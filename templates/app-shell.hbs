@@ -1,17 +1,741 @@
 <div class="dm-shell" data-domain-manager-shell data-section="{{activeSection}}">
   <div class="dm-shell__layout">
-    {{> "modules/domain-manager/templates/parts/rail.hbs"}}
+    <nav class="dm-rail" aria-label="Navegação Global">
+  <div class="dm-rail__brand" title="{{localize 'DOMAIN_MANAGER.Title'}}">
+    <i class="fa-solid fa-sitemap dm-rail__logo"></i>
+  </div>
+
+  <div class="dm-rail__nav">
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'dashboard')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="dashboard"
+      title="{{localize 'DOMAIN_MANAGER.Tabs.Overview'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Tabs.Overview'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-chart-pie"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'domains')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="domains"
+      title="{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-layer-group"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'economy')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="economy"
+      title="{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-coins"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'projects')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="projects"
+      title="{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-trowel-bricks"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'simulation')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="simulation"
+      title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-clock-rotate-left"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'events')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="events"
+      title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-dice-d20"></i>
+    </button>
+  </div>
+</nav>
 
     <div class="dm-shell__body">
-      {{> "modules/domain-manager/templates/parts/sidebar.hbs"}}
+      <aside class="dm-sidebar" aria-label="Explorador de Domínios">
+  <header class="dm-sidebar__header">
+    <div class="dm-sidebar__title-row">
+      <h2 class="dm-sidebar__title">{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}</h2>
+      {{#if isGM}}
+        <button
+          type="button"
+          class="dm-icon-btn dm-icon-btn--primary"
+          data-action="createDomain"
+          title="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+          aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+        >
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      {{/if}}
+    </div>
+
+    <div class="dm-search">
+      <i class="fa-solid fa-magnifying-glass dm-search__icon"></i>
+      <input
+        type="search"
+        class="dm-search__input"
+        placeholder="{{localize 'DOMAIN_MANAGER.SearchPlaceholder'}}"
+        value="{{searchQuery}}"
+        data-action="search"
+      />
+    </div>
+
+    <div class="dm-switcher" role="tablist">
+      <button
+        type="button"
+        class="dm-switcher__btn {{#if (eq sidebarMode 'hierarchy')}}is-active{{/if}}"
+        data-action="setSidebarMode"
+        data-mode="hierarchy"
+      >
+        {{localize 'DOMAIN_MANAGER.Sidebar.Folders'}}
+      </button>
+      <button
+        type="button"
+        class="dm-switcher__btn {{#if (eq sidebarMode 'tags')}}is-active{{/if}}"
+        data-action="setSidebarMode"
+        data-mode="tags"
+      >
+        {{localize 'DOMAIN_MANAGER.Sidebar.Tags'}}
+      </button>
+    </div>
+  </header>
+
+  <div class="dm-sidebar__content dm-scrollable">
+    {{#if (eq sidebarMode 'tags')}}
+      {{#if tagGroups.length}}
+        <ul class="dm-tag-list">
+          {{#each tagGroups}}
+            <li class="dm-tag-item">
+              <button
+                type="button"
+                class="dm-tag-btn {{#if isSelected}}is-active{{/if}}"
+                data-action="filterByTag"
+                data-tag="{{tag}}"
+              >
+                <i class="fa-solid fa-tag dm-tag-icon"></i>
+                <span class="dm-tag-label">#{{tag}}</span>
+                <span class="dm-tree__badge">{{count}}</span>
+              </button>
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <p class="dm-empty-state">Nenhuma tag encontrada.</p>
+      {{/if}}
+    {{else}}
+      {{#if domainTree.length}}
+        <ul class="dm-tree">
+          {{#each domainTree}}
+            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} {{#if hasChildren}}has-children{{/if}}">
+              <div class="dm-tree__item-row">
+                <button
+                  type="button"
+                  class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
+                  data-action="selectDomain"
+                  data-uuid="{{uuid}}"
+                >
+                  <i class="dm-tree__icon {{icon}}"></i>
+                  <span class="dm-tree__label" title="{{name}}">{{name}}</span>
+                  {{#if childCount}}
+                    <span class="dm-tree__badge" title="{{childCount}} subdivisões">{{childCount}}</span>
+                  {{/if}}
+                </button>
+              </div>
+
+              {{#if children.length}}
+                <ul class="dm-tree__children">
+                  {{#each children}}
+                    <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
+                      <div class="dm-tree__item-row">
+                        <button
+                          type="button"
+                          class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
+                          data-action="selectDomain"
+                          data-uuid="{{uuid}}"
+                        >
+                          <i class="dm-tree__icon {{icon}}"></i>
+                          <span class="dm-tree__label" title="{{name}}">{{name}}</span>
+                          {{#if childCount}}
+                            <span class="dm-tree__badge">{{childCount}}</span>
+                          {{/if}}
+                        </button>
+                      </div>
+
+                      {{#if children.length}}
+                        <ul class="dm-tree__children">
+                          {{#each children}}
+                            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
+                              <div class="dm-tree__item-row">
+                                <button
+                                  type="button"
+                                  class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
+                                  data-action="selectDomain"
+                                  data-uuid="{{uuid}}"
+                                >
+                                  <i class="dm-tree__icon {{icon}}"></i>
+                                  <span class="dm-tree__label" title="{{name}}">{{name}}</span>
+                                </button>
+                              </div>
+                            </li>
+                          {{/each}}
+                        </ul>
+                      {{/if}}
+                    </li>
+                  {{/each}}
+                </ul>
+              {{/if}}
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <div class="dm-empty-state">
+          <i class="fa-solid fa-sitemap dm-empty-state__icon"></i>
+          <p>{{localize 'DOMAIN_MANAGER.NoDomains'}}</p>
+        </div>
+      {{/if}}
+    {{/if}}
+  </div>
+</aside>
 
       <main class="dm-shell__main">
-        {{> "modules/domain-manager/templates/parts/workspace-header.hbs"}}
-        {{> "modules/domain-manager/templates/parts/overview-cards.hbs"}}
-        {{> "modules/domain-manager/templates/parts/workspace-content.hbs"}}
+        <header class="dm-workspace-header">
+  <div class="dm-workspace-header__meta">
+    {{#if selectedDomain}}
+      <nav class="dm-breadcrumbs" aria-label="Caminho hierárquico">
+        {{#each breadcrumbs}}
+          <span class="dm-breadcrumb">{{name}}</span>
+          <span class="dm-breadcrumb__sep">/</span>
+        {{/each}}
+        <span class="dm-breadcrumb is-current">{{selectedDomain.name}}</span>
+      </nav>
+
+      <div class="dm-workspace-header__identity">
+        {{#if selectedDomain.visuals.crestImg}}
+          <img src="{{selectedDomain.visuals.crestImg}}" alt="Brasão" class="dm-crest-thumb" />
+        {{/if}}
+        <div class="dm-workspace-header__titles">
+          <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
+          <div class="dm-pill-row">
+            <span class="dm-badge dm-badge--category">{{selectedDomain.identity.category}}</span>
+            <span class="dm-badge dm-badge--nature">{{selectedDomain.identity.nature}}</span>
+            <span class="dm-badge dm-badge--state is-{{selectedDomain.identity.state}}">{{selectedDomain.identity.state}}</span>
+            {{#each selectedDomain.identity.tags}}
+              <span class="dm-badge dm-badge--tag">#{{this}}</span>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="dm-workspace-header__titles">
+        <h1 class="dm-workspace-header__title">{{localize 'DOMAIN_MANAGER.AllDomains'}}</h1>
+        <p class="dm-workspace-header__subtitle">Visão Consolidada do Domínio / Território</p>
+      </div>
+    {{/if}}
+  </div>
+
+  <div class="dm-workspace-header__actions">
+    {{#if isGM}}
+      <button
+        type="button"
+        class="dm-btn dm-btn--outline"
+        data-action="rollEvent"
+        title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+      >
+        <i class="fa-solid fa-dice-d20"></i>
+        <span>{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}</span>
+      </button>
+
+      <button
+        type="button"
+        class="dm-btn dm-btn--primary"
+        data-action="advanceTime"
+        title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+      >
+        <i class="fa-solid fa-forward-step"></i>
+        <span>{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}</span>
+      </button>
+    {{/if}}
+  </div>
+</header>
+        <section class="dm-overview-cards" aria-label="Métricas Gerais">
+  <!-- Card 1: Economia -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Treasury'}}</span>
+      <i class="fa-solid fa-coins dm-card__icon text-amber"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.primaryStockDisplay}}</div>
+    <div class="dm-card__footer">
+      <span class="dm-rate dm-rate--{{metrics.netDirection}}">
+        {{metrics.netRateDisplay}}/tick
+      </span>
+      {{#if metrics.runwayDisplay}}
+        <span class="dm-card__subtext">· {{metrics.runwayDisplay}}</span>
+      {{/if}}
+    </div>
+  </article>
+
+  <!-- Card 2: Segurança & Defesa -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Security'}}</span>
+      <i class="fa-solid fa-shield-halved dm-card__icon text-blue"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.defenseRating}} DEF</div>
+    <div class="dm-card__footer">
+      <span class="dm-card__subtext">{{metrics.guardCount}} guardas</span>
+      <span class="dm-badge dm-badge--risk is-{{metrics.unrestRiskLevel}}">
+        {{metrics.unrestRiskPercent}}% agitação
+      </span>
+    </div>
+  </article>
+
+  <!-- Card 3: População -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Population'}}</span>
+      <i class="fa-solid fa-users dm-card__icon text-emerald"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.populationTotal}}</div>
+    <div class="dm-card__footer">
+      <span class="dm-card__subtext">{{metrics.groupCount}} grupos</span>
+      <span class="dm-card__subtext">· {{metrics.notableCount}} notáveis</span>
+    </div>
+  </article>
+
+  <!-- Card 4: Obras & Construções -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Projects'}}</span>
+      <i class="fa-solid fa-trowel-bricks dm-card__icon text-indigo"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.activeProjectsCount}} ativas</div>
+    <div class="dm-card__footer">
+      <div class="dm-mini-progress" title="{{metrics.averageProjectProgress}}% concluído">
+        <div class="dm-mini-progress__bar" style="width: {{metrics.averageProjectProgress}}%;"></div>
+      </div>
+      <span class="dm-card__subtext">{{metrics.averageProjectProgress}}%</span>
+    </div>
+  </article>
+</section>
+        <section class="dm-workspace-content" aria-label="Conteúdo Detalhado">
+  <!-- Navegação interna de abas -->
+  <nav class="dm-tabs" role="tablist">
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'overview')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="overview"
+    >
+      <i class="fa-solid fa-chart-pie"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.Overview'}}</span>
+    </button>
+
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'economy')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="economy"
+    >
+      <i class="fa-solid fa-coins"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}</span>
+      {{#if domainStocks.length}}
+        <span class="dm-tabs__badge">{{domainStocks.length}}</span>
+      {{/if}}
+    </button>
+
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'projects')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="projects"
+    >
+      <i class="fa-solid fa-trowel-bricks"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}</span>
+      {{#if domainProjects.length}}
+        <span class="dm-tabs__badge">{{domainProjects.length}}</span>
+      {{/if}}
+    </button>
+
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'people')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="people"
+    >
+      <i class="fa-solid fa-users"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.People'}}</span>
+    </button>
+
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'diplomacy')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="diplomacy"
+    >
+      <i class="fa-solid fa-handshake"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.Diplomacy'}}</span>
+    </button>
+
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'intel')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="intel"
+    >
+      <i class="fa-solid fa-user-secret"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.Intel'}}</span>
+    </button>
+
+    <button
+      type="button"
+      class="dm-tabs__btn {{#if (eq activeTab 'history')}}is-active{{/if}}"
+      data-action="switchTab"
+      data-tab="history"
+    >
+      <i class="fa-solid fa-feather-pointed"></i>
+      <span>{{localize 'DOMAIN_MANAGER.Tabs.History'}}</span>
+    </button>
+  </nav>
+
+  <!-- Painéis de Conteúdo -->
+  <div class="dm-tab-panels dm-scrollable">
+    {{#if (eq activeTab 'overview')}}
+      <div class="dm-panel dm-panel--overview">
+        {{#if selectedDomain.description}}
+          <div class="dm-prose">
+            <p>{{selectedDomain.description}}</p>
+          </div>
+        {{/if}}
+
+        {{#if activeConditions.length}}
+          <div class="dm-section-block">
+            <h3 class="dm-section-title"><i class="fa-solid fa-triangle-exclamation text-amber"></i> Condições Ativas</h3>
+            <div class="dm-condition-grid">
+              {{#each activeConditions}}
+                <div class="dm-condition-card is-{{severity}}">
+                  <div class="dm-condition-card__top">
+                    <strong>{{name}}</strong>
+                    <span class="dm-badge dm-badge--severity">{{severity}}</span>
+                  </div>
+                  {{#if description}}<p class="dm-condition-card__desc">{{description}}</p>{{/if}}
+                  {{#if durationTicks}}<div class="dm-condition-card__ticks">{{durationTicks}} ticks restantes</div>{{/if}}
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
+
+        <div class="dm-section-block">
+          <h3 class="dm-section-title"><i class="fa-solid fa-clock-rotate-left text-blue"></i> Crônicas Recentes</h3>
+          {{#if recentChronicles.length}}
+            <ul class="dm-feed">
+              {{#each recentChronicles}}
+                <li class="dm-feed__item is-{{significance}}">
+                  <span class="dm-feed__tick">Tick {{tick}}</span>
+                  <div class="dm-feed__body">
+                    <strong class="dm-feed__title">{{title}}</strong>
+                    {{#if summary}}<p class="dm-feed__summary">{{summary}}</p>{{/if}}
+                  </div>
+                </li>
+              {{/each}}
+            </ul>
+          {{else}}
+            <p class="dm-empty-state">Nenhum registro histórico recente.</p>
+          {{/if}}
+        </div>
+      </div>
+    {{/if}}
+
+    {{#if (eq activeTab 'economy')}}
+      <div class="dm-panel dm-panel--economy">
+        <h3 class="dm-section-title"><i class="fa-solid fa-cubes-stacked"></i> Estoques Disponíveis</h3>
+        {{#if domainStocks.length}}
+          <table class="dm-table">
+            <thead>
+              <tr>
+                <th>Recurso</th>
+                <th>Estoque Total</th>
+                <th>Reservado</th>
+                <th>Disponível</th>
+                <th>Balanço / Tick</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each domainStocks}}
+                <tr>
+                  <td><strong class="dm-text-emphasis">{{name}}</strong></td>
+                  <td>{{stockDisplay}}</td>
+                  <td class="text-amber">{{reservedDisplay}}</td>
+                  <td class="text-emerald font-semibold">{{availableDisplay}}</td>
+                  <td class="dm-rate dm-rate--{{netDirection}}">{{netPerTickDisplay}}/tick</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <p class="dm-empty-state">Nenhum estoque cadastrado.</p>
+        {{/if}}
+
+        <h3 class="dm-section-title mt-4"><i class="fa-solid fa-arrow-right-arrow-left"></i> Fluxos Econômicos</h3>
+        {{#if domainFlows.length}}
+          <table class="dm-table">
+            <thead>
+              <tr>
+                <th>Fluxo</th>
+                <th>Direção</th>
+                <th>Recurso</th>
+                <th>Quantidade</th>
+                <th>Período</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each domainFlows}}
+                <tr>
+                  <td>{{name}}</td>
+                  <td>
+                    <span class="dm-badge dm-badge--dir is-{{direction}}">{{direction}}</span>
+                  </td>
+                  <td>{{resourceName}}</td>
+                  <td>{{displayAmount}}</td>
+                  <td>a cada {{periodTicks}} tick(s)</td>
+                  <td>
+                    <span class="dm-status-dot {{#if active}}is-active{{else}}is-inactive{{/if}}"></span>
+                    {{#if active}}Ativo{{else}}Inativo{{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <p class="dm-empty-state">Nenhum fluxo configurado.</p>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq activeTab 'projects')}}
+      <div class="dm-panel dm-panel--projects">
+        <div class="dm-panel__header-row">
+          <h3 class="dm-section-title"><i class="fa-solid fa-trowel-bricks"></i> Projetos em Andamento</h3>
+        </div>
+        {{#if domainProjects.length}}
+          <div class="dm-project-grid">
+            {{#each domainProjects}}
+              <div class="dm-project-card is-{{status}}">
+                <div class="dm-project-card__top">
+                  <strong class="dm-project-card__name">{{name}}</strong>
+                  <span class="dm-badge dm-badge--status is-{{status}}">{{status}}</span>
+                </div>
+                {{#if description}}<p class="dm-project-card__desc">{{description}}</p>{{/if}}
+                
+                <div class="dm-progress-block">
+                  <div class="dm-progress-bar">
+                    <div class="dm-progress-bar__fill" style="width: {{progressPercent}}%;"></div>
+                  </div>
+                  <div class="dm-progress-labels">
+                    <span>{{work.completed}} / {{work.required}} trabalho</span>
+                    <strong class="text-emerald">{{progressPercent}}%</strong>
+                  </div>
+                </div>
+
+                {{#if costs.length}}
+                  <div class="dm-cost-pills">
+                    {{#each costs}}
+                      <span class="dm-cost-pill">{{amount}} {{resourceId}} ({{mode}})</span>
+                    {{/each}}
+                  </div>
+                {{/if}}
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="dm-empty-state">Nenhum projeto ativo.</p>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq activeTab 'people')}}
+      <div class="dm-panel dm-panel--people">
+        <h3 class="dm-section-title"><i class="fa-solid fa-user-tie"></i> Personagens Notáveis</h3>
+        {{#if notables.length}}
+          <div class="dm-notable-grid">
+            {{#each notables}}
+              <div class="dm-notable-card">
+                {{#if portrait}}
+                  <img src="{{portrait}}" alt="{{name}}" class="dm-notable-portrait" />
+                {{else}}
+                  <div class="dm-notable-portrait dm-notable-portrait--placeholder">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                {{/if}}
+                <div class="dm-notable-info">
+                  <strong class="dm-notable-name">{{name}}</strong>
+                  {{#if role}}<span class="dm-notable-role">{{role}}</span>{{/if}}
+                  {{#if function}}<span class="dm-notable-spec">{{function}}</span>{{/if}}
+                  <span class="dm-badge is-{{status}}">{{status}}</span>
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="dm-empty-state">Nenhum personagem notável registrado.</p>
+        {{/if}}
+
+        <h3 class="dm-section-title mt-4"><i class="fa-solid fa-people-group"></i> Grupos Populacionais</h3>
+        {{#if groups.length}}
+          <div class="dm-group-list">
+            {{#each groups}}
+              <div class="dm-group-item">
+                <div>
+                  <strong>{{name}}</strong> ({{count}} indivíduos)
+                  {{#if function}}<span class="dm-group-sub">· {{function}}</span>{{/if}}
+                </div>
+                <span class="dm-badge is-{{status}}">{{status}}</span>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="dm-empty-state">Nenhum grupo populacional cadastrado.</p>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq activeTab 'diplomacy')}}
+      <div class="dm-panel dm-panel--diplomacy">
+        <h3 class="dm-section-title"><i class="fa-solid fa-handshake"></i> Relações Diplomáticas</h3>
+        {{#if relations.length}}
+          <div class="dm-relation-list">
+            {{#each relations}}
+              <div class="dm-relation-item">
+                <strong class="dm-relation-target">{{targetDomainName}}</strong>
+                <span class="dm-badge dm-badge--posture is-{{posture}}">{{postureLabel}}</span>
+                {{#if notes}}<p class="dm-relation-notes">{{notes}}</p>{{/if}}
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="dm-empty-state">Nenhuma relação diplomática cadastrada.</p>
+        {{/if}}
+
+        <h3 class="dm-section-title mt-4"><i class="fa-solid fa-file-contract"></i> Acordos e Tratados</h3>
+        {{#if agreements.length}}
+          <div class="dm-agreement-list">
+            {{#each agreements}}
+              <div class="dm-agreement-item is-{{status}}">
+                <div class="dm-agreement-header">
+                  <strong>{{name}}</strong>
+                  <span class="dm-badge is-{{status}}">{{status}}</span>
+                </div>
+                <div>Alvo: {{targetDomainName}} (Tipo: {{type}})</div>
+                {{#if remainingTicks}}<div>Duração restante: {{remainingTicks}} ticks</div>{{/if}}
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="dm-empty-state">Nenhum tratado bilateral ativo.</p>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq activeTab 'intel')}}
+      <div class="dm-panel dm-panel--intel">
+        <h3 class="dm-section-title"><i class="fa-solid fa-user-secret"></i> Segredos e Informações</h3>
+        {{#if intelList.length}}
+          <div class="dm-intel-grid">
+            {{#each intelList}}
+              <div class="dm-intel-card is-{{category}}">
+                <div class="dm-intel-card__top">
+                  <strong>{{title}}</strong>
+                  <span class="dm-badge is-{{credibility}}">{{credibility}}</span>
+                </div>
+                {{#if content}}<p class="dm-intel-card__text">{{content}}</p>{{/if}}
+                <div class="dm-intel-card__footer">
+                  <span class="dm-badge dm-badge--visibility">{{visibility}}</span>
+                  {{#if source}}<span class="dm-intel-source">Fonte: {{source}}</span>{{/if}}
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <p class="dm-empty-state">Nenhum segredo ou informe registrado.</p>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq activeTab 'history')}}
+      <div class="dm-panel dm-panel--history">
+        <h3 class="dm-section-title"><i class="fa-solid fa-book-journal-whills"></i> Livro de Crônicas Completo</h3>
+        {{#if fullHistory.length}}
+          <ul class="dm-feed">
+            {{#each fullHistory}}
+              <li class="dm-feed__item is-{{significance}}">
+                <span class="dm-feed__tick">Tick {{tick}}</span>
+                <div class="dm-feed__body">
+                  <strong class="dm-feed__title">{{title}}</strong>
+                  {{#if summary}}<p class="dm-feed__summary">{{summary}}</p>{{/if}}
+                  {{#if details}}<p class="dm-feed__details">{{details}}</p>{{/if}}
+                </div>
+              </li>
+            {{/each}}
+          </ul>
+        {{else}}
+          <p class="dm-empty-state">Nenhuma crônica registrada.</p>
+        {{/if}}
+      </div>
+    {{/if}}
+  </div>
+</section>
       </main>
     </div>
   </div>
 
-  {{> "modules/domain-manager/templates/parts/footer.hbs"}}
+  <footer class="dm-footer" aria-label="Estado técnico do módulo">
+  <div class="dm-footer__left">
+    <span><strong>{{localize 'DOMAIN_MANAGER.Footer.User'}}:</strong> {{userName}}</span>
+    <span><strong>{{localize 'DOMAIN_MANAGER.Footer.Foundry'}}:</strong> {{foundryVersion}}</span>
+  </div>
+
+  <div class="dm-footer__right">
+    <span>
+      <strong>{{localize 'DOMAIN_MANAGER.Footer.Authority'}}:</strong>
+      {{#if authorityReady}}
+        <span class="dm-status-dot is-active"></span> {{localize 'DOMAIN_MANAGER.Footer.AuthorityReady'}}
+      {{else}}
+        <span class="dm-status-dot is-inactive"></span> {{localize 'DOMAIN_MANAGER.Footer.AuthorityDisconnected'}}
+      {{/if}}
+    </span>
+    <span><strong>{{localize 'DOMAIN_MANAGER.Footer.IndexedDomains'}}:</strong> {{counts.domains}}</span>
+    <span><strong>{{localize 'DOMAIN_MANAGER.Footer.SyncStatus'}}:</strong> {{timekeeping.tickDurationLabel}}</span>
+  </div>
+</footer>
 </div>

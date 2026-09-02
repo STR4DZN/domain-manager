@@ -184,7 +184,15 @@ export class DomainManagerShellApp extends
 
   static PARTS = {
     main: {
-      template: `modules/${MODULE_ID}/templates/app-shell.hbs`
+      template: `modules/${MODULE_ID}/templates/app-shell.hbs`,
+      templates: [
+        `modules/${MODULE_ID}/templates/parts/rail.hbs`,
+        `modules/${MODULE_ID}/templates/parts/sidebar.hbs`,
+        `modules/${MODULE_ID}/templates/parts/workspace-header.hbs`,
+        `modules/${MODULE_ID}/templates/parts/overview-cards.hbs`,
+        `modules/${MODULE_ID}/templates/parts/workspace-content.hbs`,
+        `modules/${MODULE_ID}/templates/parts/footer.hbs`
+      ]
     }
   };
 
