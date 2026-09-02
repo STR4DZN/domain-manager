@@ -69,10 +69,10 @@
         <p class="dm-empty-state">Nenhuma tag encontrada.</p>
       {{/if}}
     {{else}}
-      {{#if domainTree.length}}
+      {{#if flatDomainTree.length}}
         <ul class="dm-tree">
-          {{#each domainTree}}
-            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} {{#if hasChildren}}has-children{{/if}}">
+          {{#each flatDomainTree}}
+            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} depth-{{depth}}" style="padding-left: {{indentPx}}px;">
               <div class="dm-tree__item-row">
                 <button
                   type="button"
@@ -87,49 +87,6 @@
                   {{/if}}
                 </button>
               </div>
-
-              {{#if children.length}}
-                <ul class="dm-tree__children">
-                  {{#each children}}
-                    <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
-                      <div class="dm-tree__item-row">
-                        <button
-                          type="button"
-                          class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
-                          data-action="selectDomain"
-                          data-uuid="{{uuid}}"
-                        >
-                          <i class="dm-tree__icon {{icon}}"></i>
-                          <span class="dm-tree__label" title="{{name}}">{{name}}</span>
-                          {{#if childCount}}
-                            <span class="dm-tree__badge">{{childCount}}</span>
-                          {{/if}}
-                        </button>
-                      </div>
-
-                      {{#if children.length}}
-                        <ul class="dm-tree__children">
-                          {{#each children}}
-                            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
-                              <div class="dm-tree__item-row">
-                                <button
-                                  type="button"
-                                  class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
-                                  data-action="selectDomain"
-                                  data-uuid="{{uuid}}"
-                                >
-                                  <i class="dm-tree__icon {{icon}}"></i>
-                                  <span class="dm-tree__label" title="{{name}}">{{name}}</span>
-                                </button>
-                              </div>
-                            </li>
-                          {{/each}}
-                        </ul>
-                      {{/if}}
-                    </li>
-                  {{/each}}
-                </ul>
-              {{/if}}
             </li>
           {{/each}}
         </ul>

@@ -4,12 +4,13 @@
  * Implementa interface de 3 níveis:
  * 1. Rail: Dock de navegação rápida e estados
  * 2. Sidebar: Explorador de domínios em árvore hierárquica e tags
- * 3. Workspace: Cockpit com cards, navegação em abas e modais in-page (Criação e Avanço de Tempo)
+ * 3. Workspace: Cockpit com cards, navegação em abas e modais in-page (Criação, Edição, Eventos e Tempo)
  */
 
 import { MODULE_ID, MODULE_TITLE, RECORD_TYPES } from "../core/constants.js";
 import { recordIndex } from "../data/record-index.js";
 import { decodeRecord } from "../models/record-codec.js";
+import { updateRecord } from "../data/journal-store.js";
 import { buildAncestorChain } from "../features/domains/hierarchy.js";
 import { buildDomainLedger } from "../features/economy/ledger.js";
 import { formatMinorUnits } from "../core/numbers.js";
@@ -89,6 +90,26 @@ function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = 
 }
 
 /**
+ * Achata a árvore com cálculo de profundidade e recuo em pixels.
+ * Suporta níveis arbitrários (1 a 100) sem limite de loops em templates.
+ */
+function flattenDomainTree(nodes, depth = 0) {
+  const flat = [];
+  for (const node of nodes) {
+    flat.push({
+      ...node,
+      depth,
+      indentPx: depth * 16,
+      isRoot: depth === 0
+    });
+    if (node.children && node.children.length > 0) {
+      flat.push(...flattenDomainTree(node.children, depth + 1));
+    }
+  }
+  return flat;
+}
+
+/**
  * Agrupa domínios por tags
  */
 function buildDomainTagGroups(domains, currentSelectedUuid = null) {
@@ -130,7 +151,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   searchQuery = "";
   selectedTag = null;
   isCreatingDomain = false;
+  isEditingDomain = false;
   isAdvancingTimeModal = false;
+  isEventModalOpen = false;
   advanceCustomTicks = 1;
 
   static DEFAULT_OPTIONS = {
@@ -158,11 +181,18 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openCreateDomain: DomainManagerShellApp.#onOpenCreateDomain,
       cancelCreateDomain: DomainManagerShellApp.#onCancelCreateDomain,
       submitCreateDomain: DomainManagerShellApp.#onSubmitCreateDomain,
+      openEditDomain: DomainManagerShellApp.#onOpenEditDomain,
+      cancelEditDomain: DomainManagerShellApp.#onCancelEditDomain,
+      submitEditDomain: DomainManagerShellApp.#onSubmitEditDomain,
       openAdvanceModal: DomainManagerShellApp.#onOpenAdvanceModal,
       cancelAdvanceModal: DomainManagerShellApp.#onCancelAdvanceModal,
       quickAdvanceTicks: DomainManagerShellApp.#onQuickAdvanceTicks,
       submitAdvance: DomainManagerShellApp.#onSubmitAdvance,
-      rollEvent: DomainManagerShellApp.#onRollEvent
+      openEventModal: DomainManagerShellApp.#onOpenEventModal,
+      cancelEventModal: DomainManagerShellApp.#onCancelEventModal,
+      submitCustomRollEvent: DomainManagerShellApp.#onSubmitCustomRollEvent,
+      submitAuthorEvent: DomainManagerShellApp.#onSubmitAuthorEvent,
+      rollEvent: DomainManagerShellApp.#onOpenEventModal
     }
   };
 
@@ -192,31 +222,23 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const section = target.dataset.section;
     if (!section) return;
 
+    this.isCreatingDomain = false;
+    this.isEditingDomain = false;
+    this.isAdvancingTimeModal = false;
+    this.isEventModalOpen = false;
+
     if (section === "dashboard") {
       this.activeSection = "dashboard";
       this.activeTab = "overview";
-      this.isCreatingDomain = false;
-      this.isAdvancingTimeModal = false;
     } else if (section === "domains") {
       this.activeSection = "domains";
-      this.isCreatingDomain = false;
-      this.isAdvancingTimeModal = false;
+      this.activeTab = "overview";
     } else if (section === "economy") {
-      this.activeSection = "domains";
+      this.activeSection = "economy";
       this.activeTab = "economy";
-      this.isCreatingDomain = false;
-      this.isAdvancingTimeModal = false;
     } else if (section === "projects") {
-      this.activeSection = "domains";
+      this.activeSection = "projects";
       this.activeTab = "projects";
-      this.isCreatingDomain = false;
-      this.isAdvancingTimeModal = false;
-    } else if (section === "simulation") {
-      DomainManagerShellApp.#onOpenAdvanceModal.call(this);
-      return;
-    } else if (section === "events") {
-      DomainManagerShellApp.#onRollEvent.call(this);
-      return;
     }
 
     this.render();
@@ -226,6 +248,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const uuid = target.dataset.uuid;
     this.selectedDomainUuid = uuid || null;
     this.isCreatingDomain = false;
+    this.isEditingDomain = false;
     this.render();
   }
 
@@ -241,6 +264,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const tab = target.dataset.tab;
     if (tab) {
       this.activeTab = tab;
+      if (tab === "economy") this.activeSection = "economy";
+      else if (tab === "projects") this.activeSection = "projects";
+      else this.activeSection = "domains";
       this.render();
     }
   }
@@ -256,10 +282,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.render();
   }
 
+  /* --- Criação de Domínio --- */
   static #onOpenCreateDomain() {
     if (!game.user.isGM) return;
     this.isCreatingDomain = true;
+    this.isEditingDomain = false;
     this.isAdvancingTimeModal = false;
+    this.isEventModalOpen = false;
     this.render();
   }
 
@@ -271,15 +300,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static async #onSubmitCreateDomain() {
     if (!game.user.isGM) return;
     const formElement = this.element?.querySelector(".dm-dialog-card");
-    const nameInput = formElement?.querySelector("#dm-new-domain-name");
-    const categorySelect = formElement?.querySelector("#dm-new-domain-category");
-    const natureSelect = formElement?.querySelector("#dm-new-domain-nature");
-    const parentSelect = formElement?.querySelector("#dm-new-domain-parent");
+    const name = formElement?.querySelector("#dm-new-domain-name")?.value?.trim() || "Nova Base";
+    const category = formElement?.querySelector("#dm-new-domain-category")?.value?.trim() || "settlement";
+    const nature = formElement?.querySelector("#dm-new-domain-nature")?.value || "physical";
+    const tagsRaw = formElement?.querySelector("#dm-new-domain-tags")?.value || "";
+    const description = formElement?.querySelector("#dm-new-domain-description")?.value || "";
+    const parentUuid = formElement?.querySelector("#dm-new-domain-parent")?.value || null;
 
-    const name = nameInput?.value?.trim() || "Nova Base";
-    const category = categorySelect?.value || "settlement";
-    const nature = natureSelect?.value || "physical";
-    const parentUuid = parentSelect?.value || null;
+    const tags = tagsRaw.split(",").map((t) => t.trim()).filter(Boolean);
 
     try {
       const { createDomainAction } = await import("../features/domains/actions.js");
@@ -287,6 +315,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         name,
         category,
         nature,
+        tags,
+        description,
         locatedInUuid: parentUuid,
         administrativeParentUuid: parentUuid
       });
@@ -301,10 +331,87 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  /* --- Edição de Domínio --- */
+  static #onOpenEditDomain() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.isEditingDomain = true;
+    this.isCreatingDomain = false;
+    this.isAdvancingTimeModal = false;
+    this.isEventModalOpen = false;
+    this.render();
+  }
+
+  static #onCancelEditDomain() {
+    this.isEditingDomain = false;
+    this.render();
+  }
+
+  static async #onSubmitEditDomain() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-edit-domain-name")?.value?.trim();
+    const category = form?.querySelector("#dm-edit-domain-category")?.value?.trim() || "territory";
+    const nature = form?.querySelector("#dm-edit-domain-nature")?.value || "physical";
+    const tagsRaw = form?.querySelector("#dm-edit-domain-tags")?.value || "";
+    const description = form?.querySelector("#dm-edit-domain-description")?.value || "";
+    const parentUuid = form?.querySelector("#dm-edit-domain-parent")?.value || null;
+    const defenseScore = Number(form?.querySelector("#dm-edit-domain-defense")?.value) || 10;
+    const guardCount = Number(form?.querySelector("#dm-edit-domain-guards")?.value) || 0;
+
+    if (!name) {
+      ui.notifications?.warn("O nome do domínio não pode ser vazio.");
+      return;
+    }
+
+    const tags = tagsRaw.split(",").map((t) => t.trim()).filter(Boolean);
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      if (!doc) throw new Error("Domínio não encontrado no índice.");
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+
+      data.identity = {
+        ...data.identity,
+        category,
+        nature,
+        tags,
+        description
+      };
+      data.hierarchy = {
+        ...data.hierarchy,
+        locatedInUuid: parentUuid,
+        administrativeParentUuid: parentUuid
+      };
+      data.security = {
+        ...data.security,
+        defenseScore,
+        defenseRating: defenseScore,
+        guardCount
+      };
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        name,
+        data
+      });
+
+      this.isEditingDomain = false;
+      ui.notifications?.info(`Domínio "${name}" atualizado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao editar domínio.");
+    }
+  }
+
+  /* --- Avanço Temporal --- */
   static #onOpenAdvanceModal() {
     if (!game.user.isGM) return;
     this.isAdvancingTimeModal = true;
     this.isCreatingDomain = false;
+    this.isEditingDomain = false;
+    this.isEventModalOpen = false;
     this.render();
   }
 
@@ -335,7 +442,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async #onRollEvent() {
+  /* --- Rolar & Customizar Eventos --- */
+  static #onOpenEventModal() {
     if (!game.user.isGM) {
       ui.notifications?.warn("Apenas o Mestre pode rolar eventos.");
       return;
@@ -344,13 +452,84 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ui.notifications?.warn("Selecione um domínio primeiro.");
       return;
     }
+    this.isEventModalOpen = true;
+    this.isCreatingDomain = false;
+    this.isEditingDomain = false;
+    this.isAdvancingTimeModal = false;
+    this.render();
+  }
+
+  static #onCancelEventModal() {
+    this.isEventModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitCustomRollEvent() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const category = form?.querySelector("#dm-event-filter-category")?.value || null;
+    this.isEventModalOpen = false;
+
     try {
       const { executeRollAndApplyEvent } = await import("../features/events/actions.js");
-      await executeRollAndApplyEvent({ domainUuid: this.selectedDomainUuid });
-      ui.notifications?.info("Evento de domínio rolado e publicado no chat!");
+      await executeRollAndApplyEvent({
+        domainUuid: this.selectedDomainUuid,
+        category: category === "all" ? null : category
+      });
+      ui.notifications?.info("Evento rolado e publicado no chat!");
       this.render();
     } catch (err) {
       ui.notifications?.error(err.message || "Erro ao rolar evento.");
+    }
+  }
+
+  static async #onSubmitAuthorEvent() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const title = form?.querySelector("#dm-author-event-title")?.value?.trim() || "Evento do Mestre";
+    const description = form?.querySelector("#dm-author-event-desc")?.value?.trim() || "Um evento marcante alterou os rumos do território.";
+    const outcomeLabel = form?.querySelector("#dm-author-event-outcome")?.value?.trim() || "Desfecho aplicado pelo Mestre";
+    const stockBonusAmount = Number(form?.querySelector("#dm-author-event-stock")?.value) || 0;
+    const conditionName = form?.querySelector("#dm-author-event-cond-name")?.value?.trim();
+    const conditionTicks = Number(form?.querySelector("#dm-author-event-cond-ticks")?.value) || 3;
+    const severity = form?.querySelector("#dm-author-event-severity")?.value || "neutral";
+
+    this.isEventModalOpen = false;
+
+    try {
+      const { executeApplyEventOutcome } = await import("../features/events/actions.js");
+      const customEvent = {
+        id: `custom_${Date.now()}`,
+        title,
+        description,
+        category: "custom",
+        severity,
+        outcomes: [
+          {
+            label: outcomeLabel,
+            description: outcomeLabel,
+            stockBonus: stockBonusAmount !== 0 ? { amount: stockBonusAmount * 100 } : null,
+            condition: conditionName ? {
+              name: conditionName,
+              description: `Condição gerada por evento: ${title}`,
+              durationTicks: conditionTicks
+            } : null,
+            chronicleTitle: title
+          }
+        ]
+      };
+
+      await executeApplyEventOutcome({
+        domainUuid: this.selectedDomainUuid,
+        event: customEvent,
+        outcomeIndex: 0,
+        postToChat: true
+      });
+
+      ui.notifications?.info(`Evento "${title}" aplicado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao aplicar evento customizado.");
     }
   }
 
@@ -379,8 +558,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       );
     }
 
-    // 1. Árvore e Tags para a Sidebar
+    // 1. Árvore e Tags para a Sidebar (suporte a profundidade ilimitada)
     const domainTree = buildDomainTreeNodes(filteredDomains, null, this.selectedDomainUuid);
+    const flatDomainTree = flattenDomainTree(domainTree);
     const tagGroups = buildDomainTagGroups(filteredDomains, this.selectedDomainUuid);
 
     // 2. Domínio Selecionado e Detalhes
@@ -580,14 +760,17 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         state: data.identity?.state || "active",
         crest: data.identity?.crestMedia?.path || "fa-solid fa-landmark",
         tags: data.identity?.tags || [],
-        description: data.identity?.description || "Sem descrição registrada."
+        description: data.identity?.description || "Sem descrição registrada.",
+        defenseScore: defenseBase,
+        guardCount: guards,
+        parentUuid: data.hierarchy?.locatedInUuid || data.hierarchy?.administrativeParentUuid || ""
       };
     }
 
     const availableParentDomains = domainRecords.map((d) => ({
       uuid: d.document.uuid,
       name: d.document.name,
-      isSelected: d.document.uuid === this.selectedDomainUuid
+      isSelected: d.document.uuid === (selectedDomain?.parentUuid || this.selectedDomainUuid)
     }));
 
     return {
@@ -604,12 +787,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       searchQuery: this.searchQuery,
       selectedTag: this.selectedTag,
       isCreatingDomain: this.isCreatingDomain,
+      isEditingDomain: this.isEditingDomain,
       isAdvancingTimeModal: this.isAdvancingTimeModal,
+      isEventModalOpen: this.isEventModalOpen,
       advanceCustomTicks: this.advanceCustomTicks,
       availableParentDomains,
       domainTree,
+      flatDomainTree,
       tagGroups,
       selectedDomain,
+      selectedDomainTagsFormatted: (selectedDomain?.tags || []).join(", "),
       breadcrumbs,
       metrics,
       domainStocks,

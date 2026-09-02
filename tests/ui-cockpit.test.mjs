@@ -256,3 +256,67 @@ test("teste de escala: 1 galáxia, 6 planetas e 20 bases interligadas na árvore
   assert.equal(baseContext.metrics.netRateDisplay, "500");
   assert.equal(baseContext.metrics.defenseRating, 47); // 25 + floor(15 * 1.5) = 25 + 22 = 47
 });
+
+test("teste de hierarquia profunda: 5 níveis de aninhamento são preservados no flatDomainTree", async () => {
+  game.journal = [];
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  recordIndex.rebuild();
+
+  // Nível 1: Raiz (Galáxia)
+  const l1 = createMockJournal({
+    uuid: "JournalEntry.lvl-1",
+    name: "Nível 1 - Galáxia Raiz",
+    data: { identity: { category: "galaxy", nature: "physical", state: "active" }, hierarchy: {} }
+  });
+  recordIndex.upsert(l1);
+
+  // Nível 2: Planeta (filho do Nível 1)
+  const l2 = createMockJournal({
+    uuid: "JournalEntry.lvl-2",
+    name: "Nível 2 - Planeta",
+    data: { identity: { category: "planet", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.lvl-1" } }
+  });
+  recordIndex.upsert(l2);
+
+  // Nível 3: Setor (filho do Nível 2)
+  const l3 = createMockJournal({
+    uuid: "JournalEntry.lvl-3",
+    name: "Nível 3 - Setor",
+    data: { identity: { category: "sector", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.lvl-2" } }
+  });
+  recordIndex.upsert(l3);
+
+  // Nível 4: Base Operacional (filho do Nível 3)
+  const l4 = createMockJournal({
+    uuid: "JournalEntry.lvl-4",
+    name: "Nível 4 - Base Operacional",
+    data: { identity: { category: "outpost", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.lvl-3" } }
+  });
+  recordIndex.upsert(l4);
+
+  // Nível 5: Sub-Instalação Interna (filho do Nível 4)
+  const l5 = createMockJournal({
+    uuid: "JournalEntry.lvl-5",
+    name: "Nível 5 - Sub-Instalação",
+    data: { identity: { category: "facility", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.lvl-4" } }
+  });
+  recordIndex.upsert(l5);
+
+  const app = new DomainManagerShellApp();
+  const context = await app._prepareContext();
+
+  assert.equal(context.flatDomainTree.length, 5, "Todos os 5 níveis hierárquicos devem estar presentes no flatDomainTree");
+  assert.equal(context.flatDomainTree[0].name, "Nível 1 - Galáxia Raiz");
+  assert.equal(context.flatDomainTree[0].depth, 0);
+  assert.equal(context.flatDomainTree[1].name, "Nível 2 - Planeta");
+  assert.equal(context.flatDomainTree[1].depth, 1);
+  assert.equal(context.flatDomainTree[2].name, "Nível 3 - Setor");
+  assert.equal(context.flatDomainTree[2].depth, 2);
+  assert.equal(context.flatDomainTree[3].name, "Nível 4 - Base Operacional");
+  assert.equal(context.flatDomainTree[3].depth, 3);
+  assert.equal(context.flatDomainTree[4].name, "Nível 5 - Sub-Instalação");
+  assert.equal(context.flatDomainTree[4].depth, 4);
+  assert.equal(context.flatDomainTree[4].indentPx, 64);
+});

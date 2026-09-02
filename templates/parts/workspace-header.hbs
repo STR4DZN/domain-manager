@@ -1,44 +1,61 @@
 <header class="dm-workspace-header">
-  <div class="dm-workspace-header__meta">
-    {{#if selectedDomain}}
-      <nav class="dm-breadcrumbs" aria-label="Caminho hierárquico">
+  <div class="dm-workspace-header__main">
+    {{#if breadcrumbs.length}}
+      <nav class="dm-breadcrumbs" aria-label="Caminho Hierárquico">
         {{#each breadcrumbs}}
-          <span class="dm-breadcrumb">{{name}}</span>
-          <span class="dm-breadcrumb__sep">/</span>
+          <span class="dm-breadcrumbs__item" data-action="selectDomain" data-uuid="{{uuid}}" title="{{name}}">{{name}}</span>
+          {{#unless @last}}<span class="dm-breadcrumbs__separator">/</span>{{/unless}}
         {{/each}}
-        <span class="dm-breadcrumb is-current">{{selectedDomain.name}}</span>
       </nav>
+    {{/if}}
 
+    {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
-        {{#if selectedDomain.visuals.crestImg}}
-          <img src="{{selectedDomain.visuals.crestImg}}" alt="Brasão" class="dm-crest-thumb" />
-        {{/if}}
+        <div class="dm-crest">
+          <i class="{{selectedDomain.crest}} dm-crest__icon"></i>
+        </div>
         <div class="dm-workspace-header__titles">
-          <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
-          <div class="dm-pill-row">
-            <span class="dm-badge dm-badge--category">{{selectedDomain.identity.category}}</span>
-            <span class="dm-badge dm-badge--nature">{{selectedDomain.identity.nature}}</span>
-            <span class="dm-badge dm-badge--state is-{{selectedDomain.identity.state}}">{{selectedDomain.identity.state}}</span>
-            {{#each selectedDomain.identity.tags}}
-              <span class="dm-badge dm-badge--tag">#{{this}}</span>
-            {{/each}}
+          <div class="dm-workspace-header__title-row">
+            <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
+            <span class="dm-pill dm-pill--category">{{selectedDomain.category}}</span>
+            <span class="dm-pill dm-pill--nature">{{selectedDomain.nature}}</span>
+            <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.state}}</span>
           </div>
+          {{#if selectedDomain.tags.length}}
+            <div class="dm-workspace-header__tags">
+              {{#each selectedDomain.tags}}
+                <span class="dm-tag-chip">#{{this}}</span>
+              {{/each}}
+            </div>
+          {{/if}}
         </div>
       </div>
     {{else}}
-      <div class="dm-workspace-header__titles">
+      <div class="dm-workspace-header__identity">
         <h1 class="dm-workspace-header__title">{{localize 'DOMAIN_MANAGER.AllDomains'}}</h1>
-        <p class="dm-workspace-header__subtitle">Visão Consolidada do Domínio / Território</p>
+        <p class="dm-workspace-header__subtitle">Visão Consolidada do Território</p>
       </div>
     {{/if}}
   </div>
 
   <div class="dm-workspace-header__actions">
     {{#if isGM}}
+      {{#if selectedDomain}}
+        <button
+          type="button"
+          class="dm-btn dm-btn--outline"
+          data-action="openEditDomain"
+          title="Editar este Domínio"
+        >
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Editar</span>
+        </button>
+      {{/if}}
+
       <button
         type="button"
         class="dm-btn dm-btn--outline"
-        data-action="rollEvent"
+        data-action="openEventModal"
         title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
       >
         <i class="fa-solid fa-dice-d20"></i>

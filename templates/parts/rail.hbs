@@ -30,7 +30,7 @@
 
     <button
       type="button"
-      class="dm-rail__item {{#if (eq activeTab 'economy')}}is-active{{/if}}"
+      class="dm-rail__item {{#if (eq activeSection 'economy')}}is-active{{/if}}"
       data-action="navigate"
       data-section="economy"
       title="{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}"
@@ -42,7 +42,7 @@
 
     <button
       type="button"
-      class="dm-rail__item {{#if (eq activeTab 'projects')}}is-active{{/if}}"
+      class="dm-rail__item {{#if (eq activeSection 'projects')}}is-active{{/if}}"
       data-action="navigate"
       data-section="projects"
       title="{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}"
@@ -66,7 +66,7 @@
     <button
       type="button"
       class="dm-rail__item"
-      data-action="rollEvent"
+      data-action="openEventModal"
       title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
       aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
     >

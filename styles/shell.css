@@ -1096,3 +1096,56 @@
 .text-emerald { color: #10b981; }
 .text-blue { color: #3b82f6; }
 .mt-3 { margin-top: 12px; }
+
+.dm-dialog-card--wide {
+  max-width: 780px;
+}
+
+.dm-textarea {
+  background: #0c0c0e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #f4f4f5;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.dm-textarea:focus {
+  border-color: #ef4444;
+}
+
+.dm-event-split {
+  display: grid;
+  grid-template-columns: 1fr 1px 1.2fr;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.dm-event-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dm-event-col__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dm-event-divider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.text-amber { color: #f59e0b; }
+.text-purple { color: #a855f7; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }

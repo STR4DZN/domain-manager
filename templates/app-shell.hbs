@@ -32,7 +32,7 @@
 
     <button
       type="button"
-      class="dm-rail__item {{#if (eq activeTab 'economy')}}is-active{{/if}}"
+      class="dm-rail__item {{#if (eq activeSection 'economy')}}is-active{{/if}}"
       data-action="navigate"
       data-section="economy"
       title="{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}"
@@ -44,7 +44,7 @@
 
     <button
       type="button"
-      class="dm-rail__item {{#if (eq activeTab 'projects')}}is-active{{/if}}"
+      class="dm-rail__item {{#if (eq activeSection 'projects')}}is-active{{/if}}"
       data-action="navigate"
       data-section="projects"
       title="{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}"
@@ -68,7 +68,7 @@
     <button
       type="button"
       class="dm-rail__item"
-      data-action="rollEvent"
+      data-action="openEventModal"
       title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
       aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
     >
@@ -151,10 +151,10 @@
         <p class="dm-empty-state">Nenhuma tag encontrada.</p>
       {{/if}}
     {{else}}
-      {{#if domainTree.length}}
+      {{#if flatDomainTree.length}}
         <ul class="dm-tree">
-          {{#each domainTree}}
-            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} {{#if hasChildren}}has-children{{/if}}">
+          {{#each flatDomainTree}}
+            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} depth-{{depth}}" style="padding-left: {{indentPx}}px;">
               <div class="dm-tree__item-row">
                 <button
                   type="button"
@@ -169,49 +169,6 @@
                   {{/if}}
                 </button>
               </div>
-
-              {{#if children.length}}
-                <ul class="dm-tree__children">
-                  {{#each children}}
-                    <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
-                      <div class="dm-tree__item-row">
-                        <button
-                          type="button"
-                          class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
-                          data-action="selectDomain"
-                          data-uuid="{{uuid}}"
-                        >
-                          <i class="dm-tree__icon {{icon}}"></i>
-                          <span class="dm-tree__label" title="{{name}}">{{name}}</span>
-                          {{#if childCount}}
-                            <span class="dm-tree__badge">{{childCount}}</span>
-                          {{/if}}
-                        </button>
-                      </div>
-
-                      {{#if children.length}}
-                        <ul class="dm-tree__children">
-                          {{#each children}}
-                            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
-                              <div class="dm-tree__item-row">
-                                <button
-                                  type="button"
-                                  class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
-                                  data-action="selectDomain"
-                                  data-uuid="{{uuid}}"
-                                >
-                                  <i class="dm-tree__icon {{icon}}"></i>
-                                  <span class="dm-tree__label" title="{{name}}">{{name}}</span>
-                                </button>
-                              </div>
-                            </li>
-                          {{/each}}
-                        </ul>
-                      {{/if}}
-                    </li>
-                  {{/each}}
-                </ul>
-              {{/if}}
             </li>
           {{/each}}
         </ul>
@@ -225,48 +182,66 @@
   </div>
 </aside>
 
+
       <main class="dm-shell__main">
         <header class="dm-workspace-header">
-  <div class="dm-workspace-header__meta">
-    {{#if selectedDomain}}
-      <nav class="dm-breadcrumbs" aria-label="Caminho hierárquico">
+  <div class="dm-workspace-header__main">
+    {{#if breadcrumbs.length}}
+      <nav class="dm-breadcrumbs" aria-label="Caminho Hierárquico">
         {{#each breadcrumbs}}
-          <span class="dm-breadcrumb">{{name}}</span>
-          <span class="dm-breadcrumb__sep">/</span>
+          <span class="dm-breadcrumbs__item" data-action="selectDomain" data-uuid="{{uuid}}" title="{{name}}">{{name}}</span>
+          {{#unless @last}}<span class="dm-breadcrumbs__separator">/</span>{{/unless}}
         {{/each}}
-        <span class="dm-breadcrumb is-current">{{selectedDomain.name}}</span>
       </nav>
+    {{/if}}
 
+    {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
-        {{#if selectedDomain.visuals.crestImg}}
-          <img src="{{selectedDomain.visuals.crestImg}}" alt="Brasão" class="dm-crest-thumb" />
-        {{/if}}
+        <div class="dm-crest">
+          <i class="{{selectedDomain.crest}} dm-crest__icon"></i>
+        </div>
         <div class="dm-workspace-header__titles">
-          <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
-          <div class="dm-pill-row">
-            <span class="dm-badge dm-badge--category">{{selectedDomain.identity.category}}</span>
-            <span class="dm-badge dm-badge--nature">{{selectedDomain.identity.nature}}</span>
-            <span class="dm-badge dm-badge--state is-{{selectedDomain.identity.state}}">{{selectedDomain.identity.state}}</span>
-            {{#each selectedDomain.identity.tags}}
-              <span class="dm-badge dm-badge--tag">#{{this}}</span>
-            {{/each}}
+          <div class="dm-workspace-header__title-row">
+            <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
+            <span class="dm-pill dm-pill--category">{{selectedDomain.category}}</span>
+            <span class="dm-pill dm-pill--nature">{{selectedDomain.nature}}</span>
+            <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.state}}</span>
           </div>
+          {{#if selectedDomain.tags.length}}
+            <div class="dm-workspace-header__tags">
+              {{#each selectedDomain.tags}}
+                <span class="dm-tag-chip">#{{this}}</span>
+              {{/each}}
+            </div>
+          {{/if}}
         </div>
       </div>
     {{else}}
-      <div class="dm-workspace-header__titles">
+      <div class="dm-workspace-header__identity">
         <h1 class="dm-workspace-header__title">{{localize 'DOMAIN_MANAGER.AllDomains'}}</h1>
-        <p class="dm-workspace-header__subtitle">Visão Consolidada do Domínio / Território</p>
+        <p class="dm-workspace-header__subtitle">Visão Consolidada do Território</p>
       </div>
     {{/if}}
   </div>
 
   <div class="dm-workspace-header__actions">
     {{#if isGM}}
+      {{#if selectedDomain}}
+        <button
+          type="button"
+          class="dm-btn dm-btn--outline"
+          data-action="openEditDomain"
+          title="Editar este Domínio"
+        >
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Editar</span>
+        </button>
+      {{/if}}
+
       <button
         type="button"
         class="dm-btn dm-btn--outline"
-        data-action="rollEvent"
+        data-action="openEventModal"
         title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
       >
         <i class="fa-solid fa-dice-d20"></i>
@@ -285,6 +260,7 @@
     {{/if}}
   </div>
 </header>
+
         <section class="dm-overview-cards" aria-label="Métricas Gerais">
   <!-- Card 1: Economia -->
   <article class="dm-card dm-card--stat">
@@ -353,7 +329,7 @@
         <h3><i class="fa-solid fa-plus-circle text-emerald"></i> Criar Novo Domínio / Base</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelCreateDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Defina a identidade inicial do domínio. O registro será indexado na árvore hierárquica.</p>
+      <p class="dm-dialog-desc">Defina a identidade inicial do domínio. Ele será vinculado à árvore hierárquica na profundidade correta.</p>
       
       <div class="dm-form-grid">
         <div class="dm-form-group">
@@ -363,14 +339,8 @@
         
         <div class="dm-form-row">
           <div class="dm-form-group">
-            <label>Categoria</label>
-            <select class="dm-select" id="dm-new-domain-category">
-              <option value="settlement">Assentamento / Cidade</option>
-              <option value="stronghold">Forte / Fortaleza</option>
-              <option value="outpost">Posto Avançado / Base</option>
-              <option value="planet">Planeta / Setor</option>
-              <option value="territory">Território Geral</option>
-            </select>
+            <label>Categoria (Customizável)</label>
+            <input type="text" class="dm-input" id="dm-new-domain-category" placeholder="Ex: settlement, outpost, planet, galaxy..." value="settlement" />
           </div>
           <div class="dm-form-group">
             <label>Natureza</label>
@@ -381,6 +351,16 @@
               <option value="abstract">Esfera Abstrata</option>
             </select>
           </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Tags (separadas por vírgula)</label>
+          <input type="text" class="dm-input" id="dm-new-domain-tags" placeholder="Ex: capital, mineração, fronteira" />
+        </div>
+
+        <div class="dm-form-group">
+          <label>Descrição Geral</label>
+          <textarea class="dm-textarea" id="dm-new-domain-description" rows="2" placeholder="Breve resumo sobre a base..."></textarea>
         </div>
 
         <div class="dm-form-group">
@@ -397,6 +377,77 @@
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelCreateDomain">Cancelar</button>
         <button type="button" class="dm-btn dm-btn--primary" data-action="submitCreateDomain"><i class="fa-solid fa-check"></i> Criar Domínio</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+{{#if isEditingDomain}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Domínio: {{selectedDomain.name}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="dm-dialog-desc">Altere o nome, a categoria, natureza, tags, defesa e hierarquia deste domínio.</p>
+      
+      <div class="dm-form-grid">
+        <div class="dm-form-group">
+          <label>Nome do Domínio / Base *</label>
+          <input type="text" class="dm-input" id="dm-edit-domain-name" value="{{selectedDomain.name}}" />
+        </div>
+        
+        <div class="dm-form-row">
+          <div class="dm-form-group">
+            <label>Categoria (Customizável)</label>
+            <input type="text" class="dm-input" id="dm-edit-domain-category" value="{{selectedDomain.category}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Natureza</label>
+            <select class="dm-select" id="dm-edit-domain-nature">
+              <option value="physical" {{#if (eq selectedDomain.nature 'physical')}}selected{{/if}}>Físico / Territorial</option>
+              <option value="organization" {{#if (eq selectedDomain.nature 'organization')}}selected{{/if}}>Organização / Guilda</option>
+              <option value="hybrid" {{#if (eq selectedDomain.nature 'hybrid')}}selected{{/if}}>Híbrido</option>
+              <option value="abstract" {{#if (eq selectedDomain.nature 'abstract')}}selected{{/if}}>Esfera Abstrata</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dm-form-row">
+          <div class="dm-form-group">
+            <label>Defesa Base (Rating)</label>
+            <input type="number" class="dm-input" id="dm-edit-domain-defense" value="{{selectedDomain.defenseScore}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Número de Guardas</label>
+            <input type="number" class="dm-input" id="dm-edit-domain-guards" value="{{selectedDomain.guardCount}}" />
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Tags (separadas por vírgula)</label>
+          <input type="text" class="dm-input" id="dm-edit-domain-tags" value="{{selectedDomainTagsFormatted}}" />
+        </div>
+
+        <div class="dm-form-group">
+          <label>Descrição Geral</label>
+          <textarea class="dm-textarea" id="dm-edit-domain-description" rows="2">{{selectedDomain.description}}</textarea>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Domínio Superior / Localização</label>
+          <select class="dm-select" id="dm-edit-domain-parent">
+            <option value="">Nenhum (Raiz / Independente / Galáxia)</option>
+            {{#each availableParentDomains}}
+              <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditDomain">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditDomain"><i class="fa-solid fa-floppy-disk"></i> Salvar Alterações</button>
       </div>
     </div>
   </div>
@@ -437,9 +488,86 @@
     </div>
   </div>
 {{/if}}
-<section class="dm-workspace-content" aria-label="Conteúdo Detalhado">
-  <!-- Navegação interna de abas -->
-  <nav class="dm-tabs" role="tablist">
+
+{{#if isEventModalOpen}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-dialog-card--wide">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-dice-d20 text-purple"></i> Central de Eventos de Domínio</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEventModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="dm-dialog-desc">Role um evento customizado com filtros ou crie um evento autoral do Mestre para aplicar na base.</p>
+
+      <div class="dm-event-split">
+        <!-- Coluna 1: Sorteio Customizado -->
+        <div class="dm-event-col">
+          <h4 class="dm-event-col__title"><i class="fa-solid fa-dice"></i> Sorteio com Filtros</h4>
+          <div class="dm-form-group">
+            <label>Filtrar por Categoria:</label>
+            <select class="dm-select" id="dm-event-filter-category">
+              <option value="all">Todas as Categorias</option>
+              <option value="economy">Economia & Comércio</option>
+              <option value="security">Segurança & Conflito</option>
+              <option value="population">Social & População</option>
+              <option value="crisis">Crise & Desastre</option>
+              <option value="opportunity">Oportunidade & Bonança</option>
+            </select>
+          </div>
+          <button type="button" class="dm-btn dm-btn--primary mt-4" data-action="submitCustomRollEvent">
+            <i class="fa-solid fa-dice-d20"></i> Rolar com Filtro
+          </button>
+        </div>
+
+        <div class="dm-event-divider"></div>
+
+        <!-- Coluna 2: Evento Autoral do Mestre -->
+        <div class="dm-event-col">
+          <h4 class="dm-event-col__title"><i class="fa-solid fa-feather"></i> Evento Autoral do Mestre</h4>
+          <div class="dm-form-group">
+            <label>Título do Evento:</label>
+            <input type="text" class="dm-input" id="dm-author-event-title" placeholder="Ex: Chuva de Meteoros, Festival Estelar..." />
+          </div>
+          <div class="dm-form-group">
+            <label>Descrição do Acontecimento:</label>
+            <textarea class="dm-textarea" id="dm-author-event-desc" rows="2" placeholder="O que aconteceu no território..."></textarea>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Severidade:</label>
+              <select class="dm-select" id="dm-author-event-severity">
+                <option value="neutral">Neutra / Comum</option>
+                <option value="crisis">Crise Severa</option>
+                <option value="opportunity">Oportunidade Positiva</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Impacto no Tesouro:</label>
+              <input type="number" class="dm-input" id="dm-author-event-stock" placeholder="+/- valor" value="0" />
+            </div>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Condição Gerada (Opcional):</label>
+              <input type="text" class="dm-input" id="dm-author-event-cond-name" placeholder="Ex: Blecaute, Quarentena" />
+            </div>
+            <div class="dm-form-group">
+              <label>Duração (Ticks):</label>
+              <input type="number" class="dm-input" id="dm-author-event-cond-ticks" value="3" />
+            </div>
+          </div>
+          <button type="button" class="dm-btn dm-btn--outline mt-2" data-action="submitAuthorEvent">
+            <i class="fa-solid fa-check"></i> Aplicar Evento do Mestre
+          </button>
+        </div>
+      </div>
+
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEventModal">Fechar</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+<nav class="dm-tabs" role="tablist">
     <button
       type="button"
       class="dm-tabs__btn {{#if (eq activeTab 'overview')}}is-active{{/if}}"
