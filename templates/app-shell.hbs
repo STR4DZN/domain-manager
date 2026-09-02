@@ -1,0 +1,17 @@
+<div class="dm-shell" data-domain-manager-shell data-section="{{activeSection}}">
+  <div class="dm-shell__layout">
+    {{> "modules/domain-manager/templates/parts/rail.hbs"}}
+
+    <div class="dm-shell__body">
+      {{> "modules/domain-manager/templates/parts/sidebar.hbs"}}
+
+      <main class="dm-shell__main">
+        {{> "modules/domain-manager/templates/parts/workspace-header.hbs"}}
+        {{> "modules/domain-manager/templates/parts/overview-cards.hbs"}}
+        {{> "modules/domain-manager/templates/parts/workspace-content.hbs"}}
+      </main>
+    </div>
+  </div>
+
+  {{> "modules/domain-manager/templates/parts/footer.hbs"}}
+</div>

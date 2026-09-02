@@ -1,0 +1,15 @@
+{
+  "_id": "dmMacro000000004",
+  "name": "Rolar Evento de Domínio (GM)",
+  "type": "script",
+  "author": "gm",
+  "img": "icons/sundries/gaming/dice-runed-brown.webp",
+  "scope": "global",
+  "command": "game.modules.get('domain-manager')?.api?.rollDomainEvent?.();",
+  "folder": null,
+  "sort": 400000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {}
+}

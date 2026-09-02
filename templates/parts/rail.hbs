@@ -1,0 +1,79 @@
+<nav class="dm-rail" aria-label="Navegação Global">
+  <div class="dm-rail__brand" title="{{localize 'DOMAIN_MANAGER.Title'}}">
+    <i class="fa-solid fa-sitemap dm-rail__logo"></i>
+  </div>
+
+  <div class="dm-rail__nav">
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'dashboard')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="dashboard"
+      title="{{localize 'DOMAIN_MANAGER.Tabs.Overview'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Tabs.Overview'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-chart-pie"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'domains')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="domains"
+      title="{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-layer-group"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'economy')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="economy"
+      title="{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-coins"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'projects')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="projects"
+      title="{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-trowel-bricks"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'simulation')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="simulation"
+      title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-clock-rotate-left"></i>
+    </button>
+
+    <button
+      type="button"
+      class="dm-rail__item {{#if (eq activeSection 'events')}}is-active{{/if}}"
+      data-action="navigate"
+      data-section="events"
+      title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+      aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+    >
+      <span class="dm-rail__indicator"></span>
+      <i class="fa-solid fa-dice-d20"></i>
+    </button>
+  </div>
+</nav>

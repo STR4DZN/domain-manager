@@ -1,0 +1,15 @@
+{
+  "_id": "dmMacro000000003",
+  "name": "Avançar Tempo do Mundo (GM)",
+  "type": "script",
+  "author": "gm",
+  "img": "icons/magic/time/hourglass-tilted-gray.webp",
+  "scope": "global",
+  "command": "game.modules.get('domain-manager')?.api?.openAdvanceRun?.();",
+  "folder": null,
+  "sort": 300000,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {}
+}

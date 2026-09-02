@@ -1,0 +1,15 @@
+{
+  "_id": "dmMacro000000002",
+  "name": "Abrir Minha Base",
+  "type": "script",
+  "author": "gm",
+  "img": "icons/environment/settlement/castle-stone.webp",
+  "scope": "global",
+  "command": "game.modules.get('domain-manager')?.api?.openMyDomain?.();",
+  "folder": null,
+  "sort": 200000,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {}
+}

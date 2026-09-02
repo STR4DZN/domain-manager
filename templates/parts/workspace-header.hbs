@@ -1,0 +1,59 @@
+<header class="dm-workspace-header">
+  <div class="dm-workspace-header__meta">
+    {{#if selectedDomain}}
+      <nav class="dm-breadcrumbs" aria-label="Caminho hierárquico">
+        {{#each breadcrumbs}}
+          <span class="dm-breadcrumb">{{name}}</span>
+          <span class="dm-breadcrumb__sep">/</span>
+        {{/each}}
+        <span class="dm-breadcrumb is-current">{{selectedDomain.name}}</span>
+      </nav>
+
+      <div class="dm-workspace-header__identity">
+        {{#if selectedDomain.visuals.crestImg}}
+          <img src="{{selectedDomain.visuals.crestImg}}" alt="Brasão" class="dm-crest-thumb" />
+        {{/if}}
+        <div class="dm-workspace-header__titles">
+          <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
+          <div class="dm-pill-row">
+            <span class="dm-badge dm-badge--category">{{selectedDomain.identity.category}}</span>
+            <span class="dm-badge dm-badge--nature">{{selectedDomain.identity.nature}}</span>
+            <span class="dm-badge dm-badge--state is-{{selectedDomain.identity.state}}">{{selectedDomain.identity.state}}</span>
+            {{#each selectedDomain.identity.tags}}
+              <span class="dm-badge dm-badge--tag">#{{this}}</span>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="dm-workspace-header__titles">
+        <h1 class="dm-workspace-header__title">{{localize 'DOMAIN_MANAGER.AllDomains'}}</h1>
+        <p class="dm-workspace-header__subtitle">Visão Consolidada do Domínio / Território</p>
+      </div>
+    {{/if}}
+  </div>
+
+  <div class="dm-workspace-header__actions">
+    {{#if isGM}}
+      <button
+        type="button"
+        class="dm-btn dm-btn--outline"
+        data-action="rollEvent"
+        title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+      >
+        <i class="fa-solid fa-dice-d20"></i>
+        <span>{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}</span>
+      </button>
+
+      <button
+        type="button"
+        class="dm-btn dm-btn--primary"
+        data-action="advanceTime"
+        title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+      >
+        <i class="fa-solid fa-forward-step"></i>
+        <span>{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}</span>
+      </button>
+    {{/if}}
+  </div>
+</header>

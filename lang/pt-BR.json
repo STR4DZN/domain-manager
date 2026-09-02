@@ -1,0 +1,73 @@
+{
+  "DOMAIN_MANAGER": {
+    "Title": "Domínios // Domain Manager",
+    "Open": "Abrir Gerenciador de Domínios",
+    "SearchPlaceholder": "Buscar domínios, planetas ou bases...",
+    "AllDomains": "Todos os Domínios",
+    "NoDomains": "Nenhum domínio registrado",
+    "NoSelection": "Selecione um domínio na árvore para visualizar os detalhes",
+    "Sidebar": {
+      "Title": "Setores & Bases",
+      "Folders": "Pastas",
+      "Tags": "Tags",
+      "NewDomain": "Novo Domínio",
+      "CollapseAll": "Recolher Todos"
+    },
+    "Tabs": {
+      "Overview": "Visão Geral",
+      "Economy": "Economia & Recursos",
+      "Projects": "Obras & Projetos",
+      "People": "População & Notáveis",
+      "Diplomacy": "Diplomacia & Rotas",
+      "Intel": "Segredos & Conhecimento",
+      "History": "Crônicas & Histórico"
+    },
+    "Metrics": {
+      "Treasury": "Economia & Tesouro",
+      "Runway": "Autonomia",
+      "NetRate": "Balanço Líquido",
+      "Defense": "Defesa Efetiva",
+      "Security": "Segurança & Defesa",
+      "UnrestRisk": "Risco de Agitação",
+      "ScarcityRisk": "Risco de Escassez",
+      "Population": "População Total",
+      "Notables": "Pessoas Notáveis",
+      "Projects": "Obras Ativas",
+      "Progress": "Progresso Global"
+    },
+    "Actions": {
+      "AdvanceTime": "Avançar Tempo",
+      "RollEvent": "Rolar Evento",
+      "EditDomain": "Editar Domínio",
+      "AddStock": "Adicionar Estoque",
+      "AddFlow": "Novo Fluxo",
+      "NewProject": "Nova Obra",
+      "AddNotable": "Nomear Notável",
+      "AddGroup": "Novo Grupo",
+      "NewAgreement": "Novo Acordo",
+      "AddIntel": "Registrar Segredo",
+      "RevealIntel": "Revelar Segredo",
+      "ClearHistory": "Limpar Histórico"
+    },
+    "Status": {
+      "Active": "Ativo / Operacional",
+      "Inactive": "Inativo",
+      "Lost": "Perdido",
+      "Destroyed": "Destruído",
+      "Archived": "Arquivado",
+      "Physical": "Físico / Territorial",
+      "Organization": "Organização / Guilda",
+      "Hybrid": "Híbrido",
+      "Abstract": "Abstrato"
+    },
+    "Footer": {
+      "User": "Usuário",
+      "Foundry": "Foundry",
+      "Authority": "Autoridade",
+      "AuthorityReady": "Conectada (Mestre)",
+      "AuthorityDisconnected": "Aguardando Mestre",
+      "IndexedDomains": "Domínios Indexados",
+      "SyncStatus": "Tempo Sincronizado"
+    }
+  }
+}

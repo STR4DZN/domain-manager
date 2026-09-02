@@ -1,0 +1,144 @@
+<aside class="dm-sidebar" aria-label="Explorador de Domínios">
+  <header class="dm-sidebar__header">
+    <div class="dm-sidebar__title-row">
+      <h2 class="dm-sidebar__title">{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}</h2>
+      {{#if isGM}}
+        <button
+          type="button"
+          class="dm-icon-btn dm-icon-btn--primary"
+          data-action="createDomain"
+          title="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+          aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+        >
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      {{/if}}
+    </div>
+
+    <div class="dm-search">
+      <i class="fa-solid fa-magnifying-glass dm-search__icon"></i>
+      <input
+        type="search"
+        class="dm-search__input"
+        placeholder="{{localize 'DOMAIN_MANAGER.SearchPlaceholder'}}"
+        value="{{searchQuery}}"
+        data-action="search"
+      />
+    </div>
+
+    <div class="dm-switcher" role="tablist">
+      <button
+        type="button"
+        class="dm-switcher__btn {{#if (eq sidebarMode 'hierarchy')}}is-active{{/if}}"
+        data-action="setSidebarMode"
+        data-mode="hierarchy"
+      >
+        {{localize 'DOMAIN_MANAGER.Sidebar.Folders'}}
+      </button>
+      <button
+        type="button"
+        class="dm-switcher__btn {{#if (eq sidebarMode 'tags')}}is-active{{/if}}"
+        data-action="setSidebarMode"
+        data-mode="tags"
+      >
+        {{localize 'DOMAIN_MANAGER.Sidebar.Tags'}}
+      </button>
+    </div>
+  </header>
+
+  <div class="dm-sidebar__content dm-scrollable">
+    {{#if (eq sidebarMode 'tags')}}
+      {{#if tagGroups.length}}
+        <ul class="dm-tag-list">
+          {{#each tagGroups}}
+            <li class="dm-tag-item">
+              <button
+                type="button"
+                class="dm-tag-btn {{#if isSelected}}is-active{{/if}}"
+                data-action="filterByTag"
+                data-tag="{{tag}}"
+              >
+                <i class="fa-solid fa-tag dm-tag-icon"></i>
+                <span class="dm-tag-label">#{{tag}}</span>
+                <span class="dm-tree__badge">{{count}}</span>
+              </button>
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <p class="dm-empty-state">Nenhuma tag encontrada.</p>
+      {{/if}}
+    {{else}}
+      {{#if domainTree.length}}
+        <ul class="dm-tree">
+          {{#each domainTree}}
+            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} {{#if hasChildren}}has-children{{/if}}">
+              <div class="dm-tree__item-row">
+                <button
+                  type="button"
+                  class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
+                  data-action="selectDomain"
+                  data-uuid="{{uuid}}"
+                >
+                  <i class="dm-tree__icon {{icon}}"></i>
+                  <span class="dm-tree__label" title="{{name}}">{{name}}</span>
+                  {{#if childCount}}
+                    <span class="dm-tree__badge" title="{{childCount}} subdivisões">{{childCount}}</span>
+                  {{/if}}
+                </button>
+              </div>
+
+              {{#if children.length}}
+                <ul class="dm-tree__children">
+                  {{#each children}}
+                    <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
+                      <div class="dm-tree__item-row">
+                        <button
+                          type="button"
+                          class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
+                          data-action="selectDomain"
+                          data-uuid="{{uuid}}"
+                        >
+                          <i class="dm-tree__icon {{icon}}"></i>
+                          <span class="dm-tree__label" title="{{name}}">{{name}}</span>
+                          {{#if childCount}}
+                            <span class="dm-tree__badge">{{childCount}}</span>
+                          {{/if}}
+                        </button>
+                      </div>
+
+                      {{#if children.length}}
+                        <ul class="dm-tree__children">
+                          {{#each children}}
+                            <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}}">
+                              <div class="dm-tree__item-row">
+                                <button
+                                  type="button"
+                                  class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
+                                  data-action="selectDomain"
+                                  data-uuid="{{uuid}}"
+                                >
+                                  <i class="dm-tree__icon {{icon}}"></i>
+                                  <span class="dm-tree__label" title="{{name}}">{{name}}</span>
+                                </button>
+                              </div>
+                            </li>
+                          {{/each}}
+                        </ul>
+                      {{/if}}
+                    </li>
+                  {{/each}}
+                </ul>
+              {{/if}}
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <div class="dm-empty-state">
+          <i class="fa-solid fa-sitemap dm-empty-state__icon"></i>
+          <p>{{localize 'DOMAIN_MANAGER.NoDomains'}}</p>
+        </div>
+      {{/if}}
+    {{/if}}
+  </div>
+</aside>

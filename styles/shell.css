@@ -1,0 +1,955 @@
+/* ==========================================================================
+   DOMAIN MANAGER - DARK MINIMALIST COCKPIT THEME
+   Foundry VTT v13 ApplicationV2
+   ========================================================================== */
+
+.domain-manager-shell-window .window-content {
+  padding: 0;
+  overflow: hidden;
+  background-color: #0c0c0e;
+  color: #f4f4f5;
+  font-family: var(--font-primary, system-ui, -apple-system, sans-serif);
+}
+
+.dm-shell {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: #0c0c0e;
+  overflow: hidden;
+  user-select: none;
+}
+
+.dm-shell__layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   1. NAVIGATION RAIL (Far Left Dock)
+   -------------------------------------------------------------------------- */
+.dm-rail {
+  width: 54px;
+  background: #09090b;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.dm-rail__brand {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.25rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dm-rail__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.dm-rail__item {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #71717a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  padding: 0;
+}
+
+.dm-rail__item:hover {
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dm-rail__item.is-active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dm-rail__indicator {
+  display: none;
+  position: absolute;
+  left: -6px;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
+}
+
+.dm-rail__item.is-active .dm-rail__indicator {
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   2. EXPLORER SIDEBAR (Folders & Hierarchy)
+   -------------------------------------------------------------------------- */
+.dm-shell__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dm-sidebar {
+  width: 270px;
+  background: #121215;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.dm-sidebar__header {
+  padding: 14px 14px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.dm-sidebar__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dm-sidebar__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  letter-spacing: -0.01em;
+}
+
+.dm-icon-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #a1a1aa;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.dm-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.dm-icon-btn--primary {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.dm-icon-btn--primary:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Campo de busca */
+.dm-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dm-search__icon {
+  position: absolute;
+  left: 10px;
+  font-size: 0.75rem;
+  color: #71717a;
+  pointer-events: none;
+}
+
+.dm-search__input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #18181c;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 6px 10px 6px 30px;
+  color: #f4f4f5;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.dm-search__input:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: #1e1e23;
+}
+
+/* Switcher / Pill Segmented Control */
+.dm-switcher {
+  display: flex;
+  background: #18181c;
+  padding: 3px;
+  border-radius: 20px;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dm-switcher__btn {
+  flex: 1;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dm-switcher__btn.is-active {
+  background: #27272e;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Árvore de Diretórios (Hierarchy Tree View) */
+.dm-sidebar__content {
+  flex: 1;
+  padding: 10px 6px;
+  overflow-y: auto;
+}
+
+.dm-tree,
+.dm-tree__children,
+.dm-tag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dm-tree__children {
+  margin-left: 14px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.dm-tree__node {
+  margin-bottom: 2px;
+}
+
+.dm-tree__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #d4d4d8;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.dm-tree__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.dm-tree__item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.dm-tree__icon {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.dm-tree__label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dm-tree__badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.dm-tag-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #d4d4d8;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.dm-tag-btn:hover,
+.dm-tag-btn.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.dm-tag-icon {
+  color: #f87171;
+  font-size: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   3. MAIN WORKSPACE CANVAS
+   -------------------------------------------------------------------------- */
+.dm-shell__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d10;
+  min-width: 0;
+  overflow: hidden;
+  padding: 16px 20px;
+  gap: 16px;
+}
+
+/* Header */
+.dm-workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.dm-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-bottom: 4px;
+}
+
+.dm-breadcrumb.is-current {
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.dm-workspace-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dm-crest-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #18181c;
+}
+
+.dm-workspace-header__title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.dm-workspace-header__subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: #71717a;
+}
+
+.dm-pill-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.dm-workspace-header__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Botões Modernos */
+.dm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dm-btn--primary {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.dm-btn--primary:hover {
+  background: #dc2626;
+}
+
+.dm-btn--outline {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e4e4e7;
+}
+
+.dm-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   4. OVERVIEW STAT CARDS (Top Grid)
+   -------------------------------------------------------------------------- */
+.dm-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.dm-card {
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease;
+}
+
+.dm-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.dm-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dm-card__title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+.dm-card__icon {
+  font-size: 0.9rem;
+}
+
+.dm-card__value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.dm-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.dm-card__subtext {
+  color: #71717a;
+}
+
+.dm-mini-progress {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dm-mini-progress__bar {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   5. TABS & MAIN CONTENT AREA
+   -------------------------------------------------------------------------- */
+.dm-workspace-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #131317;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dm-tabs {
+  display: flex;
+  background: #16161c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 8px 0 8px;
+  gap: 2px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.dm-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: #8e8e93;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.dm-tabs__btn:hover {
+  color: #d4d4d8;
+}
+
+.dm-tabs__btn.is-active {
+  color: #ffffff;
+  border-bottom-color: #ef4444;
+}
+
+.dm-tabs__badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+}
+
+.dm-tab-panels {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.dm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dm-section-title {
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tabelas */
+.dm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.dm-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: #71717a;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dm-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #d4d4d8;
+}
+
+.dm-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dm-text-emphasis {
+  color: #ffffff;
+}
+
+/* Grades de Projetos / Notáveis / Condições */
+.dm-project-grid,
+.dm-notable-grid,
+.dm-intel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.dm-project-card,
+.dm-notable-card,
+.dm-intel-card,
+.dm-condition-card {
+  background: #17171c;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-project-card__top,
+.dm-condition-card__top,
+.dm-intel-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.dm-project-card__name {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.dm-project-card__desc,
+.dm-condition-card__desc,
+.dm-intel-card__text {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+.dm-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dm-progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.dm-progress-bar__fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 3px;
+}
+
+.dm-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #71717a;
+}
+
+.dm-cost-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dm-cost-pill {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #d4d4d8;
+}
+
+/* Notáveis */
+.dm-notable-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.dm-notable-portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #202026;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dm-notable-portrait--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717a;
+}
+
+.dm-notable-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dm-notable-name {
+  color: #ffffff;
+  font-size: 0.88rem;
+}
+
+.dm-notable-role {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+}
+
+.dm-notable-spec {
+  font-size: 0.72rem;
+  color: #71717a;
+}
+
+/* Feeds de Histórico */
+.dm-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-feed__item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 10px;
+  background: #17171c;
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 6px 6px 0;
+}
+
+.dm-feed__item.is-critical {
+  border-left-color: #ef4444;
+}
+
+.dm-feed__tick {
+  font-size: 0.72rem;
+  color: #71717a;
+  font-family: var(--font-mono, monospace);
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.dm-feed__title {
+  font-size: 0.82rem;
+  color: #f4f4f5;
+}
+
+.dm-feed__summary {
+  margin: 2px 0 0 0;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+/* Badges e Status */
+.dm-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d4d4d8;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dm-badge--category {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+.dm-badge--nature {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.dm-badge--state.is-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.dm-badge--tag {
+  background: rgba(255, 255, 255, 0.05);
+  color: #a1a1aa;
+}
+
+.dm-badge--risk.is-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.dm-badge--risk.is-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.dm-badge--risk.is-high {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.dm-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #71717a;
+  margin-right: 4px;
+}
+
+.dm-status-dot.is-active {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.dm-status-dot.is-inactive {
+  background: #ef4444;
+}
+
+.dm-rate--inflow,
+.text-emerald {
+  color: #10b981;
+}
+
+.dm-rate--outflow,
+.text-amber {
+  color: #f59e0b;
+}
+
+.text-blue {
+  color: #3b82f6;
+}
+
+.text-indigo {
+  color: #818cf8;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+/* Estado vazio */
+.dm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 10px;
+  color: #71717a;
+  font-size: 0.8rem;
+  gap: 8px;
+}
+
+.dm-empty-state__icon {
+  font-size: 1.75rem;
+  opacity: 0.4;
+}
+
+/* --------------------------------------------------------------------------
+   6. TECHNICAL STATUS FOOTER
+   -------------------------------------------------------------------------- */
+.dm-footer {
+  height: 28px;
+  background: #09090b;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 0.72rem;
+  color: #71717a;
+  flex-shrink: 0;
+}
+
+.dm-footer__left,
+.dm-footer__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Scrollbars limpas */
+.dm-scrollable::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.dm-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dm-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.dm-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

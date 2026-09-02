@@ -1,0 +1,15 @@
+{
+  "_id": "dmMacro000000001",
+  "name": "Abrir Dashboard do Reino",
+  "type": "script",
+  "author": "gm",
+  "img": "icons/sundries/books/book-embossed-bound-gold.webp",
+  "scope": "global",
+  "command": "game.modules.get('domain-manager')?.api?.openDashboard?.();",
+  "folder": null,
+  "sort": 100000,
+  "ownership": {
+    "default": 2
+  },
+  "flags": {}
+}

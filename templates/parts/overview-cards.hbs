@@ -1,0 +1,61 @@
+<section class="dm-overview-cards" aria-label="Métricas Gerais">
+  <!-- Card 1: Economia -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Treasury'}}</span>
+      <i class="fa-solid fa-coins dm-card__icon text-amber"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.primaryStockDisplay}}</div>
+    <div class="dm-card__footer">
+      <span class="dm-rate dm-rate--{{metrics.netDirection}}">
+        {{metrics.netRateDisplay}}/tick
+      </span>
+      {{#if metrics.runwayDisplay}}
+        <span class="dm-card__subtext">· {{metrics.runwayDisplay}}</span>
+      {{/if}}
+    </div>
+  </article>
+
+  <!-- Card 2: Segurança & Defesa -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Security'}}</span>
+      <i class="fa-solid fa-shield-halved dm-card__icon text-blue"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.defenseRating}} DEF</div>
+    <div class="dm-card__footer">
+      <span class="dm-card__subtext">{{metrics.guardCount}} guardas</span>
+      <span class="dm-badge dm-badge--risk is-{{metrics.unrestRiskLevel}}">
+        {{metrics.unrestRiskPercent}}% agitação
+      </span>
+    </div>
+  </article>
+
+  <!-- Card 3: População -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Population'}}</span>
+      <i class="fa-solid fa-users dm-card__icon text-emerald"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.populationTotal}}</div>
+    <div class="dm-card__footer">
+      <span class="dm-card__subtext">{{metrics.groupCount}} grupos</span>
+      <span class="dm-card__subtext">· {{metrics.notableCount}} notáveis</span>
+    </div>
+  </article>
+
+  <!-- Card 4: Obras & Construções -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Projects'}}</span>
+      <i class="fa-solid fa-trowel-bricks dm-card__icon text-indigo"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.activeProjectsCount}} ativas</div>
+    <div class="dm-card__footer">
+      <div class="dm-mini-progress" title="{{metrics.averageProjectProgress}}% concluído">
+        <div class="dm-mini-progress__bar" style="width: {{metrics.averageProjectProgress}}%;"></div>
+      </div>
+      <span class="dm-card__subtext">{{metrics.averageProjectProgress}}%</span>
+    </div>
+  </article>
+</section>
