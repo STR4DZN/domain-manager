@@ -154,3 +154,24 @@ export async function executeApplyEventOutcome({
 
   return result;
 }
+
+/**
+ * Rola e aplica um evento diretamente, registrando nas crônicas e enviando ao chat.
+ */
+export async function executeRollAndApplyEvent({
+  domainUuid = null,
+  category = null,
+  outcomeIndex = 0,
+  postToChat = true
+} = {}) {
+  assertGM();
+  const { domain, event, catalog } = rollEventForDomain({ domainUuid, category });
+  return executeApplyEventOutcome({
+    domainUuid: domain.document.uuid,
+    event,
+    outcomeIndex,
+    postToChat,
+    catalog
+  });
+}
+

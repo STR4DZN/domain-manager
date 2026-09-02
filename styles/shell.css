@@ -953,3 +953,146 @@
 .dm-scrollable::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* --------------------------------------------------------------------------
+   MODAL & OVERLAYS IN-PAGE
+   -------------------------------------------------------------------------- */
+.domain-manager-shell-window {
+  min-width: 900px;
+  min-height: 560px;
+}
+
+.dm-shell__main {
+  position: relative;
+}
+
+.dm-overlay-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(8, 8, 10, 0.82);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.dm-dialog-card {
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  max-width: 520px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: dmFadeIn 0.15s ease-out;
+}
+
+@keyframes dmFadeIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dm-dialog-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dm-dialog-card__header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dm-dialog-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  line-height: 1.4;
+}
+
+.dm-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dm-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dm-form-group label, .dm-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #d4d4d8;
+}
+
+.dm-input, .dm-select {
+  background: #0c0c0e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #f4f4f5;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.dm-input:focus, .dm-select:focus {
+  border-color: #ef4444;
+}
+
+.dm-dialog-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.dm-advance-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dm-pill-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dm-sync-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #71717a;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-emerald { color: #10b981; }
+.text-blue { color: #3b82f6; }
+.mt-3 { margin-top: 12px; }

@@ -1,3 +1,94 @@
+{{#if isCreatingDomain}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-plus-circle text-emerald"></i> Criar Novo Domínio / Base</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelCreateDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="dm-dialog-desc">Defina a identidade inicial do domínio. O registro será indexado na árvore hierárquica.</p>
+      
+      <div class="dm-form-grid">
+        <div class="dm-form-group">
+          <label>Nome do Domínio / Base *</label>
+          <input type="text" class="dm-input" id="dm-new-domain-name" placeholder="Ex: Base Alpha, Forte Solar, Cidade Baixa..." autofocus />
+        </div>
+        
+        <div class="dm-form-row">
+          <div class="dm-form-group">
+            <label>Categoria</label>
+            <select class="dm-select" id="dm-new-domain-category">
+              <option value="settlement">Assentamento / Cidade</option>
+              <option value="stronghold">Forte / Fortaleza</option>
+              <option value="outpost">Posto Avançado / Base</option>
+              <option value="planet">Planeta / Setor</option>
+              <option value="territory">Território Geral</option>
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Natureza</label>
+            <select class="dm-select" id="dm-new-domain-nature">
+              <option value="physical">Físico / Territorial</option>
+              <option value="organization">Organização / Guilda</option>
+              <option value="hybrid">Híbrido</option>
+              <option value="abstract">Esfera Abstrata</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Pertence a qual Domínio Superior? (Hierarquia Territorial)</label>
+          <select class="dm-select" id="dm-new-domain-parent">
+            <option value="">Nenhum (Raiz / Independente / Galáxia)</option>
+            {{#each availableParentDomains}}
+              <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelCreateDomain">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitCreateDomain"><i class="fa-solid fa-check"></i> Criar Domínio</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+{{#if isAdvancingTimeModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-clock-rotate-left text-blue"></i> Avançar Tempo do Mundo</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelAdvanceModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="dm-dialog-desc">Simula e avança deterministicamente a economia, as obras, os acordos e as condições de todos os domínios.</p>
+
+      <div class="dm-advance-options">
+        <label class="dm-label">Opções Rápidas:</label>
+        <div class="dm-pill-row">
+          <button type="button" class="dm-btn dm-btn--outline" data-action="quickAdvanceTicks" data-ticks="1">+1 Dia (1 Tick)</button>
+          <button type="button" class="dm-btn dm-btn--outline" data-action="quickAdvanceTicks" data-ticks="7">+1 Semana (7 Ticks)</button>
+          <button type="button" class="dm-btn dm-btn--outline" data-action="quickAdvanceTicks" data-ticks="30">+1 Mês (30 Ticks)</button>
+        </div>
+
+        <div class="dm-form-group mt-3">
+          <label class="dm-label">Ou digite a quantidade de Ticks:</label>
+          <input type="number" class="dm-input" id="dm-advance-ticks-input" min="1" max="1000" value="{{advanceCustomTicks}}" />
+        </div>
+
+        <div class="dm-sync-info">
+          <i class="fa-solid fa-link text-emerald"></i>
+          <span>Sincronização ativada com o relógio do mundo ({{timekeeping.tickDurationLabel}})</span>
+        </div>
+      </div>
+
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelAdvanceModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitAdvance"><i class="fa-solid fa-forward-step"></i> Confirmar Avanço</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
 <section class="dm-workspace-content" aria-label="Conteúdo Detalhado">
   <!-- Navegação interna de abas -->
   <nav class="dm-tabs" role="tablist">

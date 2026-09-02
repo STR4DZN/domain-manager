@@ -75,8 +75,8 @@ const launcherModule = await import("../scripts/ui/launcher.js");
 test("shell possui janela redimensionável e template próprio", () => {
   const AppClass = appModule.DomainManagerApp;
   assert.equal(AppClass.DEFAULT_OPTIONS.window.resizable, true);
-  assert.equal(AppClass.DEFAULT_OPTIONS.position.width, 720);
-  assert.equal(AppClass.DEFAULT_OPTIONS.position.height, 520);
+  assert.equal(AppClass.DEFAULT_OPTIONS.position.width, 1120);
+  assert.equal(AppClass.DEFAULT_OPTIONS.position.height, 700);
   assert.match(AppClass.PARTS.main.template, /templates\/app-shell\.hbs$/);
 });
 

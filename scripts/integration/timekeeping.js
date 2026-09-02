@@ -26,6 +26,10 @@ export function getTimekeepingStatus() {
   };
 }
 
+let isDomainManagerAdvancingTime = false;
+let accumulatedSeconds = 0;
+let isAdvancingFromHook = false;
+
 export async function syncWorldTimeAdvance({ deltaTicks = 1 } = {}) {
   const syncEnabled = getSyncTimekeepingSetting();
   if (!syncEnabled) {
@@ -39,32 +43,29 @@ export async function syncWorldTimeAdvance({ deltaTicks = 1 } = {}) {
   if (deltaSeconds <= 0) {
     return { advanced: false, deltaSeconds: 0 };
   }
+
+  isDomainManagerAdvancingTime = true;
   
-  if (globalThis.game?.time?.advance && typeof globalThis.game.time.advance === "function") {
-    try {
+  try {
+    const simpleTimekeepingApi = globalThis.ui?.simpleTimekeeping
+      || globalThis.game?.modules?.get(SIMPLE_TIMEKEEPING_ID)?.api
+      || globalThis.SimpleTimekeeping;
+
+    if (simpleTimekeepingApi && typeof simpleTimekeepingApi.advanceTime === "function") {
+      await simpleTimekeepingApi.advanceTime(deltaSeconds);
+    } else if (globalThis.game?.time?.advance && typeof globalThis.game.time.advance === "function") {
       await globalThis.game.time.advance(deltaSeconds);
-    } catch (err) {
-      console.warn("DomainManager | Aviso ao avancar tempo do mundo via game.time.advance:", err);
     }
-  }
-  
-  const simpleModule = globalThis.game?.modules?.get(SIMPLE_TIMEKEEPING_ID);
-  if (simpleModule?.active) {
-    const api = simpleModule.api || globalThis.SimpleTimekeeping;
-    if (api && typeof api.advanceTime === "function") {
-      try {
-        await api.advanceTime(deltaSeconds);
-      } catch (_err) {
-        // Core game.time.advance ja e capturado pelo hook updateWorldTime do Simple Timekeeping
-      }
-    }
+  } catch (err) {
+    console.warn("DomainManager | Aviso ao sincronizar tempo com o mundo:", err);
+  } finally {
+    setTimeout(() => {
+      isDomainManagerAdvancingTime = false;
+    }, 150);
   }
   
   return { advanced: true, deltaSeconds };
 }
-
-let accumulatedSeconds = 0;
-let isAdvancingFromHook = false;
 
 /**
  * Registra o hook do Foundry para escutar avanços de tempo feitos pelo Simple Timekeeping ou pelo Foundry.
@@ -74,7 +75,7 @@ export function registerTimekeepingHooks() {
     // Apenas o GM ativo deve executar mutações no mundo
     if (!globalThis.game?.user?.isGM) return;
     if (!getSyncTimekeepingSetting()) return;
-    if (isAdvancingFromHook) return;
+    if (isDomainManagerAdvancingTime || isAdvancingFromHook) return;
 
     const deltaSecs = Number(delta) || 0;
     if (deltaSecs <= 0) return;
@@ -99,3 +100,4 @@ export function registerTimekeepingHooks() {
     }
   });
 }
+
