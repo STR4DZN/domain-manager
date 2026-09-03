@@ -927,3 +927,43 @@ test("Auditoria Geral: Sistema de Notificações, Alertas e Panorama da Visão G
   const unreadList = [notif].filter(n => !n.readByUserIds.includes(userId));
   assert.strictEqual(unreadList.length, 0, "Lista de não lidas deve ser 0 após ser vista pelo player");
 });
+
+test("Auditoria Geral: Dossiê Tático e Bio-Monitor de Notáveis (Inspirado em Cyberpunk HUD)", async () => {
+  // 1. Validar que o schema de notáveis possui os 6 atributos operacionais e perícias
+  const modelCode = fs.readFileSync("scripts/models/domain-model.js", "utf8");
+  assert.strictEqual(modelCode.includes("combat: new NumberField"), true, "Atributo combat deve existir");
+  assert.strictEqual(modelCode.includes("stealth: new NumberField"), true, "Atributo stealth deve existir");
+  assert.strictEqual(modelCode.includes("cunning: new NumberField"), true, "Atributo cunning deve existir");
+  assert.strictEqual(modelCode.includes("diplomacy: new NumberField"), true, "Atributo diplomacy deve existir");
+  assert.strictEqual(modelCode.includes("technique: new NumberField"), true, "Atributo technique deve existir");
+  assert.strictEqual(modelCode.includes("survival: new NumberField"), true, "Atributo survival deve existir");
+  assert.strictEqual(modelCode.includes("skills: new ArrayField"), true, "Campo skills deve existir no notável");
+  assert.strictEqual(modelCode.includes("missionsCompletedCount: new NumberField"), true, "Contador de missões deve existir");
+
+  // 2. Validar que o template workspace-content.hbs contém a estrutura do Bio-Monitor
+  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  assert.strictEqual(contentHbs.includes("dm-biomonitor"), true, "Estrutura do biomonitor deve existir no template");
+  assert.strictEqual(contentHbs.includes("openNotableDossier"), true, "Ação openNotableDossier deve existir no template");
+  assert.strictEqual(contentHbs.includes("closeNotableDossier"), true, "Ação closeNotableDossier deve existir no template");
+  assert.strictEqual(contentHbs.includes("selectDossierSkill"), true, "Ação selectDossierSkill deve existir no template");
+
+  // 3. Validar que as actions do Dossiê estão registradas em shell-app.js
+  const shellCode = fs.readFileSync("scripts/ui/shell-app.js", "utf8");
+  const requiredDossierActions = [
+    "openNotableDossier",
+    "closeNotableDossier",
+    "selectDossierSkill",
+    "openEditNotableStatsModal",
+    "cancelNotableStatsModal",
+    "submitNotableStats"
+  ];
+  for (const act of requiredDossierActions) {
+    assert.strictEqual(shellCode.includes(act + ":"), true, `Action ${act} deve estar registrada em DEFAULT_OPTIONS.actions`);
+  }
+
+  // 4. Validar os estilos do Bio-Monitor em shell.css
+  const css = fs.readFileSync("styles/shell.css", "utf8");
+  assert.strictEqual(css.includes(".dm-biomonitor"), true, "Estilo .dm-biomonitor deve existir");
+  assert.strictEqual(css.includes(".dm-biomonitor__diamond"), true, "Estilo .dm-biomonitor__diamond deve existir");
+  assert.strictEqual(css.includes(".dm-btn-dossier"), true, "Estilo .dm-btn-dossier deve existir");
+});

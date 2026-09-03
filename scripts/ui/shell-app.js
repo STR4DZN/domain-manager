@@ -400,6 +400,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isTagModalOpen = false;
   isNotificationModalOpen = false;
   showNotificationsHistory = false;
+  activeNotableDossierLocalId = null;
+  selectedDossierSkillId = null;
+  isEditingNotableStatsModal = false;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -546,7 +549,15 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       dismissNotification: DomainManagerShellApp.#onDismissNotification,
       dismissAllNotifications: DomainManagerShellApp.#onDismissAllNotifications,
       deleteNotification: DomainManagerShellApp.#onDeleteNotification,
-      toggleNotificationsHistory: DomainManagerShellApp.#onToggleNotificationsHistory
+      toggleNotificationsHistory: DomainManagerShellApp.#onToggleNotificationsHistory,
+
+      // Dossiê Tático & Bio-Monitor de Notáveis
+      openNotableDossier: DomainManagerShellApp.#onOpenNotableDossier,
+      closeNotableDossier: DomainManagerShellApp.#onCloseNotableDossier,
+      selectDossierSkill: DomainManagerShellApp.#onSelectDossierSkill,
+      openEditNotableStatsModal: DomainManagerShellApp.#onOpenEditNotableStatsModal,
+      cancelNotableStatsModal: DomainManagerShellApp.#onCancelNotableStatsModal,
+      submitNotableStats: DomainManagerShellApp.#onSubmitNotableStats
     }
   };
 
@@ -620,6 +631,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.editingFlowLocalId = null;
     this.isTagModalOpen = false;
     this.isNotificationModalOpen = false;
+    this.isEditingNotableStatsModal = false;
   }
 
   /* ------------------------------------------------------------------------
@@ -2732,6 +2744,84 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.render();
   }
 
+
+  /* ------------------------------------------------------------------------
+     Dossiê Tático & Bio-Monitor do Notável (Inspirado em Cyberpunk HUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenNotableDossier(event, target) {
+    const localId = getActionAttr(target, "local-id");
+    if (!localId) return;
+    this.activeNotableDossierLocalId = localId;
+    this.selectedDossierSkillId = null;
+    this.render();
+  }
+
+  static #onCloseNotableDossier() {
+    this.activeNotableDossierLocalId = null;
+    this.selectedDossierSkillId = null;
+    this.render();
+  }
+
+  static #onSelectDossierSkill(event, target) {
+    const skillId = getActionAttr(target, "skill-id");
+    if (skillId) {
+      this.selectedDossierSkillId = skillId;
+      this.render();
+    }
+  }
+
+  static #onOpenEditNotableStatsModal() {
+    if (!game.user.isGM) return;
+    this.#closeAllModals();
+    this.isEditingNotableStatsModal = true;
+    this.render();
+  }
+
+  static #onCancelNotableStatsModal() {
+    this.isEditingNotableStatsModal = false;
+    this.render();
+  }
+
+  static async #onSubmitNotableStats() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.activeNotableDossierLocalId) return;
+
+    const combat = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-combat")?.value) || 10));
+    const stealth = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-stealth")?.value) || 10));
+    const cunning = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-cunning")?.value) || 10));
+    const diplomacy = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-diplomacy")?.value) || 10));
+    const technique = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-technique")?.value) || 10));
+    const survival = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-survival")?.value) || 10));
+    const loyalty = this.element?.querySelector("#dm-stat-loyalty")?.value?.trim() || "Alta";
+    const missions = Math.max(0, Number(this.element?.querySelector("#dm-stat-missions")?.value) || 0);
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      const notables = data.population?.notables;
+      if (!Array.isArray(notables)) return;
+
+      const not = notables.find(n => n.localId === this.activeNotableDossierLocalId);
+      if (!not) return;
+
+      not.attributes = { combat, stealth, cunning, diplomacy, technique, survival };
+      not.loyalty = loyalty;
+      not.missionsCompletedCount = missions;
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+
+      this.isEditingNotableStatsModal = false;
+      ui.notifications?.info("Atributos táticos do notável atualizados!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao atualizar atributos do notável.");
+    }
+  }
+
   async _prepareContext(options) {
     const context = typeof super._prepareContext === "function"
       ? await super._prepareContext(options)
@@ -3369,6 +3459,51 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     const activeTabMeta = navigationHubItems.find((item) => item.tab === this.activeTab) || navigationHubItems[0];
 
+
+    // Dossiê Tático do Notável Ativo
+    let activeNotableDossier = null;
+    if (this.activeNotableDossierLocalId && Array.isArray(selectedDomain?.population?.notables)) {
+      const targetNot = selectedDomain.population.notables.find(n => n.localId === this.activeNotableDossierLocalId);
+      if (targetNot) {
+        const rawAttr = targetNot.attributes || {};
+        const attrList = [
+          { key: "combat", label: "Combate", icon: "fa-solid fa-hand-fist", value: rawAttr.combat ?? 10, detail: "Poder em combate armado, duelos e assaltos" },
+          { key: "stealth", label: "Furtividade", icon: "fa-solid fa-mask", value: rawAttr.stealth ?? 10, detail: "Infiltração silenciosa, roubo e operações ocultas" },
+          { key: "cunning", label: "Astúcia", icon: "fa-solid fa-brain", value: rawAttr.cunning ?? 10, detail: "Estratégia, decifração e contra-inteligência" },
+          { key: "diplomacy", label: "Diplomacia", icon: "fa-solid fa-handshake", value: rawAttr.diplomacy ?? 10, detail: "Persuasão, acordos e alianças" },
+          { key: "technique", label: "Técnica", icon: "fa-solid fa-screwdriver-wrench", value: rawAttr.technique ?? 10, detail: "Engenharia de campo, arrombamento e armadilhas" },
+          { key: "survival", label: "Sobrevivência", icon: "fa-solid fa-shield-heart", value: rawAttr.survival ?? 10, detail: "Resistência a dano, venenos e ambientes hostis" }
+        ];
+
+        // Perícias (constelação de nós)
+        let skillsList = Array.isArray(targetNot.skills) && targetNot.skills.length ? targetNot.skills : [
+          { localId: "sk_1", name: "Infiltração", level: 4, maxLevel: 5, category: "stealth", desc: "Movimentação em território hostil sem detecção." },
+          { localId: "sk_2", name: "Duelo & Lâminas", level: 3, maxLevel: 5, category: "combat", desc: "Perícia em combate corpo-a-corpo e eliminação rápida." },
+          { localId: "sk_3", name: "Interrogatório", level: 2, maxLevel: 5, category: "cunning", desc: "Extração de segredos e informações confidenciais." },
+          { localId: "sk_4", name: "Sabotagem", level: 3, maxLevel: 5, category: "technique", desc: "Comprometimento de estruturas e mecanismos inimigos." },
+          { localId: "sk_5", name: "Rastreio & Guia", level: 4, maxLevel: 5, category: "survival", desc: "Localização de trilhas e navegação em terrenos ermos." },
+          { localId: "sk_6", name: "Negociação Fria", level: 2, maxLevel: 5, category: "diplomacy", desc: "Firmeza em conversas difíceis sem ceder pressão." }
+        ];
+
+        skillsList = skillsList.map(sk => ({
+          ...sk,
+          isSelected: (this.selectedDossierSkillId === sk.localId) || (!this.selectedDossierSkillId && sk.localId === skillsList[0].localId)
+        }));
+
+        const selectedSkill = skillsList.find(s => s.isSelected) || skillsList[0];
+
+        activeNotableDossier = {
+          ...targetNot,
+          attributesList: attrList,
+          skillsList,
+          selectedSkill,
+          statusLabel: targetNot.status === "active" ? "DISPONÍVEL NA BASE" : targetNot.status === "away" ? "EM MISSÃO DE CAMPO" : "INDISPONÍVEL",
+          statusColor: targetNot.status === "active" ? "emerald" : targetNot.status === "away" ? "amber" : "crimson",
+          missionsCount: targetNot.missionsCompletedCount || 0
+        };
+      }
+    }
+
     return {
       ...context,
       moduleTitle: MODULE_TITLE,
@@ -3393,6 +3528,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       unreadNotificationsCount,
       isNotificationModalOpen: this.isNotificationModalOpen,
       showNotificationsHistory: this.showNotificationsHistory,
+      activeNotableDossier,
+      isEditingNotableStatsModal: this.isEditingNotableStatsModal,
 
       // Estados de Modais
       isCreatingDomain: this.isCreatingDomain,

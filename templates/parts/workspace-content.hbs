@@ -2107,6 +2107,128 @@
 
     {{#if (eq activeTab 'people')}}
       <div class="dm-panel dm-panel--people">
+        {{#if activeNotableDossier}}
+          <!-- =================================================================
+               DOSSIÊ TÁTICO & BIO-MONITOR HUD DIEGÉTICO DO NOTÁVEL
+               ================================================================= -->
+          <div class="dm-biomonitor">
+            <!-- HEADER HUD ARQUEADO (Top Bar) -->
+            <div class="dm-biomonitor__header">
+              <div class="dm-biomonitor__header-left">
+                <button type="button" class="dm-btn dm-btn--outline dm-btn--sm dm-biomonitor__back-btn" data-action="closeNotableDossier" title="Retornar à Lista de Notáveis">
+                  <i class="fa-solid fa-arrow-left"></i>
+                  <span>Voltar à Lista</span>
+                </button>
+                <div class="dm-biomonitor__id-badge">
+                  <i class="fa-solid fa-id-card-clip dm-biomonitor__chip-icon"></i>
+                  <div>
+                    <h2 class="dm-biomonitor__name">{{activeNotableDossier.name}}</h2>
+                    <span class="dm-biomonitor__spec">{{activeNotableDossier.role}} // {{activeNotableDossier.specialization}}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dm-biomonitor__header-right">
+                <div class="dm-biomonitor__hud-tag">
+                  <span class="dm-biomonitor__tag-bracket">[</span>
+                  <span class="dm-biomonitor__tag-val">{{activeNotableDossier.statusLabel}}</span>
+                  <span class="dm-biomonitor__tag-bracket">]</span>
+                </div>
+                <div class="dm-biomonitor__hud-tag">
+                  <span class="dm-biomonitor__tag-bracket">[</span>
+                  <span class="dm-biomonitor__tag-label">LEALDADE:</span>
+                  <strong class="dm-biomonitor__tag-val text-crimson">{{activeNotableDossier.loyalty}}</strong>
+                  <span class="dm-biomonitor__tag-bracket">]</span>
+                </div>
+                <div class="dm-biomonitor__hud-tag">
+                  <span class="dm-biomonitor__tag-bracket">[</span>
+                  <span class="dm-biomonitor__tag-label">MISSÕES:</span>
+                  <strong class="dm-biomonitor__tag-val text-crimson">{{activeNotableDossier.missionsCount}}</strong>
+                  <span class="dm-biomonitor__tag-bracket">]</span>
+                </div>
+                {{#if isGM}}
+                  <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openEditNotableStatsModal" title="Calibrar Atributos Táticos">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Calibrar</span>
+                  </button>
+                {{/if}}
+              </div>
+            </div>
+
+            <!-- CORPO PRINCIPAL DO BIOMONITOR -->
+            <div class="dm-biomonitor__body">
+              <!-- COLUNA DA ESQUERDA: CLUSTER DE ATRIBUTOS EM LOSANGOS CHANFRADOS -->
+              <div class="dm-biomonitor__attributes-col">
+                <div class="dm-biomonitor__col-header">
+                  <span class="dm-biomonitor__subhead">// MATRIZ DE ATRIBUTOS OPERACIONAIS</span>
+                  <h4 class="dm-biomonitor__col-title">ATRIBUTOS</h4>
+                </div>
+
+                <div class="dm-biomonitor__diamond-cluster">
+                  {{#each activeNotableDossier.attributesList}}
+                    <div class="dm-biomonitor__attr-row">
+                      <div class="dm-biomonitor__diamond-slot">
+                        <div class="dm-biomonitor__diamond">
+                          <div class="dm-biomonitor__diamond-inner">
+                            <i class="{{this.icon}} dm-biomonitor__diamond-icon"></i>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="dm-biomonitor__attr-data">
+                        <div class="dm-biomonitor__attr-name-val">
+                          <span class="dm-biomonitor__attr-label">{{this.label}}</span>
+                          <span class="dm-biomonitor__attr-num">{{this.value}}</span>
+                        </div>
+                        <span class="dm-biomonitor__attr-desc">{{this.detail}}</span>
+                      </div>
+                    </div>
+                  {{/each}}
+                </div>
+              </div>
+
+              <!-- ÁREA CENTRAL/DIREITA: MATRIZ DE PERÍCIAS EM LOSANGOS CONECTADOS -->
+              <div class="dm-biomonitor__skills-col">
+                <div class="dm-biomonitor__col-header">
+                  <span class="dm-biomonitor__subhead">// ÁRVORE DE ESPECIALIZAÇÕES & APTIDÃO PARA ESQUADRÕES</span>
+                  <h4 class="dm-biomonitor__col-title">ESPECIALIZAÇÕES TÁTICAS</h4>
+                </div>
+
+                <div class="dm-biomonitor__constellation">
+                  {{#each activeNotableDossier.skillsList}}
+                    <div class="dm-biomonitor__skill-card {{#if this.isSelected}}is-selected{{/if}}" data-action="selectDossierSkill" data-skill-id="{{this.localId}}" title="Clique para inspecionar">
+                      <div class="dm-biomonitor__skill-diamond">
+                        <span class="dm-biomonitor__skill-level">{{this.level}}</span>
+                      </div>
+                      <div class="dm-biomonitor__skill-info">
+                        <strong class="dm-biomonitor__skill-name">{{this.name}}</strong>
+                        <span class="dm-biomonitor__skill-fraction">{{this.level}} / {{this.maxLevel}}</span>
+                      </div>
+                    </div>
+                  {{/each}}
+                </div>
+
+                <!-- RODAPÉ: CAIXA INSPETORA TÉCNICA CHANFRADA -->
+                <div class="dm-biomonitor__inspector">
+                  <div class="dm-biomonitor__inspector-header">
+                    <span class="dm-biomonitor__inspector-tag"><i class="fa-solid fa-microchip"></i> INSPETOR OPERACIONAL</span>
+                    <strong class="dm-biomonitor__inspector-name">{{activeNotableDossier.selectedSkill.name}}</strong>
+                  </div>
+                  <p class="dm-biomonitor__inspector-desc">
+                    {{activeNotableDossier.selectedSkill.desc}}
+                  </p>
+                  <div class="dm-biomonitor__inspector-footer">
+                    <span class="dm-biomonitor__inspector-note">
+                      <i class="fa-solid fa-crosshairs text-crimson"></i> Relevância em Missões: Aumenta significativamente a chance de êxito do esquadrão em tarefas de {{activeNotableDossier.selectedSkill.name}}.
+                    </span>
+                    <span class="dm-biomonitor__inspector-meter">
+                      GRADUAÇÃO: <strong>{{activeNotableDossier.selectedSkill.level}} / {{activeNotableDossier.selectedSkill.maxLevel}}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {{else}}
         <div class="dm-panel__header-row">
           <h3 class="dm-section-title"><i class="fa-solid fa-user-tie"></i> Personagens Notáveis</h3>
           {{#if isGM}}
@@ -2132,6 +2254,10 @@
                     <strong class="dm-notable-name">{{name}}</strong>
                     <div class="dm-row-actions">
                       {{#if @root.isGM}}
+                        <button type="button" class="dm-btn dm-btn--primary dm-btn--xs dm-btn-dossier" data-action="openNotableDossier" data-local-id="{{localId}}" title="Abrir Dossiê Tático / Bio-Monitor">
+                          <i class="fa-solid fa-microchip"></i>
+                          <span>Dossiê</span>
+                        </button>
                         <button type="button" class="dm-icon-btn" data-action="openEditNotableModal" data-local-id="{{localId}}" title="Editar Notável">
                           <i class="fa-solid fa-pen-to-square"></i>
                         </button>
@@ -2196,6 +2322,7 @@
           </div>
         {{else}}
           <p class="dm-empty-state">Nenhum grupo populacional cadastrado.</p>
+        {{/if}}
         {{/if}}
       </div>
     {{/if}}
@@ -2367,6 +2494,60 @@
       <footer class="dm-modal__footer">
         <button type="button" class="dm-btn dm-btn--ghost" data-action="cancelNotificationModal">Cancelar</button>
         <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotification"><i class="fa-solid fa-paper-plane"></i> Publicar Aviso</button>
+      </footer>
+    </div>
+  </div>
+{{/if}}
+
+{{#if isEditingNotableStatsModal}}
+  <div class="dm-modal-backdrop">
+    <div class="dm-modal dm-modal--md">
+      <header class="dm-modal__header">
+        <h3><i class="fa-solid fa-sliders text-crimson"></i> Calibrar Atributos Operacionais do Notável</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelNotableStatsModal"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="dm-modal__body">
+        <p class="dm-card__subtext mb-3">Defina as pontuações táticas que determinam o desempenho deste agente nas futuras missões e esquadrões.</p>
+        <div class="dm-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="dm-form-group">
+            <label for="dm-stat-combat">⚔️ Combate (0 - 20)</label>
+            <input type="number" id="dm-stat-combat" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.combat}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-stealth">🎯 Furtividade (0 - 20)</label>
+            <input type="number" id="dm-stat-stealth" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.stealth}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-cunning">🧠 Astúcia (0 - 20)</label>
+            <input type="number" id="dm-stat-cunning" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.cunning}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-diplomacy">🤝 Diplomacia (0 - 20)</label>
+            <input type="number" id="dm-stat-diplomacy" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.diplomacy}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-technique">🛠️ Técnica (0 - 20)</label>
+            <input type="number" id="dm-stat-technique" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.technique}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-survival">🛡️ Sobrevivência (0 - 20)</label>
+            <input type="number" id="dm-stat-survival" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.survival}}" />
+          </div>
+        </div>
+        <div class="dm-form-grid mt-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="dm-form-group">
+            <label for="dm-stat-loyalty">Lealdade</label>
+            <input type="text" id="dm-stat-loyalty" class="dm-input" value="{{activeNotableDossier.loyalty}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-missions">Missões Cumpridas</label>
+            <input type="number" id="dm-stat-missions" class="dm-input" min="0" value="{{activeNotableDossier.missionsCount}}" />
+          </div>
+        </div>
+      </div>
+      <footer class="dm-modal__footer">
+        <button type="button" class="dm-btn dm-btn--ghost" data-action="cancelNotableStatsModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotableStats"><i class="fa-solid fa-check"></i> Salvar Calibração</button>
       </footer>
     </div>
   </div>

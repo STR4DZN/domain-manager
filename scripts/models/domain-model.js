@@ -133,7 +133,27 @@ function notableSchema() {
     description: new StringField({required:true, nullable:false, blank:true, initial:""}),
     currentLocationUuid: new StringField({required:true, nullable:true, blank:false, initial:null}),
     status: new StringField({required:true, nullable:false, blank:false, choices:["active","away","unavailable","missing","dead","retired"], initial:"active"}),
-    assignment: new StringField({required:true, nullable:false, blank:true, initial:""})
+    assignment: new StringField({required:true, nullable:false, blank:true, initial:""}),
+    loyalty: new StringField({required:false, nullable:false, initial:"Alta"}),
+    missionsCompletedCount: new NumberField({required:false, nullable:false, integer:true, min:0, initial:0}),
+    attributes: new SchemaField({
+      combat: new NumberField({required:false, nullable:false, integer:true, min:0, max:20, initial:10}),
+      stealth: new NumberField({required:false, nullable:false, integer:true, min:0, max:20, initial:10}),
+      cunning: new NumberField({required:false, nullable:false, integer:true, min:0, max:20, initial:10}),
+      diplomacy: new NumberField({required:false, nullable:false, integer:true, min:0, max:20, initial:10}),
+      technique: new NumberField({required:false, nullable:false, integer:true, min:0, max:20, initial:10}),
+      survival: new NumberField({required:false, nullable:false, integer:true, min:0, max:20, initial:10})
+    }, {required:false, nullable:false, initial: () => ({combat:10, stealth:10, cunning:10, diplomacy:10, technique:10, survival:10})}),
+    skills: new ArrayField(
+      new SchemaField({
+        localId: new StringField({required:true, nullable:false, blank:false, initial: () => foundry.utils.randomID()}),
+        name: new StringField({required:true, nullable:false, blank:false, initial:"Perícia"}),
+        level: new NumberField({required:false, nullable:false, integer:true, min:0, max:10, initial:3}),
+        maxLevel: new NumberField({required:false, nullable:false, integer:true, min:1, max:10, initial:10}),
+        category: new StringField({required:false, nullable:false, initial:"combat"})
+      }),
+      {required:false, nullable:false, initial: []}
+    )
   });
 }
 
