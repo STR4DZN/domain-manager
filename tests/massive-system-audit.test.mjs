@@ -860,6 +860,7 @@ test("Auditoria Geral: Preservação de schema do Image Studio e sincronização
 
 test("Auditoria Geral: Navegação Tática Indexada e Limpeza da Visão Geral", async () => {
   const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  const sidebarHbs = fs.readFileSync("templates/parts/sidebar.hbs", "utf8");
   
   // 1. A antiga barra de scroll horizontal dm-tabs foi completamente removida
   assert.strictEqual(contentHbs.includes('<nav class="dm-tabs"'), false, "dm-tabs horizontal antiga deve ter sido removida");
@@ -867,12 +868,12 @@ test("Auditoria Geral: Navegação Tática Indexada e Limpeza da Visão Geral", 
   // 2. A tabela pesada dm-hub foi removida a pedido do usuário
   assert.strictEqual(contentHbs.includes('dm-hub__table'), false, "dm-hub__table não deve mais poluir a visão geral");
 
-  // 3. A navegação tática indexada COMP/CON está presente
-  assert.strictEqual(contentHbs.includes('dm-tactical-rail') || contentHbs.includes('dm-tactical-nav'), true, "Navegação tática deve estar presente no template");
+  // 3. A navegação tática indexada COMP/CON está presente na sidebar unificada
+  assert.strictEqual(sidebarHbs.includes('dm-tactical-nav') || sidebarHbs.includes('dm-sidebar__tactical-nav'), true, "Navegação tática deve estar presente na sidebar unificada");
 
   // 4. Os estilos CSS de navegação existem
   const css = fs.readFileSync("styles/shell.css", "utf8");
-  assert.strictEqual(css.includes('.dm-tactical-rail') || css.includes('.dm-tactical-nav'), true, "Estilo de navegação tática deve existir em shell.css");
+  assert.strictEqual(css.includes('.dm-tactical-nav') || css.includes('.dm-sidebar__nav-item'), true, "Estilo de navegação tática deve existir em shell.css");
 });
 
 test("Auditoria Geral: Sistema de Notificações, Alertas e Panorama da Visão Geral", async () => {
@@ -968,14 +969,15 @@ test("Auditoria Geral: Dossiê Tático e Bio-Monitor de Notáveis (Inspirado em 
   assert.strictEqual(css.includes(".dm-btn-dossier"), true, "Estilo .dm-btn-dossier deve existir");
 });
 
-test("Auditoria Geral: Layout COMP/CON de Terminal Tático Unificado (Horizontal HUD Tabs & Expansive Canvas)", async () => {
+test("Auditoria Geral: Layout COMP/CON de Terminal Tático Unificado (Single Sidebar & Expansive Canvas)", async () => {
   // 1. Validar que o cabeçalho possui a estrutura do HUD Header limpo
   const headerHbs = fs.readFileSync("templates/parts/workspace-header.hbs", "utf8");
   assert.strictEqual(headerHbs.includes("dm-hud-header"), true, "Cabeçalho deve possuir a classe dm-hud-header");
 
-  // 2. Validar que o workspace-content.hbs possui a barra tática horizontal COMP/CON e o canvas amplo
+  // 2. Validar que o sidebar.hbs possui os módulos táticos e o workspace possui o canvas amplo
+  const sidebarHbs = fs.readFileSync("templates/parts/sidebar.hbs", "utf8");
   const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
-  assert.strictEqual(contentHbs.includes("dm-tactical-hud-tabs"), true, "Barra de abas dm-tactical-hud-tabs deve existir");
+  assert.strictEqual(sidebarHbs.includes("dm-sidebar__tactical-nav"), true, "Módulos táticos devem estar na sidebar unificada");
   assert.strictEqual(contentHbs.includes("dm-workspace-canvas"), true, "Canvas dm-workspace-canvas deve existir");
 
   // 3. Validar que os cards de métricas estão presentes exclusivamente na Visão Geral
@@ -983,6 +985,6 @@ test("Auditoria Geral: Layout COMP/CON de Terminal Tático Unificado (Horizontal
 
   // 4. Validar os estilos COMP/CON em shell.css
   const css = fs.readFileSync("styles/shell.css", "utf8");
-  assert.strictEqual(css.includes(".dm-tactical-hud-tabs"), true, "Estilo .dm-tactical-hud-tabs deve existir em shell.css");
+  assert.strictEqual(css.includes(".dm-sidebar__nav-item"), true, "Estilo .dm-sidebar__nav-item deve existir em shell.css");
   assert.strictEqual(css.includes(".dm-workspace-canvas"), true, "Estilo .dm-workspace-canvas deve existir em shell.css");
 });

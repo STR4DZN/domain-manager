@@ -1565,26 +1565,7 @@
 <!-- =======================================================================
      BARRA DE NAVEGAÇÃO TÁTICA COMP/CON (Horizontal Superior, sem 3ª sidebar)
      ======================================================================= -->
-{{#unless activeNotableDossier}}
-  <nav class="dm-tactical-nav dm-tactical-hud-tabs" aria-label="Navegação Tática da Base">
-    {{#each navigationHubItems}}
-      <button
-        type="button"
-        class="dm-tactical-nav__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
-        data-action="switchTab"
-        data-tab="{{this.tab}}"
-        title="{{this.title}}"
-      >
-        <span class="dm-tactical-nav__num">{{this.index}}</span>
-        <i class="{{this.icon}} dm-tactical-nav__icon"></i>
-        <span class="dm-tactical-nav__label">{{this.shortTitle}}</span>
-        {{#if this.badge}}
-          <span class="dm-tactical-nav__badge">{{this.badge}}</span>
-        {{/if}}
-      </button>
-    {{/each}}
-  </nav>
-{{/unless}}
+
 
 <div class="dm-workspace-canvas">
 {{#if (eq activeTab 'overview')}}

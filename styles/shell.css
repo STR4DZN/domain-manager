@@ -3970,3 +3970,199 @@
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
+
+/* ==========================================================================
+   UNIFIED COMP/CON SINGLE SIDEBAR ARCHITECTURE
+   ========================================================================== */
+
+/* 1. Ocultar o Rail redundante de ícones para ter apenas UMA barra lateral */
+.dm-rail {
+  display: none !important;
+}
+
+/* 2. Sidebar Tática Única */
+.dm-sidebar {
+  width: 250px !important;
+  background: #09090c !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dm-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dm-sidebar__brand i {
+  font-size: 1.1rem;
+  color: #ef4444;
+}
+
+.dm-sidebar__section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.75rem;
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.65rem;
+  color: #71717a;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.25);
+  margin: 0.35rem 0;
+}
+
+.dm-sidebar__sub-btn {
+  background: none;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  padding: 0.2rem;
+  font-size: 0.75rem;
+}
+
+.dm-sidebar__sub-btn:hover {
+  color: #f4f4f5;
+}
+
+/* 3. Módulos Táticos na Sidebar (As 7 Abas no estilo COMP/CON) */
+.dm-sidebar__tactical-nav {
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.dm-sidebar__nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.dm-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  font-size: 0.8rem;
+  position: relative;
+}
+
+.dm-sidebar__nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.dm-sidebar__nav-item.is-active {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.04) 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+  font-weight: 700;
+}
+
+.dm-sidebar__nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: #ef4444;
+  border-radius: 2px;
+  box-shadow: 0 0 6px #ef4444;
+}
+
+.dm-sidebar__nav-idx {
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #71717a;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-idx {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.dm-sidebar__nav-icon {
+  font-size: 0.8rem;
+  color: #71717a;
+  width: 14px;
+  text-align: center;
+}
+
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-icon {
+  color: #ef4444;
+}
+
+.dm-sidebar__nav-label {
+  flex: 1;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-sidebar__nav-badge {
+  font-size: 0.65rem;
+  background: #ef4444;
+  color: #ffffff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+/* 4. Árvore de Bases na Sidebar */
+.dm-sidebar__domains-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dm-sidebar__domains-section .dm-sidebar__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* 5. Canvas Principal Limpo e Expansivo */
+.dm-shell__main {
+  flex: 1;
+  min-width: 0;
+  background: #0d0d12;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dm-workspace-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  gap: 1.25rem;
+}
