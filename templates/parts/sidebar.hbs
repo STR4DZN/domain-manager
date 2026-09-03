@@ -32,14 +32,14 @@
         </div>
       </div>
 
-      <!-- SWITCHER DE VISUALIZAÇÃO PARA TELAS PEQUENAS (Módulos / Territórios / Tudo) -->
+      <!-- SWITCHER 2-WAY (Módulos / Territórios - sem o Tudo) -->
       <div class="dm-sidebar__view-switcher" role="tablist">
         <button
           type="button"
           class="dm-sidebar__view-btn {{#if (eq sidebarView 'modules')}}is-active{{/if}}"
           data-action="setSidebarView"
           data-view="modules"
-          title="Focar apenas nos Módulos Operacionais da base"
+          title="Focar nos Módulos Operacionais da base"
         >
           <i class="fa-solid fa-microchip"></i>
           <span>Módulos</span>
@@ -49,24 +49,14 @@
           class="dm-sidebar__view-btn {{#if (eq sidebarView 'domains')}}is-active{{/if}}"
           data-action="setSidebarView"
           data-view="domains"
-          title="Focar apenas nos Territórios e Pastas"
+          title="Focar nos Territórios e Pastas do mundo"
         >
           <i class="fa-solid fa-folder-tree"></i>
           <span>Territórios</span>
         </button>
-        <button
-          type="button"
-          class="dm-sidebar__view-btn {{#if (eq sidebarView 'all')}}is-active{{/if}}"
-          data-action="setSidebarView"
-          data-view="all"
-          title="Exibir Módulos e Territórios juntos"
-        >
-          <i class="fa-solid fa-layer-group"></i>
-          <span>Tudo</span>
-        </button>
       </div>
     {{else}}
-      <!-- MODO RECOLHIDO: Botão único de expansão alinhado perfeitamente -->
+      <!-- MODO RECOLHIDO: Botão único de expansão centralizado -->
       <div class="dm-sidebar__collapsed-header">
         <button
           type="button"
@@ -83,9 +73,9 @@
 
   <!-- CONTEÚDO DA SIDEBAR -->
   <div class="dm-sidebar__scroll-area">
-    {{#if selectedDomain}}
-      {{#if (or (eq sidebarView 'modules') (eq sidebarView 'all'))}}
-        <!-- MÓDULOS TÁTICOS DA BASE ATIVA (COMP/CON STYLE) -->
+    {{#if (eq sidebarView 'modules')}}
+      {{#if selectedDomain}}
+        <!-- MÓDULOS TÁTICOS DA BASE ATIVA -->
         <nav class="dm-tactical-nav dm-sidebar__tactical-nav" aria-label="Módulos Operacionais">
           {{#if isSidebarOpen}}
             <div class="dm-sidebar__section-divider">
@@ -116,12 +106,15 @@
             {{/each}}
           </div>
         </nav>
+      {{else}}
+        <div class="dm-empty dm-p-4 text-center text-muted">
+          <i class="fa-solid fa-satellite dm-mb-2"></i>
+          <p>Selecione um domínio na aba Territórios para acessar os módulos.</p>
+        </div>
       {{/if}}
-    {{/if}}
-
-    <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO -->
-    {{#if isSidebarOpen}}
-      {{#if (or (eq sidebarView 'domains') (eq sidebarView 'all'))}}
+    {{else}}
+      <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO -->
+      {{#if isSidebarOpen}}
         <div class="dm-sidebar__domains-section">
           <div class="dm-sidebar__section-divider">
             <span>// SETORES & TERRITÓRIOS</span>

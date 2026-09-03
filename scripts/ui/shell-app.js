@@ -1,4 +1,176 @@
 
+const HUD_SECTOR_TELEMETRY = {
+  overview: {
+    routineHeader: "ROTINA // 01 DIAGNÓSTICO",
+    routineTag: "STATUS: NOMINAL",
+    routineLines: [
+      { no: "01", code: 'def compilar_visao_geral(base):' },
+      { no: "02", code: '    diagnostico = varrer_sensores_orbitais()' },
+      { no: "03", code: '    taxa_estabilidade = calcular_coesao_territorial()' },
+      { no: "04", code: '    verificar_alertas_ativas() -> 0_CRITICAS' },
+      { no: "05", code: '    sincronizar_indicadores_macro("NUCLEO_OK")' },
+      { no: "06", code: '    carregar_grade_defensiva(modulo="ESCUDO")' },
+      { no: "07", code: '    renderizar_panorama_tatico(camada="GERAL")' },
+      { no: "08", code: '    return pronto.VISAO_ESTAVEL' }
+    ],
+    matrixHeader: "MATRIZ // COESÃO E SOBERANIA",
+    matrixTag: "MONITOR_ATIVO",
+    matrixLines: [
+      "01001100 01100001 01100010 [SOBERANIA: 100%]",
+      "11010010 11000011 00101101 [ESTABILIDADE_ALTA]",
+      "10101100 00010011 00101001 [SEGURANCA: OMNI]",
+      "00011011 11011011 11011011 [ORBITA_SINCRONIZADA]",
+      "10101011 10110010 10110001 [GRADE_ENERGIA_99.4%]",
+      "01110011 01110100 01101111 [FEED_GLOBAL_ONLINE]"
+    ]
+  },
+  economy: {
+    routineHeader: "ROTINA // 02 BALANÇO FISCAL",
+    routineTag: "TESOURO: ATIVO",
+    routineLines: [
+      { no: "01", code: 'def auditar_livro_fiscal(tick=ATUAL):' },
+      { no: "02", code: '    calcular_receitas_tributarias(aliquota="BASE")' },
+      { no: "03", code: '    processar_consumo_sustento(comida, agua)' },
+      { no: "04", code: '    debito_manutencao_guardas() -> REGULAR' },
+      { no: "05", code: '    sincronizar_arrecadacao_por_tick()' },
+      { no: "06", code: '    verificar_limite_capacidade_armazem()' },
+      { no: "07", code: '    atualizar_reservas_ouro(delta=POSITIVO)' },
+      { no: "08", code: '    return livro_caixa.EQUILIBRADO' }
+    ],
+    matrixHeader: "MATRIZ // FLUXOS E RESERVAS",
+    matrixTag: "CAMBIO_ESTAVEL",
+    matrixLines: [
+      "11001011 01010101 01101101 [OURO: DEPOSITADO]",
+      "11100011 00110111 01010101 [FLUXO_LIQUIDO: +TICK]",
+      "10101100 00010011 00101001 [RESERVAS_ESTRATEGICAS]",
+      "00011011 11011011 11011011 [CONTRATO_COMERCIAL_OK]",
+      "10101011 10110010 10110001 [IMPOSTO_APLICADO_100%]",
+      "01110011 01110100 01101111 [LIVRO_FISCAL_FECHADO]"
+    ]
+  },
+  projects: {
+    routineHeader: "ROTINA // 03 ENGENHARIA",
+    routineTag: "CANTEIRO: EM OPERAÇÃO",
+    routineLines: [
+      { no: "01", code: 'def carregar_canteiro_obras():' },
+      { no: "02", code: '    alocar_trabalhadores_especializados()' },
+      { no: "03", code: '    inspecionar_materiais_construcao()' },
+      { no: "04", code: '    computar_progresso_edificacao() -> +AVANCO' },
+      { no: "05", code: '    verificar_modificadores_estruturais()' },
+      { no: "06", code: '    testar_resistencia_fundacao(tier="AVANCADO")' },
+      { no: "07", code: '    liberar_capacidade_slots_canteiro()' },
+      { no: "08", code: '    return engenharia.PRONTA_OPERACIONAL' }
+    ],
+    matrixHeader: "MATRIZ // ESTRUTURAL E LOGÍSTICA",
+    matrixTag: "PROJETO_ATIVO",
+    matrixLines: [
+      "01101111 01100010 01110010 [CONCRETO_CURADO]",
+      "11110110 11000111 00110101 [VIGAS_TITANIO_OK]",
+      "10101100 00010011 00101001 [TAXA_AVANCO: 100%]",
+      "00011011 11011011 11011011 [OPERARIOS_ALOCADOS]",
+      "10101011 10110010 10110001 [MODIFICADOR_VINCULADO]",
+      "01110011 01110100 01101111 [OBRA_SINCRONIZADA]"
+    ]
+  },
+  population: {
+    routineHeader: "ROTINA // 04 CENSO SOCIAL",
+    routineTag: "DEMOGRAFIA: MONITORADA",
+    routineLines: [
+      { no: "01", code: 'def censo_demografico_ativo():' },
+      { no: "02", code: '    computar_habitantes_totais()' },
+      { no: "03", code: '    calcular_agitacao_ponderada() -> PACIFICO' },
+      { no: "04", code: '    medir_satisfacao_por_estrato_social()' },
+      { no: "05", code: '    distribuir_racao_sustento_basico()' },
+      { no: "06", code: '    verificar_estabilidade_guarnicao()' },
+      { no: "07", code: '    atualizar_painel_notaveis_dossie()' },
+      { no: "08", code: '    return demografia.ORDEM_ESTAVEL' }
+    ],
+    matrixHeader: "MATRIZ // BIO-MONITOR SOCIAL",
+    matrixTag: "COESAO_SOCIAL",
+    matrixLines: [
+      "10101101 01100101 01101101 [HABITANTES_ATIVOS]",
+      "11010010 11000011 00101101 [AGITACAO_BAIXA_0.0%]",
+      "10101100 00010011 00101001 [MORAL_CIVIL: ALTA]",
+      "00011011 11011011 11011011 [GUARNICAO_EM_POSTO]",
+      "10101011 10110010 10110001 [NOTAVEIS_SINCRONIZADOS]",
+      "01110011 01110100 01101111 [HARMONIA_TERRITORIAL]"
+    ]
+  },
+  diplomacy: {
+    routineHeader: "ROTINA // 05 DIPLOMACIA",
+    routineTag: "CANAIS: SEGUROS",
+    routineLines: [
+      { no: "01", code: 'def estabelecer_canal_diplomatico():' },
+      { no: "02", code: '    consultar_pactos_nao_agressao()' },
+      { no: "03", code: '    verificar_acordos_bilaterais_ativos()' },
+      { no: "04", code: '    validar_estoques_transferencia() -> OK' },
+      { no: "05", code: '    decodificar_missivas_embaixadas()' },
+      { no: "06", code: '    calcular_indice_confianca_mutua()' },
+      { no: "07", code: '    registrar_tratado_interestadual()' },
+      { no: "08", code: '    return protocolo.TRATADOS_ATIVOS' }
+    ],
+    matrixHeader: "MATRIZ // RELAÇÕES EXTERNAS",
+    matrixTag: "TRATADOS_VALIDOS",
+    matrixLines: [
+      "01100100 01101001 01110000 [PACTO_COMERCIAL_OK]",
+      "11110110 11000111 00110101 [ALIANCA_CONFIRMADA]",
+      "10101100 00010011 00101001 [ROTAS_COMERCIAIS_LIVRES]",
+      "00011011 11011011 11011011 [EMBAIXADA_RECONHECIDA]",
+      "10101011 10110010 10110001 [MISSAO_DIPLOMATICA]",
+      "01110011 01110100 01101111 [CANAL_ENCRIPTADO_AES]"
+    ]
+  },
+  intel: {
+    routineHeader: "ROTINA // 06 INTELIGÊNCIA",
+    routineTag: "SIGILO: GRAU MÁXIMO",
+    routineLines: [
+      { no: "01", code: 'def descriptografar_redes_espionagem():' },
+      { no: "02", code: '    varrer_espectro_contra_vigilancia()' },
+      { no: "03", code: '    analisar_frequencias_subversivas()' },
+      { no: "04", code: '    compilar_dossies_confidenciais() -> OK' },
+      { no: "05", code: '    triagem_operacoes_secretas_campo()' },
+      { no: "06", code: '    bloquear_vazamento_dados_hostis()' },
+      { no: "07", code: '    verificar_identidades_agentes()' },
+      { no: "08", code: '    return sigilo.INFORMACAO_BLINDADA' }
+    ],
+    matrixHeader: "MATRIZ // ESPIÕES E DADOS SECRETOS",
+    matrixTag: "CONTRA_ESPIONAGEM",
+    matrixLines: [
+      "01110011 01101001 01100111 [CIFRA_ASSIMETRICA_OK]",
+      "11110110 11000111 00110101 [AGENTE_INFILTRADO_07]",
+      "10101100 00010011 00101001 [RELATORIO_CONFIDENCIAL]",
+      "00011011 11011011 11011011 [ESCUTA_DESATIVADA]",
+      "10101011 10110010 10110001 [CONTRA_VIGILANCIA: 100%]",
+      "01110011 01110100 01101111 [ACESSO_RESTRITO_GM]"
+    ]
+  },
+  history: {
+    routineHeader: "ROTINA // 07 CRÔNICAS HISTÓRICAS",
+    routineTag: "ARQUIVO: IMUTÁVEL",
+    routineLines: [
+      { no: "01", code: 'def consultar_cronicas_temporais():' },
+      { no: "02", code: '    reconstruir_linha_do_tempo_ticks()' },
+      { no: "03", code: '    auditar_registro_eventos_passados()' },
+      { no: "04", code: '    indexar_marcos_historicos_base()' },
+      { no: "05", code: '    sincronizar_memoria_ancestral()' },
+      { no: "06", code: '    validar_imutabilidade_registros()' },
+      { no: "07", code: '    gerar_resumo_eras_governanca()' },
+      { no: "08", code: '    return arquivo.HISTORICO_PRESERVADO' }
+    ],
+    matrixHeader: "MATRIZ // ARQUIVO CRONOLÓGICO",
+    matrixTag: "MEMORIA_SALVA",
+    matrixLines: [
+      "01101000 01101001 01110011 [EPOCA_FUNDACAO: SALVA]",
+      "11110110 11000111 00110101 [TICKS_REGISTRADOS: TOTAL]",
+      "10101100 00010011 00101001 [CRONICAS_CONSOLIDADAS]",
+      "00011011 11011011 11011011 [REGISTROS_IMUTAVEIS]",
+      "10101011 10110010 10110001 [LEALDADE_PRESERVADA]",
+      "01110011 01110100 01101111 [MEMORIA_HISTORICA_OK]"
+    ]
+  }
+};
+
+
 function getActionAttr(target, name) {
   if (!target) return null;
   const camelName = name.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
@@ -339,7 +511,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   activeSection = SHELL_SECTIONS.DOMAINS;
   selectedDomainUuid = null;
   sidebarMode = "hierarchy";
-  sidebarView = "all";
+  sidebarView = "modules";
   activeTab = "overview";
   searchQuery = "";
   selectedTag = null;
@@ -718,9 +890,9 @@ super._onRender?.(context, options);
   }
 
   static #onSelectDomain(event, target) {
-    this._shouldAnimateNextRender = true;
+    // Ao selecionar uma base, não dispara nenhuma animação (diretriz de performance do usuário)
+    this._shouldAnimateNextRender = false;
     const uuid = getActionAttr(target, "uuid");
-    DomainManagerShellApp.#triggerHudTransition();
     this.selectedDomainUuid = uuid || null;
     this.#closeAllModals();
     this.render();
@@ -3579,8 +3751,10 @@ super._onRender?.(context, options);
     }
     const sectorIndex = activeTabMeta?.index || "01";
 
+    const currentHudTelemetry = HUD_SECTOR_TELEMETRY[this.activeTab] || HUD_SECTOR_TELEMETRY.overview;
     return {
       ...context,
+      hudTelemetry: currentHudTelemetry,
       moduleTitle: MODULE_TITLE,
       foundryVersion: game.version,
       userName: game.user.name,
@@ -3589,7 +3763,7 @@ super._onRender?.(context, options);
       activeSection: this.activeSection,
       selectedDomainUuid: this.selectedDomainUuid,
       sidebarMode: this.sidebarMode,
-      sidebarView: this.sidebarView || "all",
+      sidebarView: this.sidebarView || "modules",
       activeTab: this.activeTab,
       searchQuery: this.searchQuery,
       selectedTag: this.selectedTag,

@@ -5717,3 +5717,113 @@
   0% { transform: translateY(15px); }
   100% { transform: translateY(-20px); }
 }
+
+/* ==========================================================================
+   REFINAMENTO COMPLETO: BLOQUEIO DE CLIQUES & ALINHAMENTO MILITAR DE MÓDULOS
+   ========================================================================== */
+
+/* 1. Bloquear Cliques durante o Loading / Animação */
+.dm-hud-transition-overlay--fullscreen.is-active {
+  pointer-events: all !important; /* BLOQUEIO TOTAL: Impede qualquer clique no HUD durante a transição */
+  cursor: wait !important;
+}
+
+/* 2. Switcher de 2 Opções (Módulos / Territórios) */
+.dm-sidebar__view-switcher {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px !important;
+  padding: 4px !important;
+}
+
+.dm-sidebar__view-btn {
+  padding: 6px 8px !important;
+  font-size: 0.76rem !important;
+}
+
+/* 3. Alinhamento Perfeito dos Módulos Operacionais (Grid Flush) */
+.dm-sidebar__tactical-nav {
+  padding: 0.5rem 0.65rem !important;
+}
+
+.dm-sidebar__section-divider {
+  margin-bottom: 0.4rem !important;
+  padding: 0 0.2rem 0.35rem 0.2rem !important;
+}
+
+.dm-sidebar__nav-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.dm-sidebar__nav-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  height: 36px !important;
+  padding: 0 0.65rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 4px !important;
+  color: #a1a1aa !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+  box-sizing: border-box !important;
+}
+
+.dm-sidebar__nav-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.dm-sidebar__nav-item.is-active {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.22) 0%, rgba(239, 68, 68, 0.03) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  border-left: 3px solid #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.18) !important;
+}
+
+.dm-sidebar__nav-idx {
+  width: 22px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  color: #71717a !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-idx {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+.dm-sidebar__nav-icon {
+  width: 20px !important;
+  text-align: center !important;
+  font-size: 0.95rem !important;
+  color: #a1a1aa !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-icon {
+  color: #ef4444 !important;
+}
+
+.dm-sidebar__nav-label {
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  flex: 1 !important;
+  text-align: left !important;
+}
