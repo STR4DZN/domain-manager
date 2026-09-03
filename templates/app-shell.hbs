@@ -2649,11 +2649,11 @@
                   <div class="dm-notable-title-row">
                     <strong class="dm-notable-name">{{name}}</strong>
                     <div class="dm-row-actions">
-                      {{#if @root.isGM}}
                         <button type="button" class="dm-btn dm-btn--primary dm-btn--xs dm-btn-dossier" data-action="openNotableDossier" data-local-id="{{localId}}" title="Abrir Dossiê Tático / Bio-Monitor">
                           <i class="fa-solid fa-microchip"></i>
                           <span>Dossiê</span>
                         </button>
+                      {{#if @root.isGM}}
                         <button type="button" class="dm-icon-btn" data-action="openEditNotableModal" data-local-id="{{localId}}" title="Editar Notável">
                           <i class="fa-solid fa-pen-to-square"></i>
                         </button>

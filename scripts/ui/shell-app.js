@@ -3462,8 +3462,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     // Dossiê Tático do Notável Ativo
     let activeNotableDossier = null;
-    if (this.activeNotableDossierLocalId && Array.isArray(selectedDomain?.population?.notables)) {
-      const targetNot = selectedDomain.population.notables.find(n => n.localId === this.activeNotableDossierLocalId);
+    const rawNotablesList = (selectedRecord?.data?.population?.notables ?? selectedRecord?.data?.people?.notables ?? []);
+    if (this.activeNotableDossierLocalId && rawNotablesList.length) {
+      const targetNot = rawNotablesList.find((n) => n.localId === this.activeNotableDossierLocalId);
       if (targetNot) {
         const rawAttr = targetNot.attributes || {};
         const attrList = [
