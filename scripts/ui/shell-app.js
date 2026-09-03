@@ -154,15 +154,18 @@ function isImageSource(src) {
          /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(src);
 }
 
-function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = null) {
+function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = null, visited = new Set()) {
   const nodes = [];
   const children = domains.filter((d) => {
-    const p = d.data.hierarchy?.locatedInUuid || d.data.hierarchy?.administrativeParentUuid || null;
+    let p = d.data.hierarchy?.locatedInUuid || d.data.hierarchy?.administrativeParentUuid || null;
+    if (p === d.document.uuid) p = null; // Auto-curar ciclo onde a base é seu próprio pai
     return p === parentUuid;
   });
 
   for (const child of children) {
-    const subChildren = buildDomainTreeNodes(domains, child.document.uuid, currentSelectedUuid);
+    if (visited.has(child.document.uuid)) continue;
+    visited.add(child.document.uuid);
+    const subChildren = buildDomainTreeNodes(domains, child.document.uuid, currentSelectedUuid, new Set(visited));
     const totalDescendants = subChildren.reduce((acc, sub) => acc + 1 + (sub.descendantCount || 0), 0);
     const crestPath = child.data.identity?.crestMedia?.path || child.data.visuals?.crestImg || "fa-solid fa-landmark";
 
@@ -260,11 +263,35 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isProjectModalOpen = false;
   isEditingProjectModal = false;
   editingProjectUuid = null;
+
+  // Notáveis
   isNotableModalOpen = false;
+  isEditingNotableModal = false;
+  editingNotableLocalId = null;
+
+  // Grupos Populacionais
   isGroupModalOpen = false;
+  isEditingGroupModal = false;
+  editingGroupLocalId = null;
+
+  // Relações Diplomáticas
   isRelationModalOpen = false;
+  isEditingRelationModal = false;
+  editingRelationTargetUuid = null;
+
+  // Segredos / Informações
   isIntelModalOpen = false;
+  isEditingIntelModal = false;
+  editingIntelLocalId = null;
+
+  // Crônicas / Histórico
   isHistoryModalOpen = false;
+  isEditingHistoryModal = false;
+  editingHistoryIndex = null;
+
+  // Galeria de Imagens da Base
+  activeGalleryImage = null;
+
   isTagModalOpen = false;
 
   static DEFAULT_OPTIONS = {
@@ -405,10 +432,20 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isEditingProjectModal = false;
     this.editingProjectUuid = null;
     this.isNotableModalOpen = false;
+    this.isEditingNotableModal = false;
+    this.editingNotableLocalId = null;
     this.isGroupModalOpen = false;
+    this.isEditingGroupModal = false;
+    this.editingGroupLocalId = null;
     this.isRelationModalOpen = false;
+    this.isEditingRelationModal = false;
+    this.editingRelationTargetUuid = null;
     this.isIntelModalOpen = false;
+    this.isEditingIntelModal = false;
+    this.editingIntelLocalId = null;
     this.isHistoryModalOpen = false;
+    this.isEditingHistoryModal = false;
+    this.editingHistoryIndex = null;
     this.isTagModalOpen = false;
   }
 
@@ -693,9 +730,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const category = form?.querySelector("#dm-edit-domain-category")?.value?.trim() || "territory";
     const nature = form?.querySelector("#dm-edit-domain-nature")?.value || "physical";
     const crestImg = form?.querySelector("#dm-edit-domain-crest")?.value?.trim() || "";
+    const imageFit = form?.querySelector("#dm-edit-domain-fit")?.value || "cover";
+    const imagePosition = form?.querySelector("#dm-edit-domain-pos")?.value || "center";
     const tagsRaw = form?.querySelector("#dm-edit-domain-tags")?.value || "";
     const description = form?.querySelector("#dm-edit-domain-description")?.value || "";
-    const parentUuid = form?.querySelector("#dm-edit-domain-parent")?.value || null;
+    let parentUuid = form?.querySelector("#dm-edit-domain-parent")?.value || null;
+    if (parentUuid === this.selectedDomainUuid) {
+      parentUuid = null; // Impede ciclo hierárquico onde a base seleciona a si mesma
+    }
     const defenseScore = Number(form?.querySelector("#dm-edit-domain-defense")?.value) || 10;
     const guardCount = Number(form?.querySelector("#dm-edit-domain-guards")?.value) || 0;
 
@@ -721,11 +763,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         nature,
         tags,
         description,
-        crestMedia: crestImg ? { path: crestImg } : data.identity?.crestMedia
+        crestMedia: crestImg ? { path: crestImg } : null
       };
       data.visuals = {
         ...(data.visuals || {}),
-        crestImg: crestImg || data.visuals?.crestImg || ""
+        crestImg,
+        image: crestImg,
+        imageFit,
+        imagePosition
       };
       data.hierarchy = {
         ...data.hierarchy,
@@ -1658,6 +1703,360 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* ------------------------------------------------------------------------
      Context Preparation
      ------------------------------------------------------------------------ */
+
+  /* --- Galeria de Imagens da Base --- */
+  static #onSelectGalleryImage(event, target) {
+    const src = target.dataset.src;
+    if (src) {
+      this.activeGalleryImage = src;
+      this.render();
+    }
+  }
+
+  static async #onAddGalleryImage(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const input = this.element?.querySelector("#dm-new-gallery-img");
+    const src = input?.value?.trim();
+    if (!src) {
+      ui.notifications?.warn("Digite ou selecione uma imagem para adicionar.");
+      return;
+    }
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      data.visuals = data.visuals || {};
+      data.visuals.gallery = Array.isArray(data.visuals.gallery) ? data.visuals.gallery : [];
+      if (!data.visuals.gallery.includes(src)) {
+        data.visuals.gallery.push(src);
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        if (input) input.value = "";
+        this.activeGalleryImage = src;
+        ui.notifications?.info("Imagem adicionada à galeria da base!");
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar à galeria.");
+    }
+  }
+
+  static async #onRemoveGalleryImage(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const src = target.dataset.src;
+    if (!src) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.visuals?.gallery)) {
+        data.visuals.gallery = data.visuals.gallery.filter((img) => img !== src);
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        if (this.activeGalleryImage === src) {
+          this.activeGalleryImage = null;
+        }
+        ui.notifications?.info("Imagem removida da galeria.");
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover imagem da galeria.");
+    }
+  }
+
+  /* --- Edição de Notáveis --- */
+  static #onOpenEditNotableModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+    this.#closeAllModals();
+    this.isEditingNotableModal = true;
+    this.editingNotableLocalId = localId;
+    this.render();
+  }
+
+  static #onCancelEditNotableModal() {
+    this.isEditingNotableModal = false;
+    this.editingNotableLocalId = null;
+    this.render();
+  }
+
+  static async #onSubmitEditNotable() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.editingNotableLocalId) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-edit-notable-name")?.value?.trim();
+    const role = form?.querySelector("#dm-edit-notable-role")?.value?.trim() || "Conselheiro";
+    const title = form?.querySelector("#dm-edit-notable-title")?.value?.trim() || "";
+    const portrait = form?.querySelector("#dm-edit-notable-portrait")?.value?.trim() || "";
+    const loyalty = form?.querySelector("#dm-edit-notable-loyalty")?.value || "Alta";
+    const status = form?.querySelector("#dm-edit-notable-status")?.value || "active";
+
+    if (!name) {
+      ui.notifications?.warn("O nome do notável é obrigatório.");
+      return;
+    }
+
+    const localId = this.editingNotableLocalId;
+    this.isEditingNotableModal = false;
+    this.editingNotableLocalId = null;
+
+    try {
+      const { upsertNotableAction } = await import("../features/people/actions.js");
+      await upsertNotableAction({
+        domainUuid: this.selectedDomainUuid,
+        localId,
+        name,
+        role,
+        title,
+        portrait,
+        assignment: loyalty,
+        status
+      });
+      ui.notifications?.info(`Notável "${name}" atualizado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao atualizar notável.");
+    }
+  }
+
+  /* --- Edição de Grupos Populacionais --- */
+  static #onOpenEditGroupModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+    this.#closeAllModals();
+    this.isEditingGroupModal = true;
+    this.editingGroupLocalId = localId;
+    this.render();
+  }
+
+  static #onCancelEditGroupModal() {
+    this.isEditingGroupModal = false;
+    this.editingGroupLocalId = null;
+    this.render();
+  }
+
+  static async #onSubmitEditGroup() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.editingGroupLocalId) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-edit-group-name")?.value?.trim();
+    const count = Number(form?.querySelector("#dm-edit-group-count")?.value) || 100;
+    const happiness = form?.querySelector("#dm-edit-group-happiness")?.value || "Estável";
+    let unrestScore = Number(form?.querySelector("#dm-edit-group-unrest")?.value);
+
+    if (isNaN(unrestScore)) {
+      if (happiness === "Muito Alta") unrestScore = 0;
+      else if (happiness === "Estável") unrestScore = 2;
+      else if (happiness === "Insatisfeito") unrestScore = 6;
+      else if (happiness === "Rebelde") unrestScore = 9;
+      else unrestScore = 2;
+    }
+
+    if (!name) {
+      ui.notifications?.warn("O nome do grupo é obrigatório.");
+      return;
+    }
+
+    const localId = this.editingGroupLocalId;
+    this.isEditingGroupModal = false;
+    this.editingGroupLocalId = null;
+
+    try {
+      const { upsertGroupAction } = await import("../features/people/actions.js");
+      await upsertGroupAction({
+        domainUuid: this.selectedDomainUuid,
+        localId,
+        name,
+        count,
+        quality: happiness,
+        assignment: String(unrestScore)
+      });
+      ui.notifications?.info(`Grupo "${name}" atualizado!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao editar grupo.");
+    }
+  }
+
+  /* --- Edição de Relações Diplomáticas --- */
+  static #onOpenEditRelationModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const targetUuid = target.dataset.targetUuid;
+    if (!targetUuid) return;
+    this.#closeAllModals();
+    this.isEditingRelationModal = true;
+    this.editingRelationTargetUuid = targetUuid;
+    this.render();
+  }
+
+  static #onCancelEditRelationModal() {
+    this.isEditingRelationModal = false;
+    this.editingRelationTargetUuid = null;
+    this.render();
+  }
+
+  static async #onSubmitEditRelation() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.editingRelationTargetUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const posture = form?.querySelector("#dm-edit-relation-posture")?.value || "neutral";
+    const notes = form?.querySelector("#dm-edit-relation-notes")?.value || "";
+
+    const targetDomainUuid = this.editingRelationTargetUuid;
+    this.isEditingRelationModal = false;
+    this.editingRelationTargetUuid = null;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.relations)) {
+        const rel = data.relations.find((r) => r.targetDomainUuid === targetDomainUuid);
+        if (rel) {
+          rel.posture = posture;
+          rel.notes = notes;
+        } else {
+          data.relations.push({ targetDomainUuid, posture, notes });
+        }
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info("Relação diplomática atualizada com sucesso!");
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao atualizar diplomacia.");
+    }
+  }
+
+  /* --- Edição de Segredos & Intel --- */
+  static #onOpenEditIntelModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+    this.#closeAllModals();
+    this.isEditingIntelModal = true;
+    this.editingIntelLocalId = localId;
+    this.render();
+  }
+
+  static #onCancelEditIntelModal() {
+    this.isEditingIntelModal = false;
+    this.editingIntelLocalId = null;
+    this.render();
+  }
+
+  static async #onSubmitEditIntel() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.editingIntelLocalId) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const title = form?.querySelector("#dm-edit-intel-title")?.value?.trim();
+    const type = form?.querySelector("#dm-edit-intel-category")?.value || "secret";
+    const credibility = form?.querySelector("#dm-edit-intel-credibility")?.value || "confirmed";
+    const visibility = form?.querySelector("#dm-edit-intel-visibility")?.value || "gm_only";
+    const content = form?.querySelector("#dm-edit-intel-content")?.value?.trim() || "";
+
+    if (!title) {
+      ui.notifications?.warn("O título do informe é obrigatório.");
+      return;
+    }
+
+    const localId = this.editingIntelLocalId;
+    this.isEditingIntelModal = false;
+    this.editingIntelLocalId = null;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      const intelList = data.intel?.records || data.intel || [];
+      const target = intelList.find((i) => i.localId === localId);
+      if (target) {
+        target.title = title;
+        target.type = type;
+        target.credibility = credibility;
+        target.visibility = visibility;
+        target.content = content;
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info(`Informe "${title}" atualizado com sucesso!`);
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao atualizar informe.");
+    }
+  }
+
+  /* --- Edição de Crônicas & Histórico --- */
+  static #onOpenEditHistoryModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const index = Number(target.dataset.index);
+    if (isNaN(index)) return;
+    this.#closeAllModals();
+    this.isEditingHistoryModal = true;
+    this.editingHistoryIndex = index;
+    this.render();
+  }
+
+  static #onCancelEditHistoryModal() {
+    this.isEditingHistoryModal = false;
+    this.editingHistoryIndex = null;
+    this.render();
+  }
+
+  static async #onSubmitEditHistory() {
+    if (!game.user.isGM || !this.selectedDomainUuid || this.editingHistoryIndex == null) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const title = form?.querySelector("#dm-edit-history-title")?.value?.trim();
+    const category = form?.querySelector("#dm-edit-history-category")?.value || "story";
+    const summary = form?.querySelector("#dm-edit-history-summary")?.value?.trim() || "";
+    const details = form?.querySelector("#dm-edit-history-details")?.value?.trim() || "";
+
+    if (!title) {
+      ui.notifications?.warn("O título da crônica é obrigatório.");
+      return;
+    }
+
+    const index = this.editingHistoryIndex;
+    this.isEditingHistoryModal = false;
+    this.editingHistoryIndex = null;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.history)) {
+        const realIndex = data.history.length - 1 - index;
+        if (realIndex >= 0 && realIndex < data.history.length) {
+          data.history[realIndex].title = title;
+          data.history[realIndex].category = category;
+          data.history[realIndex].summary = summary;
+          data.history[realIndex].details = details;
+          await updateRecord({
+            uuid: this.selectedDomainUuid,
+            recordType: RECORD_TYPES.DOMAIN,
+            data
+          });
+          ui.notifications?.info(`Crônica "${title}" atualizada!`);
+          this.render();
+        }
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao atualizar crônica.");
+    }
+  }
+
   async _prepareContext(options) {
     const context = typeof super._prepareContext === "function"
       ? await super._prepareContext(options)
@@ -1964,6 +2363,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const imageRaw = data.visuals?.image || data.identity?.crestMedia?.path || data.visuals?.crestImg || "";
       const hasImage = Boolean(imageRaw && isImageSource(imageRaw));
       const crestRaw = imageRaw || "fa-solid fa-mountain-sun";
+      const gallery = Array.isArray(data.visuals?.gallery) ? data.visuals.gallery : [];
+      const imageFit = data.visuals?.imageFit || "cover";
+      const imagePosition = data.visuals?.imagePosition || "center";
+      const allImages = [imageRaw, ...gallery].filter(Boolean);
+      const activeImage = (this.activeGalleryImage && allImages.includes(this.activeGalleryImage))
+        ? this.activeGalleryImage
+        : (imageRaw || gallery[0] || "");
 
       selectedDomain = {
         uuid: selectedRecord.document.uuid,
@@ -1976,6 +2382,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         stateLabel: LABELS_PTBR.states[data.identity?.state] || data.identity?.state || "Ativo",
         image: imageRaw,
         hasImage,
+        imageFit,
+        imagePosition,
+        isContainFit: imageFit === "contain",
+        gallery,
+        allImages,
+        activeImage,
+        hasMultipleImages: allImages.length > 1,
         crest: crestRaw,
         isImageCrest: hasImage,
         tags: data.identity?.tags || [],
@@ -1987,11 +2400,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       };
     }
 
-    const availableParentDomains = domainRecords.map((d) => ({
-      uuid: d.document.uuid,
-      name: d.document.name,
-      isSelected: d.document.uuid === (selectedDomain?.parentUuid || this.selectedDomainUuid)
-    }));
+    const availableParentDomains = domainRecords
+      .filter((d) => d.document.uuid !== this.selectedDomainUuid)
+      .map((d) => ({
+        uuid: d.document.uuid,
+        name: d.document.name,
+        isSelected: Boolean(selectedDomain?.parentUuid && d.document.uuid === selectedDomain.parentUuid)
+      }));
 
     // Lista de Jogadores do Mundo para Seleção de Donos / Controladores
     const worldUsers = game.users

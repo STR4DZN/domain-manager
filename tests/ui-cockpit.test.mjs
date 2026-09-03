@@ -779,3 +779,86 @@ test("v7: Hero retangular da base, modais compactos com scroll e botões no-wrap
   assert.ok(cssContent.includes(".dm-base-hero"));
   assert.ok(cssContent.includes(".dm-project-card__media"));
 });
+
+test("v8: Auto-cura de ciclo hierárquico, galeria múltipla, ajuste contain/cover e edição de entidades", async () => {
+  game.journal = [];
+  game.user = { id: "gm-1", name: "Mestre dos Magos", isGM: true };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  recordIndex.rebuild();
+
+  // 1. Criar Domínio com Galeria de Imagens e Modo Contain
+  const baseDoc = createMockJournal({
+    uuid: "JournalEntry.base-orbit",
+    name: "Estação Orbital",
+    data: {
+      identity: {
+        category: "outpost",
+        nature: "physical",
+        state: "active",
+        tags: ["orbital"]
+      },
+      visuals: {
+        image: "assets/exterior.webp",
+        imageFit: "contain",
+        imagePosition: "center",
+        gallery: ["assets/interior.webp", "assets/hangar.webp"]
+      },
+      hierarchy: {
+        locatedInUuid: "JournalEntry.base-orbit" // SIMULANDO O BUG ANTIGO (auto-referência)
+      },
+      security: { defenseScore: 10, guardCount: 5 },
+      population: {
+        groups: [{ localId: "grp-1", name: "Engenheiros", count: 200, quality: "Estável", assignment: "2" }],
+        notables: [{ localId: "not-1", name: "Dra. Elen", role: "Cientista Chefe", portrait: "elen.png", status: "active" }]
+      },
+      relations: [{ targetDomainUuid: "JournalEntry.colonia-sul", posture: "allied", notes: "Tratado Comercial" }],
+      intel: [{ localId: "int-1", title: "Códigos de Acesso", type: "secret", credibility: "confirmed", visibility: "gm_only" }],
+      history: [{ localId: "his-1", title: "Lançamento da Estação", category: "story", summary: "Colocada em órbita", details: "Sucesso total" }]
+    }
+  });
+  recordIndex.upsert(baseDoc);
+
+  const app = new DomainManagerShellApp();
+  app.setRoute({ domainUuid: "JournalEntry.base-orbit" });
+
+  const context = await app._prepareContext();
+
+  // Verificação 1: A auto-referência foi auto-curada e a base aparece na árvore sem sumir
+  assert.equal(context.domainTree.length, 1);
+  assert.equal(context.domainTree[0].uuid, "JournalEntry.base-orbit");
+
+  // Verificação 2: availableParentDomains NUNCA contém a própria base selecionada
+  const selfInParents = context.availableParentDomains.some((d) => d.uuid === "JournalEntry.base-orbit");
+  assert.equal(selfInParents, false);
+
+  // Verificação 3: Galeria Múltipla & Ajuste de Imagem
+  assert.equal(context.selectedDomain.hasMultipleImages, true);
+  assert.equal(context.selectedDomain.allImages.length, 3);
+  assert.equal(context.selectedDomain.imageFit, "contain");
+  assert.equal(context.selectedDomain.isContainFit, true);
+
+  // Verificação 4: Suporte à Edição de Notáveis, Grupos, Relações, Intel e Crônicas
+  assert.equal(context.notables.length, 1);
+  assert.equal(context.groups.length, 1);
+  assert.equal(context.relations.length, 1);
+  assert.equal(context.intelList.length, 1);
+  assert.equal(context.fullHistory.length, 1);
+
+  // Verificação 5: Templates possuem todos os modais de edição
+  const tpl = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/parts/workspace-content.hbs"), "utf8");
+  assert.ok(tpl.includes("isEditingNotableModal"));
+  assert.ok(tpl.includes("isEditingGroupModal"));
+  assert.ok(tpl.includes("isEditingRelationModal"));
+  assert.ok(tpl.includes("isEditingIntelModal"));
+  assert.ok(tpl.includes("isEditingHistoryModal"));
+  assert.ok(tpl.includes("dm-base-gallery-strip"));
+
+  // Verificação 6: CSS possui regras matemáticas estritas contra cortes em telas pequenas
+  const css = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
+  assert.ok(css.includes("max-height: calc(100% - 16px) !important;"));
+  assert.ok(css.includes(".dm-base-gallery-strip"));
+  assert.ok(css.includes(".dm-base-hero.is-contain"));
+});

@@ -1,5 +1,6 @@
-<!-- MODAIS IN-PAGE COM ARQUITETURA COMPACTA E SCROLL INTERNO -->
+<!-- MODAIS IN-PAGE COMPACTOS COM CONTENÇÃO E SCROLL INTERNO -->
 
+<!-- 1. MODAL: ADICIONAR TAGS -->
 {{#if isTagModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -8,69 +9,69 @@
         <button type="button" class="dm-icon-btn" data-action="cancelTagModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Digite uma ou mais tags separadas por vírgula para categorizar este domínio.</p>
-        <div class="dm-form-group mt-2">
-          <label>Novas Tags (separadas por vírgula):</label>
-          <input type="text" class="dm-input" id="dm-new-tag-input" placeholder="Ex: capital, mineração, setor-3, estratégico" autofocus />
+        <p class="dm-dialog-desc">Digite uma ou mais tags separadas por vírgula.</p>
+        <div class="dm-form-group mt-1">
+          <label>Novas Tags:</label>
+          <input type="text" class="dm-input dm-input--compact" id="dm-new-tag-input" placeholder="Ex: capital, mineração, setor-3" autofocus />
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelTagModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitAddTag"><i class="fa-solid fa-check"></i> Adicionar Tags</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitAddTag"><i class="fa-solid fa-check"></i> Salvar Tags</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 2. MODAL: EXCLUIR DOMÍNIO -->
 {{#if isDeletingDomain}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-dialog-card--danger dm-modal-compact">
       <div class="dm-dialog-card__header">
-        <h3><i class="fa-solid fa-triangle-exclamation text-rose"></i> Confirmar Exclusão do Domínio</h3>
-        <button type="button" class="dm-icon-btn" data-action="cancelDeleteDomainModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        <h3><i class="fa-solid fa-triangle-exclamation text-rose"></i> Confirmar Exclusão</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelDeleteDomainModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
         <p class="dm-dialog-desc font-semibold text-rose">
-          Tem certeza que deseja excluir o domínio "<strong>{{selectedDomain.name}}</strong>"?
+          Excluir permanentemente "<strong>{{selectedDomain.name}}</strong>"?
         </p>
-        <p class="dm-dialog-desc mt-2">
-          Esta ação é <strong>irreversível</strong> e só pode ser executada pelo Mestre. Se este domínio possuir subdivisões ou bases subordinadas, elas serão desvinculadas automaticamente para a raiz territorial para evitar perda de dados.
+        <p class="dm-dialog-desc mt-1">
+          Bases subordinadas serão desvinculadas automaticamente para a raiz para evitar perda de dados.
         </p>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelDeleteDomainModal">Cancelar</button>
         <button type="button" class="dm-btn dm-btn--danger-fill" data-action="confirmDeleteDomain">
-          <i class="fa-solid fa-trash-can"></i> Sim, Excluir Domínio
+          <i class="fa-solid fa-trash-can"></i> Excluir
         </button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 3. MODAL: CRIAR NOVO DOMÍNIO / BASE -->
 {{#if isCreatingDomain}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-plus-circle text-emerald"></i> Criar Novo Domínio / Base</h3>
-        <button type="button" class="dm-icon-btn" data-action="cancelCreateDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="dm-icon-btn" data-action="cancelCreateDomain"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Defina a identidade, imagem da base, jogadores controladores e hierarquia.</p>
-        
         <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Nome do Domínio / Base *</label>
-            <input type="text" class="dm-input" id="dm-new-domain-name" placeholder="Ex: Base Alpha, Forte Solar, Cidade Baixa..." autofocus />
+            <input type="text" class="dm-input dm-input--compact" id="dm-new-domain-name" placeholder="Ex: Base Alpha, Forte Solar..." autofocus />
           </div>
 
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Categoria (Customizável)</label>
-              <input type="text" class="dm-input" id="dm-new-domain-category" placeholder="Ex: settlement, outpost, planet, galaxy..." value="settlement" />
+              <label>Categoria (Livre)</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-new-domain-category" value="settlement" />
             </div>
             <div class="dm-form-group">
               <label>Natureza</label>
-              <select class="dm-select" id="dm-new-domain-nature">
+              <select class="dm-select dm-input--compact" id="dm-new-domain-nature">
                 <option value="physical">Físico / Territorial</option>
                 <option value="organization">Organização / Guilda</option>
                 <option value="hybrid">Híbrido</option>
@@ -80,20 +81,37 @@
           </div>
 
           <div class="dm-form-group">
-            <label>Imagem / Ilustração da Base (Arquivo ou Link URL):</label>
+            <label>Imagem / Ilustração da Base:</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-img-input" id="dm-new-domain-crest" placeholder="caminho/imagem.webp ou https://.../imagem.png" />
-              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-new-domain-crest">
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-new-domain-crest" placeholder="caminho/imagem.webp ou https://..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-new-domain-crest">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
+            <div class="dm-form-row mt-1">
+              <div class="dm-form-group">
+                <label>Ajuste da Imagem:</label>
+                <select class="dm-select dm-input--compact" id="dm-new-domain-fit">
+                  <option value="cover">Preencher / Banner (cover)</option>
+                  <option value="contain">Conter Inteira (contain)</option>
+                </select>
+              </div>
+              <div class="dm-form-group">
+                <label>Foco:</label>
+                <select class="dm-select dm-input--compact" id="dm-new-domain-pos">
+                  <option value="center">Centro</option>
+                  <option value="top">Topo</option>
+                  <option value="bottom">Base</option>
+                </select>
+              </div>
+            </div>
             <div class="dm-image-preview-container mt-1" style="display: none;">
-              <img src="" class="dm-image-preview-rect" alt="Prévia da Base" />
+              <img src="" class="dm-image-preview-rect" alt="Prévia" />
             </div>
           </div>
 
           <div class="dm-form-group">
-            <label>Jogadores Controladores / Donos do Domínio:</label>
+            <label>Jogadores Controladores / Donos:</label>
             <div class="dm-player-list">
               {{#if worldPlayers.length}}
                 {{#each worldPlayers}}
@@ -103,22 +121,22 @@
                   </label>
                 {{/each}}
               {{else}}
-                <span class="dm-text-muted">Nenhum jogador cadastrado no mundo.</span>
+                <span class="dm-text-muted">Nenhum jogador cadastrado.</span>
               {{/if}}
             </div>
           </div>
 
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Tags (separadas por vírgula)</label>
-              <input type="text" class="dm-input" id="dm-new-domain-tags" placeholder="Ex: capital, mineração, fronteira" />
+              <label>Tags (vírgula)</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-new-domain-tags" placeholder="capital, mineração" />
             </div>
             <div class="dm-form-group">
               <label>Domínio Superior (Hierarquia)</label>
-              <select class="dm-select" id="dm-new-domain-parent">
+              <select class="dm-select dm-input--compact" id="dm-new-domain-parent">
                 <option value="">Nenhum (Raiz / Independente)</option>
                 {{#each availableParentDomains}}
-                  <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
+                  <option value="{{uuid}}">{{name}}</option>
                 {{/each}}
               </select>
             </div>
@@ -126,7 +144,7 @@
 
           <div class="dm-form-group">
             <label>Descrição Geral</label>
-            <textarea class="dm-textarea" id="dm-new-domain-description" rows="2" placeholder="Breve resumo sobre a base..."></textarea>
+            <textarea class="dm-textarea dm-input--compact" id="dm-new-domain-description" rows="2" placeholder="Resumo sobre a base..."></textarea>
           </div>
         </div>
       </div>
@@ -138,30 +156,29 @@
   </div>
 {{/if}}
 
+<!-- 4. MODAL: EDITAR DOMÍNIO / BASE (COM GALERIA E AJUSTES DE IMAGEM) -->
 {{#if isEditingDomain}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Base / Território: {{selectedDomain.name}}</h3>
-        <button type="button" class="dm-icon-btn" data-action="cancelEditDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditDomain"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Altere a ilustração da base, donos, categoria, defesa e hierarquia.</p>
-        
         <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Nome do Domínio / Base *</label>
-            <input type="text" class="dm-input" id="dm-edit-domain-name" value="{{selectedDomain.name}}" />
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-domain-name" value="{{selectedDomain.name}}" />
           </div>
 
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Categoria (Customizável)</label>
-              <input type="text" class="dm-input" id="dm-edit-domain-category" value="{{selectedDomain.category}}" />
+              <label>Categoria (Livre)</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-edit-domain-category" value="{{selectedDomain.category}}" />
             </div>
             <div class="dm-form-group">
               <label>Natureza</label>
-              <select class="dm-select" id="dm-edit-domain-nature">
+              <select class="dm-select dm-input--compact" id="dm-edit-domain-nature">
                 <option value="physical" {{#if (eq selectedDomain.nature 'physical')}}selected{{/if}}>Físico / Territorial</option>
                 <option value="organization" {{#if (eq selectedDomain.nature 'organization')}}selected{{/if}}>Organização / Guilda</option>
                 <option value="hybrid" {{#if (eq selectedDomain.nature 'hybrid')}}selected{{/if}}>Híbrido</option>
@@ -171,22 +188,67 @@
           </div>
 
           <div class="dm-form-group">
-            <label>Imagem / Ilustração da Base (Arquivo ou Link URL):</label>
+            <label>Imagem Principal da Base (URL ou Arquivo):</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-img-input" id="dm-edit-domain-crest" value="{{selectedDomain.crest}}" placeholder="caminho/imagem.webp ou link..." />
-              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-domain-crest">
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-domain-crest" value="{{selectedDomain.image}}" placeholder="caminho/imagem.webp ou link..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-edit-domain-crest">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
-            {{#if selectedDomain.crest}}
-              <div class="dm-image-preview-container mt-1">
-                <img src="{{selectedDomain.crest}}" class="dm-image-preview-rect" alt="Ilustração da Base" onerror="this.style.display='none'" />
+
+            <div class="dm-form-row mt-1">
+              <div class="dm-form-group">
+                <label>Ajuste da Imagem:</label>
+                <select class="dm-select dm-input--compact" id="dm-edit-domain-fit">
+                  <option value="cover" {{#if (eq selectedDomain.imageFit 'cover')}}selected{{/if}}>Preencher / Banner (cover)</option>
+                  <option value="contain" {{#if (eq selectedDomain.imageFit 'contain')}}selected{{/if}}>Conter Inteira (contain - sem cortes)</option>
+                </select>
+              </div>
+              <div class="dm-form-group">
+                <label>Foco Vertical:</label>
+                <select class="dm-select dm-input--compact" id="dm-edit-domain-pos">
+                  <option value="center" {{#if (eq selectedDomain.imagePosition 'center')}}selected{{/if}}>Centro</option>
+                  <option value="top" {{#if (eq selectedDomain.imagePosition 'top')}}selected{{/if}}>Topo</option>
+                  <option value="bottom" {{#if (eq selectedDomain.imagePosition 'bottom')}}selected{{/if}}>Base</option>
+                </select>
+              </div>
+            </div>
+
+            {{#if selectedDomain.image}}
+              <div class="dm-image-preview-container {{#if (eq selectedDomain.imageFit 'contain')}}is-contain{{/if}} mt-1">
+                <img src="{{selectedDomain.image}}" class="dm-image-preview-rect" alt="Prévia" onerror="this.style.display='none'" />
               </div>
             {{/if}}
           </div>
 
+          <!-- MÚLTIPLAS IMAGENS / GALERIA DA BASE -->
           <div class="dm-form-group">
-            <label>Jogadores Controladores / Donos do Domínio:</label>
+            <label><i class="fa-solid fa-images text-blue"></i> Galeria de Imagens da Base (Múltiplas Fotos/Conceitos):</label>
+            {{#if selectedDomain.gallery.length}}
+              <div class="dm-gallery-chips">
+                {{#each selectedDomain.gallery}}
+                  <div class="dm-gallery-chip">
+                    <img src="{{this}}" class="dm-gallery-chip__thumb" alt="Foto {{@index}}" />
+                    <button type="button" class="dm-icon-btn dm-icon-btn--xs" data-action="removeGalleryImage" data-src="{{this}}" title="Remover da galeria">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                {{/each}}
+              </div>
+            {{/if}}
+            <div class="dm-file-input-group mt-1">
+              <input type="text" class="dm-input dm-input--compact" id="dm-new-gallery-img" placeholder="URL ou arquivo de mais uma foto..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-new-gallery-img">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+              <button type="button" class="dm-btn dm-btn--primary dm-btn--xs" data-action="addGalleryImage" title="Adicionar à Galeria">
+                <i class="fa-solid fa-plus"></i> Adicionar Foto
+              </button>
+            </div>
+          </div>
+
+          <div class="dm-form-group">
+            <label>Jogadores Controladores / Donos:</label>
             <div class="dm-player-list">
               {{#if worldPlayers.length}}
                 {{#each worldPlayers}}
@@ -196,30 +258,30 @@
                   </label>
                 {{/each}}
               {{else}}
-                <span class="dm-text-muted">Nenhum jogador cadastrado no mundo.</span>
+                <span class="dm-text-muted">Nenhum jogador cadastrado.</span>
               {{/if}}
             </div>
           </div>
 
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Defesa Base (Rating)</label>
-              <input type="number" class="dm-input" id="dm-edit-domain-defense" value="{{selectedDomain.defenseScore}}" />
+              <label>Defesa Base</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-domain-defense" value="{{selectedDomain.defenseScore}}" />
             </div>
             <div class="dm-form-group">
-              <label>Número de Guardas</label>
-              <input type="number" class="dm-input" id="dm-edit-domain-guards" value="{{selectedDomain.guardCount}}" />
+              <label>Guardas</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-domain-guards" value="{{selectedDomain.guardCount}}" />
             </div>
           </div>
 
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Tags (separadas por vírgula)</label>
-              <input type="text" class="dm-input" id="dm-edit-domain-tags" value="{{selectedDomainTagsFormatted}}" />
+              <label>Tags (vírgula)</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-edit-domain-tags" value="{{selectedDomainTagsFormatted}}" />
             </div>
             <div class="dm-form-group">
-              <label>Domínio Superior / Localização</label>
-              <select class="dm-select" id="dm-edit-domain-parent">
+              <label>Domínio Superior (Hierarquia)</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-domain-parent">
                 <option value="">Nenhum (Raiz / Independente)</option>
                 {{#each availableParentDomains}}
                   <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
@@ -230,7 +292,7 @@
 
           <div class="dm-form-group">
             <label>Descrição Geral</label>
-            <textarea class="dm-textarea" id="dm-edit-domain-description" rows="2">{{selectedDomain.description}}</textarea>
+            <textarea class="dm-textarea dm-input--compact" id="dm-edit-domain-description" rows="2">{{selectedDomain.description}}</textarea>
           </div>
         </div>
       </div>
@@ -242,55 +304,51 @@
   </div>
 {{/if}}
 
+<!-- 5. MODAL: AVANÇAR TEMPO -->
 {{#if isAdvancingTimeModal}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-clock-rotate-left text-blue"></i> Avançar Tempo do Mundo</h3>
-        <button type="button" class="dm-icon-btn" data-action="cancelAdvanceModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="dm-icon-btn" data-action="cancelAdvanceModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Simula deterministicamente a economia, as obras, os acordos e as condições de todos os domínios.</p>
-        <div class="dm-advance-options mt-3">
-          <label class="dm-label">Opções Rápidas:</label>
+        <p class="dm-dialog-desc">Simula a economia, obras, acordos e condições de todos os domínios.</p>
+        <div class="dm-advance-options mt-2">
           <div class="dm-pill-row">
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="quickAdvanceTicks" data-ticks="1">+1 Dia (1 Tick)</button>
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="quickAdvanceTicks" data-ticks="7">+1 Semana (7 Ticks)</button>
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="quickAdvanceTicks" data-ticks="30">+1 Mês (30 Ticks)</button>
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="quickAdvanceTicks" data-ticks="1">+1 Dia (1 Tick)</button>
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="quickAdvanceTicks" data-ticks="7">+1 Semana (7)</button>
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="quickAdvanceTicks" data-ticks="30">+1 Mês (30)</button>
           </div>
-          <div class="dm-form-group mt-3">
-            <label class="dm-label">Ou digite a quantidade de Ticks:</label>
-            <input type="number" class="dm-input" id="dm-advance-ticks-input" min="1" max="1000" value="{{advanceCustomTicks}}" />
-          </div>
-          <div class="dm-sync-info mt-2">
-            <i class="fa-solid fa-link text-emerald"></i>
-            <span>Sincronização ativada com o relógio do mundo ({{timekeeping.tickDurationLabel}})</span>
+          <div class="dm-form-group mt-2">
+            <label>Quantidade de Ticks:</label>
+            <input type="number" class="dm-input dm-input--compact" id="dm-advance-ticks-input" min="1" max="1000" value="{{advanceCustomTicks}}" />
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelAdvanceModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitAdvance"><i class="fa-solid fa-forward-step"></i> Confirmar Avanço</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitAdvance"><i class="fa-solid fa-forward-step"></i> Avançar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 6. MODAL: EVENTOS -->
 {{#if isEventModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-dice-d20 text-purple"></i> Central de Eventos de Domínio</h3>
-        <button type="button" class="dm-icon-btn" data-action="cancelEventModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="dm-icon-btn" data-action="cancelEventModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Role um evento com filtros ou crie um evento autoral do Mestre para aplicar na base.</p>
-        <div class="dm-event-split mt-3">
+        <div class="dm-event-split">
           <div class="dm-event-col">
             <h4 class="dm-event-col__title"><i class="fa-solid fa-dice"></i> Sorteio com Filtros</h4>
             <div class="dm-form-group">
-              <label>Filtrar por Categoria:</label>
-              <select class="dm-select" id="dm-event-filter-category">
+              <label>Filtrar Categoria:</label>
+              <select class="dm-select dm-input--compact" id="dm-event-filter-category">
                 <option value="all">Todas as Categorias</option>
                 <option value="economy">Economia & Comércio</option>
                 <option value="security">Segurança & Conflito</option>
@@ -299,7 +357,7 @@
                 <option value="opportunity">Oportunidade & Bonança</option>
               </select>
             </div>
-            <button type="button" class="dm-btn dm-btn--primary mt-3 w-full" data-action="submitCustomRollEvent">
+            <button type="button" class="dm-btn dm-btn--primary mt-2 w-full" data-action="submitCustomRollEvent">
               <i class="fa-solid fa-dice-d20"></i> Rolar com Filtro
             </button>
           </div>
@@ -308,38 +366,28 @@
             <h4 class="dm-event-col__title"><i class="fa-solid fa-feather"></i> Evento Autoral do Mestre</h4>
             <div class="dm-form-group">
               <label>Título do Evento:</label>
-              <input type="text" class="dm-input" id="dm-author-event-title" placeholder="Ex: Chuva de Meteoros, Festival Estelar..." />
+              <input type="text" class="dm-input dm-input--compact" id="dm-author-event-title" placeholder="Chuva de Meteoros..." />
             </div>
             <div class="dm-form-group">
-              <label>Descrição do Acontecimento:</label>
-              <textarea class="dm-textarea" id="dm-author-event-desc" rows="2" placeholder="O que aconteceu no território..."></textarea>
+              <label>Descrição:</label>
+              <textarea class="dm-textarea dm-input--compact" id="dm-author-event-desc" rows="2"></textarea>
             </div>
             <div class="dm-form-row">
               <div class="dm-form-group">
                 <label>Severidade:</label>
-                <select class="dm-select" id="dm-author-event-severity">
-                  <option value="neutral">Neutra / Comum</option>
-                  <option value="crisis">Crise Severa</option>
-                  <option value="opportunity">Oportunidade Positiva</option>
+                <select class="dm-select dm-input--compact" id="dm-author-event-severity">
+                  <option value="neutral">Neutra</option>
+                  <option value="crisis">Crise</option>
+                  <option value="opportunity">Oportunidade</option>
                 </select>
               </div>
               <div class="dm-form-group">
-                <label>Impacto no Tesouro:</label>
-                <input type="number" class="dm-input" id="dm-author-event-stock" placeholder="+/- valor" value="0" />
-              </div>
-            </div>
-            <div class="dm-form-row">
-              <div class="dm-form-group">
-                <label>Condição Gerada:</label>
-                <input type="text" class="dm-input" id="dm-author-event-cond-name" placeholder="Ex: Blecaute, Quarentena" />
-              </div>
-              <div class="dm-form-group">
-                <label>Duração (Ticks):</label>
-                <input type="number" class="dm-input" id="dm-author-event-cond-ticks" value="3" />
+                <label>Impacto Tesouro:</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-author-event-stock" value="0" />
               </div>
             </div>
             <button type="button" class="dm-btn dm-btn--outline mt-2 w-full" data-action="submitAuthorEvent">
-              <i class="fa-solid fa-check"></i> Aplicar Evento do Mestre
+              <i class="fa-solid fa-check"></i> Aplicar Evento
             </button>
           </div>
         </div>
@@ -351,6 +399,7 @@
   </div>
 {{/if}}
 
+<!-- 7. MODAL: ADICIONAR ESTOQUE -->
 {{#if isStockModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -359,11 +408,10 @@
         <button type="button" class="dm-icon-btn" data-action="cancelStockModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Cadastre um recurso com saldo para este domínio ou selecione um existente.</p>
-        <div class="dm-form-grid mt-2">
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Recurso Existente no Catálogo:</label>
-            <select class="dm-select" id="dm-stock-resource-select">
+            <label>Recurso Existente:</label>
+            <select class="dm-select dm-input--compact" id="dm-stock-resource-select">
               <option value="">-- Ou digite um novo recurso abaixo --</option>
               {{#each catalogResources}}
                 <option value="{{id}}">{{name}} ({{id}})</option>
@@ -372,28 +420,29 @@
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Novo ID de Recurso (se novo):</label>
-              <input type="text" class="dm-input" id="dm-stock-resource-custom" placeholder="Ex: ore, energy, food..." />
+              <label>ID do Recurso (novo):</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-stock-resource-custom" placeholder="ore, food..." />
             </div>
             <div class="dm-form-group">
-              <label>Nome Amigável do Recurso:</label>
-              <input type="text" class="dm-input" id="dm-stock-resource-name" placeholder="Ex: Minério de Ferro, Energia Solar..." />
+              <label>Nome Amigável:</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-stock-resource-name" placeholder="Minério..." />
             </div>
           </div>
           <div class="dm-form-group">
-            <label>Quantidade / Saldo Total:</label>
-            <input type="number" class="dm-input" id="dm-stock-amount" placeholder="0" value="100" />
+            <label>Saldo Total:</label>
+            <input type="number" class="dm-input dm-input--compact" id="dm-stock-amount" value="100" />
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelStockModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitStock"><i class="fa-solid fa-floppy-disk"></i> Salvar Recurso e Estoque</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitStock"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 8. MODAL: ADICIONAR FLUXO -->
 {{#if isFlowModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -402,16 +451,15 @@
         <button type="button" class="dm-icon-btn" data-action="cancelFlowModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Configure uma entrada ou saída automática de recursos por tick.</p>
-        <div class="dm-form-grid mt-2">
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Nome / Descrição do Fluxo:</label>
-            <input type="text" class="dm-input" id="dm-flow-name" placeholder="Ex: Rota Comercial, Manutenção da Frota, Impostos..." />
+            <label>Descrição do Fluxo:</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-flow-name" placeholder="Rota Comercial, Impostos..." />
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Recurso:</label>
-              <select class="dm-select" id="dm-flow-resource">
+              <select class="dm-select dm-input--compact" id="dm-flow-resource">
                 {{#each catalogResources}}
                   <option value="{{id}}">{{name}}</option>
                 {{/each}}
@@ -419,33 +467,33 @@
             </div>
             <div class="dm-form-group">
               <label>Direção:</label>
-              <select class="dm-select" id="dm-flow-direction">
-                <option value="inflow">Entrada (Ganho por Tick)</option>
-                <option value="outflow">Saída (Gasto / Custo)</option>
+              <select class="dm-select dm-input--compact" id="dm-flow-direction">
+                <option value="inflow">Entrada (Ganho/Tick)</option>
+                <option value="outflow">Saída (Gasto/Tick)</option>
               </select>
             </div>
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Quantidade por Tick:</label>
-              <input type="number" class="dm-input" id="dm-flow-amount" value="50" />
+              <input type="number" class="dm-input dm-input--compact" id="dm-flow-amount" value="50" />
             </div>
             <div class="dm-form-group">
               <label>Categoria (Livre):</label>
-              <input type="text" class="dm-input" id="dm-flow-category" placeholder="Ex: comércio, mineração, impostos..." value="comércio" />
+              <input type="text" class="dm-input dm-input--compact" id="dm-flow-category" value="comércio" />
             </div>
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelFlowModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitFlow"><i class="fa-solid fa-check"></i> Adicionar Fluxo</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitFlow"><i class="fa-solid fa-check"></i> Adicionar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
-<!-- MODAL: NOVA OBRA / PROJETO (COMPACTO COM SCROLL E PRÉVIA) -->
+<!-- 9. MODAL: NOVA OBRA / PROJETO -->
 {{#if isProjectModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-large">
@@ -454,49 +502,47 @@
         <button type="button" class="dm-icon-btn" data-action="cancelProjectModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Cadastre um empreendimento com nível (Tier), imagem e modificadores ativados na conclusão.</p>
-        
         <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Nome do Projeto *</label>
-            <input type="text" class="dm-input" id="dm-project-name" placeholder="Ex: Escudo Defletor Orbital, Porto Estelar, Mina de Cristais..." />
+            <input type="text" class="dm-input dm-input--compact" id="dm-project-name" placeholder="Escudo Defletor, Porto..." />
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Categoria:</label>
-              <input type="text" class="dm-input" id="dm-project-category" value="infraestrutura" />
+              <input type="text" class="dm-input dm-input--compact" id="dm-project-category" value="infraestrutura" />
             </div>
             <div class="dm-form-group">
-              <label>Nível / Tier Inicial:</label>
-              <input type="number" class="dm-input" id="dm-project-tier" min="1" max="10" value="1" />
+              <label>Nível / Tier:</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-project-tier" min="1" max="10" value="1" />
             </div>
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Trabalho Total Necessário:</label>
-              <input type="number" class="dm-input" id="dm-project-work" value="100" />
+              <label>Trabalho Total:</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-project-work" value="100" />
             </div>
             <div class="dm-form-group">
-              <label>Taxa de Avanço por Tick:</label>
-              <input type="number" class="dm-input" id="dm-project-rate" value="10" />
+              <label>Taxa por Tick:</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-project-rate" value="10" />
             </div>
           </div>
 
           <div class="dm-form-group">
-            <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
+            <label>Imagem / GIF da Obra:</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-img-input" id="dm-project-img" placeholder="caminho/projeto.webp ou https://.../art.png" />
-              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-project-img">
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-project-img" placeholder="caminho/projeto.webp ou link..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-project-img">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
             <div class="dm-image-preview-container mt-1" style="display: none;">
-              <img src="" class="dm-image-preview-rect" alt="Prévia da Obra" />
+              <img src="" class="dm-image-preview-rect" alt="Prévia" />
             </div>
           </div>
 
           <div class="dm-form-group">
-            <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores ao Concluir (Bônus no Território):</label>
+            <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores ao Concluir:</label>
             <div class="dm-mod-grid-4">
               <div class="dm-mod-box">
                 <label>+DEF Defesa</label>
@@ -518,20 +564,20 @@
           </div>
 
           <div class="dm-form-group">
-            <label>Descrição da Obra:</label>
-            <textarea class="dm-textarea" id="dm-project-desc" rows="2" placeholder="Propósito e detalhes da construção..."></textarea>
+            <label>Descrição:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-project-desc" rows="2"></textarea>
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelProjectModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitProject"><i class="fa-solid fa-hammer"></i> Iniciar Projeto</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitProject"><i class="fa-solid fa-hammer"></i> Iniciar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
-<!-- MODAL: EDITAR OBRA / PROJETO (COMPACTO COM SCROLL E PRÉVIA) -->
+<!-- 10. MODAL: EDITAR OBRA / PROJETO -->
 {{#if isEditingProjectModal}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-large">
@@ -540,66 +586,64 @@
         <button type="button" class="dm-icon-btn" data-action="cancelEditProjectModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Altere o progresso, nível/tier, modificadores de território e imagem desta obra.</p>
-        
         <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Nome do Projeto *</label>
-            <input type="text" class="dm-input" id="dm-edit-proj-name" value="{{editingProject.name}}" />
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-proj-name" value="{{editingProject.name}}" />
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Categoria:</label>
-              <input type="text" class="dm-input" id="dm-edit-proj-category" value="{{editingProject.category}}" />
+              <input type="text" class="dm-input dm-input--compact" id="dm-edit-proj-category" value="{{editingProject.category}}" />
             </div>
             <div class="dm-form-group">
               <label>Nível / Tier:</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-tier" value="{{editingProject.tier}}" />
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-tier" value="{{editingProject.tier}}" />
             </div>
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Status:</label>
-              <select class="dm-select" id="dm-edit-proj-status">
+              <select class="dm-select dm-input--compact" id="dm-edit-proj-status">
                 <option value="active" {{#if (eq editingProject.status 'active')}}selected{{/if}}>Em Construção</option>
                 <option value="paused" {{#if (eq editingProject.status 'paused')}}selected{{/if}}>Pausado</option>
                 <option value="blocked" {{#if (eq editingProject.status 'blocked')}}selected{{/if}}>Bloqueado</option>
-                <option value="completed" {{#if (eq editingProject.status 'completed')}}selected{{/if}}>Concluído (Ativar Bônus)</option>
+                <option value="completed" {{#if (eq editingProject.status 'completed')}}selected{{/if}}>Concluído</option>
               </select>
             </div>
             <div class="dm-form-group">
               <label>Taxa por Tick:</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-rate" value="{{editingProject.rateAmount}}" />
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-rate" value="{{editingProject.rateAmount}}" />
             </div>
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Trabalho Total:</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-work" value="{{editingProject.required}}" />
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-work" value="{{editingProject.required}}" />
             </div>
             <div class="dm-form-group">
-              <label>Trabalho Já Concluído:</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-completed" value="{{editingProject.completed}}" />
+              <label>Trabalho Concluído:</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-completed" value="{{editingProject.completed}}" />
             </div>
           </div>
 
           <div class="dm-form-group">
-            <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
+            <label>Imagem / GIF da Obra:</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-img-input" id="dm-edit-proj-img" value="{{editingProject.image}}" placeholder="caminho/projeto.webp ou link..." />
-              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-proj-img">
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-proj-img" value="{{editingProject.image}}" />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-edit-proj-img">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
             {{#if editingProject.image}}
               <div class="dm-image-preview-container mt-1">
-                <img src="{{editingProject.image}}" class="dm-image-preview-rect" alt="Prévia da Obra" onerror="this.style.display='none'" />
+                <img src="{{editingProject.image}}" class="dm-image-preview-rect" alt="Prévia" onerror="this.style.display='none'" />
               </div>
             {{/if}}
           </div>
 
           <div class="dm-form-group">
-            <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores Ativos ao Concluir:</label>
+            <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores ao Concluir:</label>
             <div class="dm-mod-grid-4">
               <div class="dm-mod-box">
                 <label>+DEF Defesa</label>
@@ -621,8 +665,8 @@
           </div>
 
           <div class="dm-form-group">
-            <label>Descrição da Obra:</label>
-            <textarea class="dm-textarea" id="dm-edit-proj-desc" rows="2">{{editingProject.description}}</textarea>
+            <label>Descrição:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-edit-proj-desc" rows="2">{{editingProject.description}}</textarea>
           </div>
         </div>
       </div>
@@ -634,35 +678,36 @@
   </div>
 {{/if}}
 
+<!-- 11. MODAL: NOVO NOTÁVEL -->
 {{#if isNotableModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
-        <h3><i class="fa-solid fa-user-tie text-blue"></i> Registrar Personagem Notável</h3>
+        <h3><i class="fa-solid fa-user-tie text-blue"></i> Registrar Notável</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelNotableModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
         <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Nome do Notável *</label>
-            <input type="text" class="dm-input" id="dm-notable-name" placeholder="Ex: General Vane, Grão-Mestre Thorne..." />
+            <input type="text" class="dm-input dm-input--compact" id="dm-notable-name" placeholder="General Vane..." />
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Cargo / Função:</label>
-              <input type="text" class="dm-input" id="dm-notable-role" placeholder="Ex: Comandante da Guarda" value="Conselheiro" />
+              <input type="text" class="dm-input dm-input--compact" id="dm-notable-role" value="Conselheiro" />
             </div>
             <div class="dm-form-group">
-              <label>Título Honorífico:</label>
-              <input type="text" class="dm-input" id="dm-notable-title" placeholder="Ex: Lorde, Capitão, Almirante" />
+              <label>Título:</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-notable-title" placeholder="Lorde, Capitão" />
             </div>
           </div>
 
           <div class="dm-form-group">
-            <label>Retrato / GIF do Notável (Arquivo ou Link URL):</label>
+            <label>Retrato / GIF do Notável:</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-img-input" id="dm-notable-portrait" placeholder="caminho/personagem.webp ou link..." />
-              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-notable-portrait">
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-notable-portrait" placeholder="caminho/foto.webp ou link..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-notable-portrait">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
@@ -671,7 +716,7 @@
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Lealdade:</label>
-              <select class="dm-select" id="dm-notable-loyalty">
+              <select class="dm-select dm-input--compact" id="dm-notable-loyalty">
                 <option value="Inabalável">Inabalável</option>
                 <option value="Alta" selected>Alta</option>
                 <option value="Estável">Estável</option>
@@ -680,7 +725,7 @@
             </div>
             <div class="dm-form-group">
               <label>Status:</label>
-              <select class="dm-select" id="dm-notable-status">
+              <select class="dm-select dm-input--compact" id="dm-notable-status">
                 <option value="active" selected>Ativo / Presente</option>
                 <option value="away">Em Missão / Ausente</option>
                 <option value="unavailable">Indisponível</option>
@@ -692,12 +737,83 @@
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelNotableModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotable"><i class="fa-solid fa-check"></i> Salvar Notável</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotable"><i class="fa-solid fa-check"></i> Salvar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 12. MODAL: EDITAR NOTÁVEL (CRUD COMPLETO COM IMAGEM) -->
+{{#if isEditingNotableModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-user-pen text-amber"></i> Editar Personagem Notável: {{editingNotable.name}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditNotableModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Nome do Notável *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-notable-name" value="{{editingNotable.name}}" />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Cargo / Função:</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-edit-notable-role" value="{{editingNotable.role}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Título:</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-edit-notable-title" value="{{editingNotable.title}}" />
+            </div>
+          </div>
+
+          <div class="dm-form-group">
+            <label>Retrato / GIF do Notável (Arquivo ou Link URL):</label>
+            <div class="dm-file-input-group">
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-notable-portrait" value="{{editingNotable.portrait}}" />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-edit-notable-portrait">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+            </div>
+            {{#if editingNotable.portrait}}
+              <div class="dm-image-preview-container mt-1">
+                <img src="{{editingNotable.portrait}}" class="dm-image-preview-rect" alt="Retrato" onerror="this.style.display='none'" />
+              </div>
+            {{/if}}
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Lealdade:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-notable-loyalty">
+                <option value="Inabalável" {{#if (eq editingNotable.loyalty 'Inabalável')}}selected{{/if}}>Inabalável</option>
+                <option value="Alta" {{#if (eq editingNotable.loyalty 'Alta')}}selected{{/if}}>Alta</option>
+                <option value="Estável" {{#if (eq editingNotable.loyalty 'Estável')}}selected{{/if}}>Estável</option>
+                <option value="Duvidosa" {{#if (eq editingNotable.loyalty 'Duvidosa')}}selected{{/if}}>Duvidosa</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Status:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-notable-status">
+                <option value="active" {{#if (eq editingNotable.status 'active')}}selected{{/if}}>Ativo / Presente</option>
+                <option value="away" {{#if (eq editingNotable.status 'away')}}selected{{/if}}>Em Missão / Ausente</option>
+                <option value="unavailable" {{#if (eq editingNotable.status 'unavailable')}}selected{{/if}}>Indisponível</option>
+                <option value="retired" {{#if (eq editingNotable.status 'retired')}}selected{{/if}}>Aposentado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditNotableModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditNotable"><i class="fa-solid fa-floppy-disk"></i> Salvar Notável</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- 13. MODAL: NOVO GRUPO POPULACIONAL -->
 {{#if isGroupModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -706,41 +822,84 @@
         <button type="button" class="dm-icon-btn" data-action="cancelGroupModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="dm-dialog-card__body dm-scrollable">
-        <p class="dm-dialog-desc">Cadastre uma população. O sistema calcula a agitação ponderada automaticamente.</p>
-        <div class="dm-form-grid mt-2">
+        <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Nome do Grupo *</label>
-            <input type="text" class="dm-input" id="dm-group-name" placeholder="Ex: Mineiros das Crateras, Cidadãos da Capital..." />
+            <input type="text" class="dm-input dm-input--compact" id="dm-group-name" placeholder="Cidadãos, Mineiros..." />
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>População (Contagem):</label>
-              <input type="number" class="dm-input" id="dm-group-count" value="1000" />
+              <label>População:</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-group-count" value="1000" />
             </div>
             <div class="dm-form-group">
               <label>Satisfação:</label>
-              <select class="dm-select" id="dm-group-happiness">
+              <select class="dm-select dm-input--compact" id="dm-group-happiness">
                 <option value="Muito Alta">Muito Alta (Agitação 0)</option>
                 <option value="Estável" selected>Estável (Agitação 2)</option>
                 <option value="Insatisfeito">Insatisfeito (Agitação 6)</option>
-                <option value="Rebelde">Rebelde / Em Revolta (Agitação 9)</option>
+                <option value="Rebelde">Rebelde (Agitação 9)</option>
               </select>
             </div>
           </div>
           <div class="dm-form-group">
-            <label>Ajuste Fino de Agitação (Opcional, 0 a 10):</label>
-            <input type="number" class="dm-input" id="dm-group-unrest" min="0" max="10" placeholder="Automático pela satisfação" />
+            <label>Ajuste de Agitação (0 a 10):</label>
+            <input type="number" class="dm-input dm-input--compact" id="dm-group-unrest" min="0" max="10" placeholder="Automático" />
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelGroupModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitGroup"><i class="fa-solid fa-check"></i> Adicionar Grupo</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitGroup"><i class="fa-solid fa-check"></i> Adicionar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 14. MODAL: EDITAR GRUPO POPULACIONAL (NOVO) -->
+{{#if isEditingGroupModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Grupo Populacional: {{editingGroup.name}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditGroupModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Nome do Grupo *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-group-name" value="{{editingGroup.name}}" />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>População (Contagem):</label>
+              <input type="number" class="dm-input dm-input--compact" id="dm-edit-group-count" value="{{editingGroup.population}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Satisfação:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-group-happiness">
+                <option value="Muito Alta" {{#if (eq editingGroup.happiness 'Muito Alta')}}selected{{/if}}>Muito Alta (Agitação 0)</option>
+                <option value="Estável" {{#if (eq editingGroup.happiness 'Estável')}}selected{{/if}}>Estável (Agitação 2)</option>
+                <option value="Insatisfeito" {{#if (eq editingGroup.happiness 'Insatisfeito')}}selected{{/if}}>Insatisfeito (Agitação 6)</option>
+                <option value="Rebelde" {{#if (eq editingGroup.happiness 'Rebelde')}}selected{{/if}}>Rebelde (Agitação 9)</option>
+              </select>
+            </div>
+          </div>
+          <div class="dm-form-group">
+            <label>Agitação Calculada / Ajuste Fino (0 a 10):</label>
+            <input type="number" class="dm-input dm-input--compact" id="dm-edit-group-unrest" min="0" max="10" value="{{editingGroup.unrestScore}}" />
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditGroupModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditGroup"><i class="fa-solid fa-floppy-disk"></i> Salvar Grupo</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- 15. MODAL: NOVA RELAÇÃO DIPLOMÁTICA -->
 {{#if isRelationModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -752,7 +911,7 @@
         <div class="dm-form-grid">
           <div class="dm-form-group">
             <label>Domínio Parceiro *</label>
-            <select class="dm-select" id="dm-relation-target">
+            <select class="dm-select dm-input--compact" id="dm-relation-target">
               {{#each availableParentDomains}}
                 <option value="{{uuid}}">{{name}}</option>
               {{/each}}
@@ -760,7 +919,7 @@
           </div>
           <div class="dm-form-group">
             <label>Postura Diplomática:</label>
-            <select class="dm-select" id="dm-relation-posture">
+            <select class="dm-select dm-input--compact" id="dm-relation-posture">
               <option value="allied">Aliança Firme</option>
               <option value="friendly">Amigável / Cooperativo</option>
               <option value="neutral" selected>Neutro</option>
@@ -770,19 +929,55 @@
             </select>
           </div>
           <div class="dm-form-group">
-            <label>Termos e Notas Diplomáticas:</label>
-            <textarea class="dm-textarea" id="dm-relation-notes" rows="2" placeholder="Tratados assinados, embaixadas, histórico..."></textarea>
+            <label>Notas e Termos:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-relation-notes" rows="2"></textarea>
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelRelationModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitRelation"><i class="fa-solid fa-check"></i> Salvar Relação</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitRelation"><i class="fa-solid fa-check"></i> Salvar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 16. MODAL: EDITAR RELAÇÃO DIPLOMÁTICA (NOVO) -->
+{{#if isEditingRelationModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-handshake text-amber"></i> Editar Relação com: {{editingRelation.targetDomainName}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditRelationModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Postura Diplomática:</label>
+            <select class="dm-select dm-input--compact" id="dm-edit-relation-posture">
+              <option value="allied" {{#if (eq editingRelation.posture 'allied')}}selected{{/if}}>Aliança Firme</option>
+              <option value="friendly" {{#if (eq editingRelation.posture 'friendly')}}selected{{/if}}>Amigável / Cooperativo</option>
+              <option value="neutral" {{#if (eq editingRelation.posture 'neutral')}}selected{{/if}}>Neutro</option>
+              <option value="tense" {{#if (eq editingRelation.posture 'tense')}}selected{{/if}}>Tenso / Fricção</option>
+              <option value="hostile" {{#if (eq editingRelation.posture 'hostile')}}selected{{/if}}>Hostil / Beligerante</option>
+              <option value="at_war" {{#if (eq editingRelation.posture 'at_war')}}selected{{/if}}>Em Guerra Declarada</option>
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Termos e Acordos Diplomáticos:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-edit-relation-notes" rows="3">{{editingRelation.notes}}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditRelationModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditRelation"><i class="fa-solid fa-floppy-disk"></i> Salvar Relação</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- 17. MODAL: NOVO SEGREDO / INFORME (INTEL) -->
 {{#if isIntelModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -793,13 +988,13 @@
       <div class="dm-dialog-card__body dm-scrollable">
         <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Título do Segredo / Informe *</label>
-            <input type="text" class="dm-input" id="dm-intel-title" placeholder="Ex: Planos de Invasão dos Piratas..." />
+            <label>Título *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-intel-title" placeholder="Planos de invasão..." />
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
               <label>Tipo:</label>
-              <select class="dm-select" id="dm-intel-category">
+              <select class="dm-select dm-input--compact" id="dm-intel-category">
                 <option value="secret" selected>Segredo Confidencial</option>
                 <option value="rumor">Boato / Rumor</option>
                 <option value="fact">Fato Comprovado</option>
@@ -809,36 +1004,94 @@
             </div>
             <div class="dm-form-group">
               <label>Credibilidade:</label>
-              <select class="dm-select" id="dm-intel-credibility">
+              <select class="dm-select dm-input--compact" id="dm-intel-credibility">
                 <option value="confirmed" selected>Confirmada</option>
                 <option value="likely">Provável</option>
                 <option value="doubtful">Duvidosa</option>
-                <option value="false">Falsa / Desinformação</option>
+                <option value="false">Falsa</option>
               </select>
             </div>
           </div>
           <div class="dm-form-group">
             <label>Visibilidade:</label>
-            <select class="dm-select" id="dm-intel-visibility">
+            <select class="dm-select dm-input--compact" id="dm-intel-visibility">
               <option value="gm_only" selected>Apenas o Mestre (GM)</option>
               <option value="all_controllers">Controladores do Domínio</option>
-              <option value="public">Público / Todos os Jogadores</option>
+              <option value="public">Público (Todos)</option>
             </select>
           </div>
           <div class="dm-form-group">
-            <label>Conteúdo Detalhado:</label>
-            <textarea class="dm-textarea" id="dm-intel-content" rows="3" placeholder="Informação confidencial..."></textarea>
+            <label>Conteúdo:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-intel-content" rows="2"></textarea>
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelIntelModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitIntel"><i class="fa-solid fa-check"></i> Registrar Intel</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitIntel"><i class="fa-solid fa-check"></i> Registrar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 18. MODAL: EDITAR SEGREDO / INFORME (NOVO) -->
+{{#if isEditingIntelModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-user-secret text-amber"></i> Editar Segredo: {{editingIntel.title}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditIntelModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Título do Informe *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-intel-title" value="{{editingIntel.title}}" />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Tipo:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-intel-category">
+                <option value="secret" {{#if (eq editingIntel.type 'secret')}}selected{{/if}}>Segredo Confidencial</option>
+                <option value="rumor" {{#if (eq editingIntel.type 'rumor')}}selected{{/if}}>Boato / Rumor</option>
+                <option value="fact" {{#if (eq editingIntel.type 'fact')}}selected{{/if}}>Fato Comprovado</option>
+                <option value="clue" {{#if (eq editingIntel.type 'clue')}}selected{{/if}}>Pista / Investigação</option>
+                <option value="lore" {{#if (eq editingIntel.type 'lore')}}selected{{/if}}>História / Tradição</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Credibilidade:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-intel-credibility">
+                <option value="confirmed" {{#if (eq editingIntel.credibility 'confirmed')}}selected{{/if}}>Confirmada</option>
+                <option value="likely" {{#if (eq editingIntel.credibility 'likely')}}selected{{/if}}>Provável</option>
+                <option value="doubtful" {{#if (eq editingIntel.credibility 'doubtful')}}selected{{/if}}>Duvidosa</option>
+                <option value="false" {{#if (eq editingIntel.credibility 'false')}}selected{{/if}}>Falsa</option>
+              </select>
+            </div>
+          </div>
+          <div class="dm-form-group">
+            <label>Visibilidade:</label>
+            <select class="dm-select dm-input--compact" id="dm-edit-intel-visibility">
+              <option value="gm_only" {{#if (eq editingIntel.visibility 'gm_only')}}selected{{/if}}>Apenas o Mestre (GM)</option>
+              <option value="all_controllers" {{#if (eq editingIntel.visibility 'all_controllers')}}selected{{/if}}>Controladores do Domínio</option>
+              <option value="public" {{#if (eq editingIntel.visibility 'public')}}selected{{/if}}>Público (Todos)</option>
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Conteúdo Detalhado:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-edit-intel-content" rows="3">{{editingIntel.content}}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditIntelModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditIntel"><i class="fa-solid fa-floppy-disk"></i> Salvar Informe</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- 19. MODAL: NOVA CRÔNICA / HISTÓRICO -->
 {{#if isHistoryModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card dm-modal-compact">
@@ -849,12 +1102,12 @@
       <div class="dm-dialog-card__body dm-scrollable">
         <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Título do Evento Histórico *</label>
-            <input type="text" class="dm-input" id="dm-history-title" placeholder="Ex: Inauguração da Cidadela, Grande Vitória..." />
+            <label>Título do Evento *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-history-title" placeholder="Inauguração..." />
           </div>
           <div class="dm-form-group">
             <label>Categoria:</label>
-            <select class="dm-select" id="dm-history-category">
+            <select class="dm-select dm-input--compact" id="dm-history-category">
               <option value="conquest">Conquista / Triunfo</option>
               <option value="crisis">Crise / Calamidade</option>
               <option value="project">Obra Concluída</option>
@@ -864,22 +1117,65 @@
           </div>
           <div class="dm-form-group">
             <label>Resumo Narrativo:</label>
-            <input type="text" class="dm-input" id="dm-history-summary" placeholder="Uma frase de resumo..." />
+            <input type="text" class="dm-input dm-input--compact" id="dm-history-summary" placeholder="Uma frase..." />
           </div>
           <div class="dm-form-group">
             <label>Detalhes Históricos:</label>
-            <textarea class="dm-textarea" id="dm-history-details" rows="3" placeholder="O relato completo para a posteridade..."></textarea>
+            <textarea class="dm-textarea dm-input--compact" id="dm-history-details" rows="3"></textarea>
           </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelHistoryModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitHistory"><i class="fa-solid fa-check"></i> Gravar Crônica</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitHistory"><i class="fa-solid fa-check"></i> Gravar</button>
       </div>
     </div>
   </div>
 {{/if}}
 
+<!-- 20. MODAL: EDITAR CRÔNICA / HISTÓRICO (NOVO) -->
+{{#if isEditingHistoryModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-pen-nib text-amber"></i> Editar Crônica: {{editingHistory.title}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditHistoryModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Título do Evento *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-history-title" value="{{editingHistory.title}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Categoria:</label>
+            <select class="dm-select dm-input--compact" id="dm-edit-history-category">
+              <option value="conquest" {{#if (eq editingHistory.category 'conquest')}}selected{{/if}}>Conquista / Triunfo</option>
+              <option value="crisis" {{#if (eq editingHistory.category 'crisis')}}selected{{/if}}>Crise / Calamidade</option>
+              <option value="project" {{#if (eq editingHistory.category 'project')}}selected{{/if}}>Obra Concluída</option>
+              <option value="politics" {{#if (eq editingHistory.category 'politics')}}selected{{/if}}>Tratado / Política</option>
+              <option value="story" {{#if (eq editingHistory.category 'story')}}selected{{/if}}>Crônica Geral</option>
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Resumo Narrativo:</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-history-summary" value="{{editingHistory.summary}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Detalhes Históricos:</label>
+            <textarea class="dm-textarea dm-input--compact" id="dm-edit-history-details" rows="3">{{editingHistory.details}}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditHistoryModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditHistory"><i class="fa-solid fa-floppy-disk"></i> Salvar Crônica</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- CORPO PRINCIPAL DO WORKSPACE -->
 <div class="dm-workspace-content">
   <!-- Barra de Abas -->
   <nav class="dm-tabs" role="tablist" aria-label="Abas do Cockpit">
@@ -917,33 +1213,48 @@
   <div class="dm-tab-panels dm-scrollable">
     {{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
-        <!-- Retângulo da Base (Ilustração / Imagem Real da Base) -->
+        <!-- Retângulo da Base com Galeria e Ajuste Proporcional -->
         {{#if selectedDomain}}
-          <div class="dm-base-hero">
-            {{#if selectedDomain.hasImage}}
-              <img src="{{selectedDomain.image}}" class="dm-base-hero__img" alt="{{selectedDomain.name}}" />
+          <div class="dm-base-hero {{#if selectedDomain.isContainFit}}is-contain{{/if}}">
+            {{#if selectedDomain.activeImage}}
+              <img src="{{selectedDomain.activeImage}}" class="dm-base-hero__img" style="object-position: {{selectedDomain.imagePosition}};" alt="{{selectedDomain.name}}" />
             {{else}}
               <div class="dm-base-hero__placeholder">
                 <i class="fa-solid fa-mountain-sun dm-base-hero__placeholder-icon"></i>
                 <span>Nenhuma ilustração definida para esta base</span>
               </div>
             {{/if}}
+
             <div class="dm-base-hero__overlay">
               <div class="dm-base-hero__text">
                 <h2 class="dm-base-hero__name">{{selectedDomain.name}}</h2>
-                <div class="dm-base-hero__badges">
+                <div class="dm-base-hero__tags">
                   <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
                   <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
                   <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
                 </div>
               </div>
-              {{#if @root.isGM}}
-                <button type="button" class="dm-btn dm-btn--outline dm-btn--xs dm-base-hero__edit-btn" data-action="openEditDomain" title="Definir / Alterar Imagem da Base">
-                  <i class="fa-solid fa-camera"></i>
-                  <span>Alterar Imagem</span>
-                </button>
-              {{/if}}
+
+              <div class="dm-base-hero__actions">
+                {{#if @root.isGM}}
+                  <button type="button" class="dm-btn dm-btn--outline dm-btn--xs dm-base-hero__edit-btn" data-action="openEditDomain" title="Editar Base e Galeria">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Editar Imagens</span>
+                  </button>
+                {{/if}}
+              </div>
             </div>
+
+            <!-- Faixa Seletora de Miniaturas da Galeria (Múltiplas Imagens) -->
+            {{#if selectedDomain.hasMultipleImages}}
+              <div class="dm-base-gallery-strip">
+                {{#each selectedDomain.allImages}}
+                  <button type="button" class="dm-gallery-thumb-btn {{#if (eq this @root.selectedDomain.activeImage)}}is-active{{/if}}" data-action="selectGalleryImage" data-src="{{this}}" title="Ver imagem">
+                    <img src="{{this}}" class="dm-gallery-thumb-img" alt="Foto {{@index}}" />
+                  </button>
+                {{/each}}
+              </div>
+            {{/if}}
           </div>
         {{/if}}
 
@@ -1025,7 +1336,7 @@
                   <td class="dm-rate dm-rate--{{netDirection}}">{{netPerTickDisplay}}/tick</td>
                   {{#if @root.isGM}}
                     <td style="text-align: center;">
-                      <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteStock" data-resource-id="{{resourceId}}" title="Excluir Recurso {{name}} do Sistema">
+                      <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteStock" data-resource-id="{{resourceId}}" title="Excluir Recurso {{name}}">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
                     </td>
@@ -1107,7 +1418,7 @@
                 <div class="dm-project-card__top">
                   <div class="dm-project-card__header-left">
                     <strong class="dm-project-card__name">{{name}}</strong>
-                    <span class="dm-badge dm-badge--tier">Nível / Tier {{tier}}</span>
+                    <span class="dm-badge dm-badge--tier">Tier {{tier}}</span>
                   </div>
                   <div class="dm-row-actions">
                     <span class="dm-badge dm-badge--status is-{{status}}">{{statusLabel}}</span>
@@ -1201,11 +1512,16 @@
                 <div class="dm-notable-info">
                   <div class="dm-notable-title-row">
                     <strong class="dm-notable-name">{{name}}</strong>
-                    {{#if @root.isGM}}
-                      <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteNotable" data-local-id="{{localId}}" title="Excluir Notável">
-                        <i class="fa-solid fa-trash-can"></i>
-                      </button>
-                    {{/if}}
+                    <div class="dm-row-actions">
+                      {{#if @root.isGM}}
+                        <button type="button" class="dm-icon-btn" data-action="openEditNotableModal" data-local-id="{{localId}}" title="Editar Notável">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteNotable" data-local-id="{{localId}}" title="Excluir Notável">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      {{/if}}
+                    </div>
                   </div>
                   {{#if role}}<span class="dm-notable-role">{{role}}</span>{{/if}}
                   {{#if title}}<span class="dm-notable-spec">{{title}}</span>{{/if}}
@@ -1221,7 +1537,7 @@
         <div class="dm-panel__header-row mt-4">
           <div>
             <h3 class="dm-section-title"><i class="fa-solid fa-people-group"></i> Grupos Populacionais & Agitação Calculada</h3>
-            <span class="dm-card__subtext">Agitação Geral Ponderada do Domínio: <strong>{{metrics.unrestRiskPercent}}%</strong> (Nível: {{metrics.unrestRiskLevel}})</span>
+            <span class="dm-card__subtext">Agitação Ponderada: <strong>{{metrics.unrestRiskPercent}}%</strong> ({{metrics.unrestRiskLevel}})</span>
           </div>
           {{#if isGM}}
             <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddGroupModal">
@@ -1244,6 +1560,9 @@
                 <div class="dm-row-actions">
                   <span class="dm-badge is-stable">Ativo</span>
                   {{#if @root.isGM}}
+                    <button type="button" class="dm-icon-btn" data-action="openEditGroupModal" data-local-id="{{localId}}" title="Editar Grupo">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                     <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteGroup" data-local-id="{{localId}}" title="Excluir Grupo">
                       <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -1279,9 +1598,14 @@
                   {{#if notes}}<p class="dm-relation-notes">{{notes}}</p>{{/if}}
                 </div>
                 {{#if @root.isGM}}
-                  <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteRelation" data-target-uuid="{{targetDomainUuid}}" title="Excluir Relação">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
+                  <div class="dm-row-actions">
+                    <button type="button" class="dm-icon-btn" data-action="openEditRelationModal" data-target-uuid="{{targetDomainUuid}}" title="Editar Relação">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteRelation" data-target-uuid="{{targetDomainUuid}}" title="Excluir Relação">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
                 {{/if}}
               </div>
             {{/each}}
@@ -1312,6 +1636,9 @@
                   <div class="dm-row-actions">
                     <span class="dm-badge is-{{credibility}}">{{credibilityLabel}}</span>
                     {{#if @root.isGM}}
+                      <button type="button" class="dm-icon-btn" data-action="openEditIntelModal" data-local-id="{{localId}}" title="Editar Segredo">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
                       <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteIntel" data-local-id="{{localId}}" title="Excluir Segredo">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
@@ -1353,6 +1680,9 @@
                     <div class="dm-row-actions">
                       <span class="dm-feed__date">{{timestamp}}</span>
                       {{#if @root.isGM}}
+                        <button type="button" class="dm-icon-btn" data-action="openEditHistoryModal" data-index="{{@index}}" title="Editar Crônica">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
                         <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteHistory" data-index="{{@index}}" title="Excluir Crônica">
                           <i class="fa-solid fa-trash-can"></i>
                         </button>

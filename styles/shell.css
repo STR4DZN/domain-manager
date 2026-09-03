@@ -1952,3 +1952,269 @@
   object-fit: cover !important;
   display: block !important;
 }
+
+/* ==========================================================================
+   V8 ENHANCEMENTS: SMALL MONITORS ANTI-CUTOFF, IMAGE ASPECT/FIT, BASE GALLERY
+   ========================================================================== */
+
+/* 1. Modal Overlay & Dialog Card (Contenção Matemática Estrita: Nunca Corta em Telas Pequenas) */
+.dm-overlay-panel {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 10000 !important;
+  background: rgba(3, 3, 5, 0.86) !important;
+  backdrop-filter: blur(5px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.dm-dialog-card {
+  background: #17171c !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85) !important;
+  width: 96% !important;
+  max-width: 580px !important;
+  max-height: calc(100% - 16px) !important; /* Estritamente 16px menor que a janela do app */
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  animation: dmFadeIn 0.12s ease-out;
+}
+
+.dm-modal-compact {
+  max-width: 490px !important;
+}
+
+.dm-modal-large {
+  max-width: 600px !important;
+}
+
+.dm-dialog-card__header {
+  padding: 9px 14px !important;
+  background: #131317 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  min-height: 40px !important;
+  box-sizing: border-box !important;
+}
+
+.dm-dialog-card__header h3 {
+  margin: 0 !important;
+  font-size: 0.94rem !important;
+  font-weight: 600 !important;
+  color: #f4f4f5 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.dm-dialog-card__body {
+  padding: 10px 14px !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.dm-dialog-card__actions {
+  padding: 8px 14px !important;
+  background: #111115 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  min-height: 44px !important;
+  box-sizing: border-box !important;
+}
+
+.dm-dialog-desc {
+  font-size: 0.78rem !important;
+  color: #a1a1aa !important;
+  margin: 0 !important;
+  line-height: 1.35 !important;
+}
+
+/* 2. Inputs e Grids Ultra Compactos para Caber em Laptops */
+.dm-form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.dm-form-group label {
+  font-size: 0.74rem !important;
+  color: #d4d4d8 !important;
+  font-weight: 500 !important;
+}
+
+.dm-form-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+.dm-input--compact {
+  padding: 4px 8px !important;
+  font-size: 0.78rem !important;
+  height: 28px !important;
+  border-radius: 5px !important;
+  box-sizing: border-box !important;
+}
+
+.dm-textarea.dm-input--compact {
+  height: auto !important;
+  min-height: 44px !important;
+  resize: vertical !important;
+}
+
+/* 3. Ajuste de Imagem (Modo Preencher ou Conter Inteira sem Cortes) */
+.dm-base-hero {
+  position: relative !important;
+  width: 100% !important;
+  height: 180px !important;
+  border-radius: 9px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-bottom: 12px !important;
+  background: #09090c !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dm-base-hero__img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+}
+
+.dm-base-hero.is-contain .dm-base-hero__img {
+  object-fit: contain !important;
+  background: radial-gradient(circle at center, #1c1c24 0%, #09090c 100%) !important;
+}
+
+.dm-image-preview-container {
+  width: 100% !important;
+  height: 90px !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: #0c0c0f !important;
+  margin-top: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.dm-image-preview-rect {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.dm-image-preview-container.is-contain .dm-image-preview-rect {
+  object-fit: contain !important;
+}
+
+/* 4. Galeria de Múltiplas Imagens da Base */
+.dm-base-gallery-strip {
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 12px !important;
+  display: flex !important;
+  gap: 5px !important;
+  background: rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(4px) !important;
+  padding: 3px !important;
+  border-radius: 7px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  z-index: 6 !important;
+}
+
+.dm-gallery-thumb-btn {
+  width: 36px !important;
+  height: 26px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  background: #111 !important;
+  transition: all 0.12s ease !important;
+}
+
+.dm-gallery-thumb-btn:hover {
+  border-color: #38bdf8 !important;
+  transform: scale(1.05);
+}
+
+.dm-gallery-thumb-btn.is-active {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.6) !important;
+}
+
+.dm-gallery-thumb-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.dm-gallery-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  background: #111114 !important;
+  padding: 5px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  max-height: 70px !important;
+  overflow-y: auto !important;
+}
+
+.dm-gallery-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dm-gallery-chip__thumb {
+  width: 24px !important;
+  height: 18px !important;
+  border-radius: 3px !important;
+  object-fit: cover !important;
+}
+
+.dm-icon-btn--xs {
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 0.65rem !important;
+  padding: 0 !important;
+}
+
+.dm-btn--xs {
+  height: 24px !important;
+  padding: 0 8px !important;
+  font-size: 0.72rem !important;
+}
