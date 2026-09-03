@@ -5483,17 +5483,20 @@
 }
 
 /* ==========================================================================
-   TRANSIÇÃO HUD TÁTICA AAA: FUNDO OPACO, ZERO BLUR, MOLDURAS E SEM VAZAMENTOS
+   TRANSIÇÃO HUD TÁTICA AAA: PADRÃO LANCER / COMP/CON (UNIFICADO & DIEGÉTICO)
    ========================================================================== */
 
-/* Overlay Container: 100% OPACO para não vazar a página por trás */
+/* Overlay Container: 100% Sólido no Void Deep-Space (#04060a) sem vazamentos */
 .dm-hud-transition-overlay--fullscreen {
   position: absolute !important;
   inset: 0 !important;
   z-index: 99999 !important;
   width: 100% !important;
   height: 100% !important;
-  background: #08080b !important; /* Totalmente sólido, sem ghosting */
+  background: #04060a !important;
+  background-image: 
+    radial-gradient(ellipse at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
+    radial-gradient(circle at center, transparent 50%, rgba(239, 68, 68, 0.04) 100%) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -5509,77 +5512,224 @@
 .dm-hud-transition-overlay--fullscreen.is-active {
   opacity: 1 !important;
   visibility: visible !important;
+  pointer-events: all !important;
+  cursor: wait !important;
   animation: dmHudTransitionFadeClean 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
-/* Animação limpa sem blur */
 @keyframes dmHudTransitionFadeClean {
-  0% {
-    opacity: 1;
-    visibility: visible;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
+  0% { opacity: 1; visibility: visible; }
+  75% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
-/* Cantoneiras HUD nos 4 Cantos */
+@keyframes dmHudTransitionFade {
+  0% { opacity: 1; visibility: visible; }
+  75% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+/* Cantoneiras Táticas de Enquadramento Militar (COMP/CON MIL-SPEC) */
 .dm-hud-bracket {
   position: absolute !important;
-  width: 24px !important;
-  height: 24px !important;
-  border: 2px solid #ef4444 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border: 2px solid rgba(0, 229, 255, 0.6) !important;
   pointer-events: none !important;
-  z-index: 10 !important;
+  z-index: 25 !important;
+  box-sizing: border-box !important;
+}
+
+.dm-hud-bracket::before {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
 }
 
 .dm-hud-bracket--tl {
-  top: 12px !important;
-  left: 12px !important;
+  top: 14px !important;
+  left: 14px !important;
   border-right: none !important;
   border-bottom: none !important;
 }
+.dm-hud-bracket--tl::before { top: -2px; left: -2px; }
 
 .dm-hud-bracket--tr {
-  top: 12px !important;
-  right: 12px !important;
+  top: 14px !important;
+  right: 14px !important;
   border-left: none !important;
   border-bottom: none !important;
 }
+.dm-hud-bracket--tr::before { top: -2px; right: -2px; }
 
 .dm-hud-bracket--bl {
-  bottom: 12px !important;
-  left: 12px !important;
+  bottom: 14px !important;
+  left: 14px !important;
   border-right: none !important;
   border-top: none !important;
 }
+.dm-hud-bracket--bl::before { bottom: -2px; left: -2px; }
 
 .dm-hud-bracket--br {
-  bottom: 12px !important;
-  right: 12px !important;
+  bottom: 14px !important;
+  right: 14px !important;
   border-left: none !important;
   border-top: none !important;
+}
+.dm-hud-bracket--br::before { bottom: -2px; right: -2px; }
+
+.dm-hud-bracket__tag {
+  position: absolute;
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #00e5ff;
+  white-space: nowrap;
+  opacity: 0.85;
+  text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+}
+.dm-hud-bracket--tl .dm-hud-bracket__tag { top: 0; left: 36px; }
+.dm-hud-bracket--tr .dm-hud-bracket__tag { top: 0; right: 36px; }
+.dm-hud-bracket--bl .dm-hud-bracket__tag { bottom: 0; left: 36px; }
+.dm-hud-bracket--br .dm-hud-bracket__tag { bottom: 0; right: 36px; }
+
+/* Grid Hexagonal Tático (GIF 3 & COMP/CON) */
+.dm-hud-transition__hex-grid {
+  position: absolute !important;
+  inset: -40px !important;
+  background-image: 
+    radial-gradient(circle at center, rgba(0, 229, 255, 0.07) 0%, transparent 70%),
+    repeating-linear-gradient(60deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 32px),
+    repeating-linear-gradient(120deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 32px),
+    repeating-linear-gradient(0deg, rgba(0, 229, 255, 0.02) 0, rgba(0, 229, 255, 0.02) 1px, transparent 0, transparent 56px);
+  background-size: auto, 64px 110px, 64px 110px, 64px 110px !important;
+  opacity: 0.85 !important;
+  pointer-events: none !important;
+}
+
+/* Scanlines de CRT com alta nitidez */
+.dm-hud-transition__scanlines {
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.38) 51%) !important;
+  background-size: 100% 4px !important;
+  pointer-events: none !important;
+  opacity: 0.65 !important;
+  z-index: 8 !important;
 }
 
 /* Grid de Pontos Tático (Dot-Matrix) */
 .dm-hud-transition__dot-grid {
   position: absolute !important;
   inset: 0 !important;
-  background-image: radial-gradient(rgba(239, 68, 68, 0.12) 1px, transparent 0) !important;
+  background-image: radial-gradient(rgba(0, 229, 255, 0.16) 1px, transparent 0) !important;
   background-size: 24px 24px !important;
   pointer-events: none !important;
+  z-index: 4 !important;
 }
 
-/* Barra Superior Tática */
+/* Glitch / Laser Beam Sweeper */
+.dm-hud-transition__glitch-beam {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.8) 50%, transparent 100%) !important;
+  box-shadow: 0 0 12px #00e5ff, 0 0 24px #00e5ff !important;
+  pointer-events: none !important;
+  animation: dmGlitchBeamSweep 2.2s linear infinite !important;
+  z-index: 9 !important;
+}
+
+@keyframes dmGlitchBeamSweep {
+  0% { top: -5%; opacity: 0; }
+  15% { opacity: 0.5; }
+  85% { opacity: 0.5; }
+  100% { top: 105%; opacity: 0; }
+}
+
+/* Pista em Perspectiva 3D e Horizonte (Compartilhado com Animação de Boot) */
+.dm-hud-transition__runway-perspective {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 3% !important;
+  right: 3% !important;
+  height: 260px !important;
+  perspective: 340px !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  opacity: 0.85 !important;
+  z-index: 5 !important;
+}
+
+.dm-hud-transition__runway-plane {
+  width: 100% !important;
+  height: 100% !important;
+  transform: rotateX(72deg) !important;
+  transform-origin: bottom center !important;
+  background-image: 
+    radial-gradient(circle, #00e5ff 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(0, 229, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(239, 68, 68, 0.08) 1px, transparent 1px) !important;
+  background-size: 32px 32px, 64px 64px, 64px 64px !important;
+  animation: dmRunwayScroll 1.2s linear infinite !important;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%) !important;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%) !important;
+}
+
+.dm-hud-transition__horizon {
+  position: absolute !important;
+  top: 48% !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.25) 15%, rgba(0, 229, 255, 0.7) 50%, rgba(0, 229, 255, 0.25) 85%, transparent 100%) !important;
+  pointer-events: none !important;
+  transform: translateY(-50%) !important;
+  z-index: 6 !important;
+}
+
+.dm-hud-transition__horizon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 12px;
+  background-image: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.85) 0, rgba(0, 229, 255, 0.85) 1px, transparent 0, transparent 16px);
+  opacity: 0.75;
+}
+
+.dm-hud-transition__laser-tracer {
+  position: absolute !important;
+  top: 48% !important;
+  height: 2px !important;
+  background: #00e5ff !important;
+  box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff !important;
+  z-index: 7 !important;
+}
+
+.dm-hud-transition__laser-tracer--left {
+  right: 50% !important;
+  animation: dmLaserSnapLeft 0.55s cubic-bezier(0.05, 0.9, 0.1, 1) forwards !important;
+}
+
+.dm-hud-transition__laser-tracer--right {
+  left: 50% !important;
+  animation: dmLaserSnapRight 0.55s cubic-bezier(0.05, 0.9, 0.1, 1) forwards !important;
+}
+
+/* Barra Superior Tática com Equalizador e Status COMP/CON */
 .dm-hud-transition__top-bar {
   display: flex !important;
   align-items: center !important;
   gap: 0.65rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2) !important;
   padding-bottom: 0.65rem !important;
   position: relative !important;
   z-index: 20 !important;
@@ -5588,91 +5738,245 @@
 .dm-hud-dot {
   width: 6px !important;
   height: 6px !important;
-  background: #10b981 !important;
+  background: #00e5ff !important;
   border-radius: 50% !important;
   display: inline-block !important;
   margin-right: 4px !important;
-  box-shadow: 0 0 6px #10b981 !important;
+  box-shadow: 0 0 8px #00e5ff !important;
+  animation: dmPulseDot 1s infinite alternate !important;
 }
 
 .dm-hud-transition__sys-pill {
   font-family: var(--dm-font-mono, monospace) !important;
-  font-size: 0.7rem !important;
+  font-size: 0.68rem !important;
   font-weight: 800 !important;
   letter-spacing: 0.08em !important;
   color: #71717a !important;
-  padding: 0.2rem 0.65rem !important;
+  padding: 0.25rem 0.75rem !important;
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 3px !important;
+  clip-path: polygon(6px 0%, 100% 0%, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0% 100%, 0% 6px) !important;
+  transition: all 0.2s ease !important;
 }
 
 .dm-hud-transition__sys-pill.is-active {
   color: #ffffff !important;
-  background: rgba(239, 68, 68, 0.15) !important;
+  background: rgba(239, 68, 68, 0.18) !important;
   border-color: #ef4444 !important;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.35) !important;
 }
+
+.dm-hud-transition__eq-mini {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 3px !important;
+  height: 14px !important;
+  padding: 0 4px !important;
+}
+
+.dm-hud-eq-bar {
+  width: 3px !important;
+  background: #00e5ff !important;
+  border-radius: 1px !important;
+  opacity: 0.75 !important;
+  animation: dmEqBounce 0.75s ease-in-out infinite alternate !important;
+}
+.dm-hud-eq-bar:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.dm-hud-eq-bar:nth-child(2) { height: 85%; animation-delay: 0.25s; }
+.dm-hud-eq-bar:nth-child(3) { height: 60%; animation-delay: 0.05s; }
+.dm-hud-eq-bar:nth-child(4) { height: 100%; animation-delay: 0.35s; }
+.dm-hud-eq-bar:nth-child(5) { height: 50%; animation-delay: 0.2s; }
 
 .dm-hud-transition__sys-meta {
   margin-left: auto !important;
   display: flex !important;
+  align-items: center !important;
   gap: 1.25rem !important;
   font-family: var(--dm-font-mono, monospace) !important;
   font-size: 0.65rem !important;
-  color: #71717a !important;
+  color: #8ec5fc !important;
   letter-spacing: 0.06em !important;
 }
+.dm-hud-transition__sys-meta i {
+  color: #00e5ff !important;
+  margin-right: 4px !important;
+}
 
-/* Banner Central Tático */
-.dm-hud-transition__sector-banner {
+/* Radar Tático Central com Mira e Retículo COMP/CON */
+.dm-hud-transition__radar-wrap {
   position: absolute !important;
-  top: 42% !important;
+  top: 44% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
-  background: #0e0e14 !important;
-  border: 2px solid #ef4444 !important;
+  width: 380px !important;
+  height: 380px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+.dm-hud-transition__radar-crosshair {
+  position: absolute !important;
+  background: rgba(0, 229, 255, 0.4) !important;
+}
+.dm-hud-transition__radar-crosshair--h {
+  width: 100% !important;
+  height: 1px !important;
+}
+.dm-hud-transition__radar-crosshair--v {
+  height: 100% !important;
+  width: 1px !important;
+}
+
+.dm-hud-transition__radar-circle {
+  position: absolute !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+}
+.dm-hud-transition__radar-circle:not(.dm-hud-transition__radar-circle--lg):not(.dm-hud-transition__radar-circle--xl):not(.dm-hud-transition__radar-circle--ticks) {
+  width: 200px !important;
+  height: 200px !important;
+  border: 1px dashed rgba(0, 229, 255, 0.4) !important;
+  animation: dmRotateClockwise 16s linear infinite !important;
+}
+.dm-hud-transition__radar-circle--ticks {
+  width: 260px !important;
+  height: 260px !important;
+  border: 2px solid transparent !important;
+  border-top: 2px solid #00e5ff !important;
+  border-bottom: 2px solid #00e5ff !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.25) !important;
+  animation: dmRotateCounter 8s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
+.dm-hud-transition__radar-circle--lg {
+  width: 320px !important;
+  height: 320px !important;
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+}
+.dm-hud-transition__radar-circle--xl {
+  width: 370px !important;
+  height: 370px !important;
+  border: 1px dotted rgba(239, 68, 68, 0.3) !important;
+}
+
+.dm-hud-transition__radar-sweep {
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  background: conic-gradient(from 0deg at 50% 50%, rgba(0, 229, 255, 0.22) 0deg, rgba(239, 68, 68, 0.12) 30deg, transparent 65deg) !important;
+  animation: dmRotateClockwise 1.5s linear infinite !important;
+}
+
+.dm-hud-transition__radar-coords {
+  position: absolute !important;
+  bottom: -45px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  color: #22d3ee !important;
+  white-space: nowrap !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important;
+}
+
+/* Banner Central Tático com Chanfro Militar e Acento Carmesim */
+.dm-hud-transition__sector-banner {
+  position: absolute !important;
+  top: 44% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: rgba(6, 12, 20, 0.96) !important;
+  border: 1px solid rgba(0, 229, 255, 0.7) !important;
+  clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px) !important;
   display: flex !important;
   align-items: stretch !important;
   padding: 0 !important;
-  border-radius: 4px !important;
-  box-shadow: 0 0 35px rgba(239, 68, 68, 0.4), inset 0 0 20px rgba(239, 68, 68, 0.1) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.3), 0 0 60px rgba(239, 68, 68, 0.25), inset 0 0 20px rgba(0, 229, 255, 0.1) !important;
   z-index: 30 !important;
   overflow: hidden !important;
+  animation: dmSectorBannerPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes dmSectorBannerPop {
+  0% { transform: translate(-50%, -50%) scale(0.88); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.03); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 .dm-hud-transition__sector-accent {
   width: 14px !important;
-  background: #ef4444 !important;
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important;
   flex-shrink: 0 !important;
+  box-shadow: 0 0 12px #ef4444 !important;
 }
 
 .dm-hud-transition__sector-text {
-  padding: 0.75rem 1.75rem !important;
+  padding: 0.85rem 1.85rem !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 3px !important;
 }
 
+.dm-hud-transition__sector-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.6rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+  color: #00e5ff !important;
+  margin-bottom: 2px !important;
+}
+
+.dm-hud-transition__badge-dot {
+  width: 6px !important;
+  height: 6px !important;
+  background: #ef4444 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 6px #ef4444 !important;
+  animation: dmPulseDot 0.9s infinite alternate !important;
+}
+
 .dm-hud-transition__sector-title {
   font-family: var(--dm-font-mono, monospace) !important;
-  font-size: 1.35rem !important;
+  font-size: 1.4rem !important;
   font-weight: 900 !important;
-  letter-spacing: 0.12em !important;
+  letter-spacing: 0.14em !important;
   text-transform: uppercase !important;
   color: #ffffff !important;
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.7), 0 0 28px rgba(0, 229, 255, 0.3) !important;
 }
 
 .dm-hud-transition__sector-sub {
   font-family: var(--dm-font-mono, monospace) !important;
   font-size: 0.65rem !important;
   font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
-  color: #a1a1aa !important;
+  letter-spacing: 0.1em !important;
+  color: #94a3b8 !important;
 }
 
-/* Painéis Inferiores: Sem estouro de texto e sem blur */
+.dm-hud-transition__sector-corner-notch {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 14px !important;
+  height: 14px !important;
+  border-bottom: 2px solid #00e5ff !important;
+  border-right: 2px solid #00e5ff !important;
+}
+
+/* Painéis Inferiores Dinâmicos com Estilo COMP/CON (Sem estouro e sem blur) */
 .dm-hud-transition__bottom-panels {
   margin-top: auto !important;
   display: grid !important;
@@ -5684,17 +5988,60 @@
 
 .dm-hud-transition__code-panel,
 .dm-hud-transition__binary-panel {
-  background: rgba(10, 10, 14, 0.9) !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  background: rgba(6, 10, 16, 0.94) !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)) !important;
   padding: 0.65rem 0.85rem !important;
-  border-radius: 4px !important;
   position: relative !important;
   overflow: hidden !important;
   height: 135px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8) !important;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.85), 0 0 15px rgba(0, 229, 255, 0.1) !important;
+}
+
+.dm-hud-transition__code-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  color: #8ec5fc !important;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.18) !important;
+  padding-bottom: 0.3rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.dm-hud-panel-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.dm-hud-panel-title i {
+  color: #00e5ff !important;
+}
+
+.dm-hud-badge {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.62rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  padding: 0.1rem 0.4rem !important;
+  border-radius: 2px !important;
+}
+.dm-hud-badge--crimson {
+  color: #ffffff !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+  border: 1px solid #ef4444 !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.35) !important;
+}
+.dm-hud-badge--amber {
+  color: #ffffff !important;
+  background: rgba(245, 158, 11, 0.25) !important;
+  border: 1px solid #f59e0b !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.35) !important;
 }
 
 .dm-hud-transition__code-wrapper {
@@ -5708,14 +6055,65 @@
   font-family: var(--dm-font-mono, monospace) !important;
   font-size: 0.68rem !important;
   line-height: 1.35 !important;
-  color: #a1a1aa !important;
+  color: #cbd5e1 !important;
   filter: none !important; /* ZERO BLUR */
   animation: dmCodeStreamUpClean 1.25s linear forwards !important;
 }
 
 @keyframes dmCodeStreamUpClean {
-  0% { transform: translateY(15px); }
-  100% { transform: translateY(-20px); }
+  0% { transform: translateY(12px); opacity: 0.8; }
+  100% { transform: translateY(-16px); opacity: 1; }
+}
+
+@keyframes dmCodeStreamUp {
+  0% { transform: translateY(12px); opacity: 0.8; }
+  100% { transform: translateY(-16px); opacity: 1; }
+}
+
+.dm-code-line {
+  white-space: nowrap !important;
+}
+
+.dm-line-no {
+  color: #00e5ff !important;
+  font-weight: 800 !important;
+  margin-right: 6px !important;
+}
+
+.dm-bin-line {
+  color: #fbbf24 !important;
+  white-space: nowrap !important;
+}
+
+.dm-hud-transition__tag {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.62rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  color: #94a3b8 !important;
+  margin-top: 0.3rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding-top: 0.25rem !important;
+}
+
+.dm-hud-transition__tag-accent {
+  width: 6px !important;
+  height: 6px !important;
+  background: #00e5ff !important;
+  box-shadow: 0 0 6px #00e5ff !important;
+}
+
+.dm-hud-cursor-blink {
+  color: #00e5ff !important;
+  animation: dmCursorBlink 0.8s steps(1) infinite !important;
+}
+
+@keyframes dmCursorBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
 }
 
 /* ==========================================================================
@@ -5830,292 +6228,349 @@
 
 
 /* ==========================================================================
-   BOOT WELCOME OVERLAY (ANIMACAO DE ABERTURA INSPIRADA NOS 3 GIFS)
+   BOOT WELCOME OVERLAY: PADRÃO LANCER / COMP/CON (UNIFICADO & DIEGÉTICO)
    ========================================================================== */
 .dm-boot-welcome-overlay {
-  position: absolute;
-  inset: 0;
-  background: #05070c;
-  z-index: 999999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  position: absolute !important;
+  inset: 0 !important;
+  background: #04060a !important;
+  background-image: 
+    radial-gradient(ellipse at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
+    radial-gradient(circle at center, transparent 50%, rgba(239, 68, 68, 0.04) 100%) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
   opacity: 0;
   visibility: hidden;
-  overflow: hidden;
+  overflow: hidden !important;
   transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
 }
 
 .dm-boot-welcome-overlay.is-active {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
   pointer-events: all !important;
   cursor: wait !important;
 }
 
 .dm-boot-welcome-overlay.is-finished {
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden !important;
   pointer-events: none !important;
-  z-index: -1;
+  z-index: -1 !important;
 }
 
-/* 1. Fundo Hexagonal e Scanline (GIF 3 & 1) */
+/* 1. Fundo Hexagonal e Scanlines com Padrão Lancer (GIF 3 & 1) */
 .dm-boot-hex-grid {
-  position: absolute;
-  inset: -50px;
+  position: absolute !important;
+  inset: -40px !important;
   background-image: 
-    radial-gradient(circle at center, rgba(0, 229, 255, 0.08) 0%, transparent 70%),
-    repeating-linear-gradient(60deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 30px),
-    repeating-linear-gradient(120deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 30px),
-    repeating-linear-gradient(0deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 52px);
-  background-size: auto, 60px 104px, 60px 104px, 60px 104px;
-  opacity: 0.85;
-  pointer-events: none;
+    radial-gradient(circle at center, rgba(0, 229, 255, 0.07) 0%, transparent 70%),
+    repeating-linear-gradient(60deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 32px),
+    repeating-linear-gradient(120deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 32px),
+    repeating-linear-gradient(0deg, rgba(0, 229, 255, 0.02) 0, rgba(0, 229, 255, 0.02) 1px, transparent 0, transparent 56px) !important;
+  background-size: auto, 64px 110px, 64px 110px, 64px 110px !important;
+  opacity: 0.85 !important;
+  pointer-events: none !important;
 }
 
 .dm-boot-scanline {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.35) 51%);
-  background-size: 100% 4px;
-  pointer-events: none;
-  opacity: 0.6;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.38) 51%) !important;
+  background-size: 100% 4px !important;
+  pointer-events: none !important;
+  opacity: 0.65 !important;
 }
 
-/* 2. Pista em Perspectiva e Horizonte (GIF 2) */
+/* 2. Pista em Perspectiva e Horizonte Tático (GIF 2) */
 .dm-boot-runway-perspective {
-  position: absolute;
-  bottom: 0;
-  left: 5%;
-  right: 5%;
-  height: 240px;
-  perspective: 350px;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0.85;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 3% !important;
+  right: 3% !important;
+  height: 260px !important;
+  perspective: 340px !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  opacity: 0.85 !important;
+  z-index: 5 !important;
 }
+
 .dm-boot-runway-plane {
-  width: 100%;
-  height: 100%;
-  transform: rotateX(72deg);
-  transform-origin: bottom center;
+  width: 100% !important;
+  height: 100% !important;
+  transform: rotateX(72deg) !important;
+  transform-origin: bottom center !important;
   background-image: 
     radial-gradient(circle, #00e5ff 1.5px, transparent 1.5px),
-    linear-gradient(to right, rgba(0, 229, 255, 0.15) 1px, transparent 1px);
-  background-size: 32px 32px, 64px 64px;
-  animation: dmRunwayScroll 1.2s linear infinite;
-  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%);
-  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%);
-}
-@keyframes dmRunwayScroll {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 64px; }
+    linear-gradient(to right, rgba(0, 229, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(239, 68, 68, 0.08) 1px, transparent 1px) !important;
+  background-size: 32px 32px, 64px 64px, 64px 64px !important;
+  animation: dmRunwayScroll 1.2s linear infinite !important;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%) !important;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%) !important;
 }
 
 .dm-boot-horizon {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.2) 15%, rgba(0, 229, 255, 0.6) 50%, rgba(0, 229, 255, 0.2) 85%, transparent 100%);
-  pointer-events: none;
-  transform: translateY(-50%);
+  position: absolute !important;
+  top: 48% !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.25) 15%, rgba(0, 229, 255, 0.7) 50%, rgba(0, 229, 255, 0.25) 85%, transparent 100%) !important;
+  pointer-events: none !important;
+  transform: translateY(-50%) !important;
+  z-index: 6 !important;
 }
+
 .dm-boot-horizon::after {
   content: '';
   position: absolute;
   left: 50%;
   top: -6px;
   transform: translateX(-50%);
-  width: 320px;
+  width: 360px;
   height: 12px;
-  background-image: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.8) 0, rgba(0, 229, 255, 0.8) 1px, transparent 0, transparent 16px);
-  opacity: 0.7;
+  background-image: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.85) 0, rgba(0, 229, 255, 0.85) 1px, transparent 0, transparent 16px);
+  opacity: 0.75;
 }
 
 .dm-boot-laser-tracer {
-  position: absolute;
-  top: 50%;
-  height: 2px;
-  background: #00e5ff;
-  box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff;
-  animation: dmLaserSnap 0.6s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
+  position: absolute !important;
+  top: 48% !important;
+  height: 2px !important;
+  background: #00e5ff !important;
+  box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff !important;
+  z-index: 7 !important;
 }
+
 .dm-boot-laser-tracer--left {
-  right: 50%;
-  animation-name: dmLaserSnapLeft;
+  right: 50% !important;
+  animation: dmLaserSnapLeft 0.55s cubic-bezier(0.05, 0.9, 0.1, 1) forwards !important;
 }
+
 .dm-boot-laser-tracer--right {
-  left: 50%;
-  animation-name: dmLaserSnapRight;
-}
-@keyframes dmLaserSnapLeft {
-  0% { width: 0; opacity: 0; }
-  40% { width: 45%; opacity: 1; }
-  100% { width: 38%; opacity: 0.4; }
-}
-@keyframes dmLaserSnapRight {
-  0% { width: 0; opacity: 0; }
-  40% { width: 45%; opacity: 1; }
-  100% { width: 38%; opacity: 0.4; }
+  left: 50% !important;
+  animation: dmLaserSnapRight 0.55s cubic-bezier(0.05, 0.9, 0.1, 1) forwards !important;
 }
 
-/* 3. Cockpit e Brackets do Visor (GIF 1 & 2) */
+/* 3. Cockpit e Cantoneiras de Visor Militar (GIF 1 & 2 com Tags COMP/CON) */
 .dm-boot-cockpit-bracket {
-  position: absolute;
-  top: 15%;
-  bottom: 15%;
-  width: 24px;
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  pointer-events: none;
-}
-.dm-boot-cockpit-bracket--left {
-  left: 20px;
-  border-right: none;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-  box-shadow: inset 3px 0 10px rgba(0, 229, 255, 0.15);
-}
-.dm-boot-cockpit-bracket--right {
-  right: 20px;
-  border-left: none;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-  box-shadow: inset -3px 0 10px rgba(0, 229, 255, 0.15);
+  position: absolute !important;
+  top: 14% !important;
+  bottom: 14% !important;
+  width: 26px !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* 4. Núcleo Holográfico com Globo e Anéis (GIF 3) */
+.dm-boot-cockpit-bracket--left {
+  left: 20px !important;
+  border-right: none !important;
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+  border-left: 2px solid #00e5ff !important;
+  box-shadow: inset 4px 0 12px rgba(0, 229, 255, 0.2) !important;
+}
+
+.dm-boot-cockpit-bracket--right {
+  right: 20px !important;
+  border-left: none !important;
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+  border-right: 2px solid #00e5ff !important;
+  box-shadow: inset -4px 0 12px rgba(0, 229, 255, 0.2) !important;
+}
+
+.dm-boot-bracket-tag {
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.58rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.18em !important;
+  color: #ef4444 !important;
+  text-shadow: 0 0 6px rgba(239, 68, 68, 0.6) !important;
+  opacity: 0.9 !important;
+}
+
+/* 4. Núcleo Holográfico com Globo, Anéis e Retículo Tático (GIF 3) */
 .dm-boot-core-system {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px;
-  height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  position: absolute !important;
+  top: 44% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 320px !important;
+  height: 320px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
 }
+
+.dm-boot-crosshair {
+  position: absolute !important;
+  background: rgba(0, 229, 255, 0.35) !important;
+}
+.dm-boot-crosshair--h {
+  width: 100% !important;
+  height: 1px !important;
+}
+.dm-boot-crosshair--v {
+  height: 100% !important;
+  width: 1px !important;
+}
+
 .dm-boot-ring {
-  position: absolute;
-  border-radius: 50%;
-  box-sizing: border-box;
+  position: absolute !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
 }
+
 .dm-boot-ring-outer {
-  width: 260px;
-  height: 260px;
-  border: 1px dashed rgba(0, 229, 255, 0.35);
-  animation: dmRotateClockwise 18s linear infinite;
+  width: 280px !important;
+  height: 280px !important;
+  border: 1px dashed rgba(0, 229, 255, 0.4) !important;
+  animation: dmRotateClockwise 18s linear infinite !important;
 }
+
 .dm-boot-ring-ticks {
-  width: 220px;
-  height: 220px;
-  border: 2px solid transparent;
-  border-top: 2px solid #00e5ff;
-  border-bottom: 2px solid #00e5ff;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
-  animation: dmRotateCounter 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  width: 230px !important;
+  height: 230px !important;
+  border: 2px solid transparent !important;
+  border-top: 2px solid #00e5ff !important;
+  border-bottom: 2px solid #00e5ff !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.25) !important;
+  animation: dmRotateCounter 8s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
+
 .dm-boot-ring-inner {
-  width: 170px;
-  height: 170px;
-  border: 1px dotted rgba(0, 229, 255, 0.5);
-  animation: dmRotateClockwise 10s linear infinite;
+  width: 180px !important;
+  height: 180px !important;
+  border: 1px dotted rgba(0, 229, 255, 0.55) !important;
+  animation: dmRotateClockwise 10s linear infinite !important;
 }
-@keyframes dmRotateClockwise {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes dmRotateCounter {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
+
+.dm-boot-sweep {
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  background: conic-gradient(from 0deg at 50% 50%, rgba(0, 229, 255, 0.22) 0deg, rgba(239, 68, 68, 0.12) 30deg, transparent 65deg) !important;
+  animation: dmRotateClockwise 1.5s linear infinite !important;
 }
 
 .dm-boot-sphere {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 229, 255, 0.4);
-  position: relative;
-  background: radial-gradient(circle at 30% 30%, rgba(0, 229, 255, 0.25), transparent 70%);
-  box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.3), 0 0 20px rgba(0, 229, 255, 0.15);
-  overflow: hidden;
+  width: 104px !important;
+  height: 104px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(0, 229, 255, 0.5) !important;
+  position: relative !important;
+  background: radial-gradient(circle at 30% 30%, rgba(0, 229, 255, 0.25), transparent 70%) !important;
+  box-shadow: inset 0 0 18px rgba(0, 229, 255, 0.35), 0 0 24px rgba(0, 229, 255, 0.2) !important;
+  overflow: hidden !important;
 }
+
 .dm-boot-sphere::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(0, 229, 255, 0.6);
+  border: 1px solid rgba(0, 229, 255, 0.65);
   transform: scaleX(0.4);
   animation: dmSphereLongitude 4s linear infinite;
 }
+
 .dm-boot-sphere::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(0, 229, 255, 0.6);
+  border: 1px solid rgba(0, 229, 255, 0.65);
   transform: scaleY(0.4);
 }
-@keyframes dmSphereLongitude {
-  0% { transform: scaleX(0.1); opacity: 0.4; }
-  50% { transform: scaleX(0.85); opacity: 0.8; }
-  100% { transform: scaleX(0.1); opacity: 0.4; }
+
+.dm-boot-core-coords {
+  position: absolute !important;
+  bottom: -36px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.6rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  color: #22d3ee !important;
+  white-space: nowrap !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important;
 }
 
-/* 5. Holo-Projetor Superior Direito (GIF 3) */
+/* 5. Holo-Projetor Superior Direito (GIF 3 com Moldura Chanfrada COMP/CON) */
 .dm-boot-holo-projector {
-  position: absolute;
-  top: 30px;
-  right: 40px;
-  width: 190px;
-  padding: 10px;
-  background: rgba(4, 15, 26, 0.9);
-  border: 1px solid rgba(0, 229, 255, 0.4);
-  clip-path: polygon(15px 0%, 100% 0%, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0% 100%, 0% 15px);
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
-  pointer-events: none;
+  position: absolute !important;
+  top: 25px !important;
+  right: 35px !important;
+  width: 200px !important;
+  padding: 10px !important;
+  background: rgba(6, 12, 20, 0.95) !important;
+  border: 1px solid rgba(0, 229, 255, 0.45) !important;
+  clip-path: polygon(15px 0%, 100% 0%, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0% 100%, 0% 15px) !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.2), inset 0 0 15px rgba(0, 229, 255, 0.08) !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
 }
+
 .dm-boot-holo-projector__header {
-  font-size: 9px;
-  font-family: monospace;
-  color: #00e5ff;
-  letter-spacing: 1.5px;
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
-  padding-bottom: 4px;
-  margin-bottom: 8px;
+  font-size: 9px !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  color: #00e5ff !important;
+  letter-spacing: 1.5px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.22) !important;
+  padding-bottom: 4px !important;
+  margin-bottom: 8px !important;
 }
+
+.dm-boot-tag--active {
+  color: #10b981 !important;
+  font-weight: 800 !important;
+}
+
 .dm-boot-holo-mesh {
-  height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  height: 65px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
 }
+
 .dm-boot-holo-rig {
-  width: 50px;
-  height: 50px;
-  border: 1px solid #00e5ff;
-  transform: rotate(45deg);
-  position: relative;
-  animation: dmRigRotate 6s linear infinite;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+  width: 48px !important;
+  height: 48px !important;
+  border: 1px solid #00e5ff !important;
+  transform: rotate(45deg) !important;
+  position: relative !important;
+  animation: dmRigRotate 6s linear infinite !important;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35) !important;
 }
+
 .dm-boot-holo-rig::before {
   content: '';
   position: absolute;
-  inset: 8px;
-  border: 1px dashed rgba(0, 229, 255, 0.7);
+  inset: 7px;
+  border: 1px dashed rgba(239, 68, 68, 0.7);
   animation: dmRotateCounter 4s linear infinite;
 }
+
 .dm-boot-holo-rig::after {
   content: '▲';
   position: absolute;
@@ -6123,54 +6578,74 @@
   left: 50%;
   transform: translate(-50%, -50%);
   color: #00e5ff;
-  font-size: 14px;
+  font-size: 13px;
   text-shadow: 0 0 8px #00e5ff;
 }
-@keyframes dmRigRotate {
-  0% { transform: rotate(0deg) scale(0.95); }
-  50% { transform: rotate(180deg) scale(1.05); }
-  100% { transform: rotate(360deg) scale(0.95); }
+
+.dm-boot-holo-footer {
+  margin-top: 6px !important;
+  padding-top: 4px !important;
+  border-top: 1px solid rgba(0, 229, 255, 0.15) !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 8px !important;
+  color: #94a3b8 !important;
+  letter-spacing: 1px !important;
 }
 
 /* 6. Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) */
 .dm-boot-telemetry-panel {
-  position: absolute;
-  top: 30px;
-  left: 40px;
-  width: 220px;
-  padding: 10px;
-  background: rgba(4, 15, 26, 0.9);
-  border: 1px solid rgba(0, 229, 255, 0.4);
-  clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 15px, 100% 100%, 15px 100%, 0% calc(100% - 15px));
-  font-family: monospace;
-  font-size: 10px;
-  color: #8ec5fc;
-  pointer-events: none;
+  position: absolute !important;
+  top: 25px !important;
+  left: 35px !important;
+  width: 230px !important;
+  padding: 10px !important;
+  background: rgba(6, 12, 20, 0.95) !important;
+  border: 1px solid rgba(0, 229, 255, 0.45) !important;
+  clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 15px, 100% 100%, 15px 100%, 0% calc(100% - 15px)) !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 10px !important;
+  color: #8ec5fc !important;
+  pointer-events: none !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.2), inset 0 0 15px rgba(0, 229, 255, 0.08) !important;
+  z-index: 20 !important;
 }
+
 .dm-boot-telemetry-header {
-  color: #00e5ff;
-  font-weight: bold;
-  letter-spacing: 1px;
-  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
-  padding-bottom: 4px;
-  margin-bottom: 6px;
-  display: flex;
-  justify-content: space-between;
+  color: #00e5ff !important;
+  font-weight: bold !important;
+  letter-spacing: 1px !important;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.22) !important;
+  padding-bottom: 4px !important;
+  margin-bottom: 6px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
 }
+
+.dm-boot-badge--emerald {
+  font-size: 9px !important;
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  padding: 1px 5px !important;
+  border-radius: 2px !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
 .dm-boot-equalizer {
-  display: flex;
-  gap: 3px;
-  height: 18px;
-  align-items: flex-end;
-  margin-top: 6px;
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  display: flex !important;
+  gap: 3px !important;
+  height: 18px !important;
+  align-items: flex-end !important;
+  margin-top: 6px !important;
+  padding: 2px 0 !important;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15) !important;
 }
+
 .dm-boot-eq-bar {
-  flex: 1;
-  background: #00e5ff;
-  opacity: 0.7;
-  animation: dmEqBounce 0.8s ease-in-out infinite alternate;
+  flex: 1 !important;
+  background: #00e5ff !important;
+  opacity: 0.75 !important;
+  animation: dmEqBounce 0.8s ease-in-out infinite alternate !important;
 }
 .dm-boot-eq-bar:nth-child(1) { animation-delay: 0.1s; height: 40%; }
 .dm-boot-eq-bar:nth-child(2) { animation-delay: 0.3s; height: 80%; }
@@ -6180,101 +6655,139 @@
 .dm-boot-eq-bar:nth-child(6) { animation-delay: 0.15s; height: 90%; }
 .dm-boot-eq-bar:nth-child(7) { animation-delay: 0.35s; height: 70%; }
 .dm-boot-eq-bar:nth-child(8) { animation-delay: 0.2s; height: 30%; }
-@keyframes dmEqBounce {
-  0% { transform: scaleY(0.3); }
-  100% { transform: scaleY(1); }
-}
+
 .dm-boot-port-check {
-  margin-top: 6px;
-  font-size: 9px;
-  color: rgba(0, 229, 255, 0.75);
-  line-height: 1.4;
+  margin-top: 6px !important;
+  font-size: 9px !important;
+  color: rgba(0, 229, 255, 0.85) !important;
+  line-height: 1.4 !important;
 }
 
-/* 7. Card Central de Boas-Vindas ao Usuário */
-.dm-boot-welcome-card {
-  position: absolute;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 600px;
-  background: rgba(6, 12, 20, 0.95);
-  border: 1px solid #00e5ff;
-  border-radius: 4px;
-  padding: 16px 24px;
-  text-align: center;
-  box-shadow: 0 0 35px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.1);
-  z-index: 10;
-  animation: dmWelcomeCardSnap 0.5s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
+.dm-boot-stream-mini {
+  margin-top: 6px !important;
+  padding-top: 4px !important;
+  border-top: 1px solid rgba(0, 229, 255, 0.12) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  font-size: 9px !important;
 }
+
+.dm-boot-mini-line {
+  color: #cbd5e1 !important;
+}
+
+/* 7. Card Central de Boas-Vindas ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) */
+.dm-boot-welcome-card {
+  position: absolute !important;
+  bottom: 45px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 620px !important;
+  background: rgba(6, 12, 20, 0.96) !important;
+  border: 1px solid rgba(0, 229, 255, 0.7) !important;
+  clip-path: polygon(16px 0%, 100% 0%, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0% 100%, 0% 16px) !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.3), 0 0 60px rgba(239, 68, 68, 0.25), inset 0 0 20px rgba(0, 229, 255, 0.1) !important;
+  z-index: 25 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  animation: dmWelcomeCardSnap 0.5s cubic-bezier(0.05, 0.9, 0.1, 1) forwards !important;
+}
+
 @keyframes dmWelcomeCardSnap {
   0% { opacity: 0; transform: translate(-50%, 20px) scale(0.95); }
   100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
+
+.dm-boot-card-accent {
+  width: 14px !important;
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 0 12px #ef4444 !important;
+}
+
+.dm-boot-card-content {
+  flex: 1 !important;
+  padding: 16px 24px !important;
+  text-align: center !important;
+}
+
 .dm-boot-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: monospace;
-  font-size: 10px;
-  font-weight: bold;
-  color: #00e5ff;
-  letter-spacing: 2px;
-  background: rgba(0, 229, 255, 0.12);
-  padding: 3px 10px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  margin-bottom: 8px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  color: #00e5ff !important;
+  letter-spacing: 2px !important;
+  background: rgba(0, 229, 255, 0.12) !important;
+  padding: 3px 12px !important;
+  border-radius: 2px !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  margin-bottom: 8px !important;
 }
+
 .dm-boot-status-dot {
-  width: 6px;
-  height: 6px;
-  background: #00e5ff;
-  border-radius: 50%;
-  box-shadow: 0 0 6px #00e5ff;
-  animation: dmPulseDot 1s infinite alternate;
+  width: 6px !important;
+  height: 6px !important;
+  background: #00e5ff !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 8px #00e5ff !important;
+  animation: dmPulseDot 1s infinite alternate !important;
 }
-@keyframes dmPulseDot {
-  from { opacity: 0.3; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1.3); }
-}
+
 .dm-boot-welcome-title {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 2.5px;
-  color: #ffffff;
-  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
-  margin-bottom: 4px;
-  text-transform: uppercase;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  letter-spacing: 2.5px !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.7), 0 0 28px rgba(0, 229, 255, 0.3) !important;
+  margin-bottom: 4px !important;
+  text-transform: uppercase !important;
 }
+
 .dm-boot-welcome-title span {
-  color: #00e5ff;
+  color: #00e5ff !important;
 }
+
 .dm-boot-welcome-subtitle {
-  font-family: monospace;
-  font-size: 11px;
-  color: #94a3b8;
-  letter-spacing: 1.5px;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  letter-spacing: 1.5px !important;
 }
+
 .dm-boot-progress-bar {
-  margin-top: 12px;
-  width: 100%;
-  height: 4px;
-  background: rgba(0, 229, 255, 0.15);
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
+  margin-top: 12px !important;
+  width: 100% !important;
+  height: 4px !important;
+  background: rgba(0, 229, 255, 0.15) !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+  position: relative !important;
 }
+
 .dm-boot-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #00e5ff, #ffffff);
-  box-shadow: 0 0 8px #00e5ff;
-  width: 0%;
-  animation: dmBootLoadProgress 2.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  height: 100% !important;
+  background: linear-gradient(90deg, #00e5ff, #ffffff) !important;
+  box-shadow: 0 0 10px #00e5ff !important;
+  width: 0% !important;
+  animation: dmBootLoadProgress 2.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
 }
-@keyframes dmBootLoadProgress {
-  0% { width: 0%; }
-  30% { width: 45%; }
-  70% { width: 85%; }
-  100% { width: 100%; }
+
+.dm-boot-card-meta {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-top: 8px !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 9px !important;
+  color: #71717a !important;
+  letter-spacing: 1px !important;
+}
+.dm-boot-card-meta i {
+  color: #00e5ff !important;
 }

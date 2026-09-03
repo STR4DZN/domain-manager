@@ -1,93 +1,122 @@
 <div class="dm-shell" data-domain-manager-shell data-section="{{activeSection}}">
+  <!-- OVERLAY DE TRANSIÇÃO DE SETOR TÁTICA (COMP/CON MILITARY HUD) -->
   <div class="dm-hud-transition-overlay dm-hud-transition-overlay--fullscreen" aria-hidden="true">
-  <!-- Cantoneiras Táticas de Enquadramento -->
-  <div class="dm-hud-bracket dm-hud-bracket--tl"></div>
-  <div class="dm-hud-bracket dm-hud-bracket--tr"></div>
-  <div class="dm-hud-bracket dm-hud-bracket--bl"></div>
-  <div class="dm-hud-bracket dm-hud-bracket--br"></div>
+    <!-- Cantoneiras Táticas de Enquadramento Militar (COMP/CON MIL-SPEC) -->
+    <div class="dm-hud-bracket dm-hud-bracket--tl"><span class="dm-hud-bracket__tag">SYS.01 // COR</span></div>
+    <div class="dm-hud-bracket dm-hud-bracket--tr"><span class="dm-hud-bracket__tag">OMNI-LINK</span></div>
+    <div class="dm-hud-bracket dm-hud-bracket--bl"><span class="dm-hud-bracket__tag">LAT.44°S</span></div>
+    <div class="dm-hud-bracket dm-hud-bracket--br"><span class="dm-hud-bracket__tag">SEC.TRANS</span></div>
 
-  <!-- Barra Superior de Telemetria (100% em Português) -->
-  <div class="dm-hud-transition__top-bar">
-    <div class="dm-hud-transition__sys-pill is-active">
-      <span class="dm-hud-dot"></span> SISTEMAS
-    </div>
-    <div class="dm-hud-transition__sys-pill">LOGÍSTICA</div>
-    <div class="dm-hud-transition__sys-pill">BANCO DE DADOS</div>
-    <div class="dm-hud-transition__sys-meta">
-      <span>CANAL SEGURO: CRIPTO-SHA256</span>
-      <span>NÚCLEO TÁTICO v2.4 // REGISTRO: {{selectedDomain.name}}</span>
-    </div>
-  </div>
-
-  <!-- Texturas Táticas de Fundo (Dot Matrix & Scanlines) -->
-  <div class="dm-hud-transition__scanlines"></div>
-  <div class="dm-hud-transition__dot-grid"></div>
-  <div class="dm-hud-transition__glitch-beam"></div>
-
-  <!-- Radar Tático Central com Mira e Coordenadas -->
-  <div class="dm-hud-transition__radar-wrap">
-    <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--h"></div>
-    <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--v"></div>
-    <div class="dm-hud-transition__radar-circle"></div>
-    <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--lg"></div>
-    <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--xl"></div>
-    <div class="dm-hud-transition__radar-sweep"></div>
-    <div class="dm-hud-transition__radar-coords">
-      <span>AZIMUTE: 042° // ELEVAÇÃO: 850M</span>
-      <span>LAT: 44° 12' S // LONG: 53° 08' O // ALCANCE: 100 KM</span>
-    </div>
-  </div>
-
-  <!-- Banner Central Tático (Placa Escura com Borda Iluminada e Chanfro) -->
-  <div class="dm-hud-transition__sector-banner">
-    <div class="dm-hud-transition__sector-accent"></div>
-    <div class="dm-hud-transition__sector-text">
-      <div class="dm-hud-transition__sector-title">{{sectorCallout}}</div>
-      <div class="dm-hud-transition__sector-sub">ACESSO AUTORIZADO · PROTOCOLO SINCRONIZADO</div>
-    </div>
-  </div>
-
-  <!-- Painéis Inferiores Dinâmicos e Únicos por Página (Sem Vazamento) -->
-  <div class="dm-hud-transition__bottom-panels">
-    <!-- Bloco 1: Rotina Dinâmica em Português -->
-    <div class="dm-hud-transition__code-panel">
-      <div class="dm-hud-transition__code-header">
-        <span>{{hudTelemetry.routineHeader}}</span>
-        <span class="text-crimson">AUTORIZADO</span>
+    <!-- Barra Superior de Telemetria (100% em Português com Estilo COMP/CON) -->
+    <div class="dm-hud-transition__top-bar">
+      <div class="dm-hud-transition__sys-pill is-active">
+        <span class="dm-hud-dot"></span> SISTEMAS // NAVEGAÇÃO
       </div>
-      <div class="dm-hud-transition__code-wrapper">
-        <div class="dm-hud-transition__code-stream">
-          {{#each hudTelemetry.routineLines}}
-            <div class="dm-code-line"><span class="dm-line-no">{{this.no}}</span> {{this.code}}</div>
-          {{/each}}
+      <div class="dm-hud-transition__sys-pill">LOGÍSTICA</div>
+      <div class="dm-hud-transition__sys-pill">BANCO DE DADOS</div>
+      <div class="dm-hud-transition__eq-mini">
+        <span class="dm-hud-eq-bar"></span>
+        <span class="dm-hud-eq-bar"></span>
+        <span class="dm-hud-eq-bar"></span>
+        <span class="dm-hud-eq-bar"></span>
+        <span class="dm-hud-eq-bar"></span>
+      </div>
+      <div class="dm-hud-transition__sys-meta">
+        <span><i class="fa-solid fa-shield-halved"></i> CANAL SEGURO: CRIPTO-SHA256</span>
+        <span>NÚCLEO TÁTICO v2.4 // REGISTRO: {{selectedDomain.name}}</span>
+      </div>
+    </div>
+
+    <!-- Texturas Táticas de Fundo (Hex Grid, Dot Matrix, Scanlines, Glitch Beam & Runway 3D) -->
+    <div class="dm-hud-transition__hex-grid"></div>
+    <div class="dm-hud-transition__scanlines"></div>
+    <div class="dm-hud-transition__dot-grid"></div>
+    <div class="dm-hud-transition__glitch-beam"></div>
+    <div class="dm-hud-transition__runway-perspective">
+      <div class="dm-hud-transition__runway-plane"></div>
+    </div>
+    <div class="dm-hud-transition__horizon"></div>
+    <div class="dm-hud-transition__laser-tracer dm-hud-transition__laser-tracer--left"></div>
+    <div class="dm-hud-transition__laser-tracer dm-hud-transition__laser-tracer--right"></div>
+
+    <!-- Radar Tático Central com Mira e Coordenadas (COMP/CON Reticle) -->
+    <div class="dm-hud-transition__radar-wrap">
+      <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--h"></div>
+      <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--v"></div>
+      <div class="dm-hud-transition__radar-circle"></div>
+      <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--ticks"></div>
+      <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--lg"></div>
+      <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--xl"></div>
+      <div class="dm-hud-transition__radar-sweep"></div>
+      <div class="dm-hud-transition__radar-coords">
+        <span>AZIMUTE: 042° // ELEVAÇÃO: 850M</span>
+        <span>LAT: 44° 12' S // LONG: 53° 08' O // ALCANCE: 100 KM</span>
+      </div>
+    </div>
+
+    <!-- Banner Central Tático (Placa Escura Chanfrada com Borda Iluminada e Acentos Militares) -->
+    <div class="dm-hud-transition__sector-banner">
+      <div class="dm-hud-transition__sector-accent"></div>
+      <div class="dm-hud-transition__sector-text">
+        <div class="dm-hud-transition__sector-badge">
+          <span class="dm-hud-transition__badge-dot"></span>
+          <span>// PROTOCOLO COMP/CON // TRANSIÇÃO DE SETOR</span>
+        </div>
+        <div class="dm-hud-transition__sector-title">{{sectorCallout}}</div>
+        <div class="dm-hud-transition__sector-sub">ACESSO AUTORIZADO · TELEMETRIA SINCRONIZADA</div>
+      </div>
+      <div class="dm-hud-transition__sector-corner-notch"></div>
+    </div>
+
+    <!-- Painéis Inferiores Dinâmicos e Únicos por Página (Sem Vazamento) -->
+    <div class="dm-hud-transition__bottom-panels">
+      <!-- Bloco 1: Rotina Dinâmica em Português -->
+      <div class="dm-hud-transition__code-panel">
+        <div class="dm-hud-transition__code-header">
+          <div class="dm-hud-panel-title">
+            <i class="fa-solid fa-terminal"></i>
+            <span>{{hudTelemetry.routineHeader}}</span>
+          </div>
+          <span class="dm-hud-badge dm-hud-badge--crimson">AUTORIZADO</span>
+        </div>
+        <div class="dm-hud-transition__code-wrapper">
+          <div class="dm-hud-transition__code-stream">
+            {{#each hudTelemetry.routineLines}}
+              <div class="dm-code-line"><span class="dm-line-no">{{this.no}}</span> {{this.code}}</div>
+            {{/each}}
+          </div>
+        </div>
+        <div class="dm-hud-transition__tag">
+          <span class="dm-hud-transition__tag-accent"></span>
+          <span>{{hudTelemetry.routineTag}}</span>
+          <span class="dm-hud-cursor-blink">_</span>
         </div>
       </div>
-      <div class="dm-hud-transition__tag">
-        <span class="dm-hud-transition__tag-accent"></span>
-        <span>{{hudTelemetry.routineTag}}</span>
-      </div>
-    </div>
 
-    <!-- Bloco 2: Matriz Dinâmica de Dados e Telemetria -->
-    <div class="dm-hud-transition__binary-panel">
-      <div class="dm-hud-transition__code-header">
-        <span>{{hudTelemetry.matrixHeader}}</span>
-        <span class="text-amber">FLUXO_ONLINE</span>
-      </div>
-      <div class="dm-hud-transition__code-wrapper">
-        <div class="dm-hud-transition__binary-stream">
-          {{#each hudTelemetry.matrixLines}}
-            <div class="dm-bin-line">{{this}}</div>
-          {{/each}}
+      <!-- Bloco 2: Matriz Dinâmica de Dados e Telemetria -->
+      <div class="dm-hud-transition__binary-panel">
+        <div class="dm-hud-transition__code-header">
+          <div class="dm-hud-panel-title">
+            <i class="fa-solid fa-network-wired"></i>
+            <span>{{hudTelemetry.matrixHeader}}</span>
+          </div>
+          <span class="dm-hud-badge dm-hud-badge--amber">FLUXO_ONLINE</span>
         </div>
-      </div>
-      <div class="dm-hud-transition__tag">
-        <span class="dm-hud-transition__tag-accent"></span>
-        <span>{{hudTelemetry.matrixTag}}</span>
+        <div class="dm-hud-transition__code-wrapper">
+          <div class="dm-hud-transition__binary-stream">
+            {{#each hudTelemetry.matrixLines}}
+              <div class="dm-bin-line">{{this}}</div>
+            {{/each}}
+          </div>
+        </div>
+        <div class="dm-hud-transition__tag">
+          <span class="dm-hud-transition__tag-accent"></span>
+          <span>{{hudTelemetry.matrixTag}}</span>
+          <span class="dm-hud-cursor-blink">_</span>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
   <!-- OVERLAY DE BOOT TÁTICO AAA (EXECUTA EXCLUSIVAMENTE NA ABERTURA DO MÓDULO) -->
   <div class="dm-boot-welcome-overlay {{#if shouldPlayBootWelcome}}is-active{{else}}is-finished{{/if}}" aria-hidden="true">
@@ -103,34 +132,47 @@
     <div class="dm-boot-laser-tracer dm-boot-laser-tracer--left"></div>
     <div class="dm-boot-laser-tracer dm-boot-laser-tracer--right"></div>
 
-    <!-- 3. Cantoneiras de Cockpit (GIF 1 & 2) -->
-    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--left"></div>
-    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--right"></div>
+    <!-- 3. Cantoneiras de Cockpit (GIF 1 & 2 com Tags COMP/CON) -->
+    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--left">
+      <span class="dm-boot-bracket-tag">PILOT.LINK // 01</span>
+    </div>
+    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--right">
+      <span class="dm-boot-bracket-tag">OMNI-NET // ALFA</span>
+    </div>
 
-    <!-- 4. Núcleo Holográfico com Globo e Anéis Concéntricos (GIF 3) -->
+    <!-- 4. Núcleo Holográfico com Globo, Anéis Concéntricos e Mira Tática (GIF 3 + COMP/CON Crosshairs) -->
     <div class="dm-boot-core-system">
+      <div class="dm-boot-crosshair dm-boot-crosshair--h"></div>
+      <div class="dm-boot-crosshair dm-boot-crosshair--v"></div>
       <div class="dm-boot-ring dm-boot-ring-outer"></div>
       <div class="dm-boot-ring dm-boot-ring-ticks"></div>
       <div class="dm-boot-ring dm-boot-ring-inner"></div>
+      <div class="dm-boot-sweep"></div>
       <div class="dm-boot-sphere"></div>
+      <div class="dm-boot-core-coords">
+        <span>ORBITAL AZ: 128.4° // ELEV: 450KM // COMP/CON</span>
+      </div>
     </div>
 
-    <!-- 5. Painel de Holo-Projeção Superior Direito (GIF 3) -->
+    <!-- 5. Painel de Holo-Projeção Superior Direito (GIF 3 com Acentos Militares) -->
     <div class="dm-boot-holo-projector">
       <div class="dm-boot-holo-projector__header">
-        <span>// HOLO-DIAG</span>
-        <span>ESTRUTURA: ATIVA</span>
+        <span>// COMP/CON HOLO-DIAG</span>
+        <span class="dm-boot-tag--active">ESTRUTURA: ATIVA</span>
       </div>
       <div class="dm-boot-holo-mesh">
         <div class="dm-boot-holo-rig"></div>
+      </div>
+      <div class="dm-boot-holo-footer">
+        <span>GRID: LNC-42 // POLÍGONOS: 1024</span>
       </div>
     </div>
 
     <!-- 6. Painel de Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) -->
     <div class="dm-boot-telemetry-panel">
       <div class="dm-boot-telemetry-header">
-        <span>SISTEMA TÁTICO v0.1</span>
-        <span>LINK 100%</span>
+        <span>// SISTEMA TÁTICO COMP/CON</span>
+        <span class="dm-boot-badge--emerald">LINK 100%</span>
       </div>
       <div class="dm-boot-equalizer">
         <div class="dm-boot-eq-bar"></div>
@@ -144,20 +186,31 @@
       </div>
       <div class="dm-boot-port-check">
         PORT CHECK: 399.160.01:60.000<br>
-        ENCRIPTADOR: ATIVO // ALFA
+        ENCRIPTADOR: ATIVO // SHA-256 ALFA
+      </div>
+      <div class="dm-boot-stream-mini">
+        <div class="dm-boot-mini-line"><span class="text-cyan">></span> KERNEL: CARREGADO</div>
+        <div class="dm-boot-mini-line"><span class="text-amber">></span> DIRETRIZ: COMP/CON OK</div>
       </div>
     </div>
 
-    <!-- 7. Card de Boas-Vindas Central ao Usuário -->
+    <!-- 7. Card de Boas-Vindas Central ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) -->
     <div class="dm-boot-welcome-card">
-      <div class="dm-boot-status-badge">
-        <span class="dm-boot-status-dot"></span>
-        <span>AUTORIZAÇÃO NÍVEL ALFA CONCEDIDA</span>
-      </div>
-      <h1 class="dm-boot-welcome-title">SEJA BEM-VINDO, <span>{{currentUserName}}</span></h1>
-      <p class="dm-boot-welcome-subtitle">// TERMINAL DE SOBERANIA OPERACIONAL CARREGADO //</p>
-      <div class="dm-boot-progress-bar">
-        <div class="dm-boot-progress-fill"></div>
+      <div class="dm-boot-card-accent"></div>
+      <div class="dm-boot-card-content">
+        <div class="dm-boot-status-badge">
+          <span class="dm-boot-status-dot"></span>
+          <span>AUTORIZAÇÃO NÍVEL ALFA CONCEDIDA // COMP/CON</span>
+        </div>
+        <h1 class="dm-boot-welcome-title">SEJA BEM-VINDO, <span>{{currentUserName}}</span></h1>
+        <p class="dm-boot-welcome-subtitle">// TERMINAL DE SOBERANIA OPERACIONAL CARREGADO //</p>
+        <div class="dm-boot-progress-bar">
+          <div class="dm-boot-progress-fill"></div>
+        </div>
+        <div class="dm-boot-card-meta">
+          <span><i class="fa-solid fa-lock"></i> CANAL CRIPTOGRAFADO</span>
+          <span>STATUS: ONLINE</span>
+        </div>
       </div>
     </div>
   </div>

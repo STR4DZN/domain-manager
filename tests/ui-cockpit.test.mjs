@@ -962,3 +962,37 @@ test("v9: Animação de Boot Welcome (Seja bem-vindo, {Usuário}) com referênci
   const appJsCode = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/scripts/ui/app.js"), "utf8");
   assert.ok(appJsCode.includes("isAlreadyOpen"), "app.js deve verificar se o app já está aberto para não disparar boot em re-renders");
 });
+
+test("v10: Harmonização e Unificação de HUD Lancer / COMP/CON (Transição de Setor e Boot Welcome)", async () => {
+  const appShell = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/app-shell.hbs"), "utf8");
+  const shellCss = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
+
+  // 1. Validar elementos compartilhados no overlay de transição
+  assert.ok(appShell.includes("dm-hud-transition__hex-grid"), "Transição deve possuir hex grid");
+  assert.ok(appShell.includes("dm-hud-transition__runway-perspective"), "Transição deve possuir pista 3D");
+  assert.ok(appShell.includes("dm-hud-transition__horizon"), "Transição deve possuir horizonte");
+  assert.ok(appShell.includes("dm-hud-transition__laser-tracer"), "Transição deve possuir laser tracer");
+  assert.ok(appShell.includes("dm-hud-transition__eq-mini"), "Transição deve possuir equalizador mini");
+  assert.ok(appShell.includes("dm-hud-transition__radar-circle--ticks"), "Transição deve possuir anel de ticks");
+  assert.ok(appShell.includes("dm-hud-transition__sector-badge"), "Transição deve possuir badge de protocolo COMP/CON");
+  assert.ok(appShell.includes("dm-hud-bracket__tag"), "Transição deve possuir tags militares nas cantoneiras");
+  assert.ok(appShell.includes("dm-hud-cursor-blink"), "Transição deve possuir cursor piscante");
+
+  // 2. Validar elementos compartilhados no overlay de boot welcome
+  assert.ok(appShell.includes("dm-boot-crosshair"), "Boot deve possuir retículo de mira");
+  assert.ok(appShell.includes("dm-boot-sweep"), "Boot deve possuir radar sweep");
+  assert.ok(appShell.includes("dm-boot-core-coords"), "Boot deve possuir coordenadas orbitais");
+  assert.ok(appShell.includes("dm-boot-holo-footer"), "Boot deve possuir telemetria no holo projector");
+  assert.ok(appShell.includes("dm-boot-stream-mini"), "Boot deve possuir mini stream de boot");
+  assert.ok(appShell.includes("dm-boot-card-accent"), "Boot deve possuir acento carmesim no card igual ao setor");
+  assert.ok(appShell.includes("dm-boot-card-meta"), "Boot deve possuir metadados de criptografia no card");
+
+  // 3. Validar estilos correspondentes em shell.css
+  assert.ok(shellCss.includes(".dm-hud-transition__hex-grid"), "CSS deve estilizar hex grid da transição");
+  assert.ok(shellCss.includes(".dm-hud-transition__runway-perspective"), "CSS deve estilizar pista 3D da transição");
+  assert.ok(shellCss.includes(".dm-hud-transition__sector-banner"), "CSS deve estilizar banner de setor");
+  assert.ok(shellCss.includes(".dm-boot-welcome-card"), "CSS deve estilizar card de boas-vindas");
+  assert.ok(shellCss.includes(".dm-boot-card-accent"), "CSS deve estilizar acento do card");
+  assert.ok(shellCss.includes(".dm-boot-crosshair"), "CSS deve estilizar mira do boot");
+});
+
