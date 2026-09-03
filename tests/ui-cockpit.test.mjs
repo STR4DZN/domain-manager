@@ -519,3 +519,68 @@ test("testes das correções v4: custom flow category, intel validation, project
   // 4. Tags no contexto
   assert.deepEqual(context.selectedDomain.tags, ["capital", "mineracao"]);
 });
+
+test("teste de interface v5: abertura e fechamento da aba lateral e expansão/recolhimento de pastas de bases", async () => {
+  game.journal = [];
+  game.user = { id: "gm-1", name: "GM", isGM: true };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  recordIndex.rebuild();
+
+  // Criar 1 Galáxia Pai com 2 Planetas Filhos
+  const galaxyDoc = createMockJournal({
+    uuid: "JournalEntry.galaxy-1",
+    name: "Galáxia Central",
+    data: { identity: { category: "galaxy", nature: "physical", state: "active" }, hierarchy: {} }
+  });
+  recordIndex.upsert(galaxyDoc);
+
+  const planet1Doc = createMockJournal({
+    uuid: "JournalEntry.planet-1",
+    name: "Planeta Alpha",
+    data: { identity: { category: "planet", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.galaxy-1" } }
+  });
+  recordIndex.upsert(planet1Doc);
+
+  const planet2Doc = createMockJournal({
+    uuid: "JournalEntry.planet-2",
+    name: "Planeta Beta",
+    data: { identity: { category: "planet", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.galaxy-1" } }
+  });
+  recordIndex.upsert(planet2Doc);
+
+  const app = new DomainManagerShellApp();
+  app.setRoute({ domainUuid: "JournalEntry.galaxy-1" });
+
+  // 1. Estado inicial da aba lateral: Aberta (isSidebarOpen: true)
+  assert.equal(app.isSidebarOpen, true);
+  let context = await app._prepareContext();
+  assert.equal(context.isSidebarOpen, true);
+  assert.equal(context.flatDomainTree.length, 3); // Galáxia + 2 Planetas
+
+  // 2. Alternar fechamento da aba lateral (click no ícone)
+  app.isSidebarOpen = false;
+  context = await app._prepareContext();
+  assert.equal(context.isSidebarOpen, false);
+
+  // 3. Alternar abertura da aba lateral
+  app.isSidebarOpen = true;
+  context = await app._prepareContext();
+  assert.equal(context.isSidebarOpen, true);
+
+  // 4. Recolher a pasta da Galáxia Central (toggleFolder)
+  app.collapsedFolderUuids.add("JournalEntry.galaxy-1");
+  context = await app._prepareContext();
+  // Quando a pasta pai está recolhida, os 2 planetas ficam ocultos
+  assert.equal(context.flatDomainTree.length, 1);
+  assert.equal(context.flatDomainTree[0].name, "Galáxia Central");
+  assert.equal(context.flatDomainTree[0].isCollapsed, true);
+
+  // 5. Expandir a pasta da Galáxia Central
+  app.collapsedFolderUuids.delete("JournalEntry.galaxy-1");
+  context = await app._prepareContext();
+  assert.equal(context.flatDomainTree.length, 3);
+  assert.equal(context.flatDomainTree[0].isCollapsed, false);
+});

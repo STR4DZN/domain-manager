@@ -18,10 +18,10 @@
 
     <button
       type="button"
-      class="dm-rail__item {{#if (eq activeSection 'domains')}}is-active{{/if}}"
+      class="dm-rail__item {{#if (eq activeSection 'domains')}}{{#if isSidebarOpen}}is-active{{/if}}{{/if}}"
       data-action="navigate"
       data-section="domains"
-      title="{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}"
+      title="{{#if isSidebarOpen}}Recolher Painel Lateral de Bases{{else}}Abrir Painel Lateral de Bases{{/if}}"
       aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}"
     >
       <span class="dm-rail__indicator"></span>

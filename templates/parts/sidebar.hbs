@@ -1,18 +1,39 @@
-<aside class="dm-sidebar" aria-label="Explorador de Domínios">
+<aside class="dm-sidebar {{#unless isSidebarOpen}}is-collapsed{{/unless}}" aria-label="Explorador de Domínios">
   <header class="dm-sidebar__header">
     <div class="dm-sidebar__title-row">
       <h2 class="dm-sidebar__title">{{localize 'DOMAIN_MANAGER.Sidebar.Title'}}</h2>
-      {{#if isGM}}
+      <div class="dm-sidebar__header-actions">
         <button
           type="button"
-          class="dm-icon-btn dm-icon-btn--primary"
-          data-action="openCreateDomain"
-          title="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
-          aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+          class="dm-icon-btn"
+          data-action="toggleAllFolders"
+          title="{{#if allFoldersCollapsed}}Expandir Todas as Pastas{{else}}Recolher Todas as Pastas{{/if}}"
         >
-          <i class="fa-solid fa-plus"></i>
+          <i class="fa-solid {{#if allFoldersCollapsed}}fa-folder-closed{{else}}fa-folder-open{{/if}}"></i>
         </button>
-      {{/if}}
+
+        {{#if isGM}}
+          <button
+            type="button"
+            class="dm-icon-btn dm-icon-btn--primary"
+            data-action="openCreateDomain"
+            title="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+            aria-label="{{localize 'DOMAIN_MANAGER.Sidebar.NewDomain'}}"
+          >
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        {{/if}}
+
+        <button
+          type="button"
+          class="dm-icon-btn"
+          data-action="toggleSidebar"
+          title="Recolher Painel Lateral"
+          aria-label="Recolher Painel Lateral"
+        >
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
     </div>
 
     <div class="dm-search">
@@ -74,6 +95,20 @@
           {{#each flatDomainTree}}
             <li class="dm-tree__node {{#if isSelected}}is-selected{{/if}} depth-{{depth}}" style="padding-left: {{indentPx}}px;">
               <div class="dm-tree__item-row">
+                {{#if hasChildren}}
+                  <button
+                    type="button"
+                    class="dm-tree__expander"
+                    data-action="toggleFolder"
+                    data-uuid="{{uuid}}"
+                    title="{{#if isCollapsed}}Expandir pasta{{else}}Recolher pasta{{/if}}"
+                  >
+                    <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
+                  </button>
+                {{else}}
+                  <span class="dm-tree__expander-spacer"></span>
+                {{/if}}
+
                 <button
                   type="button"
                   class="dm-tree__item {{#if isSelected}}is-active{{/if}}"
@@ -83,7 +118,7 @@
                   <i class="dm-tree__icon {{icon}}"></i>
                   <span class="dm-tree__label" title="{{name}}">{{name}}</span>
                   {{#if childCount}}
-                    <span class="dm-tree__badge" title="{{childCount}} subdivisões">{{childCount}}</span>
+                    <span class="dm-tree__badge" data-action="toggleFolder" data-uuid="{{uuid}}" title="{{childCount}} subdivisões">{{childCount}}</span>
                   {{/if}}
                 </button>
               </div>

@@ -90,17 +90,20 @@ function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = 
   return nodes;
 }
 
-function flattenDomainTree(nodes, depth = 0) {
+function flattenDomainTree(nodes, depth = 0, collapsedUuids = new Set()) {
   const flat = [];
   for (const node of nodes) {
+    const isCollapsed = collapsedUuids.has(node.uuid);
     flat.push({
       ...node,
       depth,
       indentPx: depth * 16,
-      isRoot: depth === 0
+      isRoot: depth === 0,
+      isCollapsed,
+      isExpanded: !isCollapsed
     });
-    if (node.children && node.children.length > 0) {
-      flat.push(...flattenDomainTree(node.children, depth + 1));
+    if (node.children && node.children.length > 0 && !isCollapsed) {
+      flat.push(...flattenDomainTree(node.children, depth + 1, collapsedUuids));
     }
   }
   return flat;
@@ -144,6 +147,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   activeTab = "overview";
   searchQuery = "";
   selectedTag = null;
+  isSidebarOpen = true;
+  collapsedFolderUuids = new Set();
 
   // Modais de Criação / Edição / Confirmação
   isCreatingDomain = false;
@@ -182,6 +187,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     actions: {
       navigate: DomainManagerShellApp.#onNavigate,
       selectDomain: DomainManagerShellApp.#onSelectDomain,
+      toggleSidebar: DomainManagerShellApp.#onToggleSidebar,
+      toggleFolder: DomainManagerShellApp.#onToggleFolder,
+      toggleAllFolders: DomainManagerShellApp.#onToggleAllFolders,
       setSidebarMode: DomainManagerShellApp.#onSetSidebarMode,
       switchTab: DomainManagerShellApp.#onSwitchTab,
       filterByTag: DomainManagerShellApp.#onFilterByTag,
@@ -302,6 +310,35 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* ------------------------------------------------------------------------
      Navegação e Tags
      ------------------------------------------------------------------------ */
+  static #onToggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+    this.render();
+  }
+
+  static #onToggleFolder(event, target) {
+    event?.stopPropagation?.();
+    const uuid = target.dataset.uuid;
+    if (!uuid) return;
+    if (this.collapsedFolderUuids.has(uuid)) {
+      this.collapsedFolderUuids.delete(uuid);
+    } else {
+      this.collapsedFolderUuids.add(uuid);
+    }
+    this.render();
+  }
+
+  static #onToggleAllFolders() {
+    const domainRecords = listVisibleDomainRecords(game.user);
+    if (this.collapsedFolderUuids.size > 0) {
+      this.collapsedFolderUuids.clear();
+    } else {
+      for (const d of domainRecords) {
+        this.collapsedFolderUuids.add(d.document.uuid);
+      }
+    }
+    this.render();
+  }
+
   static #onNavigate(event, target) {
     const section = target.dataset.section;
     if (!section) return;
@@ -312,8 +349,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       this.activeSection = "dashboard";
       this.activeTab = "overview";
     } else if (section === "domains") {
-      this.activeSection = "domains";
-      this.activeTab = "overview";
+      if (this.activeSection === "domains") {
+        // Ao clicar no mesmo botão 'Setores & Bases', abre/fecha a aba lateral exatamente como no exemplo
+        this.isSidebarOpen = !this.isSidebarOpen;
+      } else {
+        this.activeSection = "domains";
+        this.activeTab = "overview";
+        this.isSidebarOpen = true;
+      }
     } else if (section === "economy") {
       this.activeSection = "economy";
       this.activeTab = "economy";
@@ -1322,7 +1365,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
 
     const domainTree = buildDomainTreeNodes(filteredDomains, null, this.selectedDomainUuid);
-    const flatDomainTree = flattenDomainTree(domainTree);
+    const flatDomainTree = flattenDomainTree(domainTree, 0, this.collapsedFolderUuids);
     const tagGroups = buildDomainTagGroups(filteredDomains, this.selectedDomainUuid);
 
     const selectedRecord = domainRecords.find((d) => d.document.uuid === this.selectedDomainUuid) || null;
@@ -1584,6 +1627,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     return {
       ...context,
       moduleTitle: MODULE_TITLE,
+      isSidebarOpen: this.isSidebarOpen,
+      allFoldersCollapsed: this.collapsedFolderUuids.size > 0,
       foundryVersion: game.version,
       userName: game.user.name,
       isGM: game.user.isGM,

@@ -1,5 +1,11 @@
 <header class="dm-workspace-header">
   <div class="dm-workspace-header__main">
+    {{#unless isSidebarOpen}}
+      <button type="button" class="dm-btn dm-btn--outline dm-btn--xs mr-3" data-action="toggleSidebar" title="Abrir Painel Lateral de Bases">
+        <i class="fa-solid fa-bars"></i>
+        <span>Bases</span>
+      </button>
+    {{/unless}}
     {{#if breadcrumbs.length}}
       <nav class="dm-breadcrumbs" aria-label="Caminho Hierárquico">
         {{#each breadcrumbs}}
