@@ -333,7 +333,8 @@
   </div>
 </header>
 
-        <section class="dm-overview-cards" aria-label="Métricas Gerais">
+        {{#unless activeNotableDossier}}
+<section class="dm-overview-cards" aria-label="Métricas Gerais">
   <!-- Card 1: Economia -->
   <article class="dm-card dm-card--stat">
     <div class="dm-card__header">
@@ -394,6 +395,7 @@
     </div>
   </article>
 </section>
+{{/unless}}
         <!-- MODAIS IN-PAGE COMPACTOS COM CONTENÇÃO E SCROLL INTERNO -->
 
 <!-- 1. MODAL: ADICIONAR TAGS -->
@@ -1958,7 +1960,8 @@
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
 <div class="dm-workspace-content">
   <!-- BARRA DE NAVEGAÇÃO TÁTICA INDEXADA (Rápida, compacta e sem scroll lateral) -->
-  <nav class="dm-tactical-nav" aria-label="Navegação Tática do Domínio">
+  {{#unless activeNotableDossier}}
+<nav class="dm-tactical-nav" aria-label="Navegação Tática do Domínio">
     {{#each navigationHubItems}}
       <button
         type="button"
@@ -1976,6 +1979,7 @@
       </button>
     {{/each}}
   </nav>
+{{/unless}}
 
   <!-- Painéis de Conteúdo -->
   <div class="dm-tab-panels dm-scrollable">
@@ -2543,9 +2547,9 @@
                   <span class="dm-biomonitor__tag-bracket">]</span>
                 </div>
                 {{#if isGM}}
-                  <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openEditNotableStatsModal" title="Calibrar Atributos Táticos">
-                    <i class="fa-solid fa-sliders"></i>
-                    <span>Calibrar</span>
+                  <button type="button" class="dm-btn dm-btn--primary dm-btn--sm" data-action="openEditNotableStatsModal" title="Editar Dossiê Completo">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Editar Dossiê</span>
                   </button>
                 {{/if}}
               </div>
@@ -2895,56 +2899,84 @@
   </div>
 {{/if}}
 
+
 {{#if isEditingNotableStatsModal}}
-  <div class="dm-modal-backdrop">
-    <div class="dm-modal dm-modal--md">
-      <header class="dm-modal__header">
-        <h3><i class="fa-solid fa-sliders text-crimson"></i> Calibrar Atributos Operacionais do Notável</h3>
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact" style="max-width: 680px;">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-user-pen text-crimson"></i> Editar Dossiê Operacional // {{activeNotableDossier.name}}</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelNotableStatsModal"><i class="fa-solid fa-xmark"></i></button>
-      </header>
-      <div class="dm-modal__body">
-        <p class="dm-card__subtext mb-3">Defina as pontuações táticas que determinam o desempenho deste agente nas futuras missões e esquadrões.</p>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable" style="max-height: 70vh;">
+        <!-- Seção 1: Identidade e Cargo -->
+        <span class="dm-biomonitor__subhead mb-2">// 01. DADOS DE IDENTIFICAÇÃO & DESIGNAÇÃO</span>
         <div class="dm-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div class="dm-form-group">
-            <label for="dm-stat-combat">⚔️ Combate (0 - 20)</label>
-            <input type="number" id="dm-stat-combat" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.combat}}" />
+            <label for="dm-dossier-edit-name">Nome do Agente:</label>
+            <input type="text" id="dm-dossier-edit-name" class="dm-input dm-input--compact" value="{{activeNotableDossier.name}}" required />
           </div>
           <div class="dm-form-group">
-            <label for="dm-stat-stealth">🎯 Furtividade (0 - 20)</label>
-            <input type="number" id="dm-stat-stealth" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.stealth}}" />
+            <label for="dm-dossier-edit-role">Cargo / Função:</label>
+            <input type="text" id="dm-dossier-edit-role" class="dm-input dm-input--compact" value="{{activeNotableDossier.role}}" placeholder="Ex: Conselheiro, Espião, General" />
           </div>
           <div class="dm-form-group">
-            <label for="dm-stat-cunning">🧠 Astúcia (0 - 20)</label>
-            <input type="number" id="dm-stat-cunning" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.cunning}}" />
+            <label for="dm-dossier-edit-spec">Especialização Tática:</label>
+            <input type="text" id="dm-dossier-edit-spec" class="dm-input dm-input--compact" value="{{activeNotableDossier.specialization}}" placeholder="Ex: Infiltração, Operações Táticas" />
           </div>
           <div class="dm-form-group">
-            <label for="dm-stat-diplomacy">🤝 Diplomacia (0 - 20)</label>
-            <input type="number" id="dm-stat-diplomacy" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.diplomacy}}" />
+            <label for="dm-dossier-edit-status">Status Operacional:</label>
+            <select id="dm-dossier-edit-status" class="dm-select dm-select--compact">
+              <option value="active" {{#if (eq activeNotableDossier.status 'active')}}selected{{/if}}>Disponível na Base</option>
+              <option value="away" {{#if (eq activeNotableDossier.status 'away')}}selected{{/if}}>Em Missão de Campo</option>
+              <option value="unavailable" {{#if (eq activeNotableDossier.status 'unavailable')}}selected{{/if}}>Indisponível / Ferido</option>
+              <option value="missing" {{#if (eq activeNotableDossier.status 'missing')}}selected{{/if}}>Desaparecido</option>
+              <option value="dead" {{#if (eq activeNotableDossier.status 'dead')}}selected{{/if}}>Falecido</option>
+              <option value="retired" {{#if (eq activeNotableDossier.status 'retired')}}selected{{/if}}>Aposentado</option>
+            </select>
           </div>
           <div class="dm-form-group">
-            <label for="dm-stat-technique">🛠️ Técnica (0 - 20)</label>
-            <input type="number" id="dm-stat-technique" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.technique}}" />
+            <label for="dm-dossier-edit-loyalty">Lealdade:</label>
+            <input type="text" id="dm-dossier-edit-loyalty" class="dm-input dm-input--compact" value="{{activeNotableDossier.loyalty}}" placeholder="Alta, Média, Baixa" />
           </div>
           <div class="dm-form-group">
-            <label for="dm-stat-survival">🛡️ Sobrevivência (0 - 20)</label>
-            <input type="number" id="dm-stat-survival" class="dm-input" min="0" max="20" value="{{activeNotableDossier.attributes.survival}}" />
+            <label for="dm-dossier-edit-missions">Missões Cumpridas:</label>
+            <input type="number" id="dm-dossier-edit-missions" class="dm-input dm-input--compact" min="0" value="{{activeNotableDossier.missionsCount}}" />
           </div>
         </div>
-        <div class="dm-form-grid mt-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+
+        <!-- Seção 2: Atributos Táticos Operacionais (0 a 20) -->
+        <span class="dm-biomonitor__subhead mt-3 mb-2">// 02. ATRIBUTOS TÁTICOS OPERACIONAIS (0 A 20)</span>
+        <div class="dm-form-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
           <div class="dm-form-group">
-            <label for="dm-stat-loyalty">Lealdade</label>
-            <input type="text" id="dm-stat-loyalty" class="dm-input" value="{{activeNotableDossier.loyalty}}" />
+            <label for="dm-stat-combat">⚔️ Combate:</label>
+            <input type="number" id="dm-stat-combat" class="dm-input dm-input--compact" min="0" max="20" value="{{activeNotableDossier.attributes.combat}}" />
           </div>
           <div class="dm-form-group">
-            <label for="dm-stat-missions">Missões Cumpridas</label>
-            <input type="number" id="dm-stat-missions" class="dm-input" min="0" value="{{activeNotableDossier.missionsCount}}" />
+            <label for="dm-stat-stealth">🎯 Furtividade:</label>
+            <input type="number" id="dm-stat-stealth" class="dm-input dm-input--compact" min="0" max="20" value="{{activeNotableDossier.attributes.stealth}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-cunning">🧠 Astúcia:</label>
+            <input type="number" id="dm-stat-cunning" class="dm-input dm-input--compact" min="0" max="20" value="{{activeNotableDossier.attributes.cunning}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-diplomacy">🤝 Diplomacia:</label>
+            <input type="number" id="dm-stat-diplomacy" class="dm-input dm-input--compact" min="0" max="20" value="{{activeNotableDossier.attributes.diplomacy}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-technique">🛠️ Técnica:</label>
+            <input type="number" id="dm-stat-technique" class="dm-input dm-input--compact" min="0" max="20" value="{{activeNotableDossier.attributes.technique}}" />
+          </div>
+          <div class="dm-form-group">
+            <label for="dm-stat-survival">🛡️ Sobrevivência:</label>
+            <input type="number" id="dm-stat-survival" class="dm-input dm-input--compact" min="0" max="20" value="{{activeNotableDossier.attributes.survival}}" />
           </div>
         </div>
       </div>
-      <footer class="dm-modal__footer">
-        <button type="button" class="dm-btn dm-btn--ghost" data-action="cancelNotableStatsModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotableStats"><i class="fa-solid fa-check"></i> Salvar Calibração</button>
-      </footer>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelNotableStatsModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotableStats"><i class="fa-solid fa-check"></i> Salvar Dossiê</button>
+      </div>
     </div>
   </div>
 {{/if}}

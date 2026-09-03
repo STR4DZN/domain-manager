@@ -3563,3 +3563,100 @@
 .dm-biomonitor__inspector-meter strong {
   color: #ef4444;
 }
+
+/* Expansão e Visibilidade do Bio-Monitor HUD */
+.dm-biomonitor {
+  min-height: 540px;
+  display: flex;
+  flex-direction: column;
+  background: #08080c !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem !important;
+  box-shadow: 0 0 35px rgba(239, 68, 68, 0.12), inset 0 0 30px rgba(0, 0, 0, 0.85) !important;
+  margin-bottom: 0 !important;
+}
+
+.dm-biomonitor__header {
+  padding-bottom: 1.15rem !important;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3) !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.dm-biomonitor__name {
+  font-size: 1.35rem !important;
+  letter-spacing: 0.06em !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 42, 75, 0.5) !important;
+}
+
+.dm-biomonitor__spec {
+  font-size: 0.78rem !important;
+  color: #ef4444 !important;
+}
+
+.dm-biomonitor__hud-tag {
+  font-size: 0.82rem !important;
+  padding: 0.3rem 0.65rem !important;
+  background: rgba(255, 42, 75, 0.06) !important;
+  border: 1px solid rgba(255, 42, 75, 0.2) !important;
+}
+
+.dm-biomonitor__body {
+  grid-template-columns: 320px 1fr !important;
+  gap: 2rem !important;
+  flex: 1;
+}
+
+.dm-biomonitor__col-title {
+  font-size: 1rem !important;
+}
+
+.dm-biomonitor__diamond-slot {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+.dm-biomonitor__diamond {
+  width: 30px !important;
+  height: 30px !important;
+  border-width: 2px !important;
+}
+
+.dm-biomonitor__attr-label {
+  font-size: 0.88rem !important;
+}
+
+.dm-biomonitor__attr-num {
+  font-size: 1.25rem !important;
+}
+
+.dm-biomonitor__attr-desc {
+  font-size: 0.72rem !important;
+}
+
+.dm-biomonitor__skill-card {
+  padding: 0.75rem 1rem !important;
+}
+
+.dm-biomonitor__skill-name {
+  font-size: 0.85rem !important;
+}
+
+.dm-biomonitor__skill-fraction {
+  font-size: 0.76rem !important;
+}
+
+.dm-biomonitor__inspector {
+  padding: 1.15rem 1.45rem !important;
+  border-left-width: 5px !important;
+}
+
+.dm-biomonitor__inspector-name {
+  font-size: 1.1rem !important;
+}
+
+.dm-biomonitor__inspector-desc {
+  font-size: 0.84rem !important;
+  line-height: 1.55 !important;
+}

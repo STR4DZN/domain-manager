@@ -2785,28 +2785,37 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static async #onSubmitNotableStats() {
     if (!game.user.isGM || !this.selectedDomainUuid || !this.activeNotableDossierLocalId) return;
 
+    const name = this.element?.querySelector("#dm-dossier-edit-name")?.value?.trim();
+    const role = this.element?.querySelector("#dm-dossier-edit-role")?.value?.trim() || "Conselheiro";
+    const specialization = this.element?.querySelector("#dm-dossier-edit-spec")?.value?.trim() || "";
+    const status = this.element?.querySelector("#dm-dossier-edit-status")?.value || "active";
+    const loyalty = this.element?.querySelector("#dm-dossier-edit-loyalty")?.value?.trim() || "Alta";
+    const missions = Math.max(0, Number(this.element?.querySelector("#dm-dossier-edit-missions")?.value) || 0);
+
     const combat = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-combat")?.value) || 10));
     const stealth = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-stealth")?.value) || 10));
     const cunning = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-cunning")?.value) || 10));
     const diplomacy = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-diplomacy")?.value) || 10));
     const technique = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-technique")?.value) || 10));
     const survival = Math.max(0, Math.min(20, Number(this.element?.querySelector("#dm-stat-survival")?.value) || 10));
-    const loyalty = this.element?.querySelector("#dm-stat-loyalty")?.value?.trim() || "Alta";
-    const missions = Math.max(0, Number(this.element?.querySelector("#dm-stat-missions")?.value) || 0);
 
     try {
       const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
       const record = decodeRecord(doc);
       const data = foundry.utils.deepClone(record.data);
-      const notables = data.population?.notables;
-      if (!Array.isArray(notables)) return;
-
-      const not = notables.find(n => n.localId === this.activeNotableDossierLocalId);
+      const notables = data.population?.notables ?? data.people?.notables ?? [];
+      const not = notables.find((n) => n.localId === this.activeNotableDossierLocalId);
       if (!not) return;
 
-      not.attributes = { combat, stealth, cunning, diplomacy, technique, survival };
+      if (name) not.name = name;
+      not.role = role;
+      not.specialization = specialization;
+      not.title = specialization;
+      not.status = status;
       not.loyalty = loyalty;
+      not.assignment = loyalty;
       not.missionsCompletedCount = missions;
+      not.attributes = { combat, stealth, cunning, diplomacy, technique, survival };
 
       await updateRecord({
         uuid: this.selectedDomainUuid,
@@ -2815,10 +2824,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
 
       this.isEditingNotableStatsModal = false;
-      ui.notifications?.info("Atributos táticos do notável atualizados!");
+      ui.notifications?.info(`Dossiê de "${not.name}" atualizado com sucesso!`);
       this.render();
     } catch (err) {
-      ui.notifications?.error(err.message || "Erro ao atualizar atributos do notável.");
+      ui.notifications?.error(err.message || "Erro ao atualizar dossiê.");
     }
   }
 
@@ -3467,13 +3476,21 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const targetNot = rawNotablesList.find((n) => n.localId === this.activeNotableDossierLocalId);
       if (targetNot) {
         const rawAttr = targetNot.attributes || {};
+        const attrObj = {
+          combat: rawAttr.combat ?? 10,
+          stealth: rawAttr.stealth ?? 10,
+          cunning: rawAttr.cunning ?? 10,
+          diplomacy: rawAttr.diplomacy ?? 10,
+          technique: rawAttr.technique ?? 10,
+          survival: rawAttr.survival ?? 10
+        };
         const attrList = [
-          { key: "combat", label: "Combate", icon: "fa-solid fa-hand-fist", value: rawAttr.combat ?? 10, detail: "Poder em combate armado, duelos e assaltos" },
-          { key: "stealth", label: "Furtividade", icon: "fa-solid fa-mask", value: rawAttr.stealth ?? 10, detail: "Infiltração silenciosa, roubo e operações ocultas" },
-          { key: "cunning", label: "Astúcia", icon: "fa-solid fa-brain", value: rawAttr.cunning ?? 10, detail: "Estratégia, decifração e contra-inteligência" },
-          { key: "diplomacy", label: "Diplomacia", icon: "fa-solid fa-handshake", value: rawAttr.diplomacy ?? 10, detail: "Persuasão, acordos e alianças" },
-          { key: "technique", label: "Técnica", icon: "fa-solid fa-screwdriver-wrench", value: rawAttr.technique ?? 10, detail: "Engenharia de campo, arrombamento e armadilhas" },
-          { key: "survival", label: "Sobrevivência", icon: "fa-solid fa-shield-heart", value: rawAttr.survival ?? 10, detail: "Resistência a dano, venenos e ambientes hostis" }
+          { key: "combat", label: "Combate", icon: "fa-solid fa-hand-fist", value: attrObj.combat, detail: "Poder em combate armado, duelos e assaltos" },
+          { key: "stealth", label: "Furtividade", icon: "fa-solid fa-mask", value: attrObj.stealth, detail: "Infiltração silenciosa, roubo e operações ocultas" },
+          { key: "cunning", label: "Astúcia", icon: "fa-solid fa-brain", value: attrObj.cunning, detail: "Estratégia, decifração e contra-inteligência" },
+          { key: "diplomacy", label: "Diplomacia", icon: "fa-solid fa-handshake", value: attrObj.diplomacy, detail: "Persuasão, acordos e alianças" },
+          { key: "technique", label: "Técnica", icon: "fa-solid fa-screwdriver-wrench", value: attrObj.technique, detail: "Engenharia de campo, arrombamento e armadilhas" },
+          { key: "survival", label: "Sobrevivência", icon: "fa-solid fa-shield-heart", value: attrObj.survival, detail: "Resistência a dano, venenos e ambientes hostis" }
         ];
 
         // Perícias (constelação de nós)
@@ -3495,6 +3512,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
         activeNotableDossier = {
           ...targetNot,
+          attributes: attrObj,
           attributesList: attrList,
           skillsList,
           selectedSkill,
