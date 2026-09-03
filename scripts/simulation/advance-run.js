@@ -1,3 +1,4 @@
+import { calculateDomainUpkeep } from "../features/economy/upkeep.js";
 /**
  * Bloco 8 — Advance Run: Motor de Execução Temporal com Commit Real no Mundo.
  * Aplica as mutações determinísticas calculadas pelo kernel de simulação.
@@ -56,6 +57,60 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
       };
     });
     domainData.economy.stocks = newStocks;
+
+    // Impacto do Sustento da População (Fome e Desabastecimento)
+    const upkeepInfo = calculateDomainUpkeep({ domainData, catalog });
+    const hasFoodShortfall = domReport.resources.some(
+      (r) => !r.allowNegative && r.projectedStock <= 0 && r.resourceId === upkeepInfo.foodResId && upkeepInfo.rawFoodUnits > 0
+    );
+    const hasWaterShortfall = domReport.resources.some(
+      (r) => !r.allowNegative && r.projectedStock <= 0 && r.resourceId === upkeepInfo.waterResId && upkeepInfo.rawWaterUnits > 0
+    );
+
+    if (hasFoodShortfall || hasWaterShortfall) {
+      // Degradar agitação e satisfação da população
+      const groups = domainData.population?.groups ?? domainData.people?.groups ?? [];
+      for (const g of groups) {
+        const currentScore = Number(g.assignment) || 2;
+        g.assignment = String(Math.min(10, currentScore + 2));
+        if (g.quality === "Muito Alta") g.quality = "Estável";
+        else if (g.quality === "Estável") g.quality = "Insatisfeito";
+        else if (g.quality === "Insatisfeito") g.quality = "Rebelde";
+      }
+
+      // Adicionar condição crítica de Escassez & Fome
+      if (!Array.isArray(domainData.conditions)) domainData.conditions = [];
+      const existingFamine = domainData.conditions.find((c) => c.localId === "cond_famine");
+      if (existingFamine) {
+        existingFamine.durationTicks = 3;
+        existingFamine.active = true;
+      } else {
+        domainData.conditions.push({
+          localId: "cond_famine",
+          name: "Escassez & Fome",
+          severity: "crisis",
+          durationTicks: 3,
+          active: true,
+          description: `A base ${decoded.document.name} sofre com desabastecimento de provisões básicas. Agitação elevada e segurança comprometida.`
+        });
+      }
+
+      // Registrar Crônica histórica
+      if (!Array.isArray(domainData.history)) domainData.history = [];
+      domainData.history.push({
+        localId: `famine_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        title: "Crise de Desabastecimento",
+        category: "crisis",
+        summary: `A população de ${decoded.document.name} sofreu com a falta de recursos vitais neste ciclo.`,
+        details: "Estoques de sustento esgotados causaram inquietação e protestos na colônia.",
+        timestamp: Date.now()
+      });
+    } else {
+      // Se há comida e água em abundância, remover condição de fome se expirada
+      if (Array.isArray(domainData.conditions)) {
+        domainData.conditions = domainData.conditions.filter((c) => c.localId !== "cond_famine" || c.durationTicks > 0);
+      }
+    }
 
     // Decaimento de Condições (Bloco 9)
     if (Array.isArray(domainData.conditions)) {

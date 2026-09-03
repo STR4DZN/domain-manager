@@ -1,3 +1,4 @@
+import { calculateDomainUpkeep } from "../features/economy/upkeep.js";
 /**
  * DomainManagerShellApp — Aplicação Principal do Cockpit (ApplicationV2)
  *
@@ -289,6 +290,15 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isEditingHistoryModal = false;
   editingHistoryIndex = null;
 
+  // Sustento Populacional e Despesas Gerais
+  isUpkeepModalOpen = false;
+
+  // Edição de Estoques e Fluxos
+  isEditingStockModal = false;
+  editingStockResourceId = null;
+  isEditingFlowModal = false;
+  editingFlowLocalId = null;
+
   // Galeria de Imagens da Base
   activeGalleryImage = null;
 
@@ -349,16 +359,27 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       submitAuthorEvent: DomainManagerShellApp.#onSubmitAuthorEvent,
       rollEvent: DomainManagerShellApp.#onOpenEventModal,
 
-      // Estoques (CRUD)
+      // Sustento da População & Gastos Gerais (Configuração GM)
+      openUpkeepModal: DomainManagerShellApp.#onOpenUpkeepModal,
+      cancelUpkeepModal: DomainManagerShellApp.#onCancelUpkeepModal,
+      submitUpkeep: DomainManagerShellApp.#onSubmitUpkeep,
+
+      // Estoques (CRUD Completo com Edição)
       openAddStockModal: DomainManagerShellApp.#onOpenAddStockModal,
       cancelStockModal: DomainManagerShellApp.#onCancelStockModal,
       submitStock: DomainManagerShellApp.#onSubmitStock,
+      openEditStockModal: DomainManagerShellApp.#onOpenEditStockModal,
+      cancelEditStockModal: DomainManagerShellApp.#onCancelEditStockModal,
+      submitEditStock: DomainManagerShellApp.#onSubmitEditStock,
       deleteStock: DomainManagerShellApp.#onDeleteStock,
 
-      // Fluxos (CRUD)
+      // Fluxos (CRUD Completo com Edição)
       openAddFlowModal: DomainManagerShellApp.#onOpenAddFlowModal,
       cancelFlowModal: DomainManagerShellApp.#onCancelFlowModal,
       submitFlow: DomainManagerShellApp.#onSubmitFlow,
+      openEditFlowModal: DomainManagerShellApp.#onOpenEditFlowModal,
+      cancelEditFlowModal: DomainManagerShellApp.#onCancelEditFlowModal,
+      submitEditFlow: DomainManagerShellApp.#onSubmitEditFlow,
       deleteFlow: DomainManagerShellApp.#onDeleteFlow,
 
       // Projetos (CRUD + Edição + Evolução)
@@ -446,6 +467,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isHistoryModalOpen = false;
     this.isEditingHistoryModal = false;
     this.editingHistoryIndex = null;
+    this.isUpkeepModalOpen = false;
+    this.isEditingStockModal = false;
+    this.editingStockResourceId = null;
+    this.isEditingFlowModal = false;
+    this.editingFlowLocalId = null;
     this.isTagModalOpen = false;
   }
 
@@ -734,6 +760,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const imagePosition = form?.querySelector("#dm-edit-domain-pos")?.value || "center";
     const tagsRaw = form?.querySelector("#dm-edit-domain-tags")?.value || "";
     const description = form?.querySelector("#dm-edit-domain-description")?.value || "";
+    const sustenanceEnabled = form?.querySelector("#dm-edit-domain-sustenance-enabled")?.value !== "false";
+    const foodPer100 = Number(form?.querySelector("#dm-edit-domain-food-rate")?.value) || 1.0;
+    const waterPer100 = Number(form?.querySelector("#dm-edit-domain-water-rate")?.value) || 1.0;
+    const guardUpkeep = Number(form?.querySelector("#dm-edit-domain-guard-upkeep")?.value) || 1.0;
     let parentUuid = form?.querySelector("#dm-edit-domain-parent")?.value || null;
     if (parentUuid === this.selectedDomainUuid) {
       parentUuid = null; // Impede ciclo hierárquico onde a base seleciona a si mesma
@@ -771,6 +801,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         image: crestImg,
         imageFit,
         imagePosition
+      };
+      data.economy = data.economy || {};
+      data.economy.sustenanceSettings = {
+        enabled: sustenanceEnabled,
+        foodPer100,
+        waterPer100,
+        guardUpkeep
       };
       data.hierarchy = {
         ...data.hierarchy,
@@ -2057,6 +2094,180 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+
+  /* --- Sustento da População & Gastos Gerais --- */
+  static #onOpenUpkeepModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isUpkeepModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelUpkeepModal() {
+    this.isUpkeepModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitUpkeep() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const enabled = form?.querySelector("#dm-upkeep-enabled")?.value !== "false";
+    const foodPer100 = Number(form?.querySelector("#dm-upkeep-food-rate")?.value) || 1.0;
+    const waterPer100 = Number(form?.querySelector("#dm-upkeep-water-rate")?.value) || 1.0;
+    const guardUpkeep = Number(form?.querySelector("#dm-upkeep-guard-rate")?.value) || 1.0;
+
+    this.isUpkeepModalOpen = false;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!data.economy) data.economy = {};
+      data.economy.sustenanceSettings = {
+        enabled,
+        foodPer100,
+        waterPer100,
+        guardUpkeep
+      };
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+      ui.notifications?.info("Configurações de sustento populacional salvas!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao salvar configurações de sustento.");
+    }
+  }
+
+  /* --- Edição de Estoque Existente --- */
+  static #onOpenEditStockModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const resId = target.dataset.resourceId;
+    if (!resId) return;
+    this.#closeAllModals();
+    this.isEditingStockModal = true;
+    this.editingStockResourceId = resId;
+    this.render();
+  }
+
+  static #onCancelEditStockModal() {
+    this.isEditingStockModal = false;
+    this.editingStockResourceId = null;
+    this.render();
+  }
+
+  static async #onSubmitEditStock() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.editingStockResourceId) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const amount = Number(form?.querySelector("#dm-edit-stock-amount")?.value) || 0;
+    const reserved = Number(form?.querySelector("#dm-edit-stock-reserved")?.value) || 0;
+    const resourceId = this.editingStockResourceId;
+
+    this.isEditingStockModal = false;
+    this.editingStockResourceId = null;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!data.economy) data.economy = {};
+      if (!Array.isArray(data.economy.stocks)) data.economy.stocks = [];
+
+      const catalog = (typeof getResourceCatalogSetting === "function" ? getResourceCatalogSetting() : null) || { resources: [] };
+      const resDef = catalog.resources?.find((r) => r.id === resourceId) || { precision: 0 };
+      const scale = 10 ** (resDef.precision || 0);
+
+      const targetStock = data.economy.stocks.find((s) => s.resourceId === resourceId);
+      if (targetStock) {
+        targetStock.amount = Math.round(amount * scale);
+        targetStock.reserved = Math.round(reserved * scale);
+      } else {
+        data.economy.stocks.push({
+          resourceId,
+          amount: Math.round(amount * scale),
+          reserved: Math.round(reserved * scale)
+        });
+      }
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+      ui.notifications?.info(`Estoque de ${resourceId.toUpperCase()} atualizado!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao editar estoque.");
+    }
+  }
+
+  /* --- Edição de Fluxo Existente --- */
+  static #onOpenEditFlowModal(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+    this.#closeAllModals();
+    this.isEditingFlowModal = true;
+    this.editingFlowLocalId = localId;
+    this.render();
+  }
+
+  static #onCancelEditFlowModal() {
+    this.isEditingFlowModal = false;
+    this.editingFlowLocalId = null;
+    this.render();
+  }
+
+  static async #onSubmitEditFlow() {
+    if (!game.user.isGM || !this.selectedDomainUuid || !this.editingFlowLocalId) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-edit-flow-name")?.value?.trim() || "Fluxo Econômico";
+    const direction = form?.querySelector("#dm-edit-flow-direction")?.value || "inflow";
+    const resourceId = form?.querySelector("#dm-edit-flow-resource")?.value || "credits";
+    const amount = Number(form?.querySelector("#dm-edit-flow-amount")?.value) || 0;
+    const periodTicks = Number(form?.querySelector("#dm-edit-flow-period")?.value) || 1;
+    const category = form?.querySelector("#dm-edit-flow-category")?.value?.trim() || "geral";
+    const active = form?.querySelector("#dm-edit-flow-active")?.value !== "false";
+
+    const localId = this.editingFlowLocalId;
+    this.isEditingFlowModal = false;
+    this.editingFlowLocalId = null;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.economy?.flows)) {
+        const catalog = (typeof getResourceCatalogSetting === "function" ? getResourceCatalogSetting() : null) || { resources: [] };
+        const resDef = catalog.resources?.find((r) => r.id === resourceId) || { precision: 2 };
+        const scale = 10 ** (resDef.precision || 0);
+
+        const targetFlow = data.economy.flows.find((f) => f.localId === localId);
+        if (targetFlow) {
+          targetFlow.name = name;
+          targetFlow.direction = direction;
+          targetFlow.resourceId = resourceId;
+          targetFlow.amount = Math.round(amount * scale);
+          targetFlow.periodTicks = Math.max(1, periodTicks);
+          targetFlow.category = category;
+          targetFlow.active = active;
+
+          await updateRecord({
+            uuid: this.selectedDomainUuid,
+            recordType: RECORD_TYPES.DOMAIN,
+            data
+          });
+          ui.notifications?.info(`Fluxo "${name}" atualizado!`);
+          this.render();
+        }
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao editar fluxo.");
+    }
+  }
+
   async _prepareContext(options) {
     const context = typeof super._prepareContext === "function"
       ? await super._prepareContext(options)
@@ -2130,9 +2341,15 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         return { uuid: u, name: r?.document?.name || "Território" };
       });
 
+      const upkeepInfo = calculateDomainUpkeep({ domainData: data, catalog });
+      const combinedFlows = [...(data.economy?.flows ?? []), ...upkeepInfo.syntheticFlows];
+
       const ledger = buildDomainLedger({
         catalog,
-        economy: data.economy,
+        economy: {
+          ...data.economy,
+          flows: combinedFlows
+        },
         reservations: []
       });
 
@@ -2160,7 +2377,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       }
 
-      domainFlows = (data.economy?.flows ?? []).map((f) => ({
+      domainFlows = combinedFlows.map((f) => ({
         localId: f.localId,
         resourceId: f.resourceId,
         name: f.name || f.resourceId.toUpperCase(),
@@ -2371,7 +2588,18 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         ? this.activeGalleryImage
         : (imageRaw || gallery[0] || "");
 
+      const sustenanceSettings = data.economy?.sustenanceSettings || {
+        enabled: true,
+        foodPer100: 1.0,
+        waterPer100: 1.0,
+        guardUpkeep: 1.0
+      };
+
       selectedDomain = {
+        sustenanceEnabled: sustenanceSettings.enabled !== false,
+        foodPer100: sustenanceSettings.foodPer100 != null ? sustenanceSettings.foodPer100 : 1.0,
+        waterPer100: sustenanceSettings.waterPer100 != null ? sustenanceSettings.waterPer100 : 1.0,
+        guardUpkeepRate: sustenanceSettings.guardUpkeep != null ? sustenanceSettings.guardUpkeep : 1.0,
         uuid: selectedRecord.document.uuid,
         name: selectedRecord.document.name,
         category: data.identity?.category || "territory",

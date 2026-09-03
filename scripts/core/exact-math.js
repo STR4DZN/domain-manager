@@ -185,3 +185,6 @@ export function distributeProportionalExact(totalAmount, weights = []) {
 
   return parts.map(Number);
 }
+
+export const distributeExactMinorUnits = distributeProportionalExact;
+

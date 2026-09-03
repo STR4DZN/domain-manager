@@ -686,6 +686,32 @@
             </div>
           </div>
 
+          <!-- SUSTENTO DA POPULAÇÃO & DESPESAS GERAIS -->
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label><i class="fa-solid fa-wheat-awn text-amber"></i> Sustento Automático:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-domain-sustenance-enabled">
+                <option value="true" {{#if selectedDomain.sustenanceEnabled}}selected{{/if}}>Ativado (Consome Recursos)</option>
+                <option value="false" {{#unless selectedDomain.sustenanceEnabled}}selected{{/if}}>Desativado (Sem Consumo)</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Manutenção de Guarda (Créditos/tick):</label>
+              <input type="number" step="0.1" min="0" class="dm-input dm-input--compact" id="dm-edit-domain-guard-upkeep" value="{{selectedDomain.guardUpkeepRate}}" />
+            </div>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Comida por 100 hab / tick:</label>
+              <input type="number" step="0.1" min="0" class="dm-input dm-input--compact" id="dm-edit-domain-food-rate" value="{{selectedDomain.foodPer100}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Água por 100 hab / tick:</label>
+              <input type="number" step="0.1" min="0" class="dm-input dm-input--compact" id="dm-edit-domain-water-rate" value="{{selectedDomain.waterPer100}}" />
+            </div>
+          </div>
+
           <div class="dm-form-group">
             <label>Descrição Geral</label>
             <textarea class="dm-textarea dm-input--compact" id="dm-edit-domain-description" rows="2">{{selectedDomain.description}}</textarea>
@@ -1571,6 +1597,154 @@
   </div>
 {{/if}}
 
+
+<!-- 21. MODAL: CONFIGURAR SUSTENTO E GASTOS GERAIS (GM) -->
+{{#if isUpkeepModalOpen}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-wheat-awn text-emerald"></i> Configurar Sustento & Consumo</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelUpkeepModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Sistema de Sustento Ativo nesta Base:</label>
+            <select class="dm-select dm-input--compact" id="dm-upkeep-enabled">
+              <option value="true" {{#if (ne sustenanceSettings.enabled false)}}selected{{/if}}>Sim (Consumo de Comida, Água e Soldos Ativo)</option>
+              <option value="false" {{#if (eq sustenanceSettings.enabled false)}}selected{{/if}}>Não (Desativar Consumo Automático)</option>
+            </select>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Comida por 100 Habitantes / Tick:</label>
+              <input type="number" step="0.1" min="0" class="dm-input dm-input--compact" id="dm-upkeep-food-rate" value="{{#if sustenanceSettings.foodPer100}}{{sustenanceSettings.foodPer100}}{{else}}1.0{{/if}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Água por 100 Habitantes / Tick:</label>
+              <input type="number" step="0.1" min="0" class="dm-input dm-input--compact" id="dm-upkeep-water-rate" value="{{#if sustenanceSettings.waterPer100}}{{sustenanceSettings.waterPer100}}{{else}}1.0{{/if}}" />
+            </div>
+          </div>
+
+          <div class="dm-form-group">
+            <label>Manutenção / Soldo por Guarda (Créditos / Tick):</label>
+            <input type="number" step="0.1" min="0" class="dm-input dm-input--compact" id="dm-upkeep-guard-rate" value="{{#if sustenanceSettings.guardUpkeep}}{{sustenanceSettings.guardUpkeep}}{{else}}1.0{{/if}}" />
+          </div>
+
+          <div class="dm-prose mt-1">
+            <p class="dm-text-muted" style="font-size: 0.85em;">
+              <i class="fa-solid fa-info-circle text-blue"></i> Quando os estoques de alimento ou água chegam a zero, o motor temporal dispara crise de fome, elevando a agitação civil e reduzindo a satisfação.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelUpkeepModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitUpkeep"><i class="fa-solid fa-floppy-disk"></i> Salvar Configurações</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- 22. MODAL: EDITAR ESTOQUE (GM) -->
+{{#if isEditingStockModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-cubes-stacked text-amber"></i> Editar Estoque: {{editingStock.name}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditStockModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Recurso:</label>
+            <input type="text" class="dm-input dm-input--compact" value="{{editingStock.name}} ({{editingStock.resourceId}})" disabled />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Estoque Total:</label>
+              <input type="number" step="any" class="dm-input dm-input--compact" id="dm-edit-stock-amount" value="{{editingStock.stockAmountMajor}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Quantidade Reservada:</label>
+              <input type="number" step="any" class="dm-input dm-input--compact" id="dm-edit-stock-reserved" value="{{editingStock.reservedAmountMajor}}" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditStockModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditStock"><i class="fa-solid fa-floppy-disk"></i> Salvar Estoque</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- 23. MODAL: EDITAR FLUXO ECONÔMICO (GM) -->
+{{#if isEditingFlowModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card dm-modal-compact">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-arrow-right-arrow-left text-amber"></i> Editar Fluxo: {{editingFlow.name}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditFlowModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Nome / Descrição do Fluxo *</label>
+            <input type="text" class="dm-input dm-input--compact" id="dm-edit-flow-name" value="{{editingFlow.name}}" />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Direção:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-flow-direction">
+                <option value="inflow" {{#if (eq editingFlow.direction 'inflow')}}selected{{/if}}>Entrada (Receita)</option>
+                <option value="outflow" {{#if (eq editingFlow.direction 'outflow')}}selected{{/if}}>Saída (Despesa)</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Recurso:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-flow-resource">
+                {{#each availableResources}}
+                  <option value="{{id}}" {{#if (eq id @root.editingFlow.resourceId)}}selected{{/if}}>{{name}} ({{id}})</option>
+                {{/each}}
+              </select>
+            </div>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Quantidade por Período:</label>
+              <input type="number" step="any" class="dm-input dm-input--compact" id="dm-edit-flow-amount" value="{{editingFlow.displayAmount}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Período (Ticks):</label>
+              <input type="number" min="1" class="dm-input dm-input--compact" id="dm-edit-flow-period" value="{{editingFlow.periodTicks}}" />
+            </div>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Categoria:</label>
+              <input type="text" class="dm-input dm-input--compact" id="dm-edit-flow-category" value="{{editingFlow.category}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Status:</label>
+              <select class="dm-select dm-input--compact" id="dm-edit-flow-active">
+                <option value="true" {{#if editingFlow.active}}selected{{/if}}>Ativo</option>
+                <option value="false" {{#unless editingFlow.active}}selected{{/if}}>Inativo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditFlowModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditFlow"><i class="fa-solid fa-floppy-disk"></i> Salvar Fluxo</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
 <div class="dm-workspace-content">
   <!-- Barra de Abas -->
@@ -1668,7 +1842,14 @@
                 <div class="dm-condition-card is-{{severity}}">
                   <div class="dm-condition-card__top">
                     <strong>{{name}}</strong>
-                    <span class="dm-badge dm-badge--severity">{{severity}}</span>
+                    <div>
+                      <span class="dm-badge dm-badge--severity">{{severity}}</span>
+                      {{#if @root.isGM}}
+                        <button type="button" class="dm-icon-btn dm-icon-btn--danger ml-1" data-action="deleteCondition" data-local-id="{{localId}}" title="Remover Condição">
+                          <i class="fa-solid fa-xmark"></i>
+                        </button>
+                      {{/if}}
+                    </div>
                   </div>
                   {{#if description}}<p class="dm-condition-card__desc">{{description}}</p>{{/if}}
                   {{#if durationTicks}}<div class="dm-condition-card__ticks">{{durationTicks}} ticks restantes</div>{{/if}}
@@ -1704,9 +1885,14 @@
         <div class="dm-panel__header-row">
           <h3 class="dm-section-title"><i class="fa-solid fa-cubes-stacked"></i> Estoques Disponíveis</h3>
           {{#if isGM}}
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddStockModal">
-              <i class="fa-solid fa-plus"></i> Adicionar / Ajustar Estoque
-            </button>
+            <div class="dm-btn-group">
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openUpkeepModal" title="Configurar taxas de consumo de comida, água e guardas">
+                <i class="fa-solid fa-wheat-awn text-emerald"></i> Configurar Sustento
+              </button>
+              <button type="button" class="dm-btn dm-btn--primary dm-btn--sm" data-action="openAddStockModal">
+                <i class="fa-solid fa-plus"></i> Novo Recurso / Estoque
+              </button>
+            </div>
           {{/if}}
         </div>
 
@@ -1731,7 +1917,10 @@
                   <td class="text-emerald font-semibold">{{availableDisplay}}</td>
                   <td class="dm-rate dm-rate--{{netDirection}}">{{netPerTickDisplay}}/tick</td>
                   {{#if @root.isGM}}
-                    <td style="text-align: center;">
+                    <td style="text-align: center; white-space: nowrap;">
+                      <button type="button" class="dm-icon-btn" data-action="openEditStockModal" data-resource-id="{{resourceId}}" title="Editar Estoque de {{name}}">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
                       <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteStock" data-resource-id="{{resourceId}}" title="Excluir Recurso {{name}}">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
@@ -1780,10 +1969,17 @@
                     {{#if active}}Ativo{{else}}Inativo{{/if}}
                   </td>
                   {{#if @root.isGM}}
-                    <td style="text-align: center;">
-                      <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteFlow" data-local-id="{{localId}}" title="Remover Fluxo">
-                        <i class="fa-solid fa-trash-can"></i>
-                      </button>
+                    <td style="text-align: center; white-space: nowrap;">
+                      {{#unless isAutomaticUpkeep}}
+                        <button type="button" class="dm-icon-btn" data-action="openEditFlowModal" data-local-id="{{localId}}" title="Editar Fluxo">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteFlow" data-local-id="{{localId}}" title="Remover Fluxo">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      {{else}}
+                        <span class="dm-text-muted" title="Fluxo automático de sustento (configure no botão Configurar Sustento)"><i class="fa-solid fa-lock"></i></span>
+                      {{/unless}}
                     </td>
                   {{/if}}
                 </tr>
@@ -1936,9 +2132,14 @@
             <span class="dm-card__subtext">Agitação Ponderada: <strong>{{metrics.unrestRiskPercent}}%</strong> ({{metrics.unrestRiskLevel}})</span>
           </div>
           {{#if isGM}}
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddGroupModal">
-              <i class="fa-solid fa-plus"></i> Novo Grupo
-            </button>
+            <div class="dm-btn-group">
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openUpkeepModal" title="Configurar taxas de consumo e sustento">
+                <i class="fa-solid fa-wheat-awn text-emerald"></i> Configurar Sustento
+              </button>
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddGroupModal">
+                <i class="fa-solid fa-plus"></i> Novo Grupo
+              </button>
+            </div>
           {{/if}}
         </div>
 

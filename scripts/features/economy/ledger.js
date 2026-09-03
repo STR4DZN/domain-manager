@@ -89,33 +89,30 @@ export function sumFlowRates(flows) {
   return total;
 }
 
-function fractionDecimal(
+export function formatFlowRateDisplay(
   numerator,
   denominator,
-  precision = 4
+  precision = 2
 ) {
-  const negative = numerator < 0n;
+  if (numerator === 0n) {
+    return precision > 0 ? "0," + "0".repeat(precision) : "0";
+  }
+
+  const isNegative = numerator < 0n;
   const n = absBigInt(numerator);
-  const scale = 10n ** BigInt(precision);
 
-  const scaled =
-    (n * scale) / denominator;
+  const minorScale = 10n ** BigInt(precision);
+  const displayDecimals = Math.max(0, precision);
+  const displayScale = 10n ** BigInt(displayDecimals);
 
-  const whole =
-    scaled / scale;
-  const fraction =
-    String(scaled % scale)
-      .padStart(precision, "0")
-      .replace(/0+$/, "");
+  const scaled = (n * displayScale) / (denominator * minorScale);
+  const whole = scaled / displayScale;
+  const fraction = displayDecimals > 0
+    ? String(scaled % displayScale).padStart(displayDecimals, "0")
+    : "";
 
-  const output =
-    fraction
-      ? `${whole},${fraction}`
-      : String(whole);
-
-  return negative
-    ? `-${output}`
-    : output;
+  const sign = isNegative ? "-" : "+";
+  return fraction ? `${sign}${whole},${fraction}` : `${sign}${whole}`;
 }
 
 function reservationTotal(
@@ -248,13 +245,10 @@ export function buildResourceLedger({
     },
 
     netPerTickDisplay:
-      fractionDecimal(
+      formatFlowRateDisplay(
         rate.numerator,
         rate.denominator,
-        Math.max(
-          4,
-          resource.precision + 2
-        )
+        resource.precision
       ),
 
     netDirection,

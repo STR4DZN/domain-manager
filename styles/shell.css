@@ -2218,3 +2218,35 @@
   padding: 0 8px !important;
   font-size: 0.72rem !important;
 }
+
+.dm-form-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fbbf24;
+  margin: 12px 0 6px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.dm-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.dm-status-dot.is-active {
+  background: #34d399;
+  box-shadow: 0 0 4px #34d399;
+}
+
+.dm-status-dot.is-inactive {
+  background: #71717a;
+}

@@ -1,3 +1,4 @@
+import { calculateDomainUpkeep } from "../features/economy/upkeep.js";
 /**
  * Motor de Simulação Determinística Pura (Simulation Kernel).
  * Não persiste nada; calcula e retorna o SimulationReport em memória.
@@ -129,8 +130,12 @@ export function simulateAdvance({ snapshot, deltaTicks = 1 }) {
     const projectedStocks = new Map(initialStocks);
     const flowDeltas = new Map();
 
+    // Integrar sustentação populacional e manutenção geral
+    const upkeepInfo = calculateDomainUpkeep({ domainData: domain, catalog: snap.catalog });
+    const allDomainFlows = [...(domain.flows ?? []), ...upkeepInfo.syntheticFlows];
+
     // Integrar fluxos
-    for (const flow of domain.flows ?? []) {
+    for (const flow of allDomainFlows) {
       if (!flow.active) continue;
       const resId = flow.resourceId;
       const amount = Number(flow.amount ?? 0);
@@ -206,14 +211,39 @@ export function simulateAdvance({ snapshot, deltaTicks = 1 }) {
       const overReserved = !resDef.allowNegative && projectedReserved > 0 && projectedReserved > projectedStock;
 
       if (shortfall) {
-        alerts.push({
-          type: "shortfall",
-          domainUuid: domain.uuid,
-          domainName: domain.name,
-          resourceId: resId,
-          resourceName: resDef.name,
-          message: `Estoque de '${resDef.name}' no domínio '${domain.name}' ficará negativo (${projectedStock}).`
-        });
+        let isSustenanceCrisis = false;
+        if (resId === upkeepInfo.foodResId && upkeepInfo.rawFoodUnits > 0) {
+          isSustenanceCrisis = true;
+          alerts.push({
+            type: "famine",
+            domainUuid: domain.uuid,
+            domainName: domain.name,
+            resourceId: resId,
+            resourceName: resDef.name,
+            message: `Crise de Alimentos: O estoque de provisões em '${domain.name}' esgotou! A população sofrerá com fome e agitação aumentada.`
+          });
+        }
+        if (resId === upkeepInfo.waterResId && upkeepInfo.rawWaterUnits > 0) {
+          isSustenanceCrisis = true;
+          alerts.push({
+            type: "drought",
+            domainUuid: domain.uuid,
+            domainName: domain.name,
+            resourceId: resId,
+            resourceName: resDef.name,
+            message: `Crise Hídrica: O estoque de água em '${domain.name}' esgotou! Risco crítico para a população.`
+          });
+        }
+        if (!isSustenanceCrisis) {
+          alerts.push({
+            type: "shortfall",
+            domainUuid: domain.uuid,
+            domainName: domain.name,
+            resourceId: resId,
+            resourceName: resDef.name,
+            message: `Estoque de '${resDef.name}' no domínio '${domain.name}' ficará negativo (${projectedStock}).`
+          });
+        }
 
         const hasAgreement = (domain.agreements ?? []).some(
           (a) => a.status === "active" && (a.transfers ?? []).some((t) => t.resourceId === resId && t.direction === "send")

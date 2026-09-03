@@ -273,7 +273,7 @@ test("teste de escala: 1 galáxia, 6 planetas e 20 bases interligadas na árvore
 
   // Métricas da base
   assert.equal(baseContext.metrics.primaryStockDisplay, "100,00");
-  assert.equal(baseContext.metrics.netRateDisplay, "500");
+  assert.equal(baseContext.metrics.netRateDisplay, "-10,00");
   assert.equal(baseContext.metrics.defenseRating, 47); // 25 + floor(15 * 1.5) = 25 + 22 = 47
 });
 
