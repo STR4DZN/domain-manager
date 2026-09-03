@@ -1009,3 +1009,55 @@ test("v10: Harmonização e Unificação de HUD Lancer / COMP/CON (Transição d
   assert.ok(shellCss.includes(".dm-boot-card-hazard"), "CSS deve estilizar faixa de hazard");
 });
 
+test("v11: Boot Welcome Card Centralizado, Simétrico e Núcleo Holográfico 3D com Todas Animações Keyframes", async () => {
+  const appShell = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/app-shell.hbs"), "utf8");
+  const shellCss = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
+
+  // 1. Template: anel orbital e estrutura de esfera 3D
+  assert.ok(appShell.includes("dm-boot-sphere-orbit"), "Template deve conter anel orbital 3D");
+
+  // 2. CSS: Todos os @keyframes de animação devem estar estritamente definidos
+  const requiredKeyframes = [
+    "dmRotateClockwise",
+    "dmRotateCounter",
+    "dmSphereLongitude",
+    "dmSphereLatitude",
+    "dmRunwayScroll",
+    "dmLaserSnapLeft",
+    "dmLaserSnapRight",
+    "dmRigRotate",
+    "dmEqBounce",
+    "dmPulseDot",
+    "dmBootLoadProgress"
+  ];
+  for (const kf of requiredKeyframes) {
+    assert.ok(shellCss.includes(`@keyframes ${kf}`), `CSS deve conter @keyframes ${kf}`);
+  }
+
+  // 3. Centralização e Simetria do Card de Boas-Vindas
+  assert.ok(shellCss.includes(".dm-boot-welcome-card"), "CSS deve estilizar .dm-boot-welcome-card");
+  assert.ok(shellCss.includes("flex-direction: column"), "Card deve ter flex-direction: column para evitar vão horizontal");
+  assert.ok(shellCss.includes(".dm-boot-card-accent"), "CSS deve estilizar .dm-boot-card-accent");
+  assert.ok(shellCss.includes(".dm-boot-sphere-orbit"), "CSS deve estilizar o anel orbital da esfera 3D");
+
+  // 4. Integridade da árvore HTML do template app-shell.hbs
+  let depth = 0;
+  let earlyClose = false;
+  const regex = /<\/?div\b[^>]*>/gi;
+  let match;
+  while ((match = regex.exec(appShell)) !== null) {
+    if (match[0].startsWith("</")) {
+      depth--;
+      if (depth === 0 && match.index < appShell.lastIndexOf("</div>")) {
+        earlyClose = true;
+        break;
+      }
+    } else {
+      depth++;
+    }
+  }
+  assert.strictEqual(earlyClose, false, "app-shell.hbs não deve fechar a div raiz antes do final");
+  assert.strictEqual(depth, 0, "app-shell.hbs deve ter balanço perfeito de tags div");
+});
+
+

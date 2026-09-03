@@ -6080,7 +6080,7 @@
 /* 4. Núcleo Holográfico com Globo, Anéis e Retículo Tático (GIF 3) */
 .dm-boot-core-system {
   position: absolute !important;
-  top: 44% !important;
+  top: 41% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
   width: 320px !important;
@@ -6114,7 +6114,7 @@
 .dm-boot-ring-outer {
   width: 280px !important;
   height: 280px !important;
-  border: 1px dashed rgba(0, 229, 255, 0.4) !important;
+  border: 1px dashed rgba(0, 229, 255, 0.45) !important;
   animation: dmRotateClockwise 18s linear infinite !important;
 }
 
@@ -6145,14 +6145,18 @@
 }
 
 .dm-boot-sphere {
-  width: 104px !important;
-  height: 104px !important;
+  width: 108px !important;
+  height: 108px !important;
   border-radius: 50% !important;
-  border: 1px solid rgba(0, 229, 255, 0.5) !important;
+  border: 1.5px solid rgba(0, 229, 255, 0.6) !important;
   position: relative !important;
-  background: radial-gradient(circle at 30% 30%, rgba(0, 229, 255, 0.25), transparent 70%) !important;
-  box-shadow: inset 0 0 18px rgba(0, 229, 255, 0.35), 0 0 24px rgba(0, 229, 255, 0.2) !important;
+  background: radial-gradient(circle at 35% 35%, rgba(0, 229, 255, 0.3) 0%, rgba(0, 229, 255, 0.08) 50%, rgba(6, 12, 20, 0.75) 100%) !important;
+  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.4), 0 0 25px rgba(0, 229, 255, 0.25) !important;
   overflow: hidden !important;
+  animation: dmRotateClockwise 20s linear infinite !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .dm-boot-sphere::before {
@@ -6160,9 +6164,9 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(0, 229, 255, 0.65);
-  transform: scaleX(0.4);
-  animation: dmSphereLongitude 4s linear infinite;
+  border: 1.5px solid rgba(0, 229, 255, 0.75);
+  box-sizing: border-box;
+  animation: dmSphereLongitude 3.2s linear infinite !important;
 }
 
 .dm-boot-sphere::after {
@@ -6170,8 +6174,18 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(0, 229, 255, 0.65);
-  transform: scaleY(0.4);
+  border: 1.5px dashed rgba(0, 229, 255, 0.65);
+  box-sizing: border-box;
+  animation: dmSphereLatitude 5s ease-in-out infinite alternate !important;
+}
+
+.dm-boot-sphere-orbit {
+  position: absolute !important;
+  inset: 2px !important;
+  border-radius: 50% !important;
+  border: 1px dotted rgba(239, 68, 68, 0.65) !important;
+  animation: dmRotateCounter 6s linear infinite !important;
+  pointer-events: none !important;
 }
 
 .dm-boot-core-coords {
@@ -6376,10 +6390,10 @@
 /* 7. Card Central de Boas-Vindas ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) */
 .dm-boot-welcome-card {
   position: absolute !important;
-  bottom: 45px !important;
+  bottom: 28px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: min(620px, calc(100% - 32px)) !important;
+  width: min(620px, calc(100% - 40px)) !important;
   max-width: 92vw !important;
   background: rgba(6, 12, 20, 0.96) !important;
   border: 1px solid rgba(0, 229, 255, 0.7) !important;
@@ -6389,8 +6403,11 @@
   box-shadow: 0 0 35px rgba(0, 229, 255, 0.3), 0 0 60px rgba(239, 68, 68, 0.25), inset 0 0 20px rgba(0, 229, 255, 0.1) !important;
   z-index: 25 !important;
   display: flex !important;
+  flex-direction: column !important;
   align-items: stretch !important;
   animation: dmWelcomeCardSnap 0.5s cubic-bezier(0.05, 0.9, 0.1, 1) forwards !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 @keyframes dmWelcomeCardSnap {
@@ -6399,21 +6416,37 @@
 }
 
 .dm-boot-card-accent {
-  width: 14px !important;
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important;
+  width: 100% !important;
+  height: 3px !important;
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #ef4444 100%) !important;
   flex-shrink: 0 !important;
-  box-shadow: 0 0 12px #ef4444 !important;
+  box-shadow: 0 0 10px #ef4444 !important;
+}
+
+.dm-boot-card-hazard {
+  width: 100% !important;
+  height: 4px !important;
+  background-image: repeating-linear-gradient(-45deg, rgba(239, 68, 68, 0.5) 0, rgba(239, 68, 68, 0.5) 5px, transparent 5px, transparent 10px) !important;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3) !important;
+  opacity: 0.85 !important;
+  flex-shrink: 0 !important;
 }
 
 .dm-boot-card-content {
-  flex: 1 !important;
-  padding: 16px 24px !important;
+  width: 100% !important;
+  padding: 16px 28px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   text-align: center !important;
+  box-sizing: border-box !important;
 }
 
 .dm-boot-status-badge {
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
   font-family: var(--dm-font-mono, monospace) !important;
   font-size: 10px !important;
@@ -6421,10 +6454,10 @@
   color: #00e5ff !important;
   letter-spacing: 2px !important;
   background: rgba(0, 229, 255, 0.12) !important;
-  padding: 3px 12px !important;
+  padding: 3px 14px !important;
   border-radius: 2px !important;
   border: 1px solid rgba(0, 229, 255, 0.35) !important;
-  margin-bottom: 8px !important;
+  margin: 0 auto 8px auto !important;
 }
 
 .dm-boot-status-dot {
@@ -6434,6 +6467,7 @@
   border-radius: 50% !important;
   box-shadow: 0 0 8px #00e5ff !important;
   animation: dmPulseDot 1s infinite alternate !important;
+  flex-shrink: 0 !important;
 }
 
 .dm-boot-welcome-title {
@@ -6443,12 +6477,15 @@
   letter-spacing: 2.5px !important;
   color: #ffffff !important;
   text-shadow: 0 0 14px rgba(0, 229, 255, 0.7), 0 0 28px rgba(0, 229, 255, 0.3) !important;
-  margin-bottom: 4px !important;
+  margin: 0 0 4px 0 !important;
   text-transform: uppercase !important;
+  text-align: center !important;
+  width: 100% !important;
 }
 
 .dm-boot-welcome-title span {
   color: #00e5ff !important;
+  text-shadow: 0 0 16px rgba(0, 229, 255, 0.9) !important;
 }
 
 .dm-boot-welcome-subtitle {
@@ -6456,10 +6493,13 @@
   font-size: 11px !important;
   color: #94a3b8 !important;
   letter-spacing: 1.5px !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 0 4px 0 !important;
 }
 
 .dm-boot-progress-bar {
-  margin-top: 12px !important;
+  margin-top: 10px !important;
   width: 100% !important;
   height: 4px !important;
   background: rgba(0, 229, 255, 0.15) !important;
@@ -6479,12 +6519,83 @@
 .dm-boot-card-meta {
   display: flex !important;
   justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
   margin-top: 8px !important;
   font-family: var(--dm-font-mono, monospace) !important;
   font-size: 9px !important;
   color: #71717a !important;
   letter-spacing: 1px !important;
+  box-sizing: border-box !important;
 }
 .dm-boot-card-meta i {
   color: #00e5ff !important;
+  margin-right: 4px !important;
+}
+
+/* ==========================================================================
+   ANIMAÇÕES HUD: KEYFRAMES DIEGÉTICOS DO SISTEMA TÁTICO & BOOT WELCOME
+   ========================================================================== */
+@keyframes dmRotateClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dmRotateCounter {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes dmSphereLongitude {
+  0% { transform: scaleX(0.08); opacity: 0.35; }
+  25% { transform: scaleX(0.65); opacity: 0.85; }
+  50% { transform: scaleX(0.95); opacity: 0.95; }
+  75% { transform: scaleX(0.65); opacity: 0.85; }
+  100% { transform: scaleX(0.08); opacity: 0.35; }
+}
+
+@keyframes dmSphereLatitude {
+  0% { transform: scaleY(0.35) rotate(-6deg); opacity: 0.45; }
+  50% { transform: scaleY(0.52) rotate(0deg); opacity: 0.85; }
+  100% { transform: scaleY(0.35) rotate(6deg); opacity: 0.45; }
+}
+
+@keyframes dmRunwayScroll {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 0 64px, 0 64px, 0 64px; }
+}
+
+@keyframes dmLaserSnapLeft {
+  0% { width: 0%; opacity: 1; }
+  70% { width: 48%; opacity: 1; }
+  100% { width: 0%; opacity: 0; }
+}
+
+@keyframes dmLaserSnapRight {
+  0% { width: 0%; opacity: 1; }
+  70% { width: 48%; opacity: 1; }
+  100% { width: 0%; opacity: 0; }
+}
+
+@keyframes dmRigRotate {
+  0% { transform: rotate(0deg) scale(0.95); }
+  50% { transform: rotate(180deg) scale(1.05); }
+  100% { transform: rotate(360deg) scale(0.95); }
+}
+
+@keyframes dmEqBounce {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1); }
+}
+
+@keyframes dmPulseDot {
+  from { opacity: 0.3; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1.3); }
+}
+
+@keyframes dmBootLoadProgress {
+  0% { width: 0%; }
+  30% { width: 45%; }
+  70% { width: 85%; }
+  100% { width: 100%; }
 }
