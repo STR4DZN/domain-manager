@@ -1,10 +1,16 @@
 /**
  * DomainManagerShellApp — Aplicação Principal do Cockpit (ApplicationV2)
  *
- * Implementa interface de 3 níveis:
- * 1. Rail: Dock de navegação rápida e estados
- * 2. Sidebar: Explorador de domínios em árvore hierárquica e tags
- * 3. Workspace: Cockpit com cards, navegação em abas e modais in-page (Criação, Edição, Eventos e Tempo)
+ * Implementa interface de 3 níveis com CRUD completo exclusivo para o Mestre/Assistente:
+ * - Domínios: Criação, Edição completa e Exclusão com confirmação.
+ * - Economia: Adicionar, Ajustar e Excluir Estoques e Fluxos.
+ * - Projetos: Criar, Acompanhar e Excluir Obras e Projetos.
+ * - Pessoas: Adicionar e Excluir Notáveis e Grupos Populacionais.
+ * - Diplomacia: Adicionar e Excluir Relações e Acordos Diplomáticos.
+ * - Intel: Adicionar e Excluir Fatos, Segredos e Boatos.
+ * - Crônicas: Adicionar e Excluir Registros Históricos.
+ *
+ * Todas as mutações exigem isGM e são estritamente ocultas para Jogadores.
  */
 
 import { MODULE_ID, MODULE_TITLE, RECORD_TYPES } from "../core/constants.js";
@@ -13,10 +19,10 @@ import { decodeRecord } from "../models/record-codec.js";
 import { updateRecord } from "../data/journal-store.js";
 import { buildAncestorChain } from "../features/domains/hierarchy.js";
 import { buildDomainLedger } from "../features/economy/ledger.js";
-import { formatMinorUnits } from "../core/numbers.js";
+import { formatMinorUnits, parseMinorUnits } from "../core/numbers.js";
 import { isAuthorityReady } from "../authority/socket.js";
 import { getTimekeepingStatus } from "../integration/timekeeping.js";
-import { getResourceCatalogSetting } from "../core/settings.js";
+import { getResourceCatalogSetting, setResourceCatalogSetting } from "../core/settings.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -57,9 +63,6 @@ function getVisibleDomainRecord(uuid, user) {
   return (controllers.includes(user.id) || observers.includes(user.id)) ? record : null;
 }
 
-/**
- * Constrói nós hierárquicos aninhados calculando nós descendentes totais.
- */
 function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = null) {
   const nodes = [];
   const children = domains.filter((d) => {
@@ -89,10 +92,6 @@ function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = 
   return nodes;
 }
 
-/**
- * Achata a árvore com cálculo de profundidade e recuo em pixels.
- * Suporta níveis arbitrários (1 a 100) sem limite de loops em templates.
- */
 function flattenDomainTree(nodes, depth = 0) {
   const flat = [];
   for (const node of nodes) {
@@ -109,9 +108,6 @@ function flattenDomainTree(nodes, depth = 0) {
   return flat;
 }
 
-/**
- * Agrupa domínios por tags
- */
 function buildDomainTagGroups(domains, currentSelectedUuid = null) {
   const map = new Map();
 
@@ -146,15 +142,28 @@ function buildDomainTagGroups(domains, currentSelectedUuid = null) {
 export class DomainManagerShellApp extends HandlebarsApplicationMixin(ApplicationV2) {
   activeSection = SHELL_SECTIONS.DOMAINS;
   selectedDomainUuid = null;
-  sidebarMode = "hierarchy"; // 'hierarchy' | 'tags'
-  activeTab = "overview";    // 'overview' | 'economy' | 'projects' | 'people' | 'diplomacy' | 'intel' | 'history'
+  sidebarMode = "hierarchy";
+  activeTab = "overview";
   searchQuery = "";
   selectedTag = null;
+
+  // Modais de Criação / Edição / Confirmação
   isCreatingDomain = false;
   isEditingDomain = false;
+  isDeletingDomain = false;
   isAdvancingTimeModal = false;
   isEventModalOpen = false;
   advanceCustomTicks = 1;
+
+  // Modais de Tópicos Sensíveis (Exclusivos GM)
+  isStockModalOpen = false;
+  isFlowModalOpen = false;
+  isProjectModalOpen = false;
+  isNotableModalOpen = false;
+  isGroupModalOpen = false;
+  isRelationModalOpen = false;
+  isIntelModalOpen = false;
+  isHistoryModalOpen = false;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -178,12 +187,19 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       switchTab: DomainManagerShellApp.#onSwitchTab,
       filterByTag: DomainManagerShellApp.#onFilterByTag,
       search: DomainManagerShellApp.#onSearch,
+
+      // Domínios (CRUD)
       openCreateDomain: DomainManagerShellApp.#onOpenCreateDomain,
       cancelCreateDomain: DomainManagerShellApp.#onCancelCreateDomain,
       submitCreateDomain: DomainManagerShellApp.#onSubmitCreateDomain,
       openEditDomain: DomainManagerShellApp.#onOpenEditDomain,
       cancelEditDomain: DomainManagerShellApp.#onCancelEditDomain,
       submitEditDomain: DomainManagerShellApp.#onSubmitEditDomain,
+      openDeleteDomainModal: DomainManagerShellApp.#onOpenDeleteDomainModal,
+      cancelDeleteDomainModal: DomainManagerShellApp.#onCancelDeleteDomainModal,
+      confirmDeleteDomain: DomainManagerShellApp.#onConfirmDeleteDomain,
+
+      // Simulação e Eventos
       openAdvanceModal: DomainManagerShellApp.#onOpenAdvanceModal,
       cancelAdvanceModal: DomainManagerShellApp.#onCancelAdvanceModal,
       quickAdvanceTicks: DomainManagerShellApp.#onQuickAdvanceTicks,
@@ -192,7 +208,53 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       cancelEventModal: DomainManagerShellApp.#onCancelEventModal,
       submitCustomRollEvent: DomainManagerShellApp.#onSubmitCustomRollEvent,
       submitAuthorEvent: DomainManagerShellApp.#onSubmitAuthorEvent,
-      rollEvent: DomainManagerShellApp.#onOpenEventModal
+      rollEvent: DomainManagerShellApp.#onOpenEventModal,
+
+      // Estoques (CRUD)
+      openAddStockModal: DomainManagerShellApp.#onOpenAddStockModal,
+      cancelStockModal: DomainManagerShellApp.#onCancelStockModal,
+      submitStock: DomainManagerShellApp.#onSubmitStock,
+      deleteStock: DomainManagerShellApp.#onDeleteStock,
+
+      // Fluxos (CRUD)
+      openAddFlowModal: DomainManagerShellApp.#onOpenAddFlowModal,
+      cancelFlowModal: DomainManagerShellApp.#onCancelFlowModal,
+      submitFlow: DomainManagerShellApp.#onSubmitFlow,
+      deleteFlow: DomainManagerShellApp.#onDeleteFlow,
+
+      // Projetos (CRUD)
+      openAddProjectModal: DomainManagerShellApp.#onOpenAddProjectModal,
+      cancelProjectModal: DomainManagerShellApp.#onCancelProjectModal,
+      submitProject: DomainManagerShellApp.#onSubmitProject,
+      deleteProject: DomainManagerShellApp.#onDeleteProject,
+
+      // População & Notáveis (CRUD)
+      openAddNotableModal: DomainManagerShellApp.#onOpenAddNotableModal,
+      cancelNotableModal: DomainManagerShellApp.#onCancelNotableModal,
+      submitNotable: DomainManagerShellApp.#onSubmitNotable,
+      deleteNotable: DomainManagerShellApp.#onDeleteNotable,
+      openAddGroupModal: DomainManagerShellApp.#onOpenAddGroupModal,
+      cancelGroupModal: DomainManagerShellApp.#onCancelGroupModal,
+      submitGroup: DomainManagerShellApp.#onSubmitGroup,
+      deleteGroup: DomainManagerShellApp.#onDeleteGroup,
+
+      // Diplomacia (CRUD)
+      openAddRelationModal: DomainManagerShellApp.#onOpenAddRelationModal,
+      cancelRelationModal: DomainManagerShellApp.#onCancelRelationModal,
+      submitRelation: DomainManagerShellApp.#onSubmitRelation,
+      deleteRelation: DomainManagerShellApp.#onDeleteRelation,
+
+      // Intel (CRUD)
+      openAddIntelModal: DomainManagerShellApp.#onOpenAddIntelModal,
+      cancelIntelModal: DomainManagerShellApp.#onCancelIntelModal,
+      submitIntel: DomainManagerShellApp.#onSubmitIntel,
+      deleteIntel: DomainManagerShellApp.#onDeleteIntel,
+
+      // Histórico / Crônicas (CRUD)
+      openAddHistoryModal: DomainManagerShellApp.#onOpenAddHistoryModal,
+      cancelHistoryModal: DomainManagerShellApp.#onCancelHistoryModal,
+      submitHistory: DomainManagerShellApp.#onSubmitHistory,
+      deleteHistory: DomainManagerShellApp.#onDeleteHistory
     }
   };
 
@@ -215,17 +277,30 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     return this;
   }
 
+  #closeAllModals() {
+    this.isCreatingDomain = false;
+    this.isEditingDomain = false;
+    this.isDeletingDomain = false;
+    this.isAdvancingTimeModal = false;
+    this.isEventModalOpen = false;
+    this.isStockModalOpen = false;
+    this.isFlowModalOpen = false;
+    this.isProjectModalOpen = false;
+    this.isNotableModalOpen = false;
+    this.isGroupModalOpen = false;
+    this.isRelationModalOpen = false;
+    this.isIntelModalOpen = false;
+    this.isHistoryModalOpen = false;
+  }
+
   /* ------------------------------------------------------------------------
-     Actions Handlers (Click and UI interactions)
+     Navegação e Seleção
      ------------------------------------------------------------------------ */
   static #onNavigate(event, target) {
     const section = target.dataset.section;
     if (!section) return;
 
-    this.isCreatingDomain = false;
-    this.isEditingDomain = false;
-    this.isAdvancingTimeModal = false;
-    this.isEventModalOpen = false;
+    this.#closeAllModals();
 
     if (section === "dashboard") {
       this.activeSection = "dashboard";
@@ -247,8 +322,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static #onSelectDomain(event, target) {
     const uuid = target.dataset.uuid;
     this.selectedDomainUuid = uuid || null;
-    this.isCreatingDomain = false;
-    this.isEditingDomain = false;
+    this.#closeAllModals();
     this.render();
   }
 
@@ -282,13 +356,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.render();
   }
 
-  /* --- Criação de Domínio --- */
+  /* ------------------------------------------------------------------------
+     1. Domínios: Criação, Edição e Exclusão
+     ------------------------------------------------------------------------ */
   static #onOpenCreateDomain() {
     if (!game.user.isGM) return;
+    this.#closeAllModals();
     this.isCreatingDomain = true;
-    this.isEditingDomain = false;
-    this.isAdvancingTimeModal = false;
-    this.isEventModalOpen = false;
     this.render();
   }
 
@@ -299,13 +373,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitCreateDomain() {
     if (!game.user.isGM) return;
-    const formElement = this.element?.querySelector(".dm-dialog-card");
-    const name = formElement?.querySelector("#dm-new-domain-name")?.value?.trim() || "Nova Base";
-    const category = formElement?.querySelector("#dm-new-domain-category")?.value?.trim() || "settlement";
-    const nature = formElement?.querySelector("#dm-new-domain-nature")?.value || "physical";
-    const tagsRaw = formElement?.querySelector("#dm-new-domain-tags")?.value || "";
-    const description = formElement?.querySelector("#dm-new-domain-description")?.value || "";
-    const parentUuid = formElement?.querySelector("#dm-new-domain-parent")?.value || null;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-new-domain-name")?.value?.trim() || "Nova Base";
+    const category = form?.querySelector("#dm-new-domain-category")?.value?.trim() || "settlement";
+    const nature = form?.querySelector("#dm-new-domain-nature")?.value || "physical";
+    const tagsRaw = form?.querySelector("#dm-new-domain-tags")?.value || "";
+    const description = form?.querySelector("#dm-new-domain-description")?.value || "";
+    const parentUuid = form?.querySelector("#dm-new-domain-parent")?.value || null;
 
     const tags = tagsRaw.split(",").map((t) => t.trim()).filter(Boolean);
 
@@ -331,13 +405,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  /* --- Edição de Domínio --- */
   static #onOpenEditDomain() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
     this.isEditingDomain = true;
-    this.isCreatingDomain = false;
-    this.isAdvancingTimeModal = false;
-    this.isEventModalOpen = false;
     this.render();
   }
 
@@ -405,13 +476,41 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  /* --- Avanço Temporal --- */
+  static #onOpenDeleteDomainModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isDeletingDomain = true;
+    this.render();
+  }
+
+  static #onCancelDeleteDomainModal() {
+    this.isDeletingDomain = false;
+    this.render();
+  }
+
+  static async #onConfirmDeleteDomain() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const targetUuid = this.selectedDomainUuid;
+    this.isDeletingDomain = false;
+
+    try {
+      const { deleteDomainAction } = await import("../features/domains/actions.js");
+      await deleteDomainAction({ domainUuid: targetUuid });
+      this.selectedDomainUuid = null;
+      ui.notifications?.info("Domínio excluído com sucesso!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao excluir domínio.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     2. Simulação Temporal e Eventos
+     ------------------------------------------------------------------------ */
   static #onOpenAdvanceModal() {
     if (!game.user.isGM) return;
+    this.#closeAllModals();
     this.isAdvancingTimeModal = true;
-    this.isCreatingDomain = false;
-    this.isEditingDomain = false;
-    this.isEventModalOpen = false;
     this.render();
   }
 
@@ -442,7 +541,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  /* --- Rolar & Customizar Eventos --- */
   static #onOpenEventModal() {
     if (!game.user.isGM) {
       ui.notifications?.warn("Apenas o Mestre pode rolar eventos.");
@@ -452,10 +550,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ui.notifications?.warn("Selecione um domínio primeiro.");
       return;
     }
+    this.#closeAllModals();
     this.isEventModalOpen = true;
-    this.isCreatingDomain = false;
-    this.isEditingDomain = false;
-    this.isAdvancingTimeModal = false;
     this.render();
   }
 
@@ -534,6 +630,551 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
+     3. Economia: Estoques e Fluxos (CRUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenAddStockModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isStockModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelStockModal() {
+    this.isStockModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitStock() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    let resourceId = form?.querySelector("#dm-stock-resource-select")?.value;
+    const customId = form?.querySelector("#dm-stock-resource-custom")?.value?.trim()?.toLowerCase();
+    if (customId) resourceId = customId;
+    const amount = Number(form?.querySelector("#dm-stock-amount")?.value) || 0;
+
+    if (!resourceId) {
+      ui.notifications?.warn("Selecione ou digite um recurso válido.");
+      return;
+    }
+
+    this.isStockModalOpen = false;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!data.economy) data.economy = {};
+      if (!Array.isArray(data.economy.stocks)) data.economy.stocks = [];
+
+      const existingIndex = data.economy.stocks.findIndex((s) => s.resourceId === resourceId);
+      const newStock = {
+        resourceId,
+        amount: Math.round(amount * 100),
+        reserved: 0
+      };
+
+      if (existingIndex >= 0) {
+        data.economy.stocks[existingIndex].amount = newStock.amount;
+      } else {
+        data.economy.stocks.push(newStock);
+      }
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+
+      ui.notifications?.info(`Estoque de ${resourceId.toUpperCase()} atualizado para ${amount}!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao salvar estoque.");
+    }
+  }
+
+  static async #onDeleteStock(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const resourceId = target.dataset.resourceId;
+    if (!resourceId) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (data.economy?.stocks) {
+        data.economy.stocks = data.economy.stocks.filter((s) => s.resourceId !== resourceId);
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info(`Estoque de ${resourceId} removido!`);
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover estoque.");
+    }
+  }
+
+  static #onOpenAddFlowModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isFlowModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelFlowModal() {
+    this.isFlowModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitFlow() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-flow-name")?.value?.trim() || "Fluxo Geral";
+    const resourceId = form?.querySelector("#dm-flow-resource")?.value || "credits";
+    const direction = form?.querySelector("#dm-flow-direction")?.value || "inflow";
+    const amount = Number(form?.querySelector("#dm-flow-amount")?.value) || 0;
+    const category = form?.querySelector("#dm-flow-category")?.value || "comércio";
+
+    this.isFlowModalOpen = false;
+
+    try {
+      const { upsertDomainFlowAction } = await import("../features/economy/actions.js");
+      await upsertDomainFlowAction({
+        domainUuid: this.selectedDomainUuid,
+        name,
+        resourceId,
+        direction,
+        displayAmount: String(amount),
+        periodTicks: 1,
+        category,
+        source: "Manual GM",
+        active: true
+      });
+      ui.notifications?.info(`Fluxo "${name}" adicionado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar fluxo.");
+    }
+  }
+
+  static async #onDeleteFlow(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+
+    try {
+      const { removeDomainFlowAction } = await import("../features/economy/actions.js");
+      await removeDomainFlowAction({
+        domainUuid: this.selectedDomainUuid,
+        localId
+      });
+      ui.notifications?.info("Fluxo removido com sucesso!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover fluxo.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     4. Projetos & Obras (CRUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenAddProjectModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isProjectModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelProjectModal() {
+    this.isProjectModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitProject() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-project-name")?.value?.trim() || "Nova Obra";
+    const category = form?.querySelector("#dm-project-category")?.value || "infraestrutura";
+    const workRequired = Number(form?.querySelector("#dm-project-work")?.value) || 100;
+    const rateAmount = Number(form?.querySelector("#dm-project-rate")?.value) || 10;
+    const description = form?.querySelector("#dm-project-desc")?.value || "";
+
+    this.isProjectModalOpen = false;
+
+    try {
+      const { createProjectAction } = await import("../features/projects/actions.js");
+      await createProjectAction({
+        domainUuid: this.selectedDomainUuid,
+        name,
+        category,
+        description,
+        workRequired,
+        rateAmount,
+        periodTicks: 1,
+        status: "active"
+      });
+      ui.notifications?.info(`Projeto "${name}" iniciado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao criar projeto.");
+    }
+  }
+
+  static async #onDeleteProject(event, target) {
+    if (!game.user.isGM) return;
+    const projectUuid = target.dataset.uuid;
+    if (!projectUuid) return;
+
+    try {
+      const { deleteProjectAction } = await import("../features/projects/actions.js");
+      await deleteProjectAction({ projectUuid });
+      ui.notifications?.info("Projeto removido com sucesso!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover projeto.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     5. Pessoas: Notáveis e Grupos (CRUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenAddNotableModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isNotableModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelNotableModal() {
+    this.isNotableModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitNotable() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-notable-name")?.value?.trim();
+    const role = form?.querySelector("#dm-notable-role")?.value?.trim() || "Conselheiro";
+    const title = form?.querySelector("#dm-notable-title")?.value?.trim() || "";
+    const loyalty = form?.querySelector("#dm-notable-loyalty")?.value || "Alta";
+    const status = form?.querySelector("#dm-notable-status")?.value || "active";
+
+    if (!name) {
+      ui.notifications?.warn("O nome do notável é obrigatório.");
+      return;
+    }
+
+    this.isNotableModalOpen = false;
+
+    try {
+      const { upsertNotableAction } = await import("../features/people/actions.js");
+      await upsertNotableAction({
+        domainUuid: this.selectedDomainUuid,
+        name,
+        role,
+        title,
+        assignment: loyalty,
+        status
+      });
+      ui.notifications?.info(`Notável "${name}" registrado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar notável.");
+    }
+  }
+
+  static async #onDeleteNotable(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+
+    try {
+      const { removeNotableAction } = await import("../features/people/actions.js");
+      await removeNotableAction({
+        domainUuid: this.selectedDomainUuid,
+        localId
+      });
+      ui.notifications?.info("Notável removido!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover notável.");
+    }
+  }
+
+  static #onOpenAddGroupModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isGroupModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelGroupModal() {
+    this.isGroupModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitGroup() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const name = form?.querySelector("#dm-group-name")?.value?.trim();
+    const count = Number(form?.querySelector("#dm-group-count")?.value) || 100;
+    const happiness = form?.querySelector("#dm-group-happiness")?.value || "Estável";
+    const unrestScore = Number(form?.querySelector("#dm-group-unrest")?.value) || 0;
+
+    if (!name) {
+      ui.notifications?.warn("O nome do grupo é obrigatório.");
+      return;
+    }
+
+    this.isGroupModalOpen = false;
+
+    try {
+      const { upsertGroupAction } = await import("../features/people/actions.js");
+      await upsertGroupAction({
+        domainUuid: this.selectedDomainUuid,
+        name,
+        count,
+        includedInTotal: true,
+        quality: happiness,
+        status: "active",
+        assignment: `Agitação: ${unrestScore}`
+      });
+      ui.notifications?.info(`Grupo "${name}" adicionado!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar grupo.");
+    }
+  }
+
+  static async #onDeleteGroup(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+
+    try {
+      const { removeGroupAction } = await import("../features/people/actions.js");
+      await removeGroupAction({
+        domainUuid: this.selectedDomainUuid,
+        localId
+      });
+      ui.notifications?.info("Grupo populacional removido!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover grupo.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     6. Diplomacia & Relações (CRUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenAddRelationModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isRelationModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelRelationModal() {
+    this.isRelationModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitRelation() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const targetDomainUuid = form?.querySelector("#dm-relation-target")?.value;
+    const posture = form?.querySelector("#dm-relation-posture")?.value || "neutral";
+    const notes = form?.querySelector("#dm-relation-notes")?.value || "";
+
+    if (!targetDomainUuid) {
+      ui.notifications?.warn("Selecione um domínio alvo para a relação diplomática.");
+      return;
+    }
+
+    this.isRelationModalOpen = false;
+
+    try {
+      const { addRelation } = await import("../features/relations/actions.js");
+      await addRelation({
+        domainUuid: this.selectedDomainUuid,
+        targetDomainUuid,
+        posture,
+        notes
+      });
+      ui.notifications?.info("Relação diplomática atualizada com sucesso!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao atualizar diplomacia.");
+    }
+  }
+
+  static async #onDeleteRelation(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const targetUuid = target.dataset.targetUuid;
+    if (!targetUuid) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.relations)) {
+        data.relations = data.relations.filter((r) => r.targetDomainUuid !== targetUuid);
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info("Relação diplomática removida!");
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover relação.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     7. Segredos e Conhecimento (Intel) (CRUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenAddIntelModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isIntelModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelIntelModal() {
+    this.isIntelModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitIntel() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const title = form?.querySelector("#dm-intel-title")?.value?.trim();
+    const content = form?.querySelector("#dm-intel-content")?.value?.trim() || "";
+    const category = form?.querySelector("#dm-intel-category")?.value || "secret";
+    const credibility = form?.querySelector("#dm-intel-credibility")?.value || "high";
+    const visibility = form?.querySelector("#dm-intel-visibility")?.value || "gmOnly";
+
+    if (!title) {
+      ui.notifications?.warn("O título da informação é obrigatório.");
+      return;
+    }
+
+    this.isIntelModalOpen = false;
+
+    try {
+      const { addIntel } = await import("../features/intel/actions.js");
+      await addIntel({
+        domainUuid: this.selectedDomainUuid,
+        title,
+        content,
+        category,
+        credibility,
+        visibility
+      });
+      ui.notifications?.info(`Informe "${title}" registrado com sucesso!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar intel.");
+    }
+  }
+
+  static async #onDeleteIntel(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = target.dataset.localId;
+    if (!localId) return;
+
+    try {
+      const { removeIntel } = await import("../features/intel/actions.js");
+      await removeIntel({
+        domainUuid: this.selectedDomainUuid,
+        localId
+      });
+      ui.notifications?.info("Registro de intel removido!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover intel.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     8. Crônicas e Histórico (CRUD)
+     ------------------------------------------------------------------------ */
+  static #onOpenAddHistoryModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isHistoryModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelHistoryModal() {
+    this.isHistoryModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitHistory() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const title = form?.querySelector("#dm-history-title")?.value?.trim();
+    const category = form?.querySelector("#dm-history-category")?.value || "story";
+    const summary = form?.querySelector("#dm-history-summary")?.value?.trim() || "";
+    const details = form?.querySelector("#dm-history-details")?.value?.trim() || "";
+
+    if (!title) {
+      ui.notifications?.warn("O título da crônica é obrigatório.");
+      return;
+    }
+
+    this.isHistoryModalOpen = false;
+
+    try {
+      const { addHistoryEvent } = await import("../features/history/actions.js");
+      await addHistoryEvent({
+        domainUuid: this.selectedDomainUuid,
+        title,
+        category,
+        summary,
+        details
+      });
+      ui.notifications?.info(`Crônica "${title}" adicionada ao histórico!`);
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar crônica.");
+    }
+  }
+
+  static async #onDeleteHistory(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const index = Number(target.dataset.index);
+    if (isNaN(index)) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.history)) {
+        // Como a lista no UI é invertida (mais recente primeiro):
+        const realIndex = data.history.length - 1 - index;
+        if (realIndex >= 0 && realIndex < data.history.length) {
+          data.history.splice(realIndex, 1);
+          await updateRecord({
+            uuid: this.selectedDomainUuid,
+            recordType: RECORD_TYPES.DOMAIN,
+            data
+          });
+          ui.notifications?.info("Crônica removida do histórico!");
+          this.render();
+        }
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover crônica.");
+    }
+  }
+
+  /* ------------------------------------------------------------------------
      Context Preparation
      ------------------------------------------------------------------------ */
   async _prepareContext(options) {
@@ -543,12 +1184,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     const domainRecords = listVisibleDomainRecords(game.user);
 
-    // Auto-seleção do primeiro domínio se nenhum estiver selecionado
     if (!this.selectedDomainUuid && domainRecords.length > 0) {
       this.selectedDomainUuid = domainRecords[0].document.uuid;
     }
 
-    // Filtrar domínios pela busca
     let filteredDomains = domainRecords;
     if (this.searchQuery) {
       const query = this.searchQuery.toLowerCase();
@@ -558,12 +1197,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       );
     }
 
-    // 1. Árvore e Tags para a Sidebar (suporte a profundidade ilimitada)
     const domainTree = buildDomainTreeNodes(filteredDomains, null, this.selectedDomainUuid);
     const flatDomainTree = flattenDomainTree(domainTree);
     const tagGroups = buildDomainTagGroups(filteredDomains, this.selectedDomainUuid);
 
-    // 2. Domínio Selecionado e Detalhes
     const selectedRecord = domainRecords.find((d) => d.document.uuid === this.selectedDomainUuid) || null;
     let selectedDomain = null;
     let breadcrumbs = [];
@@ -590,10 +1227,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     let recentChronicles = [];
     let fullHistory = [];
 
+    const catalog = (typeof getResourceCatalogSetting === "function" ? getResourceCatalogSetting() : null) || { resources: [] };
+
     if (selectedRecord) {
       const data = selectedRecord.data;
 
-      // Breadcrumbs
       const ancestors = buildAncestorChain({
         startUuid: selectedRecord.document.uuid,
         getParentUuid: (u) => {
@@ -607,8 +1245,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         return { uuid: u, name: r?.document?.name || "Território" };
       });
 
-      // Ledgers e Economia
-      const catalog = (typeof getResourceCatalogSetting === "function" ? getResourceCatalogSetting() : null) || { resources: [] };
       const ledger = buildDomainLedger({
         catalog,
         economy: data.economy,
@@ -642,14 +1278,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       domainFlows = (data.economy?.flows ?? []).map((f) => ({
         localId: f.localId,
         resourceId: f.resourceId,
+        name: f.name || f.resourceId.toUpperCase(),
         direction: f.direction === "inflow" ? "Entrada" : "Saída",
         isInflow: f.direction === "inflow",
-        amountPerTickFormatted: formatMinorUnits((f.amountPerTick || 0) * 100, 2),
-        period: f.period || "tick",
-        category: f.category || "comércio"
+        amountPerTickFormatted: formatMinorUnits((f.amount || f.amountPerTick || 0), 2),
+        displayAmount: formatMinorUnits((f.amount || f.amountPerTick || 0), 2),
+        periodTicks: f.periodTicks || 1,
+        category: f.category || "comércio",
+        active: f.active !== false
       }));
 
-      // Projetos
       const projectDocs = recordIndex.list(RECORD_TYPES.PROJECT);
       const allProjects = projectDocs.map(decodeRecord);
       const linkedProjects = allProjects.filter((p) => p.data.domainUuid === selectedRecord.document.uuid);
@@ -668,31 +1306,35 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         };
       });
 
-      // Pessoal e Notáveis
-      notables = (data.people?.notables ?? []).map((n) => ({
+      notables = (data.population?.notables ?? data.people?.notables ?? []).map((n) => ({
         localId: n.localId,
         name: n.name,
         role: n.role || "Conselheiro",
         title: n.title || "",
         avatarMedia: n.avatarMedia?.path || "fa-solid fa-user-tie",
-        loyalty: n.loyalty || "Neutra",
+        loyalty: n.assignment || n.loyalty || "Neutra",
         status: n.status || "active"
       }));
 
-      groups = (data.people?.groups ?? []).map((g) => ({
+      groups = (data.population?.groups ?? data.people?.groups ?? []).map((g) => ({
         localId: g.localId,
         name: g.name,
-        population: g.population || 0,
+        population: g.count || g.population || 0,
         unrestScore: g.unrestScore || 0,
-        happiness: g.happiness || "Estável"
+        happiness: g.quality || g.happiness || "Estável"
       }));
 
-      // Diplomacia e Relações
-      relations = (data.relations?.external ?? []).map((rel) => ({
-        targetDomainUuid: rel.targetDomainUuid,
-        posture: rel.posture || "neutral",
-        reputationScore: rel.reputationScore || 0
-      }));
+      relations = (data.relations ?? []).map((rel) => {
+        const partner = domainRecords.find((d) => d.document.uuid === rel.targetDomainUuid);
+        return {
+          localId: rel.localId,
+          targetDomainUuid: rel.targetDomainUuid,
+          targetDomainName: partner?.document?.name || "Domínio Desconhecido",
+          posture: rel.posture || "neutral",
+          postureLabel: rel.posture || "Neutro",
+          notes: rel.notes || ""
+        };
+      });
 
       agreements = (data.agreements ?? []).map((agr) => ({
         localId: agr.localId,
@@ -702,17 +1344,15 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         partnerUuid: agr.partnerUuid
       }));
 
-      // Intel / Segredos
       intelList = (data.intel ?? []).map((it) => ({
         localId: it.localId,
-        type: it.type || "rumor",
+        type: it.category || it.type || "rumor",
         title: it.title || "Informação Confidencial",
-        summary: it.summary || "",
+        content: it.content || it.summary || "",
         credibility: it.credibility || "média",
         visibility: it.visibility || "gmOnly"
       }));
 
-      // Condições e Histórico
       activeConditions = (data.conditions ?? []).filter((c) => c.active !== false).map((c) => ({
         localId: c.localId,
         name: c.name,
@@ -722,6 +1362,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       }));
 
       fullHistory = (data.history ?? []).slice().reverse().map((h) => ({
+        localId: h.localId,
         title: h.title,
         summary: h.summary,
         details: h.details,
@@ -730,8 +1371,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       }));
       recentChronicles = fullHistory.slice(0, 3);
 
-      // Métricas calculadas
-      const popTotal = (data.people?.demographics?.totalPopulation) ?? (data.population?.directTotal || data.population?.total) ?? groups.reduce((acc, g) => acc + (g.population || 0), 0);
+      const popTotal = (data.population?.directTotal || data.population?.total) ?? (data.people?.demographics?.totalPopulation) ?? groups.reduce((acc, g) => acc + (g.population || 0), 0);
       const activeProj = domainProjects.filter((p) => p.status === "active");
       const avgProgress = activeProj.length > 0
         ? Math.round(activeProj.reduce((acc, p) => acc + p.progressPercent, 0) / activeProj.length)
@@ -786,11 +1426,25 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       activeTab: this.activeTab,
       searchQuery: this.searchQuery,
       selectedTag: this.selectedTag,
+
+      // Estados de Modais
       isCreatingDomain: this.isCreatingDomain,
       isEditingDomain: this.isEditingDomain,
+      isDeletingDomain: this.isDeletingDomain,
       isAdvancingTimeModal: this.isAdvancingTimeModal,
       isEventModalOpen: this.isEventModalOpen,
+      isStockModalOpen: this.isStockModalOpen,
+      isFlowModalOpen: this.isFlowModalOpen,
+      isProjectModalOpen: this.isProjectModalOpen,
+      isNotableModalOpen: this.isNotableModalOpen,
+      isGroupModalOpen: this.isGroupModalOpen,
+      isRelationModalOpen: this.isRelationModalOpen,
+      isIntelModalOpen: this.isIntelModalOpen,
+      isHistoryModalOpen: this.isHistoryModalOpen,
       advanceCustomTicks: this.advanceCustomTicks,
+
+      // Dados de Contexto
+      catalogResources: catalog.resources || [],
       availableParentDomains,
       domainTree,
       flatDomainTree,

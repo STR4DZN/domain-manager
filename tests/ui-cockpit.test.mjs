@@ -88,6 +88,8 @@ globalThis.game = {
   }
 };
 
+globalThis.fromUuid = async (uuid) => game.journal.find((j) => j.uuid === uuid) || null;
+
 function createMockJournal({ uuid, name, data, recordType = "domain" }) {
   const flags = {
     "domain-manager": {
@@ -97,7 +99,7 @@ function createMockJournal({ uuid, name, data, recordType = "domain" }) {
     }
   };
 
-  return {
+  const doc = {
     documentName: "JournalEntry",
     uuid,
     name,
@@ -105,8 +107,23 @@ function createMockJournal({ uuid, name, data, recordType = "domain" }) {
     getFlag(scope, key) {
       return flags[scope]?.[key];
     },
-    testUserPermission: () => true
+    testUserPermission: () => true,
+    async delete() {
+      const idx = game.journal.indexOf(doc);
+      if (idx !== -1) game.journal.splice(idx, 1);
+      return true;
+    },
+    async update(updates) {
+      if (updates.name) doc.name = updates.name;
+      if (updates["flags.domain-manager.data"]) {
+        doc.flags["domain-manager"].data = updates["flags.domain-manager.data"];
+      }
+      return doc;
+    }
   };
+
+  game.journal.push(doc);
+  return doc;
 }
 
 test("todos os templates da interface existem e são válidos", () => {
@@ -319,4 +336,99 @@ test("teste de hierarquia profunda: 5 níveis de aninhamento são preservados no
   assert.equal(context.flatDomainTree[4].name, "Nível 5 - Sub-Instalação");
   assert.equal(context.flatDomainTree[4].depth, 4);
   assert.equal(context.flatDomainTree[4].indentPx, 64);
+});
+
+test("teste de exclusão de domínio e integridade hierárquica: deleteDomainAction desvincula filhos e remove do índice", async () => {
+  game.journal = [];
+  game.user = { id: "gm-user-1", name: "Gamemaster", isGM: true };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { deleteDomainAction } = await import("../scripts/features/domains/actions.js");
+
+  recordIndex.rebuild();
+
+  // Pai
+  const parentDoc = createMockJournal({
+    uuid: "JournalEntry.parent-base",
+    name: "Base Central Primária",
+    data: { identity: { category: "base", nature: "physical", state: "active" }, hierarchy: {} }
+  });
+  recordIndex.upsert(parentDoc);
+
+  // Filho
+  const childDoc = createMockJournal({
+    uuid: "JournalEntry.child-base",
+    name: "Sub-Base de Suporte",
+    data: { identity: { category: "outpost", nature: "physical", state: "active" }, hierarchy: { locatedInUuid: "JournalEntry.parent-base" } }
+  });
+  recordIndex.upsert(childDoc);
+
+  assert.equal(recordIndex.count("domain"), 2);
+
+  // Excluir Pai
+  const success = await deleteDomainAction({ domainUuid: "JournalEntry.parent-base" });
+  assert.equal(success, true);
+
+  // Verificar que o pai foi removido do índice
+  assert.equal(recordIndex.get("domain", "JournalEntry.parent-base"), null);
+  assert.equal(recordIndex.count("domain"), 1);
+
+  // Verificar que o filho foi desvinculado (locatedInUuid limpo para null)
+  const updatedChild = recordIndex.get("domain", "JournalEntry.child-base");
+  assert.ok(updatedChild);
+  assert.equal(updatedChild.flags["domain-manager"].data.hierarchy.locatedInUuid, null);
+});
+
+test("segurança de permissões: jogadores não podem alterar tópicos sensíveis ou excluir domínios", async () => {
+  game.journal = [];
+  game.user = { id: "player-user-1", name: "Jogador Comum", isGM: false };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { deleteDomainAction } = await import("../scripts/features/domains/actions.js");
+  const { updateDomainStocksAction } = await import("../scripts/features/economy/actions.js");
+  const { createProjectAction } = await import("../scripts/features/projects/actions.js");
+  const { upsertNotableAction } = await import("../scripts/features/people/actions.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  recordIndex.rebuild();
+
+  const domainDoc = createMockJournal({
+    uuid: "JournalEntry.secure-domain",
+    name: "Base Segura",
+    data: { identity: { category: "base", nature: "physical", state: "active" }, hierarchy: {}, governance: { controllers: ["player-user-1"] } }
+  });
+  recordIndex.upsert(domainDoc);
+
+  // 1. Excluir Domínio deve falhar
+  await assert.rejects(
+    async () => deleteDomainAction({ domainUuid: "JournalEntry.secure-domain" }),
+    /Somente GM/
+  );
+
+  // 2. Alterar Estoques deve falhar
+  await assert.rejects(
+    async () => updateDomainStocksAction({ domainUuid: "JournalEntry.secure-domain", displayAmounts: { credits: "5000" } }),
+    /Somente GM/
+  );
+
+  // 3. Criar Projeto deve falhar
+  await assert.rejects(
+    async () => createProjectAction({ domainUuid: "JournalEntry.secure-domain", name: "Projeto Ilegal", workRequired: 100, rateAmount: 10, periodTicks: 1 }),
+    /Somente GM/
+  );
+
+  // 4. Adicionar Notável deve falhar
+  await assert.rejects(
+    async () => upsertNotableAction({ domainUuid: "JournalEntry.secure-domain", name: "Invasor" }),
+    /Somente GM/
+  );
+
+  // 5. No contexto da UI, isGM deve ser false
+  const app = new DomainManagerShellApp();
+  app.setRoute({ domainUuid: "JournalEntry.secure-domain" });
+  const context = await app._prepareContext();
+  assert.equal(context.isGM, false);
+
+  // Restaurar usuário GM para os próximos testes
+  game.user = { id: "gm-user-1", name: "Mestre Supremo", isGM: true };
 });

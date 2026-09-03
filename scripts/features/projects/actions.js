@@ -106,3 +106,16 @@ export async function removeProjectCostAction({projectUuid, expectedModifiedTime
   const domain = await assertFundingCapacity(data, {projectUuid:record.uuid, projectName:record.document.name});
   return updateRecord({uuid:record.uuid, recordType:RECORD_TYPES.PROJECT, name:record.document.name, data, controllerIds:domain.data.governance.controllers});
 }
+
+export async function deleteProjectAction({ projectUuid }) {
+  assertGM();
+  const record = await getRecord(projectUuid);
+  if (record.recordType !== RECORD_TYPES.PROJECT) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "O registro não é um Project.");
+  }
+  await record.document.delete();
+  const { recordIndex } = await import("../../data/record-index.js");
+  recordIndex.remove(projectUuid);
+  return true;
+}
+

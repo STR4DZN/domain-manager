@@ -1149,3 +1149,63 @@
 .text-purple { color: #a855f7; }
 .mt-2 { margin-top: 8px; }
 .mt-4 { margin-top: 16px; }
+
+.dm-dialog-card--danger {
+  border-color: rgba(244, 63, 94, 0.4);
+  box-shadow: 0 0 24px rgba(244, 63, 94, 0.15);
+}
+
+.text-rose { color: #f43f5e; }
+
+.dm-btn--danger {
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #f43f5e;
+}
+.dm-btn--danger:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: #f43f5e;
+}
+
+.dm-btn--danger-fill {
+  background: #e11d48;
+  color: #fff;
+  border: 1px solid #f43f5e;
+}
+.dm-btn--danger-fill:hover {
+  background: #be123c;
+}
+
+.dm-icon-btn--danger {
+  color: #71717a;
+}
+.dm-icon-btn--danger:hover {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.15);
+}
+
+.dm-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dm-panel__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.dm-notable-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dm-feed__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

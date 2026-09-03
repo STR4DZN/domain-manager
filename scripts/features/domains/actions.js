@@ -265,3 +265,44 @@ export async function updateDomainAction({
     controllerIds: data.governance.controllers
   });
 }
+
+export async function deleteDomainAction({ domainUuid }) {
+  assertGM();
+  const record = await getRecord(domainUuid);
+  if (record.recordType !== RECORD_TYPES.DOMAIN) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "O registro não é um Domain.");
+  }
+
+  // 1. Desvincular filhos deste domínio (tornando-os independentes)
+  const allDomains = recordIndex.list(RECORD_TYPES.DOMAIN);
+  for (const doc of allDomains) {
+    if (doc.uuid === domainUuid) continue;
+    const dec = decodeRecord(doc);
+    if (!dec?.data?.hierarchy) continue;
+    let modified = false;
+    const hierarchy = { ...dec.data.hierarchy };
+    if (hierarchy.locatedInUuid === domainUuid) {
+      hierarchy.locatedInUuid = null;
+      modified = true;
+    }
+    if (hierarchy.administrativeParentUuid === domainUuid) {
+      hierarchy.administrativeParentUuid = null;
+      modified = true;
+    }
+    if (modified) {
+      const nextData = { ...dec.data, hierarchy };
+      await updateRecord({
+        uuid: doc.uuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        name: doc.name,
+        data: nextData
+      });
+    }
+  }
+
+  // 2. Excluir o documento do Journal
+  await record.document.delete();
+  recordIndex.remove(domainUuid);
+  return true;
+}
+

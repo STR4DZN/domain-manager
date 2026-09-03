@@ -106,18 +106,21 @@ export class RecordIndex {
     }
   }
 
-  remove(document) {
+  remove(documentOrUuid) {
+    const uuid = typeof documentOrUuid === "string" ? documentOrUuid : documentOrUuid?.uuid;
+    if (!uuid) return;
+
     for (const typeMap of this.#byType.values()) {
-      typeMap.delete(document.uuid);
+      typeMap.delete(uuid);
     }
 
-    removeUuidFromSetMap(this.#domainsByAdministrativeParent, document.uuid);
-    removeUuidFromSetMap(this.#domainsByLocation, document.uuid);
-    removeUuidFromSetMap(this.#projectsByDomain, document.uuid);
-    removeUuidFromSetMap(this.#missionsByDomain, document.uuid);
-    removeUuidFromSetMap(this.#requestsByDomain, document.uuid);
-    removeUuidFromSetMap(this.#domainsByController, document.uuid);
-    removeUuidFromSetMap(this.#domainsByTag, document.uuid);
+    removeUuidFromSetMap(this.#domainsByAdministrativeParent, uuid);
+    removeUuidFromSetMap(this.#domainsByLocation, uuid);
+    removeUuidFromSetMap(this.#projectsByDomain, uuid);
+    removeUuidFromSetMap(this.#missionsByDomain, uuid);
+    removeUuidFromSetMap(this.#requestsByDomain, uuid);
+    removeUuidFromSetMap(this.#domainsByController, uuid);
+    removeUuidFromSetMap(this.#domainsByTag, uuid);
   }
 
   get(recordType, uuid) {
