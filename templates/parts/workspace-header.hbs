@@ -21,13 +21,23 @@
             <span class="dm-pill dm-pill--nature">{{selectedDomain.nature}}</span>
             <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.state}}</span>
           </div>
-          {{#if selectedDomain.tags.length}}
-            <div class="dm-workspace-header__tags">
-              {{#each selectedDomain.tags}}
-                <span class="dm-tag-chip">#{{this}}</span>
-              {{/each}}
-            </div>
-          {{/if}}
+          <div class="dm-workspace-header__tags">
+            {{#each selectedDomain.tags}}
+              <span class="dm-tag-chip">
+                #{{this}}
+                {{#if @root.isGM}}
+                  <button type="button" class="dm-tag-chip__del" data-action="removeTag" data-tag="{{this}}" title="Excluir tag #{{this}}">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                {{/if}}
+              </span>
+            {{/each}}
+            {{#if isGM}}
+              <button type="button" class="dm-tag-chip dm-tag-chip--add" data-action="openAddTagModal" title="Adicionar nova tag">
+                <i class="fa-solid fa-plus"></i> Adicionar Tag
+              </button>
+            {{/if}}
+          </div>
         </div>
       </div>
     {{else}}

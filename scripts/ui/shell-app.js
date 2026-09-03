@@ -1,16 +1,14 @@
 /**
  * DomainManagerShellApp — Aplicação Principal do Cockpit (ApplicationV2)
  *
- * Implementa interface de 3 níveis com CRUD completo exclusivo para o Mestre/Assistente:
- * - Domínios: Criação, Edição completa e Exclusão com confirmação.
- * - Economia: Adicionar, Ajustar e Excluir Estoques e Fluxos.
- * - Projetos: Criar, Acompanhar e Excluir Obras e Projetos.
- * - Pessoas: Adicionar e Excluir Notáveis e Grupos Populacionais.
- * - Diplomacia: Adicionar e Excluir Relações e Acordos Diplomáticos.
- * - Intel: Adicionar e Excluir Fatos, Segredos e Boatos.
- * - Crônicas: Adicionar e Excluir Registros Históricos.
- *
- * Todas as mutações exigem isGM e são estritamente ocultas para Jogadores.
+ * Versão com correções completas:
+ * 1. Exclusão de Recurso: Remove a definição do recurso do catálogo e dos domínios.
+ * 2. Fluxos: Suporta qualquer categoria customizada.
+ * 3. Projetos: Descrição mapeada e visível nos cartões.
+ * 4. População: Cálculo ponderado de agitação e satisfação com atenuação por guardas.
+ * 5. Intel: Normalização estrita de visibilidade (gm_only) e credibilidade.
+ * 6. Tags: Edição e remoção rápida com um clique (#tag com 'x') e inclusão rápida.
+ * 7. GM Only: Rolar Evento e Avançar Tempo estritamente restritos ao Mestre.
  */
 
 import { MODULE_ID, MODULE_TITLE, RECORD_TYPES } from "../core/constants.js";
@@ -19,10 +17,10 @@ import { decodeRecord } from "../models/record-codec.js";
 import { updateRecord } from "../data/journal-store.js";
 import { buildAncestorChain } from "../features/domains/hierarchy.js";
 import { buildDomainLedger } from "../features/economy/ledger.js";
-import { formatMinorUnits, parseMinorUnits } from "../core/numbers.js";
+import { formatMinorUnits } from "../core/numbers.js";
 import { isAuthorityReady } from "../authority/socket.js";
 import { getTimekeepingStatus } from "../integration/timekeeping.js";
-import { getResourceCatalogSetting, setResourceCatalogSetting } from "../core/settings.js";
+import { getResourceCatalogSetting } from "../core/settings.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -155,7 +153,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isEventModalOpen = false;
   advanceCustomTicks = 1;
 
-  // Modais de Tópicos Sensíveis (Exclusivos GM)
+  // Modais de Tópicos Sensíveis
   isStockModalOpen = false;
   isFlowModalOpen = false;
   isProjectModalOpen = false;
@@ -164,6 +162,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isRelationModalOpen = false;
   isIntelModalOpen = false;
   isHistoryModalOpen = false;
+  isTagModalOpen = false;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -188,6 +187,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       filterByTag: DomainManagerShellApp.#onFilterByTag,
       search: DomainManagerShellApp.#onSearch,
 
+      // Tags (Edição e Remoção)
+      removeTag: DomainManagerShellApp.#onRemoveTag,
+      openAddTagModal: DomainManagerShellApp.#onOpenAddTagModal,
+      cancelTagModal: DomainManagerShellApp.#onCancelTagModal,
+      submitAddTag: DomainManagerShellApp.#onSubmitAddTag,
+
       // Domínios (CRUD)
       openCreateDomain: DomainManagerShellApp.#onOpenCreateDomain,
       cancelCreateDomain: DomainManagerShellApp.#onCancelCreateDomain,
@@ -199,7 +204,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       cancelDeleteDomainModal: DomainManagerShellApp.#onCancelDeleteDomainModal,
       confirmDeleteDomain: DomainManagerShellApp.#onConfirmDeleteDomain,
 
-      // Simulação e Eventos
+      // Simulação e Eventos (GM Only)
       openAdvanceModal: DomainManagerShellApp.#onOpenAdvanceModal,
       cancelAdvanceModal: DomainManagerShellApp.#onCancelAdvanceModal,
       quickAdvanceTicks: DomainManagerShellApp.#onQuickAdvanceTicks,
@@ -291,10 +296,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isRelationModalOpen = false;
     this.isIntelModalOpen = false;
     this.isHistoryModalOpen = false;
+    this.isTagModalOpen = false;
   }
 
   /* ------------------------------------------------------------------------
-     Navegação e Seleção
+     Navegação e Tags
      ------------------------------------------------------------------------ */
   static #onNavigate(event, target) {
     const section = target.dataset.section;
@@ -356,6 +362,78 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.render();
   }
 
+  /* --- Gestão de Tags --- */
+  static async #onRemoveTag(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const tagToRemove = target.dataset.tag;
+    if (!tagToRemove) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.identity?.tags)) {
+        data.identity.tags = data.identity.tags.filter((t) => t !== tagToRemove);
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info(`Tag #${tagToRemove} removida!`);
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover tag.");
+    }
+  }
+
+  static #onOpenAddTagModal() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.#closeAllModals();
+    this.isTagModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelTagModal() {
+    this.isTagModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitAddTag() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector(".dm-dialog-card");
+    const newTagsRaw = form?.querySelector("#dm-new-tag-input")?.value || "";
+    const newTags = newTagsRaw.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+
+    if (newTags.length === 0) {
+      ui.notifications?.warn("Digite ao menos uma tag.");
+      return;
+    }
+
+    this.isTagModalOpen = false;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!data.identity) data.identity = {};
+      const existing = new Set(data.identity.tags || []);
+      for (const t of newTags) existing.add(t);
+      data.identity.tags = Array.from(existing);
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+
+      ui.notifications?.info("Tags adicionadas com sucesso!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao adicionar tags.");
+    }
+  }
+
   /* ------------------------------------------------------------------------
      1. Domínios: Criação, Edição e Exclusão
      ------------------------------------------------------------------------ */
@@ -381,7 +459,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const description = form?.querySelector("#dm-new-domain-description")?.value || "";
     const parentUuid = form?.querySelector("#dm-new-domain-parent")?.value || null;
 
-    const tags = tagsRaw.split(",").map((t) => t.trim()).filter(Boolean);
+    const tags = tagsRaw.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
 
     try {
       const { createDomainAction } = await import("../features/domains/actions.js");
@@ -434,7 +512,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       return;
     }
 
-    const tags = tagsRaw.split(",").map((t) => t.trim()).filter(Boolean);
+    const tags = tagsRaw.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
 
     try {
       const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
@@ -505,10 +583,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     2. Simulação Temporal e Eventos
+     2. Simulação Temporal e Eventos (GM Only)
      ------------------------------------------------------------------------ */
   static #onOpenAdvanceModal() {
-    if (!game.user.isGM) return;
+    if (!game.user.isGM) {
+      ui.notifications?.warn("Apenas o Mestre pode avançar o tempo.");
+      return;
+    }
     this.#closeAllModals();
     this.isAdvancingTimeModal = true;
     this.render();
@@ -520,6 +601,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async #onQuickAdvanceTicks(event, target) {
+    if (!game.user.isGM) return;
     const ticks = Number(target.dataset.ticks) || 1;
     this.advanceCustomTicks = ticks;
     await DomainManagerShellApp.#onSubmitAdvance.call(this);
@@ -630,7 +712,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     3. Economia: Estoques e Fluxos (CRUD)
+     3. Economia: Exclusão Completa do Recurso e Fluxos Livres
      ------------------------------------------------------------------------ */
   static #onOpenAddStockModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
@@ -649,6 +731,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const form = this.element?.querySelector(".dm-dialog-card");
     let resourceId = form?.querySelector("#dm-stock-resource-select")?.value;
     const customId = form?.querySelector("#dm-stock-resource-custom")?.value?.trim()?.toLowerCase();
+    const customName = form?.querySelector("#dm-stock-resource-name")?.value?.trim();
     if (customId) resourceId = customId;
     const amount = Number(form?.querySelector("#dm-stock-amount")?.value) || 0;
 
@@ -660,6 +743,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isStockModalOpen = false;
 
     try {
+      // 1. Garantir que o recurso existe no catálogo
+      const { upsertResourceDefinitionAction } = await import("../features/economy/actions.js");
+      await upsertResourceDefinitionAction({
+        originalId: resourceId,
+        name: customName || resourceId.toUpperCase(),
+        precision: 2,
+        allowNegative: false
+      });
+
+      // 2. Definir o saldo no domínio
       const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
       const record = decodeRecord(doc);
       const data = foundry.utils.deepClone(record.data);
@@ -685,7 +778,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         data
       });
 
-      ui.notifications?.info(`Estoque de ${resourceId.toUpperCase()} atualizado para ${amount}!`);
+      ui.notifications?.info(`Recurso ${resourceId.toUpperCase()} salvo com saldo ${amount}!`);
       this.render();
     } catch (err) {
       ui.notifications?.error(err.message || "Erro ao salvar estoque.");
@@ -698,21 +791,37 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!resourceId) return;
 
     try {
-      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
-      const record = decodeRecord(doc);
-      const data = foundry.utils.deepClone(record.data);
-      if (data.economy?.stocks) {
-        data.economy.stocks = data.economy.stocks.filter((s) => s.resourceId !== resourceId);
-        await updateRecord({
-          uuid: this.selectedDomainUuid,
-          recordType: RECORD_TYPES.DOMAIN,
-          data
-        });
-        ui.notifications?.info(`Estoque de ${resourceId} removido!`);
-        this.render();
+      // 1. Remover a definição do recurso do catálogo global
+      const { removeResourceDefinitionAction } = await import("../features/economy/actions.js");
+      await removeResourceDefinitionAction(resourceId);
+
+      // 2. Remover o recurso de todos os domínios (stocks e flows)
+      const allDomains = recordIndex.list(RECORD_TYPES.DOMAIN);
+      for (const doc of allDomains) {
+        const dec = decodeRecord(doc);
+        const data = foundry.utils.deepClone(dec.data);
+        let modified = false;
+        if (data.economy?.stocks?.some((s) => s.resourceId === resourceId)) {
+          data.economy.stocks = data.economy.stocks.filter((s) => s.resourceId !== resourceId);
+          modified = true;
+        }
+        if (data.economy?.flows?.some((f) => f.resourceId === resourceId)) {
+          data.economy.flows = data.economy.flows.filter((f) => f.resourceId !== resourceId);
+          modified = true;
+        }
+        if (modified) {
+          await updateRecord({
+            uuid: doc.uuid,
+            recordType: RECORD_TYPES.DOMAIN,
+            data
+          });
+        }
       }
+
+      ui.notifications?.info(`Recurso "${resourceId.toUpperCase()}" excluído permanentemente do sistema!`);
+      this.render();
     } catch (err) {
-      ui.notifications?.error(err.message || "Erro ao remover estoque.");
+      ui.notifications?.error(err.message || "Erro ao excluir recurso.");
     }
   }
 
@@ -735,7 +844,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const resourceId = form?.querySelector("#dm-flow-resource")?.value || "credits";
     const direction = form?.querySelector("#dm-flow-direction")?.value || "inflow";
     const amount = Number(form?.querySelector("#dm-flow-amount")?.value) || 0;
-    const category = form?.querySelector("#dm-flow-category")?.value || "comércio";
+    const category = form?.querySelector("#dm-flow-category")?.value?.trim() || "comércio";
 
     this.isFlowModalOpen = false;
 
@@ -778,7 +887,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     4. Projetos & Obras (CRUD)
+     4. Projetos & Obras (com Descrição Preservada)
      ------------------------------------------------------------------------ */
   static #onOpenAddProjectModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
@@ -799,7 +908,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const category = form?.querySelector("#dm-project-category")?.value || "infraestrutura";
     const workRequired = Number(form?.querySelector("#dm-project-work")?.value) || 100;
     const rateAmount = Number(form?.querySelector("#dm-project-rate")?.value) || 10;
-    const description = form?.querySelector("#dm-project-desc")?.value || "";
+    const description = form?.querySelector("#dm-project-desc")?.value?.trim() || "";
 
     this.isProjectModalOpen = false;
 
@@ -838,7 +947,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     5. Pessoas: Notáveis e Grupos (CRUD)
+     5. Pessoas: Notáveis e Grupos com Cálculos de Agitação
      ------------------------------------------------------------------------ */
   static #onOpenAddNotableModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
@@ -921,7 +1030,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const name = form?.querySelector("#dm-group-name")?.value?.trim();
     const count = Number(form?.querySelector("#dm-group-count")?.value) || 100;
     const happiness = form?.querySelector("#dm-group-happiness")?.value || "Estável";
-    const unrestScore = Number(form?.querySelector("#dm-group-unrest")?.value) || 0;
+    let unrestScore = Number(form?.querySelector("#dm-group-unrest")?.value);
+
+    // Se a agitação não foi especificada manualmente, calcula a partir do nível de satisfação
+    if (isNaN(unrestScore)) {
+      if (happiness === "Muito Alta") unrestScore = 0;
+      else if (happiness === "Estável") unrestScore = 2;
+      else if (happiness === "Insatisfeito") unrestScore = 6;
+      else if (happiness === "Rebelde") unrestScore = 9;
+      else unrestScore = 2;
+    }
 
     if (!name) {
       ui.notifications?.warn("O nome do grupo é obrigatório.");
@@ -939,9 +1057,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         includedInTotal: true,
         quality: happiness,
         status: "active",
-        assignment: `Agitação: ${unrestScore}`
+        assignment: String(unrestScore)
       });
-      ui.notifications?.info(`Grupo "${name}" adicionado!`);
+      ui.notifications?.info(`Grupo "${name}" adicionado com agitação calculada!`);
       this.render();
     } catch (err) {
       ui.notifications?.error(err.message || "Erro ao adicionar grupo.");
@@ -967,7 +1085,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     6. Diplomacia & Relações (CRUD)
+     6. Diplomacia & Relações
      ------------------------------------------------------------------------ */
   static #onOpenAddRelationModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
@@ -1035,7 +1153,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     7. Segredos e Conhecimento (Intel) (CRUD)
+     7. Segredos e Conhecimento (Intel) com Normalização Rigorosa
      ------------------------------------------------------------------------ */
   static #onOpenAddIntelModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
@@ -1054,9 +1172,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const form = this.element?.querySelector(".dm-dialog-card");
     const title = form?.querySelector("#dm-intel-title")?.value?.trim();
     const content = form?.querySelector("#dm-intel-content")?.value?.trim() || "";
-    const category = form?.querySelector("#dm-intel-category")?.value || "secret";
-    const credibility = form?.querySelector("#dm-intel-credibility")?.value || "high";
-    const visibility = form?.querySelector("#dm-intel-visibility")?.value || "gmOnly";
+    let category = form?.querySelector("#dm-intel-category")?.value || "secret";
+    let credibility = form?.querySelector("#dm-intel-credibility")?.value || "confirmed";
+    let visibility = form?.querySelector("#dm-intel-visibility")?.value || "gm_only";
+
+    // Normalizações de segurança para garantir correspondência com INTEL_VISIBILITY
+    if (visibility === "gmOnly") visibility = "gm_only";
+    if (credibility === "high") credibility = "likely";
+    if (credibility === "medium") credibility = "doubtful";
+    if (credibility === "low") credibility = "false";
+    if (category === "conspiracy") category = "secret";
 
     if (!title) {
       ui.notifications?.warn("O título da informação é obrigatório.");
@@ -1101,7 +1226,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   /* ------------------------------------------------------------------------
-     8. Crônicas e Histórico (CRUD)
+     8. Crônicas e Histórico
      ------------------------------------------------------------------------ */
   static #onOpenAddHistoryModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
@@ -1156,7 +1281,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const record = decodeRecord(doc);
       const data = foundry.utils.deepClone(record.data);
       if (Array.isArray(data.history)) {
-        // Como a lista no UI é invertida (mais recente primeiro):
         const realIndex = data.history.length - 1 - index;
         if (realIndex >= 0 && realIndex < data.history.length) {
           data.history.splice(realIndex, 1);
@@ -1211,9 +1335,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       effectiveDefense: 0,
       guardCount: 0,
       populationTotal: 0,
-      namedCharacters: 0,
+      groupCount: 0,
+      notableCount: 0,
       activeProjectsCount: 0,
-      projectsProgressPercent: 0
+      projectsProgressPercent: 0,
+      unrestRiskPercent: 0,
+      unrestRiskLevel: "low"
     };
     let domainStocks = [];
     let domainFlows = [];
@@ -1288,6 +1415,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         active: f.active !== false
       }));
 
+      // Projetos com Descrição Preservada
       const projectDocs = recordIndex.list(RECORD_TYPES.PROJECT);
       const allProjects = projectDocs.map(decodeRecord);
       const linkedProjects = allProjects.filter((p) => p.data.domainUuid === selectedRecord.document.uuid);
@@ -1302,7 +1430,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           status: p.data.status || "active",
           completed: comp,
           required: req,
-          progressPercent: pct
+          progressPercent: pct,
+          description: p.data.description || p.document.pages?.contents?.[0]?.text?.content || ""
         };
       });
 
@@ -1316,13 +1445,54 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         status: n.status || "active"
       }));
 
-      groups = (data.population?.groups ?? data.people?.groups ?? []).map((g) => ({
-        localId: g.localId,
-        name: g.name,
-        population: g.count || g.population || 0,
-        unrestScore: g.unrestScore || 0,
-        happiness: g.quality || g.happiness || "Estável"
-      }));
+      // População e Cálculos de Agitação Ponderada
+      const rawGroups = (data.population?.groups ?? data.people?.groups ?? []);
+      const totalPopCalculated = rawGroups.reduce((acc, g) => acc + (Number(g.count || g.population) || 0), 0);
+      const popTotal = (data.population?.directTotal || data.population?.total) ?? totalPopCalculated;
+
+      const defenseBase = data.security?.defenseScore || data.security?.defenseRating || 10;
+      const guards = data.security?.guardCount || 0;
+      const totalDef = defenseBase + Math.floor(guards * 1.5);
+
+      let weightedUnrestTotal = 0;
+
+      groups = rawGroups.map((g) => {
+        const count = Number(g.count || g.population) || 0;
+        const happiness = g.quality || g.happiness || "Estável";
+
+        // Determinar pontuação de agitação de 0 a 10
+        let groupUnrest = Number(g.assignment);
+        if (isNaN(groupUnrest)) {
+          if (happiness === "Muito Alta") groupUnrest = 0;
+          else if (happiness === "Estável") groupUnrest = 2;
+          else if (happiness === "Insatisfeito") groupUnrest = 6;
+          else if (happiness === "Rebelde") groupUnrest = 9;
+          else groupUnrest = 2;
+        }
+
+        weightedUnrestTotal += (count * groupUnrest);
+
+        const share = popTotal > 0 ? Math.round((count / popTotal) * 100) : 0;
+        const unrestLabel = groupUnrest <= 2 ? "Baixa" : (groupUnrest <= 5 ? "Moderada" : "Alta");
+
+        return {
+          localId: g.localId,
+          name: g.name,
+          population: count,
+          happiness,
+          unrestScore: groupUnrest,
+          unrestLabel,
+          sharePercent: share
+        };
+      });
+
+      // Cálculo de Agitação Efetiva do Domínio
+      const rawUnrestAvg = popTotal > 0 ? (weightedUnrestTotal / popTotal) : 0;
+      // Guardas e defesa atenuam a agitação sentida
+      const guardMitigation = Math.floor(guards * 0.2);
+      const effectiveUnrest = Math.max(0, Math.min(10, Math.round(rawUnrestAvg - guardMitigation)));
+      const unrestPercent = Math.round((effectiveUnrest / 10) * 100);
+      const unrestLevel = unrestPercent <= 20 ? "low" : (unrestPercent <= 50 ? "moderate" : (unrestPercent <= 80 ? "high" : "critical"));
 
       relations = (data.relations ?? []).map((rel) => {
         const partner = domainRecords.find((d) => d.document.uuid === rel.targetDomainUuid);
@@ -1346,11 +1516,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
       intelList = (data.intel ?? []).map((it) => ({
         localId: it.localId,
-        type: it.category || it.type || "rumor",
+        type: it.category || it.type || "secret",
         title: it.title || "Informação Confidencial",
         content: it.content || it.summary || "",
-        credibility: it.credibility || "média",
-        visibility: it.visibility || "gmOnly"
+        credibility: it.credibility || "confirmed",
+        visibility: it.visibility === "gm_only" ? "Apenas Mestre" : "Controladores"
       }));
 
       activeConditions = (data.conditions ?? []).filter((c) => c.active !== false).map((c) => ({
@@ -1371,15 +1541,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       }));
       recentChronicles = fullHistory.slice(0, 3);
 
-      const popTotal = (data.population?.directTotal || data.population?.total) ?? (data.people?.demographics?.totalPopulation) ?? groups.reduce((acc, g) => acc + (g.population || 0), 0);
       const activeProj = domainProjects.filter((p) => p.status === "active");
       const avgProgress = activeProj.length > 0
         ? Math.round(activeProj.reduce((acc, p) => acc + p.progressPercent, 0) / activeProj.length)
         : 0;
-
-      const defenseBase = data.security?.defenseScore || data.security?.defenseRating || 10;
-      const guards = data.security?.guardCount || 0;
-      const totalDef = defenseBase + Math.floor(guards * 1.5);
 
       metrics = {
         ...metrics,
@@ -1387,9 +1552,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         defenseRating: totalDef,
         guardCount: guards,
         populationTotal: popTotal,
-        namedCharacters: notables.length,
+        groupCount: groups.length,
+        notableCount: notables.length,
         activeProjectsCount: activeProj.length,
-        projectsProgressPercent: avgProgress
+        projectsProgressPercent: avgProgress,
+        unrestRiskPercent: unrestPercent,
+        unrestRiskLevel: unrestLevel
       };
 
       selectedDomain = {
@@ -1441,6 +1609,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       isRelationModalOpen: this.isRelationModalOpen,
       isIntelModalOpen: this.isIntelModalOpen,
       isHistoryModalOpen: this.isHistoryModalOpen,
+      isTagModalOpen: this.isTagModalOpen,
       advanceCustomTicks: this.advanceCustomTicks,
 
       // Dados de Contexto

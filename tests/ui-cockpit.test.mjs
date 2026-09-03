@@ -44,6 +44,9 @@ globalThis.foundry = {
   utils: {
     deepClone(val) {
       return structuredClone(val);
+    },
+    randomID() {
+      return Math.random().toString(36).substring(2, 18);
     }
   },
   data: {
@@ -431,4 +434,88 @@ test("segurança de permissões: jogadores não podem alterar tópicos sensívei
 
   // Restaurar usuário GM para os próximos testes
   game.user = { id: "gm-user-1", name: "Mestre Supremo", isGM: true };
+});
+
+test("testes das correções v4: custom flow category, intel validation, project description, tags e cálculos de população", async () => {
+  const { normalizeFlow } = await import("../scripts/features/economy/rules.js");
+  const { validateIntelData } = await import("../scripts/features/intel/rules.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  // 1. Categoria customizada de fluxo não deve lançar erro
+  const flow = normalizeFlow({
+    name: "Mineração de Esmeraldas",
+    resourceId: "credits",
+    direction: "inflow",
+    amount: 50,
+    periodTicks: 1,
+    category: "mineração-customizada"
+  }, { resources: [{ id: "credits", name: "Créditos", precision: 2, allowNegative: false }] });
+  assert.equal(flow.category, "mineração-customizada");
+
+  // 2. Validação de Intel com os enums corretos
+  assert.doesNotThrow(() => {
+    validateIntelData({
+      title: "Plano Confidencial",
+      category: "secret",
+      credibility: "confirmed",
+      visibility: "gm_only"
+    });
+  });
+
+  // 3. Descrição de projeto e cálculo de população ponderada
+  game.journal = [];
+  game.user = { id: "gm-1", name: "GM", isGM: true };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  recordIndex.rebuild();
+
+  const domainDoc = createMockJournal({
+    uuid: "JournalEntry.domain-test-v4",
+    name: "Fortaleza V4",
+    data: {
+      identity: { category: "base", nature: "physical", state: "active", tags: ["capital", "mineracao"] },
+      hierarchy: {},
+      security: { defenseScore: 12, guardCount: 10 },
+      population: {
+        groups: [
+          { localId: "g1", name: "Trabalhadores", count: 1000, quality: "Insatisfeito", assignment: "6" },
+          { localId: "g2", name: "Cientistas", count: 200, quality: "Muito Alta", assignment: "0" }
+        ]
+      }
+    }
+  });
+  recordIndex.upsert(domainDoc);
+
+  const projectDoc = createMockJournal({
+    uuid: "JournalEntry.project-test-v4",
+    name: "Escudo Planetário",
+    recordType: "project",
+    data: {
+      domainUuid: "JournalEntry.domain-test-v4",
+      category: "defesa",
+      status: "active",
+      description: "Escudo defletor de alta potência para defesa orbital.",
+      work: { required: 200, completed: 50 }
+    }
+  });
+  recordIndex.upsert(projectDoc);
+
+  const app = new DomainManagerShellApp();
+  app.setRoute({ domainUuid: "JournalEntry.domain-test-v4" });
+  const context = await app._prepareContext();
+
+  // Verificar descrição do projeto mapeada
+  assert.equal(context.domainProjects.length, 1);
+  assert.equal(context.domainProjects[0].description, "Escudo defletor de alta potência para defesa orbital.");
+
+  // Verificar cálculo de agitação ponderada
+  // (1000*6 + 200*0) / 1200 = 5 de agitação base. Com 10 guardas mitigando (10*0.2 = 2): 5 - 2 = 3 (30%)
+  assert.equal(context.groups.length, 2);
+  assert.equal(context.groups[0].sharePercent, 83); // 1000 / 1200 = 83%
+  assert.equal(context.groups[1].sharePercent, 17); // 200 / 1200 = 17%
+  assert.equal(context.metrics.unrestRiskPercent, 30);
+  assert.equal(context.metrics.unrestRiskLevel, "moderate");
+
+  // 4. Tags no contexto
+  assert.deepEqual(context.selectedDomain.tags, ["capital", "mineracao"]);
 });

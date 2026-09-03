@@ -52,26 +52,28 @@
       <i class="fa-solid fa-trowel-bricks"></i>
     </button>
 
-    <button
-      type="button"
-      class="dm-rail__item"
-      data-action="openAdvanceModal"
-      title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
-      aria-label="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
-    >
-      <span class="dm-rail__indicator"></span>
-      <i class="fa-solid fa-clock-rotate-left"></i>
-    </button>
+    {{#if isGM}}
+      <button
+        type="button"
+        class="dm-rail__item"
+        data-action="openAdvanceModal"
+        title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+        aria-label="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+      >
+        <span class="dm-rail__indicator"></span>
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </button>
 
-    <button
-      type="button"
-      class="dm-rail__item"
-      data-action="openEventModal"
-      title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
-      aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
-    >
-      <span class="dm-rail__indicator"></span>
-      <i class="fa-solid fa-dice-d20"></i>
-    </button>
+      <button
+        type="button"
+        class="dm-rail__item"
+        data-action="openEventModal"
+        title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+        aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+      >
+        <span class="dm-rail__indicator"></span>
+        <i class="fa-solid fa-dice-d20"></i>
+      </button>
+    {{/if}}
   </div>
 </nav>

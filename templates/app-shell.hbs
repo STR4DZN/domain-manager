@@ -54,27 +54,29 @@
       <i class="fa-solid fa-trowel-bricks"></i>
     </button>
 
-    <button
-      type="button"
-      class="dm-rail__item"
-      data-action="openAdvanceModal"
-      title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
-      aria-label="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
-    >
-      <span class="dm-rail__indicator"></span>
-      <i class="fa-solid fa-clock-rotate-left"></i>
-    </button>
+    {{#if isGM}}
+      <button
+        type="button"
+        class="dm-rail__item"
+        data-action="openAdvanceModal"
+        title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+        aria-label="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
+      >
+        <span class="dm-rail__indicator"></span>
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </button>
 
-    <button
-      type="button"
-      class="dm-rail__item"
-      data-action="openEventModal"
-      title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
-      aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
-    >
-      <span class="dm-rail__indicator"></span>
-      <i class="fa-solid fa-dice-d20"></i>
-    </button>
+      <button
+        type="button"
+        class="dm-rail__item"
+        data-action="openEventModal"
+        title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+        aria-label="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
+      >
+        <span class="dm-rail__indicator"></span>
+        <i class="fa-solid fa-dice-d20"></i>
+      </button>
+    {{/if}}
   </div>
 </nav>
 
@@ -207,13 +209,23 @@
             <span class="dm-pill dm-pill--nature">{{selectedDomain.nature}}</span>
             <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.state}}</span>
           </div>
-          {{#if selectedDomain.tags.length}}
-            <div class="dm-workspace-header__tags">
-              {{#each selectedDomain.tags}}
-                <span class="dm-tag-chip">#{{this}}</span>
-              {{/each}}
-            </div>
-          {{/if}}
+          <div class="dm-workspace-header__tags">
+            {{#each selectedDomain.tags}}
+              <span class="dm-tag-chip">
+                #{{this}}
+                {{#if @root.isGM}}
+                  <button type="button" class="dm-tag-chip__del" data-action="removeTag" data-tag="{{this}}" title="Excluir tag #{{this}}">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                {{/if}}
+              </span>
+            {{/each}}
+            {{#if isGM}}
+              <button type="button" class="dm-tag-chip dm-tag-chip--add" data-action="openAddTagModal" title="Adicionar nova tag">
+                <i class="fa-solid fa-plus"></i> Adicionar Tag
+              </button>
+            {{/if}}
+          </div>
         </div>
       </div>
     {{else}}
@@ -333,6 +345,26 @@
   </article>
 </section>
         <!-- MODAIS IN-PAGE (EXCLUSIVOS GM) -->
+
+{{#if isTagModalOpen}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-tag text-emerald"></i> Adicionar Tags ao Domínio</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelTagModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="dm-dialog-desc">Digite uma ou mais tags separadas por vírgula para categorizar este domínio.</p>
+      <div class="dm-form-group">
+        <label>Novas Tags (separadas por vírgula):</label>
+        <input type="text" class="dm-input" id="dm-new-tag-input" placeholder="Ex: capital, mineração, setor-3, estratégico" autofocus />
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelTagModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitAddTag"><i class="fa-solid fa-check"></i> Adicionar Tags</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
 
 {{#if isDeletingDomain}}
   <div class="dm-overlay-panel">
@@ -587,19 +619,26 @@
         <h3><i class="fa-solid fa-cubes-stacked text-amber"></i> Adicionar / Ajustar Estoque</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelStockModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Defina o recurso e a quantidade total para este domínio.</p>
+      <p class="dm-dialog-desc">Cadastre um recurso com saldo para este domínio ou selecione um existente.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
-          <label>Selecione um Recurso Existente:</label>
+          <label>Recurso Existente no Catálogo:</label>
           <select class="dm-select" id="dm-stock-resource-select">
+            <option value="">-- Ou digite um novo recurso abaixo --</option>
             {{#each catalogResources}}
               <option value="{{id}}">{{name}} ({{id}})</option>
             {{/each}}
           </select>
         </div>
-        <div class="dm-form-group">
-          <label>Ou digite um novo ID de Recurso:</label>
-          <input type="text" class="dm-input" id="dm-stock-resource-custom" placeholder="Ex: ore, energy, food, tech..." />
+        <div class="dm-form-row">
+          <div class="dm-form-group">
+            <label>Novo ID de Recurso (se novo):</label>
+            <input type="text" class="dm-input" id="dm-stock-resource-custom" placeholder="Ex: ore, energy, food..." />
+          </div>
+          <div class="dm-form-group">
+            <label>Nome Amigável do Recurso:</label>
+            <input type="text" class="dm-input" id="dm-stock-resource-name" placeholder="Ex: Minério de Ferro, Energia Solar..." />
+          </div>
         </div>
         <div class="dm-form-group">
           <label>Quantidade / Saldo Total:</label>
@@ -608,7 +647,7 @@
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelStockModal">Cancelar</button>
-        <button type="button" class="dm-btn dm-btn--primary" data-action="submitStock"><i class="fa-solid fa-floppy-disk"></i> Salvar Estoque</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitStock"><i class="fa-solid fa-floppy-disk"></i> Salvar Recurso e Estoque</button>
       </div>
     </div>
   </div>
@@ -621,7 +660,7 @@
         <h3><i class="fa-solid fa-arrow-right-arrow-left text-blue"></i> Adicionar Fluxo Econômico</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelFlowModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Configure uma entrada ou saída automática que ocorre a cada avanço temporal.</p>
+      <p class="dm-dialog-desc">Configure uma entrada ou saída automática. Você pode digitar qualquer categoria personalizada.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
           <label>Nome / Descrição do Fluxo:</label>
@@ -650,8 +689,8 @@
             <input type="number" class="dm-input" id="dm-flow-amount" value="50" />
           </div>
           <div class="dm-form-group">
-            <label>Categoria:</label>
-            <input type="text" class="dm-input" id="dm-flow-category" value="comércio" />
+            <label>Categoria (Livre / Customizável):</label>
+            <input type="text" class="dm-input" id="dm-flow-category" placeholder="Ex: comércio, mineração, impostos, manutenção..." value="comércio" />
           </div>
         </div>
       </div>
@@ -673,7 +712,7 @@
       <p class="dm-dialog-desc">Cadastre um empreendimento arquitetônico, militar ou de infraestrutura.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
-          <label>Nome do Projeto:</label>
+          <label>Nome do Projeto *</label>
           <input type="text" class="dm-input" id="dm-project-name" placeholder="Ex: Construção do Escudo Planetário, Expansão Portuária..." />
         </div>
         <div class="dm-form-row">
@@ -761,6 +800,7 @@
         <h3><i class="fa-solid fa-people-group text-emerald"></i> Adicionar Grupo Populacional</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelGroupModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
+      <p class="dm-dialog-desc">Cadastre uma população. O sistema calcula a agitação ponderada automaticamente com base na satisfação.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
           <label>Nome do Grupo *</label>
@@ -774,16 +814,16 @@
           <div class="dm-form-group">
             <label>Satisfação:</label>
             <select class="dm-select" id="dm-group-happiness">
-              <option value="Muito Alta">Muito Alta</option>
-              <option value="Estável" selected>Estável</option>
-              <option value="Insatisfeito">Insatisfeito</option>
-              <option value="Rebelde">Rebelde / Em Revolta</option>
+              <option value="Muito Alta">Muito Alta (Agitação 0)</option>
+              <option value="Estável" selected>Estável (Agitação 2)</option>
+              <option value="Insatisfeito">Insatisfeito (Agitação 6)</option>
+              <option value="Rebelde">Rebelde / Em Revolta (Agitação 9)</option>
             </select>
           </div>
         </div>
         <div class="dm-form-group">
-          <label>Agitação (0 a 10):</label>
-          <input type="number" class="dm-input" id="dm-group-unrest" min="0" max="10" value="0" />
+          <label>Ajuste Fino de Agitação (Opcional, 0 a 10 - deixe vazio para cálculo automático):</label>
+          <input type="number" class="dm-input" id="dm-group-unrest" min="0" max="10" placeholder="Automático pela satisfação" />
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -850,27 +890,29 @@
           <div class="dm-form-group">
             <label>Tipo:</label>
             <select class="dm-select" id="dm-intel-category">
-              <option value="secret" selected>Segredo de Estado</option>
+              <option value="secret" selected>Segredo Confidencial</option>
               <option value="rumor">Boato / Rumor</option>
-              <option value="fact">Fato Verificado</option>
-              <option value="conspiracy">Conspiração Interna</option>
+              <option value="fact">Fato Comprovado</option>
+              <option value="clue">Pista / Investigação</option>
+              <option value="lore">História / Tradição</option>
             </select>
           </div>
           <div class="dm-form-group">
             <label>Credibilidade:</label>
             <select class="dm-select" id="dm-intel-credibility">
               <option value="confirmed" selected>Confirmada</option>
-              <option value="high">Alta</option>
-              <option value="medium">Média</option>
-              <option value="low">Baixa / Incerta</option>
+              <option value="likely">Provável</option>
+              <option value="doubtful">Duvidosa</option>
+              <option value="false">Falsa / Desinformação</option>
             </select>
           </div>
         </div>
         <div class="dm-form-group">
           <label>Visibilidade:</label>
           <select class="dm-select" id="dm-intel-visibility">
-            <option value="gmOnly" selected>Exclusivo do Mestre (Oculto dos Jogadores)</option>
-            <option value="all_controllers">Visível para os Governantes da Base</option>
+            <option value="gm_only" selected>Apenas o Mestre (GM)</option>
+            <option value="all_controllers">Controladores do Domínio</option>
+            <option value="public">Público / Todos os Jogadores</option>
           </select>
         </div>
         <div class="dm-form-group">
@@ -1027,7 +1069,7 @@
                 <th>Reservado</th>
                 <th>Disponível</th>
                 <th>Balanço / Tick</th>
-                {{#if isGM}}<th style="width: 50px; text-align: center;">Ações</th>{{/if}}
+                {{#if isGM}}<th style="width: 50px; text-align: center;">Excluir</th>{{/if}}
               </tr>
             </thead>
             <tbody>
@@ -1040,7 +1082,7 @@
                   <td class="dm-rate dm-rate--{{netDirection}}">{{netPerTickDisplay}}/tick</td>
                   {{#if @root.isGM}}
                     <td style="text-align: center;">
-                      <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteStock" data-resource-id="{{resourceId}}" title="Remover Estoque">
+                      <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteStock" data-resource-id="{{resourceId}}" title="Excluir Recurso {{name}} do Sistema">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
                     </td>
@@ -1070,9 +1112,9 @@
                 <th>Direção</th>
                 <th>Recurso</th>
                 <th>Quantidade</th>
-                <th>Período</th>
+                <th>Categoria</th>
                 <th>Status</th>
-                {{#if isGM}}<th style="width: 50px; text-align: center;">Ações</th>{{/if}}
+                {{#if isGM}}<th style="width: 50px; text-align: center;">Excluir</th>{{/if}}
               </tr>
             </thead>
             <tbody>
@@ -1082,7 +1124,7 @@
                   <td><span class="dm-badge dm-badge--dir is-{{direction}}">{{direction}}</span></td>
                   <td>{{resourceId}}</td>
                   <td>{{displayAmount}}</td>
-                  <td>a cada {{periodTicks}} tick(s)</td>
+                  <td><span class="dm-pill dm-pill--category">{{category}}</span></td>
                   <td>
                     <span class="dm-status-dot {{#if active}}is-active{{else}}is-inactive{{/if}}"></span>
                     {{#if active}}Ativo{{else}}Inativo{{/if}}
@@ -1130,7 +1172,11 @@
                     {{/if}}
                   </div>
                 </div>
-                {{#if description}}<p class="dm-project-card__desc">{{description}}</p>{{/if}}
+                {{#if description}}
+                  <p class="dm-project-card__desc">{{description}}</p>
+                {{else}}
+                  <p class="dm-project-card__desc font-italic text-muted">Sem descrição detalhada registrada.</p>
+                {{/if}}
                 <div class="dm-progress-block">
                   <div class="dm-progress-bar">
                     <div class="dm-progress-bar__fill" style="width: {{progressPercent}}%;"></div>
@@ -1188,7 +1234,10 @@
         {{/if}}
 
         <div class="dm-panel__header-row mt-4">
-          <h3 class="dm-section-title"><i class="fa-solid fa-people-group"></i> Grupos Populacionais</h3>
+          <div>
+            <h3 class="dm-section-title"><i class="fa-solid fa-people-group"></i> Grupos Populacionais & Agitação Calculada</h3>
+            <span class="dm-card__subtext">Agitação Geral Ponderada do Domínio: <strong>{{metrics.unrestRiskPercent}}%</strong> (Nível: {{metrics.unrestRiskLevel}})</span>
+          </div>
           {{#if isGM}}
             <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddGroupModal">
               <i class="fa-solid fa-plus"></i> Novo Grupo
@@ -1200,9 +1249,12 @@
           <div class="dm-group-list">
             {{#each groups}}
               <div class="dm-group-item">
-                <div>
-                  <strong>{{name}}</strong> ({{population}} indivíduos)
-                  <span class="dm-group-sub">· Satisfação: {{happiness}}</span>
+                <div class="dm-group-main">
+                  <strong>{{name}}</strong> ({{population}} indivíduos · {{sharePercent}}% do total)
+                  <div class="dm-group-details">
+                    <span class="dm-badge dm-badge--happiness">Satisfação: {{happiness}}</span>
+                    <span class="dm-badge dm-badge--risk is-{{unrestLabel}}">Agitação: {{unrestScore}}/10 ({{unrestLabel}})</span>
+                  </div>
                 </div>
                 <div class="dm-row-actions">
                   <span class="dm-badge is-stable">Ativo</span>

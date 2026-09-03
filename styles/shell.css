@@ -1209,3 +1209,57 @@
   justify-content: space-between;
   gap: 12px;
 }
+
+.dm-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: #e4e4e7;
+}
+
+.dm-tag-chip__del {
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  transition: color 0.15s ease;
+}
+.dm-tag-chip__del:hover {
+  color: #f43f5e;
+}
+
+.dm-tag-chip--add {
+  cursor: pointer;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  transition: background 0.15s ease;
+}
+.dm-tag-chip--add:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.dm-group-details {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.dm-badge--happiness {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.font-italic { font-style: italic; }
+.text-muted { color: #71717a; }

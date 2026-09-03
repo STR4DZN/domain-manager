@@ -259,14 +259,7 @@ export function normalizeFlow({
     );
   }
 
-  if (
-    !FLOW_CATEGORIES.includes(category)
-  ) {
-    throw new ModuleError(
-      ERROR_CODES.VALIDATION,
-      `Categoria de fluxo inválida: ${category}`
-    );
-  }
+  const cleanCategory = String(category ?? "manual").trim() || "manual";
 
   try {
     assertSafeMinorAmount(amount);
@@ -307,7 +300,7 @@ export function normalizeFlow({
     direction,
     amount,
     periodTicks,
-    category,
+    category: cleanCategory,
     source:
       String(source ?? "").trim(),
     active: Boolean(active)
