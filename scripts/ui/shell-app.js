@@ -3573,7 +3573,7 @@ super._onRender?.(context, options);
       }
     }
 
-    let sectorCallout = activeTabMeta ? `SECTOR // ${activeTabMeta.index} ${activeTabMeta.title}` : "SECTOR // 01 VISÃO GERAL";
+    let sectorCallout = activeTabMeta ? `SETOR // ${activeTabMeta.index} ${activeTabMeta.title}` : "SETOR // 01 VISÃO GERAL";
     if (activeNotableDossier) {
       sectorCallout = `DOSSIÊ // ${activeNotableDossier.name.toUpperCase()}`;
     }

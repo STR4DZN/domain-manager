@@ -1,19 +1,30 @@
 <div class="dm-shell" data-domain-manager-shell data-section="{{activeSection}}">
   <div class="dm-hud-transition-overlay dm-hud-transition-overlay--fullscreen" aria-hidden="true">
-  <!-- Top HUD Bar Telemetry (Systems / Inventory / Database) -->
+  <!-- Cantoneiras Táticas de Enquadramento -->
+  <div class="dm-hud-bracket dm-hud-bracket--tl"></div>
+  <div class="dm-hud-bracket dm-hud-bracket--tr"></div>
+  <div class="dm-hud-bracket dm-hud-bracket--bl"></div>
+  <div class="dm-hud-bracket dm-hud-bracket--br"></div>
+
+  <!-- Barra Superior de Telemetria (100% em Português) -->
   <div class="dm-hud-transition__top-bar">
-    <div class="dm-hud-transition__sys-pill is-active">SYSTEMS</div>
-    <div class="dm-hud-transition__sys-pill">INVENTORY</div>
-    <div class="dm-hud-transition__sys-pill">DATABASE</div>
-    <div class="dm-hud-transition__sys-meta">HEX: 0x3F81 // KERNEL v2.4.9 · STAMP: 2414761732</div>
+    <div class="dm-hud-transition__sys-pill is-active">
+      <span class="dm-hud-dot"></span> SISTEMAS
+    </div>
+    <div class="dm-hud-transition__sys-pill">LOGÍSTICA</div>
+    <div class="dm-hud-transition__sys-pill">BANCO DE DADOS</div>
+    <div class="dm-hud-transition__sys-meta">
+      <span>CANAL SEGURO: CRIPTO-SHA256</span>
+      <span>NÚCLEO TÁTICO v2.4 // REGISTRO: {{selectedDomain.name}}</span>
+    </div>
   </div>
 
-  <!-- Scanlines & Linhas Táticas de Fundo -->
+  <!-- Texturas Táticas de Fundo (Dot Matrix & Scanlines) -->
   <div class="dm-hud-transition__scanlines"></div>
-  <div class="dm-hud-transition__grid"></div>
+  <div class="dm-hud-transition__dot-grid"></div>
   <div class="dm-hud-transition__glitch-beam"></div>
 
-  <!-- Radar Tático Central com Coordenadas -->
+  <!-- Radar Tático Central com Mira e Coordenadas -->
   <div class="dm-hud-transition__radar-wrap">
     <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--h"></div>
     <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--v"></div>
@@ -22,61 +33,69 @@
     <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--xl"></div>
     <div class="dm-hud-transition__radar-sweep"></div>
     <div class="dm-hud-transition__radar-coords">
-      <span>LAT: 44.1209 // LON: -122.9014</span>
-      <span>AZIMUTH: 042° // RANGE: 100KM</span>
+      <span>AZIMUTE: 042° // ELEVAÇÃO: 850M</span>
+      <span>LAT: 44° 12' S // LONG: 53° 08' O // ALCANCE: 100 KM</span>
     </div>
   </div>
 
-  <!-- Banner Central Tático (Fiel a SECTOR 34) -->
+  <!-- Banner Central Tático (Placa Escura com Borda Iluminada e Chanfro) -->
   <div class="dm-hud-transition__sector-banner">
-    <span class="dm-hud-transition__sector-accent"></span>
-    <span class="dm-hud-transition__sector-title">{{sectorCallout}}</span>
+    <div class="dm-hud-transition__sector-accent"></div>
+    <div class="dm-hud-transition__sector-text">
+      <div class="dm-hud-transition__sector-title">{{sectorCallout}}</div>
+      <div class="dm-hud-transition__sector-sub">ACESSO AUTORIZADO · PROTOCOLO SINCRONIZADO</div>
+    </div>
   </div>
 
-  <!-- Painéis Inferiores de Telemetria e Código Subindo -->
+  <!-- Painéis Inferiores de Telemetria e Código Subindo (Sem Vazamento) -->
   <div class="dm-hud-transition__bottom-panels">
-    <!-- Código Monospace com Linhas e Hex -->
+    <!-- Código Monospace em Português -->
     <div class="dm-hud-transition__code-panel">
       <div class="dm-hud-transition__code-header">
-        <span>SYS_ROUTINE // {{sectorIndex}} [SEC_MEM]</span>
-        <span class="text-crimson">{{selectedDomain.name}}</span>
+        <span>ROTINA DO SISTEMA // {{sectorIndex}}</span>
+        <span class="text-crimson">AUTORIZADO</span>
       </div>
-      <div class="dm-hud-transition__code-stream">
-        <div class="dm-code-line"><span class="dm-line-no">01</span> def __init__(sector="{{activeTab}}", auth=MAX):</div>
-        <div class="dm-code-line"><span class="dm-line-no">02</span>     buffer = alloc_kernel_mem(0x7FFF)</div>
-        <div class="dm-code-line"><span class="dm-line-no">03</span>     verify_encryption_handshake(auth="CONNECTED")</div>
-        <div class="dm-code-line"><span class="dm-line-no">04</span>     load_tactical_assets("{{selectedDomain.name}}")</div>
-        <div class="dm-code-line"><span class="dm-line-no">05</span>     decrypting_sector_payload(stream=1024) -> OK</div>
-        <div class="dm-code-line"><span class="dm-line-no">06</span>     synchronize_telemetry_stream(rate=1.0)</div>
-        <div class="dm-code-line"><span class="dm-line-no">07</span>     render_tactical_viewport(layer="DOM_HUD")</div>
-        <div class="dm-code-line"><span class="dm-line-no">08</span>     return status.READY_SYNCHRONIZED</div>
+      <div class="dm-hud-transition__code-wrapper">
+        <div class="dm-hud-transition__code-stream">
+          <div class="dm-code-line"><span class="dm-line-no">01</span> def inicializar_setor(id="{{activeTab}}"):</div>
+          <div class="dm-code-line"><span class="dm-line-no">02</span>     alocar_memoria_tatica(0x7FFF) -> OK</div>
+          <div class="dm-code-line"><span class="dm-line-no">03</span>     verificar_chaves_seguranca("CONECTADO")</div>
+          <div class="dm-code-line"><span class="dm-line-no">04</span>     carregar_manifesto_base("{{selectedDomain.name}}")</div>
+          <div class="dm-code-line"><span class="dm-line-no">05</span>     decodificar_dados_operacionais() -> 100%</div>
+          <div class="dm-code-line"><span class="dm-line-no">06</span>     estabelecer_fluxo_telemetria(1.0)</div>
+          <div class="dm-code-line"><span class="dm-line-no">07</span>     renderizar_visao_tatica("HUD_PRONTO")</div>
+          <div class="dm-code-line"><span class="dm-line-no">08</span>     retornar STATUS_SINCRONIZADO</div>
+        </div>
       </div>
       <div class="dm-hud-transition__tag">
         <span class="dm-hud-transition__tag-accent"></span>
-        <span>INITIALIZING...</span>
+        <span>INICIALIZANDO...</span>
       </div>
     </div>
 
-    <!-- Matriz Binária com Destaques em Vermelho -->
+    <!-- Matriz Binária e Hexadecimal -->
     <div class="dm-hud-transition__binary-panel">
       <div class="dm-hud-transition__code-header">
-        <span>DATA_MATRIX // HEX_DUMP</span>
-        <span class="text-amber">STREAM_ONLINE</span>
+        <span>MATRIZ DE DADOS // TELEMETRIA</span>
+        <span class="text-amber">FLUXO_ONLINE</span>
       </div>
-      <div class="dm-hud-transition__binary-stream">
-        <div class="dm-bin-line">00101011 00110111 01000110 01111011 [0x8FA1]</div>
-        <div class="dm-bin-line">11110110 11000111 00110101 01110110 [0x00B2]</div>
-        <div class="dm-bin-line">10101100 <span class="text-crimson">00010011 00101001</span> 10011011 [CRIT_BYTE]</div>
-        <div class="dm-bin-line">00011011 11011011 11011011 00011100 [SEC_AUTH]</div>
-        <div class="dm-bin-line">10101011 10110010 10110001 00110010 [SYNC_OK]</div>
-        <div class="dm-bin-line">01110011 01110100 01101111 01101110 [CHIP_CLR]</div>
+      <div class="dm-hud-transition__code-wrapper">
+        <div class="dm-hud-transition__binary-stream">
+          <div class="dm-bin-line">00101011 00110111 01000110 01111011 [0x8FA1]</div>
+          <div class="dm-bin-line">11110110 11000111 00110101 01110110 [0x00B2]</div>
+          <div class="dm-bin-line">10101100 <span class="text-crimson">00010011 00101001</span> 10011011 [DADO_CRITICO]</div>
+          <div class="dm-bin-line">00011011 11011011 11011011 00011100 [CHAVE_AUTH]</div>
+          <div class="dm-bin-line">10101011 10110010 10110001 00110010 [SINC_OK]</div>
+          <div class="dm-bin-line">01110011 01110100 01101111 01101110 [MEM_LIMPA]</div>
+        </div>
       </div>
       <div class="dm-hud-transition__tag">
         <span class="dm-hud-transition__tag-accent"></span>
-        <span>DEBUGGING // OK</span>
+        <span>DEPURAÇÃO // CONCLUÍDA</span>
       </div>
     </div>
   </div>
+</div>
 </div>
 
   <div class="dm-shell__layout">

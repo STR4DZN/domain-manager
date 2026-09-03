@@ -5481,3 +5481,239 @@
 .dm-tree-item::after {
   display: none !important;
 }
+
+/* ==========================================================================
+   TRANSIÇÃO HUD TÁTICA AAA: FUNDO OPACO, ZERO BLUR, MOLDURAS E SEM VAZAMENTOS
+   ========================================================================== */
+
+/* Overlay Container: 100% OPACO para não vazar a página por trás */
+.dm-hud-transition-overlay--fullscreen {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: #08080b !important; /* Totalmente sólido, sem ghosting */
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 1.25rem 1.75rem !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  box-sizing: border-box !important;
+}
+
+.dm-hud-transition-overlay--fullscreen.is-active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: dmHudTransitionFadeClean 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Animação limpa sem blur */
+@keyframes dmHudTransitionFadeClean {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Cantoneiras HUD nos 4 Cantos */
+.dm-hud-bracket {
+  position: absolute !important;
+  width: 24px !important;
+  height: 24px !important;
+  border: 2px solid #ef4444 !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+.dm-hud-bracket--tl {
+  top: 12px !important;
+  left: 12px !important;
+  border-right: none !important;
+  border-bottom: none !important;
+}
+
+.dm-hud-bracket--tr {
+  top: 12px !important;
+  right: 12px !important;
+  border-left: none !important;
+  border-bottom: none !important;
+}
+
+.dm-hud-bracket--bl {
+  bottom: 12px !important;
+  left: 12px !important;
+  border-right: none !important;
+  border-top: none !important;
+}
+
+.dm-hud-bracket--br {
+  bottom: 12px !important;
+  right: 12px !important;
+  border-left: none !important;
+  border-top: none !important;
+}
+
+/* Grid de Pontos Tático (Dot-Matrix) */
+.dm-hud-transition__dot-grid {
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: radial-gradient(rgba(239, 68, 68, 0.12) 1px, transparent 0) !important;
+  background-size: 24px 24px !important;
+  pointer-events: none !important;
+}
+
+/* Barra Superior Tática */
+.dm-hud-transition__top-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-bottom: 0.65rem !important;
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+.dm-hud-dot {
+  width: 6px !important;
+  height: 6px !important;
+  background: #10b981 !important;
+  border-radius: 50% !important;
+  display: inline-block !important;
+  margin-right: 4px !important;
+  box-shadow: 0 0 6px #10b981 !important;
+}
+
+.dm-hud-transition__sys-pill {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  color: #71717a !important;
+  padding: 0.2rem 0.65rem !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 3px !important;
+}
+
+.dm-hud-transition__sys-pill.is-active {
+  color: #ffffff !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+.dm-hud-transition__sys-meta {
+  margin-left: auto !important;
+  display: flex !important;
+  gap: 1.25rem !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.65rem !important;
+  color: #71717a !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Banner Central Tático */
+.dm-hud-transition__sector-banner {
+  position: absolute !important;
+  top: 42% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: #0e0e14 !important;
+  border: 2px solid #ef4444 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 35px rgba(239, 68, 68, 0.4), inset 0 0 20px rgba(239, 68, 68, 0.1) !important;
+  z-index: 30 !important;
+  overflow: hidden !important;
+}
+
+.dm-hud-transition__sector-accent {
+  width: 14px !important;
+  background: #ef4444 !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-hud-transition__sector-text {
+  padding: 0.75rem 1.75rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.dm-hud-transition__sector-title {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 1.35rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
+}
+
+.dm-hud-transition__sector-sub {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  color: #a1a1aa !important;
+}
+
+/* Painéis Inferiores: Sem estouro de texto e sem blur */
+.dm-hud-transition__bottom-panels {
+  margin-top: auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 1.5rem !important;
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+.dm-hud-transition__code-panel,
+.dm-hud-transition__binary-panel {
+  background: rgba(10, 10, 14, 0.9) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  padding: 0.65rem 0.85rem !important;
+  border-radius: 4px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  height: 135px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dm-hud-transition__code-wrapper {
+  flex: 1 !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.dm-hud-transition__code-stream,
+.dm-hud-transition__binary-stream {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  line-height: 1.35 !important;
+  color: #a1a1aa !important;
+  filter: none !important; /* ZERO BLUR */
+  animation: dmCodeStreamUpClean 1.25s linear forwards !important;
+}
+
+@keyframes dmCodeStreamUpClean {
+  0% { transform: translateY(15px); }
+  100% { transform: translateY(-20px); }
+}
