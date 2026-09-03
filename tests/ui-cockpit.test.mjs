@@ -166,6 +166,33 @@ test("todos os templates da interface existem e são válidos", () => {
     }
     assert.equal(stack.length, 0, `[${tpl}] Tags não fechadas: ${stack.map((s) => s.tag).join(", ")}`);
   }
+
+  // 2. Validação estrita de elemento raiz único no app-shell.hbs (exigido pelo Foundry VTT ApplicationV2)
+  const appShellContent = fs.readFileSync(path.join(ROOT, 'templates/app-shell.hbs'), 'utf8');
+  const openDivs = (appShellContent.match(/<div[\s>]/g) || []).length;
+  const closeDivs = (appShellContent.match(/<\/div>/g) || []).length;
+  assert.equal(openDivs, closeDivs, `Tags <div> em app-shell.hbs devem estar 100% balanceadas (Aberturas: ${openDivs}, Fechamentos: ${closeDivs})`);
+
+  let balance = 0;
+  const regex = /<\/?div[\s>]/g;
+  let match;
+  let line = 1;
+  let lastIndex = 0;
+  let zeroCount = 0;
+  while ((match = regex.exec(appShellContent)) !== null) {
+    const textBefore = appShellContent.slice(lastIndex, match.index);
+    line += (textBefore.match(/\n/g) || []).length;
+    lastIndex = match.index;
+    if (match[0].startsWith('</div')) {
+      balance--;
+      if (balance === 0) zeroCount++;
+    } else {
+      balance++;
+    }
+  }
+
+  assert.equal(zeroCount, 1, `app-shell.hbs deve ter exatamente 1 elemento raiz HTML (o balanço só pode atingir zero na última linha). Fechou ${zeroCount} vezes.`);
+  assert.equal(balance, 0, 'O balanço final de divs em app-shell.hbs deve ser exatamente 0.');
 });
 
 test("dicionário de idiomas pt-BR possui todas as chaves da nova interface", () => {
