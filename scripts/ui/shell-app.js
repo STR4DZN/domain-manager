@@ -2874,25 +2874,30 @@ super._onRender?.(context, options);
     if (!localId) return;
 
     try {
-      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
-      const record = decodeRecord(doc);
-      const data = foundry.utils.deepClone(record.data);
-      if (!Array.isArray(data.notifications)) return;
-
-      const notif = data.notifications.find((n) => n.localId === localId);
-      if (!notif) return;
-
-      if (!Array.isArray(notif.readByUserIds)) notif.readByUserIds = [];
-      const userId = game.user?.id || "unknown";
-      if (!notif.readByUserIds.includes(userId)) {
-        notif.readByUserIds.push(userId);
+      if (game.user.isGM) {
+        const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+        const record = decodeRecord(doc);
+        const data = foundry.utils.deepClone(record.data);
+        if (Array.isArray(data.notifications)) {
+          const notif = data.notifications.find((n) => n.localId === localId);
+          if (notif) {
+            if (!Array.isArray(notif.readByUserIds)) notif.readByUserIds = [];
+            const userId = game.user?.id || "unknown";
+            if (!notif.readByUserIds.includes(userId)) notif.readByUserIds.push(userId);
+            await updateRecord({
+              uuid: this.selectedDomainUuid,
+              recordType: RECORD_TYPES.DOMAIN,
+              data
+            });
+          }
+        }
+      } else {
+        // Jogador marca em sua própria flag de usuário
+        const existing = game.user.getFlag ? (game.user.getFlag(MODULE_ID, "readNotificationIds") || []) : [];
+        if (!existing.includes(localId)) {
+          await game.user.setFlag(MODULE_ID, "readNotificationIds", [...existing, localId]);
+        }
       }
-
-      await updateRecord({
-        uuid: this.selectedDomainUuid,
-        recordType: RECORD_TYPES.DOMAIN,
-        data
-      });
 
       ui.notifications?.info("Notificação marcada como vista.");
       this.render();
@@ -3449,7 +3454,8 @@ super._onRender?.(context, options);
         defenseScore: defenseBase,
         guardCount: guards,
         parentUuid: data.hierarchy?.locatedInUuid || data.hierarchy?.administrativeParentUuid || "",
-        controllers: data.governance?.controllers || []
+        controllers: data.governance?.controllers || [],
+        notifications: Array.isArray(data.notifications) ? data.notifications : []
       };
     }
 
@@ -3578,11 +3584,14 @@ super._onRender?.(context, options);
     const activeProjectsCount = (domainProjects || []).filter((p) => !p.isCompleted).length;
 
     // Processamento de Notificações do Domínio
-    const rawNotifications = Array.isArray(selectedDomain?.notifications) ? selectedDomain.notifications : [];
+    const rawNotifications = Array.isArray(selectedDomain?.notifications)
+      ? selectedDomain.notifications
+      : (Array.isArray(selectedRecord?.data?.notifications) ? selectedRecord.data.notifications : []);
     const currentUserId = game.user?.id || "";
+    const userReadIds = new Set(game.user?.getFlag ? (game.user.getFlag(MODULE_ID, "readNotificationIds") || []) : []);
 
     const notificationsWithMeta = rawNotifications.map((n) => {
-      const isRead = (n.readByUserIds || []).includes(currentUserId) || n.dismissed;
+      const isRead = (n.readByUserIds || []).includes(currentUserId) || userReadIds.has(n.localId) || Boolean(n.dismissed);
       let icon = "fa-solid fa-circle-info";
       if (n.severity === "critical") icon = "fa-solid fa-triangle-exclamation";
       else if (n.severity === "warning") icon = "fa-solid fa-bell";

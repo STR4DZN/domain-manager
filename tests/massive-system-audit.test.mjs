@@ -927,6 +927,11 @@ test("Auditoria Geral: Sistema de Notificações, Alertas e Panorama da Visão G
   // Validar badge na aba de Visão Geral
   const unreadList = [notif].filter(n => !n.readByUserIds.includes(userId));
   assert.strictEqual(unreadList.length, 0, "Lista de não lidas deve ser 0 após ser vista pelo player");
+
+  // 5. Validar que selectedDomain e context recebem as notificações do data
+  const shellFile = fs.readFileSync("scripts/ui/shell-app.js", "utf8");
+  assert.strictEqual(shellFile.includes("notifications: Array.isArray(data.notifications) ? data.notifications : []"), true, "selectedDomain deve conter notifications extraídas de data.notifications");
+  assert.strictEqual(shellFile.includes("readNotificationIds"), true, "shell-app deve suportar persistência de leitura de notificações por players");
 });
 
 test("Auditoria Geral: Dossiê Tático e Bio-Monitor de Notáveis (Inspirado em Cyberpunk HUD)", async () => {
