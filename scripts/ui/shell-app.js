@@ -593,8 +593,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const overlay = this.element?.querySelector(".dm-hud-transition-overlay");
       if (overlay) {
         overlay.classList.remove("is-active");
-        void overlay.offsetWidth; // Força reflow para reiniciar keyframes do frame zero
-        overlay.classList.add("is-active");
+        requestAnimationFrame(() => {
+          overlay.classList.add("is-active");
+          // Remover classe após término para liberar estado
+          setTimeout(() => {
+            overlay.classList.remove("is-active");
+          }, 1400);
+        });
       }
     }
 super._onRender?.(context, options);

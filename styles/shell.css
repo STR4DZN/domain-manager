@@ -5088,3 +5088,182 @@
   display: flex !important;
   animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
+
+/* ==========================================================================
+   FIXES CRÍTICOS: SIDEBAR HEIGHT, PASTAS VISÍVEIS & ANIMAÇÃO HUD
+   ========================================================================== */
+
+/* 1. Sidebar Principal com Scroll Suave caso a janela seja compacta */
+.dm-sidebar {
+  width: 270px !important;
+  background: #101014 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+/* 2. Módulos Operacionais Proporcionais (36px de altura - não espreme as pastas) */
+.dm-sidebar__tactical-nav {
+  padding: 0.65rem 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-sidebar__section-divider {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  color: #71717a !important;
+  letter-spacing: 0.12em !important;
+  padding: 0 0.2rem 0.4rem 0.2rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.dm-sidebar__nav-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.dm-sidebar__nav-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  height: 36px !important;
+  padding: 0 0.75rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 5px !important;
+  color: #a1a1aa !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.dm-sidebar__nav-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.dm-sidebar__nav-item.is-active {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.04) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.6) !important;
+  border-left: 3px solid #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2) !important;
+}
+
+.dm-sidebar__nav-idx {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  color: #71717a !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  padding: 0.1rem 0.35rem !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-idx {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+/* 3. Seção de Territórios & Pastas com Espaço Garantido */
+.dm-sidebar__domains-section {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 220px !important;
+  padding: 0.65rem 0.75rem !important;
+}
+
+.dm-sidebar__content {
+  flex: 1 1 auto !important;
+  min-height: 140px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* 4. Árvore de Pastas Limpa e Sem Bugs */
+.dm-tree {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  padding: 4px 0 !important;
+}
+
+.dm-tree-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  border-radius: 4px !important;
+  border: 1px solid transparent !important;
+  color: #d4d4d8 !important;
+  font-size: 0.82rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+}
+
+.dm-tree-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+.dm-tree-item.is-selected {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.22) 0%, rgba(239, 68, 68, 0.04) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  border-left: 3px solid #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15) !important;
+}
+
+.dm-tree-branch {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.75rem !important;
+  color: #ef4444 !important;
+  margin-right: 2px !important;
+  user-select: none !important;
+}
+
+/* 5. Overlay Fullscreen Funcional Sem Conflito de Opacity */
+.dm-hud-transition-overlay--fullscreen {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: radial-gradient(circle at center, rgba(12, 10, 16, 0.96) 0%, rgba(6, 6, 8, 0.99) 100%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 1.5rem 2rem !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.dm-hud-transition-overlay--fullscreen.is-active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
