@@ -89,6 +89,79 @@
   </div>
 </div>
 
+  <!-- OVERLAY DE BOOT TÁTICO AAA (EXECUTA EXCLUSIVAMENTE NA ABERTURA DO MÓDULO) -->
+  <div class="dm-boot-welcome-overlay {{#if shouldPlayBootWelcome}}is-active{{else}}is-finished{{/if}}" aria-hidden="true">
+    <!-- 1. Textura Hexagonal de Fundo (GIF 3) -->
+    <div class="dm-boot-hex-grid"></div>
+    <div class="dm-boot-scanline"></div>
+
+    <!-- 2. Pista em Perspectiva e Horizonte (GIF 2) -->
+    <div class="dm-boot-runway-perspective">
+      <div class="dm-boot-runway-plane"></div>
+    </div>
+    <div class="dm-boot-horizon"></div>
+    <div class="dm-boot-laser-tracer dm-boot-laser-tracer--left"></div>
+    <div class="dm-boot-laser-tracer dm-boot-laser-tracer--right"></div>
+
+    <!-- 3. Cantoneiras de Cockpit (GIF 1 & 2) -->
+    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--left"></div>
+    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--right"></div>
+
+    <!-- 4. Núcleo Holográfico com Globo e Anéis Concéntricos (GIF 3) -->
+    <div class="dm-boot-core-system">
+      <div class="dm-boot-ring dm-boot-ring-outer"></div>
+      <div class="dm-boot-ring dm-boot-ring-ticks"></div>
+      <div class="dm-boot-ring dm-boot-ring-inner"></div>
+      <div class="dm-boot-sphere"></div>
+    </div>
+
+    <!-- 5. Painel de Holo-Projeção Superior Direito (GIF 3) -->
+    <div class="dm-boot-holo-projector">
+      <div class="dm-boot-holo-projector__header">
+        <span>// HOLO-DIAG</span>
+        <span>ESTRUTURA: ATIVA</span>
+      </div>
+      <div class="dm-boot-holo-mesh">
+        <div class="dm-boot-holo-rig"></div>
+      </div>
+    </div>
+
+    <!-- 6. Painel de Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) -->
+    <div class="dm-boot-telemetry-panel">
+      <div class="dm-boot-telemetry-header">
+        <span>SISTEMA TÁTICO v0.1</span>
+        <span>LINK 100%</span>
+      </div>
+      <div class="dm-boot-equalizer">
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+        <div class="dm-boot-eq-bar"></div>
+      </div>
+      <div class="dm-boot-port-check">
+        PORT CHECK: 399.160.01:60.000<br>
+        ENCRIPTADOR: ATIVO // ALFA
+      </div>
+    </div>
+
+    <!-- 7. Card de Boas-Vindas Central ao Usuário -->
+    <div class="dm-boot-welcome-card">
+      <div class="dm-boot-status-badge">
+        <span class="dm-boot-status-dot"></span>
+        <span>AUTORIZAÇÃO NÍVEL ALFA CONCEDIDA</span>
+      </div>
+      <h1 class="dm-boot-welcome-title">SEJA BEM-VINDO, <span>{{currentUserName}}</span></h1>
+      <p class="dm-boot-welcome-subtitle">// TERMINAL DE SOBERANIA OPERACIONAL CARREGADO //</p>
+      <div class="dm-boot-progress-bar">
+        <div class="dm-boot-progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="dm-shell__layout">
     <nav class="dm-rail" aria-label="Navegação Global">
   <div class="dm-rail__brand" title="{{localize 'DOMAIN_MANAGER.Title'}}">

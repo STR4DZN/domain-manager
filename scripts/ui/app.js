@@ -24,7 +24,11 @@ function getOrCreateApplication() {
 }
 
 async function renderRoute({ section = null, domainUuid = undefined } = {}) {
+  const isAlreadyOpen = isApplicationOpen(application);
   const app = getOrCreateApplication();
+  if (!isAlreadyOpen) {
+    app.shouldPlayBootWelcome = true;
+  }
   app.setRoute({ section, domainUuid });
 
   try {

@@ -578,6 +578,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isEditingNotableStatsModal = false;
   _shouldAnimateNextRender = false;
   isHudTransitionActive = false;
+  shouldPlayBootWelcome = true;
   static #hudTransitionTimeout = null;
 
   static DEFAULT_OPTIONS = {
@@ -760,6 +761,19 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   _onRender(context, options) {
     if (typeof super._onRender === "function") {
       super._onRender(context, options);
+    }
+
+    if (this.shouldPlayBootWelcome) {
+      this.shouldPlayBootWelcome = false;
+      const bootOverlay = this.element?.querySelector(".dm-boot-welcome-overlay");
+      if (bootOverlay) {
+        bootOverlay.classList.remove("is-finished");
+        bootOverlay.classList.add("is-active");
+        setTimeout(() => {
+          bootOverlay.classList.add("is-finished");
+          bootOverlay.classList.remove("is-active");
+        }, 2300);
+      }
     }
 
     if (this._shouldAnimateNextRender) {
@@ -3857,7 +3871,9 @@ super._onRender?.(context, options);
         projects: recordIndex.count(RECORD_TYPES.PROJECT),
         missions: recordIndex.count(RECORD_TYPES.MISSION),
         requests: recordIndex.count(RECORD_TYPES.REQUEST)
-      }
+      },
+      currentUserName: (game.user?.name || "Operador").toUpperCase(),
+      shouldPlayBootWelcome: this.shouldPlayBootWelcome
     };
   }
 }

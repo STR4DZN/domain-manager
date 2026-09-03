@@ -909,3 +909,56 @@ test("v8: Auto-cura de ciclo hierárquico, galeria múltipla, ajuste contain/cov
   assert.ok(css.includes(".dm-base-gallery-strip"));
   assert.ok(css.includes(".dm-base-hero.is-contain"));
 });
+
+
+test("v9: Animação de Boot Welcome (Seja bem-vindo, {Usuário}) com referências dos 3 GIFs e acionamento exclusivo na abertura", async () => {
+  // 1. Validar que templates/app-shell.hbs possui o overlay e todas as camadas dos 3 GIFs
+  const appShell = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/app-shell.hbs"), "utf8");
+  assert.ok(appShell.includes("dm-boot-welcome-overlay"), "Deve possuir o overlay de boot welcome");
+  assert.ok(appShell.includes("dm-boot-hex-grid"), "Camada 1: Grade hexagonal (GIF 3)");
+  assert.ok(appShell.includes("dm-boot-scanline"), "Camada 1: Scanline (GIF 1)");
+  assert.ok(appShell.includes("dm-boot-runway-perspective"), "Camada 2: Pista em perspectiva 3D (GIF 2)");
+  assert.ok(appShell.includes("dm-boot-horizon"), "Camada 2: Horizonte tático com ticks (GIF 2)");
+  assert.ok(appShell.includes("dm-boot-laser-tracer"), "Camada 2: Traçadores laser snappy (GIF 2)");
+  assert.ok(appShell.includes("dm-boot-cockpit-bracket"), "Camada 3: Cantoneiras do cockpit (GIF 1 e 2)");
+  assert.ok(appShell.includes("dm-boot-core-system"), "Camada 4: Núcleo holográfico com anéis concêntricos (GIF 3)");
+  assert.ok(appShell.includes("dm-boot-sphere"), "Camada 4: Globo planetário wireframe (GIF 3)");
+  assert.ok(appShell.includes("dm-boot-holo-projector"), "Camada 5: Holo-projetor superior direito com base militar (GIF 3)");
+  assert.ok(appShell.includes("dm-boot-telemetry-panel"), "Camada 6: Telemetria superior esquerda com equalizador e port check (GIF 3 e 1)");
+  assert.ok(appShell.includes("dm-boot-welcome-card"), "Camada 7: Card de boas-vindas com {{currentUserName}}");
+
+  // 2. Validar que templates/app-shell.hbs mantém ESTRITAMENTE elemento raiz único
+  let depth = 0;
+  let earlyClose = false;
+  const regex = /<\/?div\b[^>]*>/gi;
+  let match;
+  while ((match = regex.exec(appShell)) !== null) {
+    if (match[0].startsWith("</")) {
+      depth--;
+      if (depth === 0 && match.index < appShell.lastIndexOf("</div>")) {
+        earlyClose = true;
+        break;
+      }
+    } else {
+      depth++;
+    }
+  }
+  assert.strictEqual(earlyClose, false, "app-shell.hbs não deve fechar a div raiz antes do final");
+  assert.strictEqual(depth, 0, "app-shell.hbs deve ter balanço perfeito de tags div (depth 0 ao final)");
+
+  // 3. Validar estilos no shell.css
+  const shellCss = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
+  assert.ok(shellCss.includes(".dm-boot-welcome-overlay"), "CSS deve estilizar .dm-boot-welcome-overlay");
+  assert.ok(shellCss.includes(".dm-boot-hex-grid"), "CSS deve estilizar a textura hexagonal");
+  assert.ok(shellCss.includes(".dm-boot-runway-perspective"), "CSS deve estilizar a pista 3D");
+  assert.ok(shellCss.includes(".dm-boot-core-system"), "CSS deve estilizar os anéis concêntricos");
+  assert.ok(shellCss.includes(".dm-boot-sphere"), "CSS deve estilizar a esfera wireframe");
+
+  // 4. Validar integração no shell-app.js e app.js
+  const shellAppCode = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/scripts/ui/shell-app.js"), "utf8");
+  assert.ok(shellAppCode.includes("shouldPlayBootWelcome"), "shell-app.js deve gerenciar a flag shouldPlayBootWelcome");
+  assert.ok(shellAppCode.includes("currentUserName"), "shell-app.js deve fornecer currentUserName no contexto");
+
+  const appJsCode = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/scripts/ui/app.js"), "utf8");
+  assert.ok(appJsCode.includes("isAlreadyOpen"), "app.js deve verificar se o app já está aberto para não disparar boot em re-renders");
+});

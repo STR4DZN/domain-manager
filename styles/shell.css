@@ -5827,3 +5827,454 @@
   flex: 1 !important;
   text-align: left !important;
 }
+
+
+/* ==========================================================================
+   BOOT WELCOME OVERLAY (ANIMACAO DE ABERTURA INSPIRADA NOS 3 GIFS)
+   ========================================================================== */
+.dm-boot-welcome-overlay {
+  position: absolute;
+  inset: 0;
+  background: #05070c;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+}
+
+.dm-boot-welcome-overlay.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all !important;
+  cursor: wait !important;
+}
+
+.dm-boot-welcome-overlay.is-finished {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none !important;
+  z-index: -1;
+}
+
+/* 1. Fundo Hexagonal e Scanline (GIF 3 & 1) */
+.dm-boot-hex-grid {
+  position: absolute;
+  inset: -50px;
+  background-image: 
+    radial-gradient(circle at center, rgba(0, 229, 255, 0.08) 0%, transparent 70%),
+    repeating-linear-gradient(60deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 30px),
+    repeating-linear-gradient(120deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 30px),
+    repeating-linear-gradient(0deg, rgba(0, 229, 255, 0.03) 0, rgba(0, 229, 255, 0.03) 1px, transparent 0, transparent 52px);
+  background-size: auto, 60px 104px, 60px 104px, 60px 104px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.dm-boot-scanline {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.35) 51%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* 2. Pista em Perspectiva e Horizonte (GIF 2) */
+.dm-boot-runway-perspective {
+  position: absolute;
+  bottom: 0;
+  left: 5%;
+  right: 5%;
+  height: 240px;
+  perspective: 350px;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.85;
+}
+.dm-boot-runway-plane {
+  width: 100%;
+  height: 100%;
+  transform: rotateX(72deg);
+  transform-origin: bottom center;
+  background-image: 
+    radial-gradient(circle, #00e5ff 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(0, 229, 255, 0.15) 1px, transparent 1px);
+  background-size: 32px 32px, 64px 64px;
+  animation: dmRunwayScroll 1.2s linear infinite;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 95%);
+}
+@keyframes dmRunwayScroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 64px; }
+}
+
+.dm-boot-horizon {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.2) 15%, rgba(0, 229, 255, 0.6) 50%, rgba(0, 229, 255, 0.2) 85%, transparent 100%);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.dm-boot-horizon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 12px;
+  background-image: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.8) 0, rgba(0, 229, 255, 0.8) 1px, transparent 0, transparent 16px);
+  opacity: 0.7;
+}
+
+.dm-boot-laser-tracer {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  background: #00e5ff;
+  box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff;
+  animation: dmLaserSnap 0.6s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
+}
+.dm-boot-laser-tracer--left {
+  right: 50%;
+  animation-name: dmLaserSnapLeft;
+}
+.dm-boot-laser-tracer--right {
+  left: 50%;
+  animation-name: dmLaserSnapRight;
+}
+@keyframes dmLaserSnapLeft {
+  0% { width: 0; opacity: 0; }
+  40% { width: 45%; opacity: 1; }
+  100% { width: 38%; opacity: 0.4; }
+}
+@keyframes dmLaserSnapRight {
+  0% { width: 0; opacity: 0; }
+  40% { width: 45%; opacity: 1; }
+  100% { width: 38%; opacity: 0.4; }
+}
+
+/* 3. Cockpit e Brackets do Visor (GIF 1 & 2) */
+.dm-boot-cockpit-bracket {
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  width: 24px;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  pointer-events: none;
+}
+.dm-boot-cockpit-bracket--left {
+  left: 20px;
+  border-right: none;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  box-shadow: inset 3px 0 10px rgba(0, 229, 255, 0.15);
+}
+.dm-boot-cockpit-bracket--right {
+  right: 20px;
+  border-left: none;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: inset -3px 0 10px rgba(0, 229, 255, 0.15);
+}
+
+/* 4. Núcleo Holográfico com Globo e Anéis (GIF 3) */
+.dm-boot-core-system {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.dm-boot-ring {
+  position: absolute;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.dm-boot-ring-outer {
+  width: 260px;
+  height: 260px;
+  border: 1px dashed rgba(0, 229, 255, 0.35);
+  animation: dmRotateClockwise 18s linear infinite;
+}
+.dm-boot-ring-ticks {
+  width: 220px;
+  height: 220px;
+  border: 2px solid transparent;
+  border-top: 2px solid #00e5ff;
+  border-bottom: 2px solid #00e5ff;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+  animation: dmRotateCounter 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.dm-boot-ring-inner {
+  width: 170px;
+  height: 170px;
+  border: 1px dotted rgba(0, 229, 255, 0.5);
+  animation: dmRotateClockwise 10s linear infinite;
+}
+@keyframes dmRotateClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes dmRotateCounter {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.dm-boot-sphere {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  position: relative;
+  background: radial-gradient(circle at 30% 30%, rgba(0, 229, 255, 0.25), transparent 70%);
+  box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.3), 0 0 20px rgba(0, 229, 255, 0.15);
+  overflow: hidden;
+}
+.dm-boot-sphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 229, 255, 0.6);
+  transform: scaleX(0.4);
+  animation: dmSphereLongitude 4s linear infinite;
+}
+.dm-boot-sphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 229, 255, 0.6);
+  transform: scaleY(0.4);
+}
+@keyframes dmSphereLongitude {
+  0% { transform: scaleX(0.1); opacity: 0.4; }
+  50% { transform: scaleX(0.85); opacity: 0.8; }
+  100% { transform: scaleX(0.1); opacity: 0.4; }
+}
+
+/* 5. Holo-Projetor Superior Direito (GIF 3) */
+.dm-boot-holo-projector {
+  position: absolute;
+  top: 30px;
+  right: 40px;
+  width: 190px;
+  padding: 10px;
+  background: rgba(4, 15, 26, 0.9);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  clip-path: polygon(15px 0%, 100% 0%, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0% 100%, 0% 15px);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+  pointer-events: none;
+}
+.dm-boot-holo-projector__header {
+  font-size: 9px;
+  font-family: monospace;
+  color: #00e5ff;
+  letter-spacing: 1.5px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.dm-boot-holo-mesh {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.dm-boot-holo-rig {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #00e5ff;
+  transform: rotate(45deg);
+  position: relative;
+  animation: dmRigRotate 6s linear infinite;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+.dm-boot-holo-rig::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed rgba(0, 229, 255, 0.7);
+  animation: dmRotateCounter 4s linear infinite;
+}
+.dm-boot-holo-rig::after {
+  content: '▲';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #00e5ff;
+  font-size: 14px;
+  text-shadow: 0 0 8px #00e5ff;
+}
+@keyframes dmRigRotate {
+  0% { transform: rotate(0deg) scale(0.95); }
+  50% { transform: rotate(180deg) scale(1.05); }
+  100% { transform: rotate(360deg) scale(0.95); }
+}
+
+/* 6. Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) */
+.dm-boot-telemetry-panel {
+  position: absolute;
+  top: 30px;
+  left: 40px;
+  width: 220px;
+  padding: 10px;
+  background: rgba(4, 15, 26, 0.9);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 15px, 100% 100%, 15px 100%, 0% calc(100% - 15px));
+  font-family: monospace;
+  font-size: 10px;
+  color: #8ec5fc;
+  pointer-events: none;
+}
+.dm-boot-telemetry-header {
+  color: #00e5ff;
+  font-weight: bold;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.dm-boot-equalizer {
+  display: flex;
+  gap: 3px;
+  height: 18px;
+  align-items: flex-end;
+  margin-top: 6px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+}
+.dm-boot-eq-bar {
+  flex: 1;
+  background: #00e5ff;
+  opacity: 0.7;
+  animation: dmEqBounce 0.8s ease-in-out infinite alternate;
+}
+.dm-boot-eq-bar:nth-child(1) { animation-delay: 0.1s; height: 40%; }
+.dm-boot-eq-bar:nth-child(2) { animation-delay: 0.3s; height: 80%; }
+.dm-boot-eq-bar:nth-child(3) { animation-delay: 0.05s; height: 60%; }
+.dm-boot-eq-bar:nth-child(4) { animation-delay: 0.4s; height: 100%; }
+.dm-boot-eq-bar:nth-child(5) { animation-delay: 0.25s; height: 50%; }
+.dm-boot-eq-bar:nth-child(6) { animation-delay: 0.15s; height: 90%; }
+.dm-boot-eq-bar:nth-child(7) { animation-delay: 0.35s; height: 70%; }
+.dm-boot-eq-bar:nth-child(8) { animation-delay: 0.2s; height: 30%; }
+@keyframes dmEqBounce {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1); }
+}
+.dm-boot-port-check {
+  margin-top: 6px;
+  font-size: 9px;
+  color: rgba(0, 229, 255, 0.75);
+  line-height: 1.4;
+}
+
+/* 7. Card Central de Boas-Vindas ao Usuário */
+.dm-boot-welcome-card {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  background: rgba(6, 12, 20, 0.95);
+  border: 1px solid #00e5ff;
+  border-radius: 4px;
+  padding: 16px 24px;
+  text-align: center;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.1);
+  z-index: 10;
+  animation: dmWelcomeCardSnap 0.5s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
+}
+@keyframes dmWelcomeCardSnap {
+  0% { opacity: 0; transform: translate(-50%, 20px) scale(0.95); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.dm-boot-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: bold;
+  color: #00e5ff;
+  letter-spacing: 2px;
+  background: rgba(0, 229, 255, 0.12);
+  padding: 3px 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  margin-bottom: 8px;
+}
+.dm-boot-status-dot {
+  width: 6px;
+  height: 6px;
+  background: #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #00e5ff;
+  animation: dmPulseDot 1s infinite alternate;
+}
+@keyframes dmPulseDot {
+  from { opacity: 0.3; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1.3); }
+}
+.dm-boot-welcome-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.dm-boot-welcome-title span {
+  color: #00e5ff;
+}
+.dm-boot-welcome-subtitle {
+  font-family: monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  letter-spacing: 1.5px;
+}
+.dm-boot-progress-bar {
+  margin-top: 12px;
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 229, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.dm-boot-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e5ff, #ffffff);
+  box-shadow: 0 0 8px #00e5ff;
+  width: 0%;
+  animation: dmBootLoadProgress 2.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes dmBootLoadProgress {
+  0% { width: 0%; }
+  30% { width: 45%; }
+  70% { width: 85%; }
+  100% { width: 100%; }
+}
