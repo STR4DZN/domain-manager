@@ -3877,3 +3877,96 @@
   background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
 }
+
+/* ==========================================================================
+   COMP/CON DIEGETIC HORIZONTAL HUD TABS & EXPANSIVE CANVAS
+   ========================================================================== */
+
+/* Barra de Abas Táticas Horizontal COMP/CON */
+.dm-tactical-hud-tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  background: #09090c !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  padding: 0.4rem 0.6rem !important;
+  margin-bottom: 1rem !important;
+  flex-wrap: wrap !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  padding: 0.45rem 0.85rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 6px !important;
+  color: #a1a1aa !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__item.is-active {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(220, 38, 38, 0.08) 100%) !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.3) !important;
+  font-weight: 700 !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__num {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #71717a !important;
+  padding: 0.15rem 0.35rem !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__item.is-active .dm-tactical-nav__num {
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__icon {
+  font-size: 0.85rem !important;
+  color: #71717a !important;
+}
+
+.dm-tactical-hud-tabs .dm-tactical-nav__item.is-active .dm-tactical-nav__icon {
+  color: #ef4444 !important;
+}
+
+/* Canvas Operacional Limpo (100% de Largura e Altura) */
+.dm-workspace-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  gap: 1.25rem;
+}
+
+.dm-workspace-canvas::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dm-workspace-canvas::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}

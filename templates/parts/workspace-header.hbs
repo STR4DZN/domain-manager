@@ -1,4 +1,4 @@
-<header class="dm-workspace-header dm-hud-strip">
+<header class="dm-workspace-header dm-hud-header">
   <div class="dm-workspace-header__main">
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
@@ -14,28 +14,9 @@
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
             <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
+            <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
             <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
           </div>
-        </div>
-
-        <!-- Telemetria Inline HUD -->
-        <div class="dm-hud-telemetry">
-          <span class="dm-hud-telemetry__item" title="Tesouro e Recursos Primários">
-            <i class="fa-solid fa-coins text-amber"></i>
-            <strong>{{metrics.primaryStockDisplay}}</strong>
-          </span>
-          <span class="dm-hud-telemetry__item" title="Defesa da Base">
-            <i class="fa-solid fa-shield-halved text-blue"></i>
-            <strong>{{metrics.defenseRating}} DEF</strong>
-          </span>
-          <span class="dm-hud-telemetry__item" title="População Total">
-            <i class="fa-solid fa-users text-emerald"></i>
-            <strong>{{metrics.populationTotal}} POP</strong>
-          </span>
-          <span class="dm-hud-telemetry__item" title="Obras Ativas">
-            <i class="fa-solid fa-trowel-bricks text-indigo"></i>
-            <strong>{{metrics.activeProjectsCount}} OBRAS</strong>
-          </span>
         </div>
       </div>
     {{else}}

@@ -233,7 +233,7 @@
 
 
       <main class="dm-shell__main">
-        <header class="dm-workspace-header dm-hud-strip">
+        <header class="dm-workspace-header dm-hud-header">
   <div class="dm-workspace-header__main">
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
@@ -249,28 +249,9 @@
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
             <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
+            <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
             <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
           </div>
-        </div>
-
-        <!-- Telemetria Inline HUD -->
-        <div class="dm-hud-telemetry">
-          <span class="dm-hud-telemetry__item" title="Tesouro e Recursos Primários">
-            <i class="fa-solid fa-coins text-amber"></i>
-            <strong>{{metrics.primaryStockDisplay}}</strong>
-          </span>
-          <span class="dm-hud-telemetry__item" title="Defesa da Base">
-            <i class="fa-solid fa-shield-halved text-blue"></i>
-            <strong>{{metrics.defenseRating}} DEF</strong>
-          </span>
-          <span class="dm-hud-telemetry__item" title="População Total">
-            <i class="fa-solid fa-users text-emerald"></i>
-            <strong>{{metrics.populationTotal}} POP</strong>
-          </span>
-          <span class="dm-hud-telemetry__item" title="Obras Ativas">
-            <i class="fa-solid fa-trowel-bricks text-indigo"></i>
-            <strong>{{metrics.activeProjectsCount}} OBRAS</strong>
-          </span>
         </div>
       </div>
     {{else}}
@@ -326,70 +307,6 @@
     {{/if}}
   </div>
 </header>
-
-        {{#if (eq activeTab 'overview')}}
-<section class="dm-overview-cards" aria-label="Métricas Gerais">
-  <!-- Card 1: Economia -->
-  <article class="dm-card dm-card--stat">
-    <div class="dm-card__header">
-      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Treasury'}}</span>
-      <i class="fa-solid fa-coins dm-card__icon text-amber"></i>
-    </div>
-    <div class="dm-card__value">{{metrics.primaryStockDisplay}}</div>
-    <div class="dm-card__footer">
-      <span class="dm-rate dm-rate--{{metrics.netDirection}}">
-        {{metrics.netRateDisplay}}/tick
-      </span>
-      {{#if metrics.runwayDisplay}}
-        <span class="dm-card__subtext">· {{metrics.runwayDisplay}}</span>
-      {{/if}}
-    </div>
-  </article>
-
-  <!-- Card 2: Segurança & Defesa -->
-  <article class="dm-card dm-card--stat">
-    <div class="dm-card__header">
-      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Security'}}</span>
-      <i class="fa-solid fa-shield-halved dm-card__icon text-blue"></i>
-    </div>
-    <div class="dm-card__value">{{metrics.defenseRating}} DEF</div>
-    <div class="dm-card__footer">
-      <span class="dm-card__subtext">{{metrics.guardCount}} guardas</span>
-      <span class="dm-badge dm-badge--risk is-{{metrics.unrestRiskLevel}}">
-        {{metrics.unrestRiskPercent}}% agitação
-      </span>
-    </div>
-  </article>
-
-  <!-- Card 3: População -->
-  <article class="dm-card dm-card--stat">
-    <div class="dm-card__header">
-      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Population'}}</span>
-      <i class="fa-solid fa-users dm-card__icon text-emerald"></i>
-    </div>
-    <div class="dm-card__value">{{metrics.populationTotal}}</div>
-    <div class="dm-card__footer">
-      <span class="dm-card__subtext">{{metrics.groupCount}} grupos</span>
-      <span class="dm-card__subtext">· {{metrics.notableCount}} notáveis</span>
-    </div>
-  </article>
-
-  <!-- Card 4: Obras & Construções -->
-  <article class="dm-card dm-card--stat">
-    <div class="dm-card__header">
-      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Projects'}}</span>
-      <i class="fa-solid fa-trowel-bricks dm-card__icon text-indigo"></i>
-    </div>
-    <div class="dm-card__value">{{metrics.activeProjectsCount}} ativas</div>
-    <div class="dm-card__footer">
-      <div class="dm-mini-progress" title="{{metrics.averageProjectProgress}}% concluído">
-        <div class="dm-mini-progress__bar" style="width: {{metrics.averageProjectProgress}}%;"></div>
-      </div>
-      <span class="dm-card__subtext">{{metrics.averageProjectProgress}}%</span>
-    </div>
-  </article>
-</section>
-{{/if}}
 
         <!-- MODAIS IN-PAGE COMPACTOS COM CONTENÇÃO E SCROLL INTERNO -->
 
@@ -1953,38 +1870,97 @@
 {{/if}}
 
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
-<div class="dm-tactical-workspace">
-  <!-- COLUNA DE NAVEGAÇÃO TÁTICA (COMP/CON STYLE) -->
-  {{#unless activeNotableDossier}}
-    <aside class="dm-tactical-rail dm-tactical-nav" aria-label="Terminal Tático">
-      <div class="dm-tactical-rail__header">
-        <span class="dm-tactical-rail__title">// SECTORES TÁTICOS</span>
-      </div>
-      <div class="dm-tactical-rail__nav">
-        {{#each navigationHubItems}}
-          <button
-            type="button"
-            class="dm-tactical-rail__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
-            data-action="switchTab"
-            data-tab="{{this.tab}}"
-            title="{{this.title}}"
-          >
-            <span class="dm-tactical-rail__idx">{{this.index}}</span>
-            <i class="{{this.icon}} dm-tactical-rail__icon"></i>
-            <span class="dm-tactical-rail__label">{{this.shortTitle}}</span>
-            {{#if this.badge}}
-              <span class="dm-tactical-rail__badge">{{this.badge}}</span>
-            {{/if}}
-          </button>
-        {{/each}}
-      </div>
-    </aside>
-  {{/unless}}
 
-  <!-- CANVAS TÁTICO PRINCIPAL (100% DA ALTURA) -->
-  <div class="dm-tactical-canvas">
-    {{#if (eq activeTab 'overview')}}
+    
+<!-- =======================================================================
+     BARRA DE NAVEGAÇÃO TÁTICA COMP/CON (Horizontal Superior, sem 3ª sidebar)
+     ======================================================================= -->
+{{#unless activeNotableDossier}}
+  <nav class="dm-tactical-nav dm-tactical-hud-tabs" aria-label="Navegação Tática da Base">
+    {{#each navigationHubItems}}
+      <button
+        type="button"
+        class="dm-tactical-nav__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
+        data-action="switchTab"
+        data-tab="{{this.tab}}"
+        title="{{this.title}}"
+      >
+        <span class="dm-tactical-nav__num">{{this.index}}</span>
+        <i class="{{this.icon}} dm-tactical-nav__icon"></i>
+        <span class="dm-tactical-nav__label">{{this.shortTitle}}</span>
+        {{#if this.badge}}
+          <span class="dm-tactical-nav__badge">{{this.badge}}</span>
+        {{/if}}
+      </button>
+    {{/each}}
+  </nav>
+{{/unless}}
+
+<div class="dm-workspace-canvas">
+{{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
+        <section class="dm-overview-cards" aria-label="Métricas Gerais">
+  <!-- Card 1: Economia -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Treasury'}}</span>
+      <i class="fa-solid fa-coins dm-card__icon text-amber"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.primaryStockDisplay}}</div>
+    <div class="dm-card__footer">
+      <span class="dm-rate dm-rate--{{metrics.netDirection}}">
+        {{metrics.netRateDisplay}}/tick
+      </span>
+      {{#if metrics.runwayDisplay}}
+        <span class="dm-card__subtext">· {{metrics.runwayDisplay}}</span>
+      {{/if}}
+    </div>
+  </article>
+
+  <!-- Card 2: Segurança & Defesa -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Security'}}</span>
+      <i class="fa-solid fa-shield-halved dm-card__icon text-blue"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.defenseRating}} DEF</div>
+    <div class="dm-card__footer">
+      <span class="dm-card__subtext">{{metrics.guardCount}} guardas</span>
+      <span class="dm-badge dm-badge--risk is-{{metrics.unrestRiskLevel}}">
+        {{metrics.unrestRiskPercent}}% agitação
+      </span>
+    </div>
+  </article>
+
+  <!-- Card 3: População -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Population'}}</span>
+      <i class="fa-solid fa-users dm-card__icon text-emerald"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.populationTotal}}</div>
+    <div class="dm-card__footer">
+      <span class="dm-card__subtext">{{metrics.groupCount}} grupos</span>
+      <span class="dm-card__subtext">· {{metrics.notableCount}} notáveis</span>
+    </div>
+  </article>
+
+  <!-- Card 4: Obras & Construções -->
+  <article class="dm-card dm-card--stat">
+    <div class="dm-card__header">
+      <span class="dm-card__title">{{localize 'DOMAIN_MANAGER.Metrics.Projects'}}</span>
+      <i class="fa-solid fa-trowel-bricks dm-card__icon text-indigo"></i>
+    </div>
+    <div class="dm-card__value">{{metrics.activeProjectsCount}} ativas</div>
+    <div class="dm-card__footer">
+      <div class="dm-mini-progress" title="{{metrics.averageProjectProgress}}% concluído">
+        <div class="dm-mini-progress__bar" style="width: {{metrics.averageProjectProgress}}%;"></div>
+      </div>
+      <span class="dm-card__subtext">{{metrics.averageProjectProgress}}%</span>
+    </div>
+  </article>
+</section>
+
         <!-- Retângulo da Base com Galeria e Ajuste Proporcional -->
         {{#if selectedDomain}}
           <div class="dm-base-hero {{#if selectedDomain.isContainFit}}is-contain{{/if}}" style="height: {{selectedDomain.imageHeight}}px;">
@@ -2850,9 +2826,7 @@
         {{/if}}
       </div>
     {{/if}}
-  </div>
 </div>
-
 {{#if isNotificationModalOpen}}
   <div class="dm-modal-backdrop">
     <div class="dm-modal dm-modal--sm">
