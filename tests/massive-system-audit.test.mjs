@@ -988,3 +988,24 @@ test("Auditoria Geral: Layout COMP/CON de Terminal Tático Unificado (Single Sid
   assert.strictEqual(css.includes(".dm-sidebar__nav-item"), true, "Estilo .dm-sidebar__nav-item deve existir em shell.css");
   assert.strictEqual(css.includes(".dm-workspace-canvas"), true, "Estilo .dm-workspace-canvas deve existir em shell.css");
 });
+
+test("Auditoria Geral: Efeito Diegético de Transição Tática (HUD Boot Animation)", async () => {
+  // 1. Validar que o workspace-content.hbs possui a estrutura da animação de transição do HUD
+  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  assert.strictEqual(contentHbs.includes("dm-hud-transition-overlay"), true, "Overlay de transição deve existir");
+  assert.strictEqual(contentHbs.includes("dm-hud-transition__sector-banner"), true, "Banner tático de setor deve existir");
+  assert.strictEqual(contentHbs.includes("dm-hud-transition__code-stream"), true, "Fluxo de código subindo deve existir");
+  assert.strictEqual(contentHbs.includes("dm-hud-transition__binary-stream"), true, "Fluxo de matriz binária deve existir");
+
+  // 2. Validar animações e estilos em shell.css
+  const css = fs.readFileSync("styles/shell.css", "utf8");
+  assert.strictEqual(css.includes(".dm-hud-transition-overlay"), true, "Classe do overlay deve existir em shell.css");
+  assert.strictEqual(css.includes("dmHudTransitionFade"), true, "Animação dmHudTransitionFade deve existir em shell.css");
+  assert.strictEqual(css.includes("dmCodeStreamUp"), true, "Animação dmCodeStreamUp deve existir em shell.css");
+  assert.strictEqual(css.includes("dmSectorBannerPop"), true, "Animação dmSectorBannerPop deve existir em shell.css");
+
+  // 3. Validar preparação no shell-app.js
+  const shellCode = fs.readFileSync("scripts/ui/shell-app.js", "utf8");
+  assert.strictEqual(shellCode.includes("sectorCallout"), true, "sectorCallout deve estar preparado em shell-app.js");
+  assert.strictEqual(shellCode.includes("sectorIndex"), true, "sectorIndex deve estar preparado em shell-app.js");
+});

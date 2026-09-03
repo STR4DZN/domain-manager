@@ -3523,6 +3523,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       }
     }
 
+    let sectorCallout = activeTabMeta ? `SECTOR // ${activeTabMeta.index} ${activeTabMeta.title}` : "SECTOR // 01 VISÃO GERAL";
+    if (activeNotableDossier) {
+      sectorCallout = `DOSSIÊ // ${activeNotableDossier.name.toUpperCase()}`;
+    }
+    const sectorIndex = activeTabMeta?.index || "01";
+
     return {
       ...context,
       moduleTitle: MODULE_TITLE,
@@ -3548,6 +3554,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       isNotificationModalOpen: this.isNotificationModalOpen,
       showNotificationsHistory: this.showNotificationsHistory,
       activeNotableDossier,
+      sectorCallout,
+      sectorIndex,
       isEditingNotableStatsModal: this.isEditingNotableStatsModal,
 
       // Estados de Modais

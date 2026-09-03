@@ -1928,6 +1928,66 @@
 
 
 <div class="dm-workspace-canvas">
+
+  <!-- EFEITO DIEGÉTICO DE TRANSIÇÃO TÁTICA HUD (COMP/CON BOOT ANIMATION) -->
+  <div class="dm-hud-transition-overlay" aria-hidden="true">
+    <div class="dm-hud-transition__scanlines"></div>
+    <div class="dm-hud-transition__grid"></div>
+
+    <!-- Radar Tático Central -->
+    <div class="dm-hud-transition__radar-wrap">
+      <div class="dm-hud-transition__radar-circle"></div>
+      <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--lg"></div>
+      <div class="dm-hud-transition__radar-sweep"></div>
+    </div>
+
+    <!-- Banner Central Tático (Estilo SECTOR 34) -->
+    <div class="dm-hud-transition__sector-banner">
+      <span class="dm-hud-transition__sector-accent"></span>
+      <span class="dm-hud-transition__sector-title">{{sectorCallout}}</span>
+    </div>
+
+    <!-- Painéis Inferiores de Telemetria e Código Subindo -->
+    <div class="dm-hud-transition__bottom-panels">
+      <!-- Código Monospace Subindo -->
+      <div class="dm-hud-transition__code-panel">
+        <div class="dm-hud-transition__code-header">
+          <span>SYS_ROUTINE // {{sectorIndex}}</span>
+          <span class="text-crimson">{{selectedDomain.name}}</span>
+        </div>
+        <div class="dm-hud-transition__code-stream">
+          <div class="dm-code-line">def __init__(sector="{{activeTab}}"):</div>
+          <div class="dm-code-line">    buffer = alloc_mem(0x7FFF)</div>
+          <div class="dm-code-line">    verify_encryption_handshake(auth="OK")</div>
+          <div class="dm-code-line">    load_assets_manifest("{{selectedDomain.name}}")</div>
+          <div class="dm-code-line">    decrypting_sector_payload(stream=1024) -> OK</div>
+          <div class="dm-code-line">    render_tactical_viewport(layer="DOM_HUD")</div>
+          <div class="dm-code-line">return status.READY_SYNCHRONIZED</div>
+        </div>
+        <div class="dm-hud-transition__tag">
+          <span class="dm-hud-transition__tag-accent"></span>
+          <span>INITIALIZING</span>
+        </div>
+      </div>
+
+      <!-- Matriz Binária Subindo -->
+      <div class="dm-hud-transition__binary-panel">
+        <div class="dm-hud-transition__binary-stream">
+          <div class="dm-bin-line">00101011001101110100011011110110</div>
+          <div class="dm-bin-line">111101101100011100110101011101100</div>
+          <div class="dm-bin-line">101011<span class="text-crimson">0001001100101001</span>10011011101</div>
+          <div class="dm-bin-line">000110111101101111011011000111001</div>
+          <div class="dm-bin-line">101010111011001010110001001100101</div>
+          <div class="dm-bin-line">01110011011101000110111101101110</div>
+        </div>
+        <div class="dm-hud-transition__tag">
+          <span class="dm-hud-transition__tag-accent"></span>
+          <span>DEBUGGING // OK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
 {{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
         <section class="dm-overview-cards" aria-label="Métricas Gerais">
