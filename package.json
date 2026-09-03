@@ -1,7 +1,7 @@
 {
   "name": "domain-manager",
   "private": true,
-  "version": "0.1.0-dev.113",
+  "version": "0.1.0-dev.114",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs"

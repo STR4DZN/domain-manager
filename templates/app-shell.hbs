@@ -195,6 +195,40 @@
           </button>
         </div>
       </div>
+
+      <!-- SWITCHER DE VISUALIZAÇÃO PARA TELAS PEQUENAS (Módulos / Territórios / Tudo) -->
+      <div class="dm-sidebar__view-switcher" role="tablist">
+        <button
+          type="button"
+          class="dm-sidebar__view-btn {{#if (eq sidebarView 'modules')}}is-active{{/if}}"
+          data-action="setSidebarView"
+          data-view="modules"
+          title="Focar apenas nos Módulos Operacionais da base"
+        >
+          <i class="fa-solid fa-microchip"></i>
+          <span>Módulos</span>
+        </button>
+        <button
+          type="button"
+          class="dm-sidebar__view-btn {{#if (eq sidebarView 'domains')}}is-active{{/if}}"
+          data-action="setSidebarView"
+          data-view="domains"
+          title="Focar apenas nos Territórios e Pastas"
+        >
+          <i class="fa-solid fa-folder-tree"></i>
+          <span>Territórios</span>
+        </button>
+        <button
+          type="button"
+          class="dm-sidebar__view-btn {{#if (eq sidebarView 'all')}}is-active{{/if}}"
+          data-action="setSidebarView"
+          data-view="all"
+          title="Exibir Módulos e Territórios juntos"
+        >
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Tudo</span>
+        </button>
+      </div>
     {{else}}
       <!-- MODO RECOLHIDO: Botão único de expansão alinhado perfeitamente -->
       <div class="dm-sidebar__collapsed-header">
@@ -211,158 +245,166 @@
     {{/if}}
   </header>
 
-  {{#if selectedDomain}}
-    <!-- MÓDULOS TÁTICOS DA BASE ATIVA (COMP/CON STYLE) -->
-    <nav class="dm-tactical-nav dm-sidebar__tactical-nav" aria-label="Módulos Operacionais">
-      {{#if isSidebarOpen}}
-        <div class="dm-sidebar__section-divider">
-          <span>// MÓDULOS OPERACIONAIS</span>
-        </div>
-      {{/if}}
-
-      <div class="dm-sidebar__nav-list">
-        {{#each navigationHubItems}}
-          <button
-            type="button"
-            class="dm-sidebar__nav-item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
-            data-action="switchTab"
-            data-tab="{{this.tab}}"
-            title="{{this.title}}"
-          >
-            {{#if @root.isSidebarOpen}}
-              <span class="dm-sidebar__nav-idx">{{this.index}}</span>
-            {{/if}}
-            <i class="{{this.icon}} dm-sidebar__nav-icon"></i>
-            {{#if @root.isSidebarOpen}}
-              <span class="dm-sidebar__nav-label">{{this.shortTitle}}</span>
-              {{#if this.badge}}
-                <span class="dm-sidebar__nav-badge">{{this.badge}}</span>
-              {{/if}}
-            {{/if}}
-          </button>
-        {{/each}}
-      </div>
-    </nav>
-  {{/if}}
-
-  <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO -->
-  {{#if isSidebarOpen}}
-    <div class="dm-sidebar__domains-section">
-      <div class="dm-sidebar__section-divider">
-        <span>// SETORES & TERRITÓRIOS</span>
-        <button
-          type="button"
-          class="dm-sidebar__sub-btn"
-          data-action="toggleAllFolders"
-          title="{{#if allFoldersCollapsed}}Expandir Todas as Pastas{{else}}Recolher Todas as Pastas{{/if}}"
-        >
-          <i class="fa-solid {{#if allFoldersCollapsed}}fa-folder-closed{{else}}fa-folder-open{{/if}}"></i>
-        </button>
-      </div>
-
-      <div class="dm-search">
-        <i class="fa-solid fa-magnifying-glass dm-search__icon"></i>
-        <input
-          type="search"
-          class="dm-search__input"
-          placeholder="{{localize 'DOMAIN_MANAGER.SearchPlaceholder'}}"
-          value="{{searchQuery}}"
-          data-action="search"
-        />
-      </div>
-
-      <div class="dm-switcher" role="tablist">
-        <button
-          type="button"
-          class="dm-switcher__btn {{#if (eq sidebarMode 'hierarchy')}}is-active{{/if}}"
-          data-action="setSidebarMode"
-          data-mode="hierarchy"
-        >
-          {{localize 'DOMAIN_MANAGER.Sidebar.Folders'}}
-        </button>
-        <button
-          type="button"
-          class="dm-switcher__btn {{#if (eq sidebarMode 'tags')}}is-active{{/if}}"
-          data-action="setSidebarMode"
-          data-mode="tags"
-        >
-          {{localize 'DOMAIN_MANAGER.Sidebar.Tags'}}
-        </button>
-      </div>
-
-      <div class="dm-sidebar__content dm-scrollable">
-        {{#if (eq sidebarMode 'hierarchy')}}
-          <div class="dm-tree" role="tree">
-            <div
-              class="dm-tree-item dm-tree-item--root {{#unless selectedDomain}}is-selected{{/unless}}"
-              data-action="selectDomain"
-              data-uuid=""
-              role="treeitem"
-              tabindex="0"
-            >
-              <i class="fa-solid fa-globe dm-tree-item__icon text-amber"></i>
-              <span class="dm-tree-item__label">{{localize 'DOMAIN_MANAGER.AllDomains'}}</span>
+  <!-- CONTEÚDO DA SIDEBAR -->
+  <div class="dm-sidebar__scroll-area">
+    {{#if selectedDomain}}
+      {{#if (or (eq sidebarView 'modules') (eq sidebarView 'all'))}}
+        <!-- MÓDULOS TÁTICOS DA BASE ATIVA (COMP/CON STYLE) -->
+        <nav class="dm-tactical-nav dm-sidebar__tactical-nav" aria-label="Módulos Operacionais">
+          {{#if isSidebarOpen}}
+            <div class="dm-sidebar__section-divider">
+              <span>// MÓDULOS OPERACIONAIS</span>
             </div>
+          {{/if}}
 
-            {{#each flatDomainTree}}
-              <div
-                class="dm-tree-item {{#if isSelected}}is-selected{{/if}} {{#if isFolder}}dm-tree-item--folder{{else}}dm-tree-item--leaf{{/if}}"
-                data-uuid="{{uuid}}"
-                data-depth="{{depth}}"
-                role="treeitem"
-                tabindex="0"
-              >
-                {{#if isFolder}}
-                  <button
-                    type="button"
-                    class="dm-tree-item__toggle"
-                    data-action="toggleFolder"
-                    data-folder-id="{{folderId}}"
-                    aria-label="{{#if isCollapsed}}Expandir{{else}}Recolher{{/if}}"
-                  >
-                    <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
-                  </button>
-                {{else}}
-                  {{#if (gt depth 0)}}
-                    <span class="dm-tree-branch">└─</span>
-                  {{else}}
-                    <span class="dm-tree-spacer"></span>
-                  {{/if}}
-                {{/if}}
-
-                <div class="dm-tree-item__content" data-action="selectDomain" data-uuid="{{uuid}}">
-                  {{#if hasImage}}
-                    <img src="{{image}}" class="dm-tree-item__thumb" alt="{{name}}" />
-                  {{else}}
-                    <i class="fa-solid {{#if isFolder}}fa-folder text-amber{{else}}fa-shield-halved text-blue{{/if}} dm-tree-item__icon"></i>
-                  {{/if}}
-                  <span class="dm-tree-item__label" title="{{name}}">{{name}}</span>
-                  {{#if childCount}}
-                    <span class="dm-tree-item__count">{{childCount}}</span>
-                  {{/if}}
-                </div>
-              </div>
-            {{/each}}
-          </div>
-        {{else}}
-          <!-- Modo Tags -->
-          <div class="dm-tag-list">
-            {{#each tagList}}
+          <div class="dm-sidebar__nav-list">
+            {{#each navigationHubItems}}
               <button
                 type="button"
-                class="dm-tag-item {{#if isSelected}}is-active{{/if}}"
-                data-action="filterByTag"
-                data-tag="{{tag}}"
+                class="dm-sidebar__nav-item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
+                data-action="switchTab"
+                data-tab="{{this.tab}}"
+                title="{{this.title}}"
               >
-                <span class="dm-tag-item__name">#{{tag}}</span>
-                <span class="dm-tag-item__count">{{count}}</span>
+                {{#if @root.isSidebarOpen}}
+                  <span class="dm-sidebar__nav-idx">{{this.index}}</span>
+                {{/if}}
+                <i class="{{this.icon}} dm-sidebar__nav-icon"></i>
+                {{#if @root.isSidebarOpen}}
+                  <span class="dm-sidebar__nav-label">{{this.shortTitle}}</span>
+                  {{#if this.badge}}
+                    <span class="dm-sidebar__nav-badge">{{this.badge}}</span>
+                  {{/if}}
+                {{/if}}
               </button>
             {{/each}}
           </div>
-        {{/if}}
-      </div>
-    </div>
-  {{/if}}
+        </nav>
+      {{/if}}
+    {{/if}}
+
+    <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO -->
+    {{#if isSidebarOpen}}
+      {{#if (or (eq sidebarView 'domains') (eq sidebarView 'all'))}}
+        <div class="dm-sidebar__domains-section">
+          <div class="dm-sidebar__section-divider">
+            <span>// SETORES & TERRITÓRIOS</span>
+            <button
+              type="button"
+              class="dm-sidebar__sub-btn"
+              data-action="toggleAllFolders"
+              title="{{#if allFoldersCollapsed}}Expandir Todas as Pastas{{else}}Recolher Todas as Pastas{{/if}}"
+            >
+              <i class="fa-solid {{#if allFoldersCollapsed}}fa-folder-closed{{else}}fa-folder-open{{/if}}"></i>
+            </button>
+          </div>
+
+          <div class="dm-search">
+            <i class="fa-solid fa-magnifying-glass dm-search__icon"></i>
+            <input
+              type="search"
+              class="dm-search__input"
+              placeholder="{{localize 'DOMAIN_MANAGER.SearchPlaceholder'}}"
+              value="{{searchQuery}}"
+              data-action="search"
+            />
+          </div>
+
+          <div class="dm-switcher" role="tablist">
+            <button
+              type="button"
+              class="dm-switcher__btn {{#if (eq sidebarMode 'hierarchy')}}is-active{{/if}}"
+              data-action="setSidebarMode"
+              data-mode="hierarchy"
+            >
+              {{localize 'DOMAIN_MANAGER.Sidebar.Folders'}}
+            </button>
+            <button
+              type="button"
+              class="dm-switcher__btn {{#if (eq sidebarMode 'tags')}}is-active{{/if}}"
+              data-action="setSidebarMode"
+              data-mode="tags"
+            >
+              {{localize 'DOMAIN_MANAGER.Sidebar.Tags'}}
+            </button>
+          </div>
+
+          <div class="dm-sidebar__content">
+            {{#if (eq sidebarMode 'hierarchy')}}
+              <div class="dm-tree" role="tree">
+                <div
+                  class="dm-tree-item dm-tree-item--root {{#unless selectedDomain}}is-selected{{/unless}}"
+                  data-action="selectDomain"
+                  data-uuid=""
+                  role="treeitem"
+                  tabindex="0"
+                >
+                  <i class="fa-solid fa-globe dm-tree-item__icon text-amber"></i>
+                  <span class="dm-tree-item__label">{{localize 'DOMAIN_MANAGER.AllDomains'}}</span>
+                </div>
+
+                {{#each flatDomainTree}}
+                  <div
+                    class="dm-tree-item {{#if isSelected}}is-selected{{/if}} {{#if isFolder}}dm-tree-item--folder{{else}}dm-tree-item--leaf{{/if}}"
+                    data-uuid="{{uuid}}"
+                    data-depth="{{depth}}"
+                    style="padding-left: calc({{depth}} * 14px + 8px);"
+                    role="treeitem"
+                    tabindex="0"
+                  >
+                    {{#if isFolder}}
+                      <button
+                        type="button"
+                        class="dm-tree-item__toggle"
+                        data-action="toggleFolder"
+                        data-folder-id="{{folderId}}"
+                        aria-label="{{#if isCollapsed}}Expandir{{else}}Recolher{{/if}}"
+                      >
+                        <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
+                      </button>
+                    {{else}}
+                      {{#if (gt depth 0)}}
+                        <span class="dm-tree-branch">└─</span>
+                      {{else}}
+                        <span class="dm-tree-spacer"></span>
+                      {{/if}}
+                    {{/if}}
+
+                    <div class="dm-tree-item__content" data-action="selectDomain" data-uuid="{{uuid}}">
+                      {{#if hasImage}}
+                        <img src="{{image}}" class="dm-tree-item__thumb" alt="{{name}}" />
+                      {{else}}
+                        <i class="fa-solid {{#if isFolder}}fa-folder text-amber{{else}}fa-shield-halved text-blue{{/if}} dm-tree-item__icon"></i>
+                      {{/if}}
+                      <span class="dm-tree-item__label" title="{{name}}">{{name}}</span>
+                      {{#if childCount}}
+                        <span class="dm-tree-item__count">{{childCount}}</span>
+                      {{/if}}
+                    </div>
+                  </div>
+                {{/each}}
+              </div>
+            {{else}}
+              <!-- Modo Tags -->
+              <div class="dm-tag-list">
+                {{#each tagList}}
+                  <button
+                    type="button"
+                    class="dm-tag-item {{#if isSelected}}is-active{{/if}}"
+                    data-action="filterByTag"
+                    data-tag="{{tag}}"
+                  >
+                    <span class="dm-tag-item__name">#{{tag}}</span>
+                    <span class="dm-tag-item__count">{{count}}</span>
+                  </button>
+                {{/each}}
+              </div>
+            {{/if}}
+          </div>
+        </div>
+      {{/if}}
+    {{/if}}
+  </div>
 </aside>
 
 

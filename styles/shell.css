@@ -5267,3 +5267,217 @@
   visibility: visible !important;
   animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
+
+/* ==========================================================================
+   RESPONSIVIDADE INTELIGENTE: ADAPTAÇÃO PARA QUALQUER TAMANHO DE MONITOR
+   ========================================================================== */
+
+.dm-shell {
+  position: relative !important;
+}
+
+/* Sidebar Container */
+.dm-sidebar {
+  width: 280px !important;
+  background: #0e0e12 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+/* Cabeçalho da Sidebar */
+.dm-sidebar__header {
+  padding: 0.75rem 0.85rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #111116 !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+}
+
+/* Switcher de Visão para Monitores Pequenos */
+.dm-sidebar__view-switcher {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 4px !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 3px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dm-sidebar__view-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 4px 6px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: #71717a !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.dm-sidebar__view-btn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dm-sidebar__view-btn.is-active {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Área de Rolagem ÚNICA da Sidebar */
+.dm-sidebar__scroll-area {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(239, 68, 68, 0.35) transparent !important;
+}
+
+.dm-sidebar__scroll-area::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.dm-sidebar__scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.35) !important;
+  border-radius: 4px !important;
+}
+
+/* Módulos Operacionais Aéreos e Sleek (Sem caixas pretas pesadas) */
+.dm-sidebar__tactical-nav {
+  padding: 0.65rem 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dm-sidebar__nav-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.dm-sidebar__nav-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  height: 34px !important;
+  padding: 0 0.65rem !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+  color: #a1a1aa !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+}
+
+.dm-sidebar__nav-item:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  transform: translateX(2px) !important;
+}
+
+.dm-sidebar__nav-item.is-active {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.02) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  border-left: 3px solid #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15) !important;
+}
+
+.dm-sidebar__nav-idx {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  color: #71717a !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 0.1rem 0.35rem !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-idx {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+.dm-sidebar__nav-icon {
+  font-size: 0.92rem !important;
+  width: 18px !important;
+  text-align: center !important;
+}
+
+.dm-sidebar__nav-label {
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  flex: 1 !important;
+  text-align: left !important;
+}
+
+/* Territórios e Pastas Sem Linhas Quebradas */
+.dm-sidebar__domains-section {
+  padding: 0.65rem 0.75rem !important;
+}
+
+.dm-sidebar__content {
+  overflow: visible !important; /* Sem barra de rolagem duplicada interna */
+}
+
+.dm-tree-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 30px !important;
+  padding: 0 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid transparent !important;
+  color: #d4d4d8 !important;
+  font-size: 0.82rem !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+  background: transparent !important;
+}
+
+.dm-tree-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+.dm-tree-item.is-selected {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.03) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  border-left: 3px solid #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.dm-tree-branch {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  color: #ef4444 !important;
+  margin-right: 2px !important;
+  user-select: none !important;
+}
+
+/* Remover linhas residuais antigas */
+.dm-tree-item::before,
+.dm-tree-item::after {
+  display: none !important;
+}

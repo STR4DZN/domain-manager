@@ -339,6 +339,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   activeSection = SHELL_SECTIONS.DOMAINS;
   selectedDomainUuid = null;
   sidebarMode = "hierarchy";
+  sidebarView = "all";
   activeTab = "overview";
   searchQuery = "";
   selectedTag = null;
@@ -429,6 +430,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       toggleFolder: DomainManagerShellApp.#onToggleFolder,
       toggleAllFolders: DomainManagerShellApp.#onToggleAllFolders,
       setSidebarMode: DomainManagerShellApp.#onSetSidebarMode,
+      setSidebarView: DomainManagerShellApp.#onSetSidebarView,
       switchTab: DomainManagerShellApp.#onSwitchTab,
       filterByTag: DomainManagerShellApp.#onFilterByTag,
       search: DomainManagerShellApp.#onSearch,
@@ -722,6 +724,14 @@ super._onRender?.(context, options);
     this.selectedDomainUuid = uuid || null;
     this.#closeAllModals();
     this.render();
+  }
+
+    static #onSetSidebarView(event, target) {
+    const view = target.dataset.view;
+    if (view === "modules" || view === "domains" || view === "all") {
+      this.sidebarView = view;
+      this.render();
+    }
   }
 
   static #onSetSidebarMode(event, target) {
@@ -3579,6 +3589,7 @@ super._onRender?.(context, options);
       activeSection: this.activeSection,
       selectedDomainUuid: this.selectedDomainUuid,
       sidebarMode: this.sidebarMode,
+      sidebarView: this.sidebarView || "all",
       activeTab: this.activeTab,
       searchQuery: this.searchQuery,
       selectedTag: this.selectedTag,
