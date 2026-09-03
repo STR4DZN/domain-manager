@@ -476,33 +476,69 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO COMPLETO DE IMAGEM DA NOVA BASE (URL / ARQUIVO) -->
           <div class="dm-form-group">
-            <label>Imagem / Ilustração da Base:</label>
+            <label><i class="fa-solid fa-camera text-sky"></i> Imagem Principal da Base (URL da Internet ou Arquivo):</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-new-domain-crest" placeholder="caminho/imagem.webp ou https://..." />
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-new-domain-crest" placeholder="Cole o link da internet (https://...) ou escolha um arquivo..." />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-new-domain-crest">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
-            <div class="dm-form-row mt-1">
-              <div class="dm-form-group">
-                <label>Ajuste da Imagem:</label>
-                <select class="dm-select dm-input--compact" id="dm-new-domain-fit">
-                  <option value="cover">Preencher / Banner (cover)</option>
-                  <option value="contain">Conter Inteira (contain)</option>
-                </select>
+
+            <!-- CONTROLES AVANÇADOS DO ESTÚDIO DE IMAGEM -->
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Modo de Enquadramento:</label>
+                  <select class="dm-select dm-input--compact" id="dm-new-domain-image-fit">
+                    <option value="cover" selected>Preencher Card (Cortar excesso)</option>
+                    <option value="contain">Conter Imagem Inteira (Sem cortes)</option>
+                    <option value="fill">Esticar (Preenchimento total)</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Altura do Card:</label>
+                  <select class="dm-select dm-input--compact" id="dm-new-domain-image-height">
+                    <option value="160">Panorâmico Compacto (160px)</option>
+                    <option value="200" selected>Padrão Card (200px)</option>
+                    <option value="260">Médio / Retângulo (260px)</option>
+                    <option value="340">Expandido / Poster (340px)</option>
+                  </select>
+                </div>
               </div>
-              <div class="dm-form-group">
-                <label>Foco:</label>
-                <select class="dm-select dm-input--compact" id="dm-new-domain-pos">
-                  <option value="center">Centro</option>
-                  <option value="top">Topo</option>
-                  <option value="bottom">Base</option>
-                </select>
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco Horizontal (X): <span class="dm-slider-val" id="dm-new-domain-image-val-x">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-new-domain-image-pos-x" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Vertical (Y): <span class="dm-slider-val" id="dm-new-domain-image-val-y">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-new-domain-image-pos-y" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom / Escala: <span class="dm-slider-val" id="dm-new-domain-image-val-zoom">100%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-new-domain-image-zoom" value="100" />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="dm-image-preview-container mt-1" style="display: none;">
-              <img src="" class="dm-image-preview-rect" alt="Prévia" />
+
+              <!-- PRÉVIA EM TEMPO REAL NO MODAL -->
+              <div class="dm-image-studio-preview" id="dm-new-image-preview-container" style="height: 150px;">
+                <img
+                  src=""
+                  id="dm-new-image-preview-img"
+                  style="object-fit: cover; object-position: 50% 50%; transform: scale(1); display: none;"
+                  alt="Prévia Interativa"
+                  onerror="this.style.display='none'"
+                />
+              </div>
             </div>
           </div>
 

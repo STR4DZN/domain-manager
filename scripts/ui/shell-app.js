@@ -563,7 +563,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     if (!this.element) return;
 
-    // 1. Live preview para o Editor de Imagem da Base (URL / Arquivo)
+    // 1. Live preview para o Editor de Imagem da Base (Novo e Edição)
+    bindLiveImagePreview(this.element, "#dm-new-domain-image", "#dm-new-image-preview-img", "#dm-new-image-preview-container", "#dm-new-domain-crest");
     bindLiveImagePreview(this.element, "#dm-edit-domain-image", "#dm-edit-image-preview-img", "#dm-edit-image-preview-container", "#dm-edit-domain-crest");
 
     // 2. Live preview para Obras / Projetos (Novo e Edição)
@@ -850,14 +851,32 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
 
       if (doc?.uuid) {
+        const imageFit = form?.querySelector("#dm-new-domain-image-fit")?.value || "cover";
+        const imageHeight = Number(form?.querySelector("#dm-new-domain-image-height")?.value) || 200;
+        const imagePosX = form?.querySelector("#dm-new-domain-image-pos-x")?.value != null ? Number(form.querySelector("#dm-new-domain-image-pos-x").value) : 50;
+        const imagePosY = form?.querySelector("#dm-new-domain-image-pos-y")?.value != null ? Number(form.querySelector("#dm-new-domain-image-pos-y").value) : 50;
+        const imageZoom = form?.querySelector("#dm-new-domain-image-zoom")?.value != null ? Number(form.querySelector("#dm-new-domain-image-zoom").value) : 100;
+
         if (crestImg) {
           const createdDoc = recordIndex.get(RECORD_TYPES.DOMAIN, doc.uuid);
           if (createdDoc) {
             const dec = decodeRecord(createdDoc);
             const data = foundry.utils.deepClone(dec.data);
             data.identity.crestMedia = { path: crestImg };
-            data.visuals = { crestImg };
+            data.visuals = {
+              ...(data.visuals || {}),
+              crestImg,
+              image: crestImg,
+              imageFit,
+              imageHeight,
+              imagePosX,
+              imagePosY,
+              imageZoom,
+              imagePosition: "center",
+              gallery: [crestImg]
+            };
             await updateRecord({ uuid: doc.uuid, recordType: RECORD_TYPES.DOMAIN, data });
+            this.activeGalleryImage = crestImg;
           }
         }
 

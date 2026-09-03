@@ -45,13 +45,16 @@ export class ProjectModel extends foundry.abstract.DataModel {
       imageZoom: new NumberField({required:false, nullable:false, initial:100}),
       tier: new NumberField({required:false, nullable:false, initial:1}),
       maxTier: new NumberField({required:false, nullable:false, initial:3}),
-      modifiers: new ArrayField(
-        new SchemaField({
-          type: new StringField({required:false, nullable:false, initial:"defense"}),
-          value: new NumberField({required:false, nullable:false, initial:0})
-        }),
-        {required:false, nullable:false, initial:[]}
-      ),
+      category: new StringField({required:false, nullable:false, initial:"infraestrutura"}),
+      modifiers: new SchemaField({
+        defenseBonus: new NumberField({required:false, nullable:false, initial:0}),
+        incomeBonus: new NumberField({required:false, nullable:false, initial:0}),
+        unrestReduction: new NumberField({required:false, nullable:false, initial:0}),
+        populationBonus: new NumberField({required:false, nullable:false, initial:0})
+      }, {required:false, nullable:false, initial:{defenseBonus:0, incomeBonus:0, unrestReduction:0, populationBonus:0}}),
+      rate: new SchemaField({
+        amount: new NumberField({required:false, nullable:false, initial:10})
+      }, {required:false, nullable:true, initial:null}),
       status: new StringField({required:true, nullable:false, blank:false, choices:PROJECT_STATUSES, initial:"planned"}),
       blockedReason: new StringField({required:true, nullable:false, blank:true, initial:""}),
       work: new SchemaField({
