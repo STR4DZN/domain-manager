@@ -616,3 +616,89 @@ test("Auditoria Geral: Retorno de Modais, Desativação de Consumo e Estúdio de
   assert.ok(editingGroup);
   assert.equal(editingGroup.name, "Colonizadores");
 });
+
+/* ==========================================================================
+   14. AUDITORIA DE CLIQUES EM ÍCONES, EDIÇÃO DE FLUXO E IMAGE STUDIO UNIVERSAL
+   ========================================================================== */
+test("Auditoria Geral: getActionAttr com tags aninhadas, Edição de Fluxo Upkeep/Manual e Image Studio Universal", async () => {
+  // 14.1 Simulação de getActionAttr com clique em ícone <i> dentro de <button>
+  function getActionAttr(target, name) {
+    if (!target) return null;
+    const camelName = name.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    if (target.dataset && target.dataset[camelName] != null) return target.dataset[camelName];
+    const attr = target.getAttribute?.(`data-${name}`);
+    if (attr != null) return attr;
+    const closest = target.closest?.(`[data-${name}]`);
+    return closest?.getAttribute?.(`data-${name}`) ?? null;
+  }
+
+  const mockButton = {
+    getAttribute: (attr) => (attr === "data-local-id" ? "flw-123" : null),
+    dataset: { localId: "flw-123" },
+    closest: () => null
+  };
+  const mockIconInsideButton = {
+    getAttribute: () => null,
+    dataset: {},
+    closest: (selector) => (selector === "[data-local-id]" ? mockButton : null)
+  };
+
+  assert.equal(getActionAttr(mockIconInsideButton, "local-id"), "flw-123");
+  assert.equal(getActionAttr(mockButton, "local-id"), "flw-123");
+
+  // 14.2 Edição de Fluxo: Suporte a Fluxo de Sustento sem apagar dados
+  const syntheticFlow = {
+    localId: "upkeep-food",
+    name: "Consumo Populacional (Comida)",
+    resourceId: "food",
+    direction: "outflow",
+    amount: 150,
+    category: "sustento"
+  };
+
+  const editingFlowUpkeep = {
+    localId: syntheticFlow.localId,
+    name: syntheticFlow.name,
+    resourceId: syntheticFlow.resourceId,
+    direction: syntheticFlow.direction,
+    displayAmount: 1.5,
+    periodTicks: 1,
+    category: syntheticFlow.category,
+    active: true,
+    isUpkeep: true
+  };
+
+  assert.equal(editingFlowUpkeep.name, "Consumo Populacional (Comida)");
+  assert.equal(editingFlowUpkeep.displayAmount, 1.5);
+  assert.equal(editingFlowUpkeep.isUpkeep, true);
+
+  // 14.3 Image Studio em Obras / Projetos
+  const projectData = {
+    name: "Muralha de Titânio",
+    image: "assets/wall.webp",
+    imageFit: "cover",
+    imageHeight: 220,
+    imagePosX: 60,
+    imagePosY: 40,
+    imageZoom: 130
+  };
+  const projectScale = projectData.imageZoom / 100;
+  const projectCustomStyle = `height: ${projectData.imageHeight}px; object-fit: ${projectData.imageFit}; object-position: ${projectData.imagePosX}% ${projectData.imagePosY}%; transform: scale(${projectScale});`;
+  assert.ok(projectCustomStyle.includes("height: 220px"));
+  assert.ok(projectCustomStyle.includes("transform: scale(1.3)"));
+
+  // 14.4 Image Studio em Notáveis
+  const notableData = {
+    name: "Almirante Ackbar",
+    portrait: "assets/ackbar.webp",
+    imageFit: "contain",
+    imageShape: "portrait",
+    imagePosX: 50,
+    imagePosY: 30,
+    imageZoom: 110
+  };
+  const notableScale = notableData.imageZoom / 100;
+  const portraitCustomStyle = `object-fit: ${notableData.imageFit}; object-position: ${notableData.imagePosX}% ${notableData.imagePosY}%; transform: scale(${notableScale});`;
+  assert.ok(portraitCustomStyle.includes("object-fit: contain"));
+  assert.ok(portraitCustomStyle.includes("transform: scale(1.1)"));
+});

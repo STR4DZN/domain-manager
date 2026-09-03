@@ -1,3 +1,66 @@
+
+function getActionAttr(target, name) {
+  if (!target) return null;
+  const camelName = name.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  if (target.dataset && target.dataset[camelName] != null) return target.dataset[camelName];
+  const attr = target.getAttribute?.(`data-${name}`);
+  if (attr != null) return attr;
+  const closest = target.closest?.(`[data-${name}]`);
+  return closest?.getAttribute?.(`data-${name}`) ?? null;
+}
+
+function bindLiveImagePreview(element, prefix, previewImgId, previewContainerId) {
+  const img = element?.querySelector(previewImgId);
+  const container = element?.querySelector(previewContainerId);
+  if (!img || !container) return;
+
+  const update = () => {
+    const fit = element.querySelector(`${prefix}-fit`)?.value || "cover";
+    const height = element.querySelector(`${prefix}-height`)?.value || "180";
+    const posX = element.querySelector(`${prefix}-pos-x`)?.value ?? "50";
+    const posY = element.querySelector(`${prefix}-pos-y`)?.value ?? "50";
+    const zoom = element.querySelector(`${prefix}-zoom`)?.value ?? "100";
+    const scale = Number(zoom) / 100;
+
+    const valX = element.querySelector(`${prefix}-val-x`);
+    const valY = element.querySelector(`${prefix}-val-y`);
+    const valZoom = element.querySelector(`${prefix}-val-zoom`);
+    if (valX) valX.textContent = `${posX}%`;
+    if (valY) valY.textContent = `${posY}%`;
+    if (valZoom) valZoom.textContent = `${zoom}%`;
+
+    if (container.classList.contains("dm-image-preview-portrait")) {
+      const shape = element.querySelector(`${prefix}-shape`)?.value || "square";
+      if (shape === "portrait") {
+        container.style.width = "72px";
+        container.style.height = "96px";
+      } else if (shape === "wide") {
+        container.style.width = "96px";
+        container.style.height = "96px";
+      } else {
+        container.style.width = "72px";
+        container.style.height = "72px";
+      }
+    } else {
+      container.style.height = `${Math.min(160, Math.round(Number(height) * 0.75))}px`;
+    }
+
+    img.style.objectFit = fit;
+    img.style.objectPosition = `${posX}% ${posY}%`;
+    img.style.transform = `scale(${scale})`;
+  };
+
+  const selectors = [`${prefix}-fit`, `${prefix}-height`, `${prefix}-shape`, `${prefix}-pos-x`, `${prefix}-pos-y`, `${prefix}-zoom`];
+  for (const sel of selectors) {
+    const el = element.querySelector(sel);
+    if (el) {
+      el.addEventListener("input", update);
+      el.addEventListener("change", update);
+    }
+  }
+  update();
+}
+
 import { calculateDomainUpkeep } from "../features/economy/upkeep.js";
 /**
  * DomainManagerShellApp — Aplicação Principal do Cockpit (ApplicationV2)
@@ -444,47 +507,18 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   _onRender(context, options) {
     super._onRender?.(context, options);
 
-    // Live preview para o Editor de Imagem da Base
-    const imgPreview = this.element?.querySelector("#dm-edit-image-preview-img");
-    const containerPreview = this.element?.querySelector("#dm-edit-image-preview-container");
-    if (imgPreview && containerPreview) {
-      const updatePreview = () => {
-        const fit = this.element.querySelector("#dm-edit-domain-image-fit")?.value || "cover";
-        const height = this.element.querySelector("#dm-edit-domain-image-height")?.value || "200";
-        const posX = this.element.querySelector("#dm-edit-domain-image-pos-x")?.value ?? "50";
-        const posY = this.element.querySelector("#dm-edit-domain-image-pos-y")?.value ?? "50";
-        const zoom = this.element.querySelector("#dm-edit-domain-image-zoom")?.value ?? "100";
-        const scale = Number(zoom) / 100;
+    if (!this.element) return;
 
-        const posXVal = this.element.querySelector("#dm-val-pos-x");
-        const posYVal = this.element.querySelector("#dm-val-pos-y");
-        const zoomVal = this.element.querySelector("#dm-val-zoom");
-        if (posXVal) posXVal.textContent = `${posX}%`;
-        if (posYVal) posYVal.textContent = `${posY}%`;
-        if (zoomVal) zoomVal.textContent = `${zoom}%`;
+    // 1. Live preview para o Editor de Imagem da Base
+    bindLiveImagePreview(this.element, "#dm-edit-domain-image", "#dm-edit-image-preview-img", "#dm-edit-image-preview-container");
 
-        containerPreview.style.height = `${Math.min(180, Math.round(Number(height) * 0.75))}px`;
-        imgPreview.style.objectFit = fit;
-        imgPreview.style.objectPosition = `${posX}% ${posY}%`;
-        imgPreview.style.transform = `scale(${scale})`;
-      };
+    // 2. Live preview para Obras / Projetos (Novo e Edição)
+    bindLiveImagePreview(this.element, "#dm-project-img", "#dm-project-image-preview-img", "#dm-project-image-preview-container");
+    bindLiveImagePreview(this.element, "#dm-edit-proj-image", "#dm-edit-proj-image-preview-img", "#dm-edit-proj-image-preview-container");
 
-      const controls = [
-        "#dm-edit-domain-image-fit",
-        "#dm-edit-domain-image-height",
-        "#dm-edit-domain-image-pos-x",
-        "#dm-edit-domain-image-pos-y",
-        "#dm-edit-domain-image-zoom"
-      ];
-      for (const sel of controls) {
-        const el = this.element.querySelector(sel);
-        if (el) {
-          el.addEventListener("input", updatePreview);
-          el.addEventListener("change", updatePreview);
-        }
-      }
-      updatePreview();
-    }
+    // 3. Live preview para Personagens Notáveis (Novo e Edição)
+    bindLiveImagePreview(this.element, "#dm-notable-portrait", "#dm-notable-image-preview-img", "#dm-notable-image-preview-container");
+    bindLiveImagePreview(this.element, "#dm-edit-notable-portrait", "#dm-edit-notable-image-preview-img", "#dm-edit-notable-image-preview-container");
   }
 
   #closeAllModals() {
@@ -531,7 +565,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static #onToggleFolder(event, target) {
     event?.stopPropagation?.();
-    const uuid = target?.dataset?.uuid || target?.getAttribute?.("data-uuid") || target?.closest?.("[data-uuid]")?.getAttribute("data-uuid");
+    const uuid = getActionAttr(target, "uuid");
     if (!uuid) return;
     if (this.collapsedFolderUuids.has(uuid)) {
       this.collapsedFolderUuids.delete(uuid);
@@ -582,7 +616,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onSelectDomain(event, target) {
-    const uuid = target?.dataset?.uuid || target?.getAttribute?.("data-uuid") || target?.closest?.("[data-uuid]")?.getAttribute("data-uuid");
+    const uuid = getActionAttr(target, "uuid");
     this.selectedDomainUuid = uuid || null;
     this.#closeAllModals();
     this.render();
@@ -1122,7 +1156,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteStock(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const resourceId = target?.dataset?.resourceId || target?.getAttribute?.("data-resource-id") || target?.closest?.("[data-resource-id]")?.getAttribute("data-resource-id");
+    const resourceId = getActionAttr(target, "resource-id");
     if (!resourceId) return;
 
     try {
@@ -1203,7 +1237,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteFlow(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
 
     // Se for fluxo de sustento automático da população
@@ -1269,19 +1303,23 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitProject() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const form = this.element?.querySelector(".dm-dialog-card");
-    const name = form?.querySelector("#dm-project-name")?.value?.trim() || "Nova Obra";
-    const category = form?.querySelector("#dm-project-category")?.value || "infraestrutura";
-    const tier = Number(form?.querySelector("#dm-project-tier")?.value) || 1;
-    const workRequired = Number(form?.querySelector("#dm-project-work")?.value) || 100;
-    const rateAmount = Number(form?.querySelector("#dm-project-rate")?.value) || 10;
-    const description = form?.querySelector("#dm-project-desc")?.value?.trim() || "";
-    const image = form?.querySelector("#dm-project-img")?.value?.trim() || "";
+    const name = this.element?.querySelector("#dm-project-name")?.value?.trim() || "Nova Obra";
+    const category = this.element?.querySelector("#dm-project-category")?.value || "infraestrutura";
+    const tier = Number(this.element?.querySelector("#dm-project-tier")?.value) || 1;
+    const workRequired = Number(this.element?.querySelector("#dm-project-work")?.value) || 100;
+    const rateAmount = Number(this.element?.querySelector("#dm-project-rate")?.value) || 10;
+    const description = this.element?.querySelector("#dm-project-desc")?.value?.trim() || "";
+    const image = this.element?.querySelector("#dm-project-img")?.value?.trim() || "";
+    const imageFit = this.element?.querySelector("#dm-project-img-fit")?.value || "cover";
+    const imageHeight = Number(this.element?.querySelector("#dm-project-img-height")?.value) || 180;
+    const imagePosX = Number(this.element?.querySelector("#dm-project-img-pos-x")?.value) ?? 50;
+    const imagePosY = Number(this.element?.querySelector("#dm-project-img-pos-y")?.value) ?? 50;
+    const imageZoom = Number(this.element?.querySelector("#dm-project-img-zoom")?.value) ?? 100;
 
-    const defenseBonus = Number(form?.querySelector("#dm-project-mod-def")?.value) || 0;
-    const incomeBonus = Number(form?.querySelector("#dm-project-mod-income")?.value) || 0;
-    const unrestReduction = Number(form?.querySelector("#dm-project-mod-unrest")?.value) || 0;
-    const populationBonus = Number(form?.querySelector("#dm-project-mod-pop")?.value) || 0;
+    const defenseBonus = Number(this.element?.querySelector("#dm-project-mod-def")?.value) || 0;
+    const incomeBonus = Number(this.element?.querySelector("#dm-project-mod-income")?.value) || 0;
+    const unrestReduction = Number(this.element?.querySelector("#dm-project-mod-unrest")?.value) || 0;
+    const populationBonus = Number(this.element?.querySelector("#dm-project-mod-pop")?.value) || 0;
 
     this.isProjectModalOpen = false;
 
@@ -1305,6 +1343,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           const data = foundry.utils.deepClone(dec.data);
           data.tier = tier;
           data.image = image;
+          data.imageFit = imageFit;
+          data.imageHeight = imageHeight;
+          data.imagePosX = imagePosX;
+          data.imagePosY = imagePosY;
+          data.imageZoom = imageZoom;
           data.modifiers = {
             defenseBonus,
             incomeBonus,
@@ -1324,7 +1367,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static #onOpenEditProjectModal(event, target) {
     if (!game.user.isGM) return;
-    const uuid = target?.dataset?.uuid || target?.getAttribute?.("data-uuid") || target?.closest?.("[data-uuid]")?.getAttribute("data-uuid");
+    const uuid = getActionAttr(target, "uuid");
     if (!uuid) return;
     this.#closeAllModals();
     this.editingProjectUuid = uuid;
@@ -1340,21 +1383,25 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitEditProject() {
     if (!game.user.isGM || !this.editingProjectUuid) return;
-    const form = this.element?.querySelector(".dm-dialog-card");
-    const name = form?.querySelector("#dm-edit-proj-name")?.value?.trim() || "Obra";
-    const category = form?.querySelector("#dm-edit-proj-category")?.value || "infraestrutura";
-    const tier = Number(form?.querySelector("#dm-edit-proj-tier")?.value) || 1;
-    const status = form?.querySelector("#dm-edit-proj-status")?.value || "active";
-    const workRequired = Number(form?.querySelector("#dm-edit-proj-work")?.value) || 100;
-    const workCompleted = Number(form?.querySelector("#dm-edit-proj-completed")?.value) || 0;
-    const rateAmount = Number(form?.querySelector("#dm-edit-proj-rate")?.value) || 10;
-    const image = form?.querySelector("#dm-edit-proj-img")?.value?.trim() || "";
-    const description = form?.querySelector("#dm-edit-proj-desc")?.value?.trim() || "";
+    const name = this.element?.querySelector("#dm-edit-proj-name")?.value?.trim() || "Obra";
+    const category = this.element?.querySelector("#dm-edit-proj-category")?.value || "infraestrutura";
+    const tier = Number(this.element?.querySelector("#dm-edit-proj-tier")?.value) || 1;
+    const status = this.element?.querySelector("#dm-edit-proj-status")?.value || "active";
+    const workRequired = Number(this.element?.querySelector("#dm-edit-proj-work")?.value) || 100;
+    const workCompleted = Number(this.element?.querySelector("#dm-edit-proj-completed")?.value) || 0;
+    const rateAmount = Number(this.element?.querySelector("#dm-edit-proj-rate")?.value) || 10;
+    const image = this.element?.querySelector("#dm-edit-proj-img")?.value?.trim() || "";
+    const imageFit = this.element?.querySelector("#dm-edit-proj-image-fit")?.value || "cover";
+    const imageHeight = Number(this.element?.querySelector("#dm-edit-proj-image-height")?.value) || 180;
+    const imagePosX = Number(this.element?.querySelector("#dm-edit-proj-image-pos-x")?.value) ?? 50;
+    const imagePosY = Number(this.element?.querySelector("#dm-edit-proj-image-pos-y")?.value) ?? 50;
+    const imageZoom = Number(this.element?.querySelector("#dm-edit-proj-image-zoom")?.value) ?? 100;
+    const description = this.element?.querySelector("#dm-edit-proj-desc")?.value?.trim() || "";
 
-    const defenseBonus = Number(form?.querySelector("#dm-edit-proj-mod-def")?.value) || 0;
-    const incomeBonus = Number(form?.querySelector("#dm-edit-proj-mod-income")?.value) || 0;
-    const unrestReduction = Number(form?.querySelector("#dm-edit-proj-mod-unrest")?.value) || 0;
-    const populationBonus = Number(form?.querySelector("#dm-edit-proj-mod-pop")?.value) || 0;
+    const defenseBonus = Number(this.element?.querySelector("#dm-edit-proj-mod-def")?.value) || 0;
+    const incomeBonus = Number(this.element?.querySelector("#dm-edit-proj-mod-income")?.value) || 0;
+    const unrestReduction = Number(this.element?.querySelector("#dm-edit-proj-mod-unrest")?.value) || 0;
+    const populationBonus = Number(this.element?.querySelector("#dm-edit-proj-mod-pop")?.value) || 0;
 
     const targetUuid = this.editingProjectUuid;
     this.isEditingProjectModal = false;
@@ -1371,6 +1418,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       data.status = status;
       data.description = description;
       data.image = image;
+      data.imageFit = imageFit;
+      data.imageHeight = imageHeight;
+      data.imagePosX = imagePosX;
+      data.imagePosY = imagePosY;
+      data.imageZoom = imageZoom;
       data.work = {
         required: workRequired,
         completed: Math.min(workRequired, workCompleted)
@@ -1485,13 +1537,17 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitNotable() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const form = this.element?.querySelector(".dm-dialog-card");
-    const name = form?.querySelector("#dm-notable-name")?.value?.trim();
-    const role = form?.querySelector("#dm-notable-role")?.value?.trim() || "Conselheiro";
-    const title = form?.querySelector("#dm-notable-title")?.value?.trim() || "";
-    const portrait = form?.querySelector("#dm-notable-portrait")?.value?.trim() || "";
-    const loyalty = form?.querySelector("#dm-notable-loyalty")?.value || "Alta";
-    const status = form?.querySelector("#dm-notable-status")?.value || "active";
+    const name = this.element?.querySelector("#dm-notable-name")?.value?.trim();
+    const role = this.element?.querySelector("#dm-notable-role")?.value?.trim() || "Conselheiro";
+    const title = this.element?.querySelector("#dm-notable-title")?.value?.trim() || "";
+    const portrait = this.element?.querySelector("#dm-notable-portrait")?.value?.trim() || "";
+    const imageFit = this.element?.querySelector("#dm-notable-portrait-fit")?.value || "cover";
+    const imageShape = this.element?.querySelector("#dm-notable-portrait-shape")?.value || "square";
+    const imagePosX = Number(this.element?.querySelector("#dm-notable-portrait-pos-x")?.value) ?? 50;
+    const imagePosY = Number(this.element?.querySelector("#dm-notable-portrait-pos-y")?.value) ?? 50;
+    const imageZoom = Number(this.element?.querySelector("#dm-notable-portrait-zoom")?.value) ?? 100;
+    const loyalty = this.element?.querySelector("#dm-notable-loyalty")?.value || "Alta";
+    const status = this.element?.querySelector("#dm-notable-status")?.value || "active";
 
     if (!name) {
       ui.notifications?.warn("O nome do notável é obrigatório.");
@@ -1511,6 +1567,22 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         assignment: loyalty,
         status
       });
+      // Salvar propriedades estendidas de imagem no registro
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      if (doc) {
+        const dec = decodeRecord(doc);
+        const data = foundry.utils.deepClone(dec.data);
+        const list = data.population?.notables ?? data.people?.notables ?? [];
+        const created = list.find((n) => n.name === name);
+        if (created) {
+          created.imageFit = imageFit;
+          created.imageShape = imageShape;
+          created.imagePosX = imagePosX;
+          created.imagePosY = imagePosY;
+          created.imageZoom = imageZoom;
+          await updateRecord({ uuid: this.selectedDomainUuid, recordType: RECORD_TYPES.DOMAIN, data });
+        }
+      }
       ui.notifications?.info(`Notável "${name}" registrado com sucesso!`);
       this.render();
     } catch (err) {
@@ -1520,7 +1592,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteNotable(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
 
     try {
@@ -1591,7 +1663,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteGroup(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
 
     try {
@@ -1653,7 +1725,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteRelation(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const targetUuid = target?.dataset?.targetUuid || target?.getAttribute?.("data-target-uuid") || target?.closest?.("[data-target-uuid]")?.getAttribute("data-target-uuid");
+    const targetUuid = getActionAttr(target, "target-uuid");
     if (!targetUuid) return;
 
     try {
@@ -1731,7 +1803,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteIntel(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
 
     try {
@@ -1795,8 +1867,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteHistory(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const index = Number(target.dataset.index);
-    if (isNaN(index)) return;
+    const rawIdx = getActionAttr(target, "index"); const index = rawIdx != null ? Number(rawIdx) : null; if (index == null || isNaN(index)) return;
 
     try {
       const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
@@ -1895,7 +1966,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Notáveis --- */
   static #onOpenEditNotableModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingNotableModal = true;
@@ -1911,13 +1982,17 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitEditNotable() {
     if (!game.user.isGM || !this.selectedDomainUuid || !this.editingNotableLocalId) return;
-    const form = this.element?.querySelector(".dm-dialog-card");
-    const name = form?.querySelector("#dm-edit-notable-name")?.value?.trim();
-    const role = form?.querySelector("#dm-edit-notable-role")?.value?.trim() || "Conselheiro";
-    const title = form?.querySelector("#dm-edit-notable-title")?.value?.trim() || "";
-    const portrait = form?.querySelector("#dm-edit-notable-portrait")?.value?.trim() || "";
-    const loyalty = form?.querySelector("#dm-edit-notable-loyalty")?.value || "Alta";
-    const status = form?.querySelector("#dm-edit-notable-status")?.value || "active";
+    const name = this.element?.querySelector("#dm-edit-notable-name")?.value?.trim();
+    const role = this.element?.querySelector("#dm-edit-notable-role")?.value?.trim() || "Conselheiro";
+    const title = this.element?.querySelector("#dm-edit-notable-title")?.value?.trim() || "";
+    const portrait = this.element?.querySelector("#dm-edit-notable-portrait")?.value?.trim() || "";
+    const imageFit = this.element?.querySelector("#dm-edit-notable-portrait-fit")?.value || "cover";
+    const imageShape = this.element?.querySelector("#dm-edit-notable-portrait-shape")?.value || "square";
+    const imagePosX = Number(this.element?.querySelector("#dm-edit-notable-portrait-pos-x")?.value) ?? 50;
+    const imagePosY = Number(this.element?.querySelector("#dm-edit-notable-portrait-pos-y")?.value) ?? 50;
+    const imageZoom = Number(this.element?.querySelector("#dm-edit-notable-portrait-zoom")?.value) ?? 100;
+    const loyalty = this.element?.querySelector("#dm-edit-notable-loyalty")?.value || "Alta";
+    const status = this.element?.querySelector("#dm-edit-notable-status")?.value || "active";
 
     if (!name) {
       ui.notifications?.warn("O nome do notável é obrigatório.");
@@ -1940,6 +2015,21 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         assignment: loyalty,
         status
       });
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      if (doc) {
+        const dec = decodeRecord(doc);
+        const data = foundry.utils.deepClone(dec.data);
+        const list = data.population?.notables ?? data.people?.notables ?? [];
+        const targetNotable = list.find((n) => n.localId === localId);
+        if (targetNotable) {
+          targetNotable.imageFit = imageFit;
+          targetNotable.imageShape = imageShape;
+          targetNotable.imagePosX = imagePosX;
+          targetNotable.imagePosY = imagePosY;
+          targetNotable.imageZoom = imageZoom;
+          await updateRecord({ uuid: this.selectedDomainUuid, recordType: RECORD_TYPES.DOMAIN, data });
+        }
+      }
       ui.notifications?.info(`Notável "${name}" atualizado com sucesso!`);
       this.render();
     } catch (err) {
@@ -1950,7 +2040,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Grupos Populacionais --- */
   static #onOpenEditGroupModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingGroupModal = true;
@@ -2009,7 +2099,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Relações Diplomáticas --- */
   static #onOpenEditRelationModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const targetUuid = target?.dataset?.targetUuid || target?.getAttribute?.("data-target-uuid") || target?.closest?.("[data-target-uuid]")?.getAttribute("data-target-uuid");
+    const targetUuid = getActionAttr(target, "target-uuid");
     if (!targetUuid) return;
     this.#closeAllModals();
     this.isEditingRelationModal = true;
@@ -2061,7 +2151,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Segredos & Intel --- */
   static #onOpenEditIntelModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingIntelModal = true;
@@ -2121,8 +2211,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Crônicas & Histórico --- */
   static #onOpenEditHistoryModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const index = Number(target.dataset.index);
-    if (isNaN(index)) return;
+    const rawIdx = getActionAttr(target, "index"); const index = rawIdx != null ? Number(rawIdx) : null; if (index == null || isNaN(index)) return;
     this.#closeAllModals();
     this.isEditingHistoryModal = true;
     this.editingHistoryIndex = index;
@@ -2227,7 +2316,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Estoque Existente --- */
   static #onOpenEditStockModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const resId = target?.dataset?.resourceId || target?.getAttribute?.("data-resource-id") || target?.closest?.("[data-resource-id]")?.getAttribute("data-resource-id");
+    const resId = getActionAttr(target, "resource-id");
     if (!resId) return;
     this.#closeAllModals();
     this.isEditingStockModal = true;
@@ -2289,7 +2378,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Fluxo Existente --- */
   static #onOpenEditFlowModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
+    const localId = getActionAttr(target, "local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingFlowModal = true;
@@ -2305,47 +2394,70 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitEditFlow() {
     if (!game.user.isGM || !this.selectedDomainUuid || !this.editingFlowLocalId) return;
-    const form = this.element?.querySelector(".dm-dialog-card");
-    const name = form?.querySelector("#dm-edit-flow-name")?.value?.trim() || "Fluxo Econômico";
-    const direction = form?.querySelector("#dm-edit-flow-direction")?.value || "inflow";
-    const resourceId = form?.querySelector("#dm-edit-flow-resource")?.value || "credits";
-    const amount = Number(form?.querySelector("#dm-edit-flow-amount")?.value) || 0;
-    const periodTicks = Number(form?.querySelector("#dm-edit-flow-period")?.value) || 1;
-    const category = form?.querySelector("#dm-edit-flow-category")?.value?.trim() || "geral";
-    const active = form?.querySelector("#dm-edit-flow-active")?.value !== "false";
+    const name = this.element?.querySelector("#dm-edit-flow-name")?.value?.trim() || "Fluxo Econômico";
+    const direction = this.element?.querySelector("#dm-edit-flow-direction")?.value || "inflow";
+    const resourceId = this.element?.querySelector("#dm-edit-flow-resource")?.value || "credits";
+    const amount = Number(this.element?.querySelector("#dm-edit-flow-amount")?.value) || 0;
+    const periodTicks = Number(this.element?.querySelector("#dm-edit-flow-period")?.value) || 1;
+    const category = this.element?.querySelector("#dm-edit-flow-category")?.value?.trim() || "geral";
+    const active = this.element?.querySelector("#dm-edit-flow-active")?.value !== "false";
 
     const localId = this.editingFlowLocalId;
     this.isEditingFlowModal = false;
     this.editingFlowLocalId = null;
 
-    try {
-      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
-      const record = decodeRecord(doc);
-      const data = foundry.utils.deepClone(record.data);
-      if (Array.isArray(data.economy?.flows)) {
-        const catalog = (typeof getResourceCatalogSetting === "function" ? getResourceCatalogSetting() : null) || { resources: [] };
-        const resDef = catalog.resources?.find((r) => r.id === resourceId) || { precision: 2 };
-        const scale = 10 ** (resDef.precision || 0);
+    // Caso seja fluxo de sustento da população
+    if (localId.startsWith("upkeep-")) {
+      try {
+        const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+        const record = decodeRecord(doc);
+        const data = foundry.utils.deepClone(record.data);
+        if (!data.economy) data.economy = {};
+        data.economy.sustenanceSettings = data.economy.sustenanceSettings || { enabled: true, foodPer100: 1.0, waterPer100: 1.0, guardUpkeep: 1.0 };
 
-        const targetFlow = data.economy.flows.find((f) => f.localId === localId);
-        if (targetFlow) {
-          targetFlow.name = name;
-          targetFlow.direction = direction;
-          targetFlow.resourceId = resourceId;
-          targetFlow.amount = Math.round(amount * scale);
-          targetFlow.periodTicks = Math.max(1, periodTicks);
-          targetFlow.category = category;
-          targetFlow.active = active;
+        const groups = data.population?.groups ?? data.people?.groups ?? [];
+        const totalPop = groups.reduce((acc, g) => acc + (Number(g.count || g.population) || 0), 0) || 100;
 
-          await updateRecord({
-            uuid: this.selectedDomainUuid,
-            recordType: RECORD_TYPES.DOMAIN,
-            data
-          });
-          ui.notifications?.info(`Fluxo "${name}" atualizado!`);
-          this.render();
+        if (localId === "upkeep-food") {
+          data.economy.sustenanceSettings.foodPer100 = active ? Math.max(0, (amount / totalPop) * 100) : 0;
+          ui.notifications?.info(`Consumo de comida atualizado para ${data.economy.sustenanceSettings.foodPer100.toFixed(2)} por 100 hab/tick!`);
+        } else if (localId === "upkeep-water") {
+          data.economy.sustenanceSettings.waterPer100 = active ? Math.max(0, (amount / totalPop) * 100) : 0;
+          ui.notifications?.info(`Consumo de água atualizado para ${data.economy.sustenanceSettings.waterPer100.toFixed(2)} por 100 hab/tick!`);
+        } else if (localId === "upkeep-guards") {
+          const guards = data.security?.guardCount || 1;
+          data.economy.sustenanceSettings.guardUpkeep = active ? Math.max(0, amount / guards) : 0;
+          ui.notifications?.info(`Manutenção da guarda atualizada para ${data.economy.sustenanceSettings.guardUpkeep.toFixed(2)}/guarda!`);
         }
+
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        this.render();
+        return;
+      } catch (err) {
+        ui.notifications?.error(err.message || "Erro ao salvar taxa de sustento.");
+        return;
       }
+    }
+
+    try {
+      const { upsertDomainFlowAction } = await import("../features/economy/actions.js");
+      await upsertDomainFlowAction({
+        domainUuid: this.selectedDomainUuid,
+        localId,
+        name,
+        resourceId,
+        direction,
+        displayAmount: String(amount),
+        periodTicks: Math.max(1, periodTicks),
+        category,
+        active
+      });
+      ui.notifications?.info(`Fluxo "${name}" atualizado com sucesso!`);
+      this.render();
     } catch (err) {
       ui.notifications?.error(err.message || "Erro ao editar fluxo.");
     }
@@ -2470,7 +2582,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         displayAmount: formatMinorUnits((f.amount || f.amountPerTick || 0), 2),
         periodTicks: f.periodTicks || 1,
         category: LABELS_PTBR.categories[f.category] || f.category || "Comércio",
-        active: f.active !== false
+        active: f.active !== false,
+        isAutomaticUpkeep: Boolean(f.isSynthetic || f.localId?.startsWith("upkeep-"))
       }));
 
       // Projetos com Suporte a Tiers, Modificadores, Imagem e Conclusão
@@ -2499,6 +2612,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           totalProjectPopBonus += (mods.populationBonus || 0);
         }
 
+        const imageFit = p.data.imageFit || "cover";
+        const imageHeight = Number(p.data.imageHeight) || 180;
+        const imagePosX = p.data.imagePosX != null ? Number(p.data.imagePosX) : 50;
+        const imagePosY = p.data.imagePosY != null ? Number(p.data.imagePosY) : 50;
+        const imageZoom = p.data.imageZoom != null ? Number(p.data.imageZoom) : 100;
+        const imageScale = imageZoom / 100;
+
         const projectObj = {
           uuid: p.document.uuid,
           name: p.document.name,
@@ -2515,6 +2635,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           progressPercent: pct,
           image: p.data.image || "",
           hasImage: Boolean(p.data.image),
+          imageFit,
+          imageHeight,
+          imagePosX,
+          imagePosY,
+          imageZoom,
+          imageScale,
+          imageCustomStyle: `height: ${imageHeight}px; object-fit: ${imageFit}; object-position: ${imagePosX}% ${imagePosY}%; transform: scale(${imageScale});`,
           description: p.data.description || p.document.pages?.contents?.[0]?.text?.content || "",
           modifiers: mods,
           hasModifiers: Boolean(mods.defenseBonus || mods.incomeBonus || mods.unrestReduction || mods.populationBonus)
@@ -2530,6 +2657,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       // Notáveis com Imagem/GIF e Localização
       notables = (data.population?.notables ?? data.people?.notables ?? []).map((n) => {
         const portrait = n.portrait || n.avatarMedia?.path || "";
+        const imageFit = n.imageFit || "cover";
+        const imageShape = n.imageShape || "square";
+        const imagePosX = n.imagePosX != null ? Number(n.imagePosX) : 50;
+        const imagePosY = n.imagePosY != null ? Number(n.imagePosY) : 50;
+        const imageZoom = n.imageZoom != null ? Number(n.imageZoom) : 100;
+        const imageScale = imageZoom / 100;
+
         return {
           localId: n.localId,
           name: n.name,
@@ -2537,6 +2671,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           title: n.title || "",
           portrait,
           hasPortrait: Boolean(portrait),
+          imageFit,
+          imageShape,
+          imagePosX,
+          imagePosY,
+          imageZoom,
+          imageScale,
+          portraitCustomStyle: `object-fit: ${imageFit}; object-position: ${imagePosX}% ${imagePosY}%; transform: scale(${imageScale});`,
           loyalty: n.assignment || n.loyalty || "Neutra",
           status: n.status || "active",
           statusLabel: LABELS_PTBR.peopleStatuses[n.status] || n.status
@@ -2789,23 +2930,43 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       };
     }
 
-    // 7. Fluxo em edição
+    // 7. Fluxo em edição (Manual ou Sustento)
     let editingFlow = null;
     if (this.editingFlowLocalId && selectedRecord) {
-      const fl = (selectedRecord.data?.economy?.flows || []).find((f) => f.localId === this.editingFlowLocalId);
-      if (fl) {
-        const resDef = catalog.resources?.find((r) => r.id === fl.resourceId) || { precision: 2 };
-        const scale = 10 ** (resDef.precision || 0);
-        editingFlow = {
-          localId: fl.localId,
-          name: fl.name,
-          resourceId: fl.resourceId,
-          direction: fl.direction,
-          displayAmount: (fl.amount || 0) / scale,
-          periodTicks: fl.periodTicks || 1,
-          category: fl.category || "geral",
-          active: fl.active !== false
-        };
+      if (this.editingFlowLocalId.startsWith("upkeep-")) {
+        const upkeepFlow = upkeepInfo.syntheticFlows.find((f) => f.localId === this.editingFlowLocalId);
+        if (upkeepFlow) {
+          const resDef = catalog.resources?.find((r) => r.id === upkeepFlow.resourceId) || { precision: 2 };
+          const scale = 10 ** (resDef.precision || 0);
+          editingFlow = {
+            localId: upkeepFlow.localId,
+            name: upkeepFlow.name,
+            resourceId: upkeepFlow.resourceId,
+            direction: upkeepFlow.direction,
+            displayAmount: (upkeepFlow.amount || 0) / scale,
+            periodTicks: upkeepFlow.periodTicks || 1,
+            category: upkeepFlow.category || "sustento",
+            active: true,
+            isUpkeep: true
+          };
+        }
+      } else {
+        const fl = (selectedRecord.data?.economy?.flows || []).find((f) => f.localId === this.editingFlowLocalId);
+        if (fl) {
+          const resDef = catalog.resources?.find((r) => r.id === fl.resourceId) || { precision: 2 };
+          const scale = 10 ** (resDef.precision || 0);
+          editingFlow = {
+            localId: fl.localId,
+            name: fl.name,
+            resourceId: fl.resourceId,
+            direction: fl.direction,
+            displayAmount: (fl.amount || 0) / scale,
+            periodTicks: fl.periodTicks || 1,
+            category: fl.category || "geral",
+            active: fl.active !== false,
+            isUpkeep: false
+          };
+        }
       }
     }
 

@@ -653,19 +653,68 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO DE IMAGEM DA OBRA (EDIÇÃO) -->
           <div class="dm-form-group">
-            <label>Imagem / GIF da Obra:</label>
+            <label><i class="fa-solid fa-camera text-sky"></i> Imagem / GIF da Obra:</label>
             <div class="dm-file-input-group">
               <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-proj-img" value="{{editingProject.image}}" />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-edit-proj-img">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
-            {{#if editingProject.image}}
-              <div class="dm-image-preview-container mt-1">
-                <img src="{{editingProject.image}}" class="dm-image-preview-rect" alt="Prévia" onerror="this.style.display='none'" />
+
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Enquadramento:</label>
+                  <select class="dm-select dm-input--compact" id="dm-edit-proj-image-fit">
+                    <option value="cover" {{#if (eq editingProject.imageFit 'cover')}}selected{{/if}}>Preencher (Cortar excesso)</option>
+                    <option value="contain" {{#if (eq editingProject.imageFit 'contain')}}selected{{/if}}>Conter (Sem corte)</option>
+                    <option value="fill" {{#if (eq editingProject.imageFit 'fill')}}selected{{/if}}>Esticar</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Altura do Card:</label>
+                  <select class="dm-select dm-input--compact" id="dm-edit-proj-image-height">
+                    <option value="140" {{#if (eq editingProject.imageHeight 140)}}selected{{/if}}>Compacto (140px)</option>
+                    <option value="180" {{#if (eq editingProject.imageHeight 180)}}selected{{/if}}>Padrão (180px)</option>
+                    <option value="220" {{#if (eq editingProject.imageHeight 220)}}selected{{/if}}>Médio (220px)</option>
+                    <option value="280" {{#if (eq editingProject.imageHeight 280)}}selected{{/if}}>Grande (280px)</option>
+                  </select>
+                </div>
               </div>
-            {{/if}}
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco X: <span class="dm-slider-val" id="dm-edit-proj-image-val-x">{{editingProject.imagePosX}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-edit-proj-image-pos-x" value="{{editingProject.imagePosX}}" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Y: <span class="dm-slider-val" id="dm-edit-proj-image-val-y">{{editingProject.imagePosY}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-edit-proj-image-pos-y" value="{{editingProject.imagePosY}}" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom: <span class="dm-slider-val" id="dm-edit-proj-image-val-zoom">{{editingProject.imageZoom}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-edit-proj-image-zoom" value="{{editingProject.imageZoom}}" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="dm-image-studio-preview" id="dm-edit-proj-image-preview-container" style="height: 120px;">
+                <img
+                  src="{{editingProject.image}}"
+                  id="dm-edit-proj-image-preview-img"
+                  style="object-fit: {{editingProject.imageFit}}; object-position: {{editingProject.imagePosX}}% {{editingProject.imagePosY}}%; transform: scale({{editingProject.imageScale}});"
+                  alt="Prévia da Obra"
+                  onerror="this.style.display='none'"
+                />
+              </div>
+            </div>
           </div>
 
           <div class="dm-form-group">
@@ -729,13 +778,59 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO DE RETRATO DO NOTÁVEL -->
           <div class="dm-form-group">
-            <label>Retrato / GIF do Notável:</label>
+            <label><i class="fa-solid fa-portrait text-amber"></i> Retrato / GIF do Notável:</label>
             <div class="dm-file-input-group">
               <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-notable-portrait" placeholder="caminho/foto.webp ou link..." />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-notable-portrait">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
+            </div>
+
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Ajuste:</label>
+                  <select class="dm-select dm-input--compact" id="dm-notable-portrait-fit">
+                    <option value="cover" selected>Preencher (Cortar excesso)</option>
+                    <option value="contain">Conter Inteiro</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Formato:</label>
+                  <select class="dm-select dm-input--compact" id="dm-notable-portrait-shape">
+                    <option value="square" selected>Quadrado (Ícone)</option>
+                    <option value="portrait">Busto Vertical</option>
+                    <option value="wide">Destaque Largo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco X: <span class="dm-slider-val" id="dm-notable-portrait-val-x">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-notable-portrait-pos-x" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Y: <span class="dm-slider-val" id="dm-notable-portrait-val-y">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-notable-portrait-pos-y" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom: <span class="dm-slider-val" id="dm-notable-portrait-val-zoom">100%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-notable-portrait-zoom" value="100" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="dm-image-studio-preview dm-image-preview-portrait" id="dm-notable-image-preview-container" style="width: 72px; height: 72px; margin: 6px auto;">
+                <img src="" id="dm-notable-image-preview-img" alt="Retrato" onerror="this.style.display='none'" />
+              </div>
             </div>
           </div>
 
@@ -794,19 +889,66 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO DE RETRATO DO NOTÁVEL (EDIÇÃO) -->
           <div class="dm-form-group">
-            <label>Retrato / GIF do Notável (Arquivo ou Link URL):</label>
+            <label><i class="fa-solid fa-portrait text-amber"></i> Retrato / GIF do Notável:</label>
             <div class="dm-file-input-group">
               <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-notable-portrait" value="{{editingNotable.portrait}}" />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-edit-notable-portrait">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
-            {{#if editingNotable.portrait}}
-              <div class="dm-image-preview-container mt-1">
-                <img src="{{editingNotable.portrait}}" class="dm-image-preview-rect" alt="Retrato" onerror="this.style.display='none'" />
+
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Ajuste:</label>
+                  <select class="dm-select dm-input--compact" id="dm-edit-notable-portrait-fit">
+                    <option value="cover" {{#if (eq editingNotable.imageFit 'cover')}}selected{{/if}}>Preencher (Cortar excesso)</option>
+                    <option value="contain" {{#if (eq editingNotable.imageFit 'contain')}}selected{{/if}}>Conter Inteiro</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Formato:</label>
+                  <select class="dm-select dm-input--compact" id="dm-edit-notable-portrait-shape">
+                    <option value="square" {{#if (eq editingNotable.imageShape 'square')}}selected{{/if}}>Quadrado (Ícone)</option>
+                    <option value="portrait" {{#if (eq editingNotable.imageShape 'portrait')}}selected{{/if}}>Busto Vertical</option>
+                    <option value="wide" {{#if (eq editingNotable.imageShape 'wide')}}selected{{/if}}>Destaque Largo</option>
+                  </select>
+                </div>
               </div>
-            {{/if}}
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco X: <span class="dm-slider-val" id="dm-edit-notable-portrait-val-x">{{editingNotable.imagePosX}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-edit-notable-portrait-pos-x" value="{{editingNotable.imagePosX}}" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Y: <span class="dm-slider-val" id="dm-edit-notable-portrait-val-y">{{editingNotable.imagePosY}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-edit-notable-portrait-pos-y" value="{{editingNotable.imagePosY}}" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom: <span class="dm-slider-val" id="dm-edit-notable-portrait-val-zoom">{{editingNotable.imageZoom}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-edit-notable-portrait-zoom" value="{{editingNotable.imageZoom}}" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="dm-image-studio-preview dm-image-preview-portrait" id="dm-edit-notable-image-preview-container" style="width: 72px; height: 72px; margin: 6px auto;">
+                <img
+                  src="{{editingNotable.portrait}}"
+                  id="dm-edit-notable-image-preview-img"
+                  style="object-fit: {{editingNotable.imageFit}}; object-position: {{editingNotable.imagePosX}}% {{editingNotable.imagePosY}}%; transform: scale({{editingNotable.imageScale}});"
+                  alt="Retrato"
+                  onerror="this.style.display='none'"
+                />
+              </div>
+            </div>
           </div>
 
           <div class="dm-form-row">
@@ -1640,8 +1782,8 @@
                 </div>
 
                 {{#if hasImage}}
-                  <div class="dm-project-card__media">
-                    <img src="{{image}}" class="dm-project-card__thumb" alt="{{name}}" />
+                  <div class="dm-project-card__media" style="height: {{imageHeight}}px; overflow: hidden; border-radius: 8px;">
+                    <img src="{{image}}" class="dm-project-card__thumb" style="width: 100%; height: 100%; {{imageCustomStyle}}" alt="{{name}}" />
                   </div>
                 {{/if}}
 
@@ -1708,9 +1850,9 @@
           <div class="dm-notable-grid">
             {{#each notables}}
               <div class="dm-notable-card">
-                <div class="dm-notable-portrait">
+                <div class="dm-notable-portrait {{#if (eq imageShape 'portrait')}}is-portrait{{/if}} {{#if (eq imageShape 'wide')}}is-wide{{/if}}" style="overflow: hidden;">
                   {{#if hasPortrait}}
-                    <img src="{{portrait}}" class="dm-notable-portrait-img" alt="{{name}}" />
+                    <img src="{{portrait}}" class="dm-notable-portrait-img" style="{{portraitCustomStyle}}" alt="{{name}}" />
                   {{else}}
                     <div class="dm-notable-portrait--placeholder"><i class="fa-solid fa-user"></i></div>
                   {{/if}}
