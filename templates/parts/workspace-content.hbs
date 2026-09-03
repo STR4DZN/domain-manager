@@ -187,38 +187,70 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO COMPLETO DE IMAGEM DA BASE (SUPORTE A URL E ARQUIVO) -->
           <div class="dm-form-group">
-            <label>Imagem Principal da Base (URL ou Arquivo):</label>
+            <label><i class="fa-solid fa-camera text-sky"></i> Imagem Principal da Base (URL da Internet ou Arquivo):</label>
             <div class="dm-file-input-group">
-              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-domain-crest" value="{{selectedDomain.image}}" placeholder="caminho/imagem.webp ou link..." />
+              <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-edit-domain-crest" value="{{selectedDomain.image}}" placeholder="Cole o link da internet (https://...) ou escolha um arquivo..." />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-edit-domain-crest">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
 
-            <div class="dm-form-row mt-1">
-              <div class="dm-form-group">
-                <label>Ajuste da Imagem:</label>
-                <select class="dm-select dm-input--compact" id="dm-edit-domain-fit">
-                  <option value="cover" {{#if (eq selectedDomain.imageFit 'cover')}}selected{{/if}}>Preencher / Banner (cover)</option>
-                  <option value="contain" {{#if (eq selectedDomain.imageFit 'contain')}}selected{{/if}}>Conter Inteira (contain - sem cortes)</option>
-                </select>
+            <!-- CONTROLES AVANÇADOS DO ESTÚDIO DE IMAGEM -->
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Modo de Enquadramento:</label>
+                  <select class="dm-select dm-input--compact" id="dm-edit-domain-image-fit">
+                    <option value="cover" {{#if (eq selectedDomain.imageFit 'cover')}}selected{{/if}}>Preencher Card (Cortar excesso)</option>
+                    <option value="contain" {{#if (eq selectedDomain.imageFit 'contain')}}selected{{/if}}>Conter Imagem Inteira (Sem cortes)</option>
+                    <option value="fill" {{#if (eq selectedDomain.imageFit 'fill')}}selected{{/if}}>Esticar (Preenchimento total)</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Altura do Card:</label>
+                  <select class="dm-select dm-input--compact" id="dm-edit-domain-image-height">
+                    <option value="160" {{#if (eq selectedDomain.imageHeight 160)}}selected{{/if}}>Panorâmico Compacto (160px)</option>
+                    <option value="200" {{#if (eq selectedDomain.imageHeight 200)}}selected{{/if}}>Padrão Card (200px)</option>
+                    <option value="260" {{#if (eq selectedDomain.imageHeight 260)}}selected{{/if}}>Médio / Retângulo (260px)</option>
+                    <option value="340" {{#if (eq selectedDomain.imageHeight 340)}}selected{{/if}}>Expandido / Poster (340px)</option>
+                  </select>
+                </div>
               </div>
-              <div class="dm-form-group">
-                <label>Foco Vertical:</label>
-                <select class="dm-select dm-input--compact" id="dm-edit-domain-pos">
-                  <option value="center" {{#if (eq selectedDomain.imagePosition 'center')}}selected{{/if}}>Centro</option>
-                  <option value="top" {{#if (eq selectedDomain.imagePosition 'top')}}selected{{/if}}>Topo</option>
-                  <option value="bottom" {{#if (eq selectedDomain.imagePosition 'bottom')}}selected{{/if}}>Base</option>
-                </select>
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco Horizontal (X): <span class="dm-slider-val" id="dm-edit-domain-image-val-x">{{selectedDomain.imagePosX}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-edit-domain-image-pos-x" value="{{selectedDomain.imagePosX}}" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Vertical (Y): <span class="dm-slider-val" id="dm-edit-domain-image-val-y">{{selectedDomain.imagePosY}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-edit-domain-image-pos-y" value="{{selectedDomain.imagePosY}}" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom / Escala: <span class="dm-slider-val" id="dm-edit-domain-image-val-zoom">{{selectedDomain.imageZoom}}%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-edit-domain-image-zoom" value="{{selectedDomain.imageZoom}}" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- PRÉVIA EM TEMPO REAL NO MODAL (URL / ARQUIVO) -->
+              <div class="dm-image-studio-preview" id="dm-edit-image-preview-container" style="height: 150px;">
+                <img
+                  src="{{selectedDomain.image}}"
+                  id="dm-edit-image-preview-img"
+                  style="object-fit: {{selectedDomain.imageFit}}; object-position: {{selectedDomain.imagePosX}}% {{selectedDomain.imagePosY}}%; transform: scale({{selectedDomain.imageScale}});"
+                  alt="Prévia Interativa"
+                  onerror="this.style.display='none'"
+                />
               </div>
             </div>
-
-            {{#if selectedDomain.image}}
-              <div class="dm-image-preview-container {{#if (eq selectedDomain.imageFit 'contain')}}is-contain{{/if}} mt-1">
-                <img src="{{selectedDomain.image}}" class="dm-image-preview-rect" alt="Prévia" onerror="this.style.display='none'" />
-              </div>
-            {{/if}}
           </div>
 
           <!-- MÚLTIPLAS IMAGENS / GALERIA DA BASE -->

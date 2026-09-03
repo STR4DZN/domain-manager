@@ -9,12 +9,34 @@ function getActionAttr(target, name) {
   return closest?.getAttribute?.(`data-${name}`) ?? null;
 }
 
-function bindLiveImagePreview(element, prefix, previewImgId, previewContainerId) {
+function bindLiveImagePreview(element, prefix, previewImgId, previewContainerId, urlInputSelector) {
   const img = element?.querySelector(previewImgId);
   const container = element?.querySelector(previewContainerId);
   if (!img || !container) return;
 
+  const urlInput = urlInputSelector ? element.querySelector(urlInputSelector) : null;
+
   const update = () => {
+    // Atualizar URL na prévia
+    if (urlInput) {
+      const url = urlInput.value?.trim() || "";
+      if (url) {
+        img.src = url;
+        img.style.display = "block";
+      } else {
+        img.style.display = "none";
+      }
+    } else if (img.getAttribute("src")) {
+      img.style.display = "block";
+    }
+
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+    img.onload = () => {
+      img.style.display = "block";
+    };
+
     const fit = element.querySelector(`${prefix}-fit`)?.value || "cover";
     const height = element.querySelector(`${prefix}-height`)?.value || "180";
     const posX = element.querySelector(`${prefix}-pos-x`)?.value ?? "50";
@@ -58,6 +80,13 @@ function bindLiveImagePreview(element, prefix, previewImgId, previewContainerId)
       el.addEventListener("change", update);
     }
   }
+
+  if (urlInput) {
+    urlInput.addEventListener("input", update);
+    urlInput.addEventListener("change", update);
+    urlInput.addEventListener("paste", () => setTimeout(update, 10));
+  }
+
   update();
 }
 
@@ -212,10 +241,13 @@ function getVisibleDomainRecord(uuid, user) {
 
 function isImageSource(src) {
   if (!src || typeof src !== "string") return false;
-  return src.startsWith("http://") ||
-         src.startsWith("https://") ||
-         src.startsWith("data:image/") ||
-         /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(src);
+  const trimmed = src.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("//")) return true;
+  if (trimmed.startsWith("data:image/")) return true;
+  if (/\.(png|jpe?g|webp|gif|svg|avif|bmp)(\?.*)?$/i.test(trimmed)) return true;
+  if (trimmed.includes("/") || trimmed.includes("\\")) return true;
+  return false;
 }
 
 function buildDomainTreeNodes(domains, parentUuid = null, currentSelectedUuid = null, visited = new Set()) {
@@ -509,16 +541,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     if (!this.element) return;
 
-    // 1. Live preview para o Editor de Imagem da Base
-    bindLiveImagePreview(this.element, "#dm-edit-domain-image", "#dm-edit-image-preview-img", "#dm-edit-image-preview-container");
+    // 1. Live preview para o Editor de Imagem da Base (URL / Arquivo)
+    bindLiveImagePreview(this.element, "#dm-edit-domain-image", "#dm-edit-image-preview-img", "#dm-edit-image-preview-container", "#dm-edit-domain-crest");
 
     // 2. Live preview para Obras / Projetos (Novo e Edição)
-    bindLiveImagePreview(this.element, "#dm-project-img", "#dm-project-image-preview-img", "#dm-project-image-preview-container");
-    bindLiveImagePreview(this.element, "#dm-edit-proj-image", "#dm-edit-proj-image-preview-img", "#dm-edit-proj-image-preview-container");
+    bindLiveImagePreview(this.element, "#dm-project-img", "#dm-project-image-preview-img", "#dm-project-image-preview-container", "#dm-project-img");
+    bindLiveImagePreview(this.element, "#dm-edit-proj-image", "#dm-edit-proj-image-preview-img", "#dm-edit-proj-image-preview-container", "#dm-edit-proj-img");
 
     // 3. Live preview para Personagens Notáveis (Novo e Edição)
-    bindLiveImagePreview(this.element, "#dm-notable-portrait", "#dm-notable-image-preview-img", "#dm-notable-image-preview-container");
-    bindLiveImagePreview(this.element, "#dm-edit-notable-portrait", "#dm-edit-notable-image-preview-img", "#dm-edit-notable-image-preview-container");
+    bindLiveImagePreview(this.element, "#dm-notable-portrait", "#dm-notable-image-preview-img", "#dm-notable-image-preview-container", "#dm-notable-portrait");
+    bindLiveImagePreview(this.element, "#dm-edit-notable-portrait", "#dm-edit-notable-image-preview-img", "#dm-edit-notable-image-preview-container", "#dm-edit-notable-portrait");
   }
 
   #closeAllModals() {
@@ -831,27 +863,30 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onSubmitEditDomain() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const form = this.element?.querySelector(".dm-dialog-card");
-    const name = form?.querySelector("#dm-edit-domain-name")?.value?.trim();
-    const category = form?.querySelector("#dm-edit-domain-category")?.value?.trim() || "territory";
-    const nature = form?.querySelector("#dm-edit-domain-nature")?.value || "physical";
-    const crestImg = form?.querySelector("#dm-edit-domain-crest")?.value?.trim() || "";
-    const imageFit = form?.querySelector("#dm-edit-domain-fit")?.value || "cover";
-    const imagePosition = form?.querySelector("#dm-edit-domain-pos")?.value || "center";
-    const tagsRaw = form?.querySelector("#dm-edit-domain-tags")?.value || "";
-    const description = form?.querySelector("#dm-edit-domain-description")?.value || "";
-    const sustenanceEnabled = form?.querySelector("#dm-edit-domain-sustenance-enabled")?.value !== "false";
-    const foodPer100 = Number(form?.querySelector("#dm-edit-domain-food-rate")?.value) || 1.0;
-    const waterPer100 = Number(form?.querySelector("#dm-edit-domain-water-rate")?.value) || 1.0;
-    const guardUpkeep = Number(form?.querySelector("#dm-edit-domain-guard-upkeep")?.value) || 1.0;
-    let parentUuid = form?.querySelector("#dm-edit-domain-parent")?.value || null;
+    const name = this.element?.querySelector("#dm-edit-domain-name")?.value?.trim();
+    const category = this.element?.querySelector("#dm-edit-domain-category")?.value?.trim() || "territory";
+    const nature = this.element?.querySelector("#dm-edit-domain-nature")?.value || "physical";
+    const crestImg = this.element?.querySelector("#dm-edit-domain-crest")?.value?.trim() || "";
+    const imageFit = this.element?.querySelector("#dm-edit-domain-image-fit")?.value || "cover";
+    const imageHeight = Number(this.element?.querySelector("#dm-edit-domain-image-height")?.value) || 200;
+    const imagePosX = this.element?.querySelector("#dm-edit-domain-image-pos-x")?.value != null ? Number(this.element.querySelector("#dm-edit-domain-image-pos-x").value) : 50;
+    const imagePosY = this.element?.querySelector("#dm-edit-domain-image-pos-y")?.value != null ? Number(this.element.querySelector("#dm-edit-domain-image-pos-y").value) : 50;
+    const imageZoom = this.element?.querySelector("#dm-edit-domain-image-zoom")?.value != null ? Number(this.element.querySelector("#dm-edit-domain-image-zoom").value) : 100;
+    const imagePosition = "center";
+    const tagsRaw = this.element?.querySelector("#dm-edit-domain-tags")?.value || "";
+    const description = this.element?.querySelector("#dm-edit-domain-description")?.value || "";
+    const sustenanceEnabled = this.element?.querySelector("#dm-edit-domain-sustenance-enabled")?.value !== "false";
+    const foodPer100 = Number(this.element?.querySelector("#dm-edit-domain-food-rate")?.value) || 1.0;
+    const waterPer100 = Number(this.element?.querySelector("#dm-edit-domain-water-rate")?.value) || 1.0;
+    const guardUpkeep = Number(this.element?.querySelector("#dm-edit-domain-guard-upkeep")?.value) || 1.0;
+    let parentUuid = this.element?.querySelector("#dm-edit-domain-parent")?.value || null;
     if (parentUuid === this.selectedDomainUuid) {
-      parentUuid = null; // Impede ciclo hierárquico onde a base seleciona a si mesma
+      parentUuid = null;
     }
-    const defenseScore = Number(form?.querySelector("#dm-edit-domain-defense")?.value) || 10;
-    const guardCount = Number(form?.querySelector("#dm-edit-domain-guards")?.value) || 0;
+    const defenseScore = Number(this.element?.querySelector("#dm-edit-domain-defense")?.value) || 10;
+    const guardCount = Number(this.element?.querySelector("#dm-edit-domain-guards")?.value) || 0;
 
-    const controllerCheckboxes = form?.querySelectorAll(".dm-edit-domain-controller:checked");
+    const controllerCheckboxes = this.element?.querySelectorAll(".dm-edit-domain-controller:checked");
     const controllers = Array.from(controllerCheckboxes || []).map((cb) => cb.value);
 
     if (!name) {

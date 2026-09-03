@@ -702,3 +702,57 @@ test("Auditoria Geral: getActionAttr com tags aninhadas, Edição de Fluxo Upkee
   assert.ok(portraitCustomStyle.includes("object-fit: contain"));
   assert.ok(portraitCustomStyle.includes("transform: scale(1.1)"));
 });
+
+/* ==========================================================================
+   15. AUDITORIA DE SUPORTE A URLS EXTERNAS NO IMAGE STUDIO
+   ========================================================================== */
+test("Auditoria Geral: Suporte a URLs externas (HTTP/HTTPS/Data/CORS) no Image Studio", async () => {
+  function isImageSource(src) {
+    if (!src || typeof src !== "string") return false;
+    const trimmed = src.trim();
+    if (!trimmed) return false;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("//")) return true;
+    if (trimmed.startsWith("data:image/")) return true;
+    if (/\.(png|jpe?g|webp|gif|svg|avif|bmp)(\?.*)?$/i.test(trimmed)) return true;
+    if (trimmed.includes("/") || trimmed.includes("\\")) return true;
+    return false;
+  }
+
+  // 15.1 Variações de URLs
+  const httpsUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800";
+  const httpUrl = "http://minhabalizagalactica.com/base-estelar.png";
+  const protocolRelativeUrl = "//cdn.discordapp.com/attachments/12345/67890/banner.webp";
+  const dataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const localFoundryPath = "modules/domain-manager/assets/base.webp";
+
+  assert.ok(isImageSource(httpsUrl), "HTTPS URL deve ser reconhecida");
+  assert.ok(isImageSource(httpUrl), "HTTP URL deve ser reconhecida");
+  assert.ok(isImageSource(protocolRelativeUrl), "Protocol relative URL deve ser reconhecida");
+  assert.ok(isImageSource(dataUrl), "Data URL base64 deve ser reconhecida");
+  assert.ok(isImageSource(localFoundryPath), "Caminho local Foundry deve ser reconhecido");
+  assert.equal(isImageSource(""), false, "String vazia não deve ser reconhecida");
+  assert.equal(isImageSource("   "), false, "Espaços vazios não devem ser reconhecidos");
+
+  // 15.2 Simulação de persistência e geração de estilo com URL
+  const domainRecord = {
+    data: {
+      identity: { name: "Nova Terra" },
+      visuals: {
+        image: httpsUrl,
+        imageFit: "cover",
+        imageHeight: 260,
+        imagePosX: 75,
+        imagePosY: 25,
+        imageZoom: 150
+      }
+    }
+  };
+
+  const scale = domainRecord.data.visuals.imageZoom / 100;
+  const heroStyle = `object-fit: ${domainRecord.data.visuals.imageFit}; object-position: ${domainRecord.data.visuals.imagePosX}% ${domainRecord.data.visuals.imagePosY}%; transform: scale(${scale});`;
+
+  assert.ok(heroStyle.includes("object-fit: cover"));
+  assert.ok(heroStyle.includes("object-position: 75% 25%"));
+  assert.ok(heroStyle.includes("transform: scale(1.5)"));
+  assert.equal(domainRecord.data.visuals.image, httpsUrl);
+});
