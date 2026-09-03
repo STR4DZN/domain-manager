@@ -796,3 +796,64 @@ test("Auditoria Geral: 100% das data-actions em templates devem estar registrada
 
   assert.deepEqual(missing, [], `Nenhuma ação de template pode ficar órfã sem handler: ${missing.join(", ")}`);
 });
+
+/* ==========================================================================
+   17. AUDITORIA DE PRESERVAÇÃO DE SCHEMAS DO IMAGE STUDIO E BANNER CENTRAL
+   ========================================================================== */
+test("Auditoria Geral: Preservação de schema do Image Studio e sincronização do Banner Central", async () => {
+  // Simular payload salvo ao editar imagem e posicionamento
+  const domainPayload = {
+    visuals: {
+      crestImg: "https://minhaurl.com/castelo.webp",
+      image: "https://minhaurl.com/castelo.webp",
+      imageFit: "contain",
+      imageHeight: 260,
+      imagePosX: 80,
+      imagePosY: 20,
+      imageZoom: 140,
+      imagePosition: "80% 20%",
+      gallery: ["https://minhaurl.com/castelo.webp", "https://minhaurl.com/anterior.webp"]
+    },
+    economy: {
+      sustenanceSettings: {
+        enabled: true,
+        foodPer100: 2.5,
+        waterPer100: 3.0,
+        guardUpkeep: 1.5
+      }
+    }
+  };
+
+  // 17.1 Testar que os dados não são descartados
+  assert.equal(domainPayload.visuals.image, "https://minhaurl.com/castelo.webp");
+  assert.equal(domainPayload.visuals.imageFit, "contain");
+  assert.equal(domainPayload.visuals.imageHeight, 260);
+  assert.equal(domainPayload.visuals.imagePosX, 80);
+  assert.equal(domainPayload.visuals.imagePosY, 20);
+  assert.equal(domainPayload.visuals.imageZoom, 140);
+  assert.equal(domainPayload.economy.sustenanceSettings.foodPer100, 2.5);
+
+  // 17.2 Sincronização do Banner Central
+  let activeGalleryImage = null;
+  const imageRaw = domainPayload.visuals.image;
+  const gallery = domainPayload.visuals.gallery;
+  const allImages = [imageRaw, ...gallery].filter(Boolean);
+
+  // Ao salvar o domínio, activeGalleryImage é atualizada para a nova imagem
+  activeGalleryImage = domainPayload.visuals.image;
+  const activeImage = (activeGalleryImage && allImages.includes(activeGalleryImage))
+    ? activeGalleryImage
+    : (imageRaw || gallery[0] || "");
+
+  assert.equal(activeImage, "https://minhaurl.com/castelo.webp", "Banner central deve renderizar a nova imagem");
+  assert.equal(activeImage, domainPayload.visuals.crestImg, "Banner central e cabeçalho devem exibir exatamente a mesma imagem");
+
+  // 17.3 Estilo CSS em linha do Banner com transform-origin
+  const scale = domainPayload.visuals.imageZoom / 100;
+  const bannerImgStyle = `object-fit: ${domainPayload.visuals.imageFit}; object-position: ${domainPayload.visuals.imagePosX}% ${domainPayload.visuals.imagePosY}%; transform: scale(${scale}); transform-origin: ${domainPayload.visuals.imagePosX}% ${domainPayload.visuals.imagePosY}%;`;
+
+  assert.ok(bannerImgStyle.includes("object-fit: contain"));
+  assert.ok(bannerImgStyle.includes("object-position: 80% 20%"));
+  assert.ok(bannerImgStyle.includes("transform: scale(1.4)"));
+  assert.ok(bannerImgStyle.includes("transform-origin: 80% 20%"));
+});

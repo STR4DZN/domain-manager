@@ -35,7 +35,23 @@ export class ProjectModel extends foundry.abstract.DataModel {
     return {
       domainUuid: new StringField({required:true, nullable:false, blank:false}),
       originRequestUuid: nullableUuidField(),
+      name: new StringField({required:false, nullable:false, blank:true, initial:""}),
       description: new StringField({required:true, nullable:false, blank:true, initial:""}),
+      image: new StringField({required:false, nullable:true, blank:true, initial:""}),
+      imageFit: new StringField({required:false, nullable:false, initial:"cover"}),
+      imageHeight: new NumberField({required:false, nullable:false, initial:180}),
+      imagePosX: new NumberField({required:false, nullable:false, initial:50}),
+      imagePosY: new NumberField({required:false, nullable:false, initial:50}),
+      imageZoom: new NumberField({required:false, nullable:false, initial:100}),
+      tier: new NumberField({required:false, nullable:false, initial:1}),
+      maxTier: new NumberField({required:false, nullable:false, initial:3}),
+      modifiers: new ArrayField(
+        new SchemaField({
+          type: new StringField({required:false, nullable:false, initial:"defense"}),
+          value: new NumberField({required:false, nullable:false, initial:0})
+        }),
+        {required:false, nullable:false, initial:[]}
+      ),
       status: new StringField({required:true, nullable:false, blank:false, choices:PROJECT_STATUSES, initial:"planned"}),
       blockedReason: new StringField({required:true, nullable:false, blank:true, initial:""}),
       work: new SchemaField({

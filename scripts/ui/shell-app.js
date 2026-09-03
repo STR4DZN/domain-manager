@@ -974,6 +974,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         controllerIds: controllers
       });
 
+      this.activeGalleryImage = crestImg;
       this.isEditingDomain = false;
       ui.notifications?.info(`Domínio "${name}" atualizado com sucesso!`);
       this.render();

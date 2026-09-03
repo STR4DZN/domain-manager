@@ -641,7 +641,7 @@
                 <img
                   src="{{selectedDomain.image}}"
                   id="dm-edit-image-preview-img"
-                  style="object-fit: {{selectedDomain.imageFit}}; object-position: {{selectedDomain.imagePosX}}% {{selectedDomain.imagePosY}}%; transform: scale({{selectedDomain.imageScale}});"
+                  style="object-fit: {{selectedDomain.imageFit}}; object-position: {{selectedDomain.imagePosX}}% {{selectedDomain.imagePosY}}%; transform: scale({{selectedDomain.imageScale}}); transform-origin: {{selectedDomain.imagePosX}}% {{selectedDomain.imagePosY}}%;"
                   alt="Prévia Interativa"
                   onerror="this.style.display='none'"
                 />

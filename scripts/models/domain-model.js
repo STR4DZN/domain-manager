@@ -122,6 +122,11 @@ function notableSchema() {
     name: new StringField({required:true, nullable:false, blank:false}),
     actorUuid: new StringField({required:true, nullable:true, blank:false, initial:null}),
     portrait: new StringField({required:true, nullable:false, blank:true, initial:""}),
+    portraitFit: new StringField({required:false, nullable:false, initial:"cover"}),
+    portraitShape: new StringField({required:false, nullable:false, initial:"square"}),
+    portraitPosX: new NumberField({required:false, nullable:false, initial:50}),
+    portraitPosY: new NumberField({required:false, nullable:false, initial:50}),
+    portraitZoom: new NumberField({required:false, nullable:false, initial:100}),
     function: new StringField({required:true, nullable:false, blank:true, initial:""}),
     specialization: new StringField({required:true, nullable:false, blank:true, initial:""}),
     role: new StringField({required:true, nullable:false, blank:true, initial:""}),
@@ -320,23 +325,61 @@ function historySchema() {
 function visualsSchema() {
   return new SchemaField({
     bannerImg: new StringField({
-      required: true,
-      nullable: false,
+      required: false,
+      nullable: true,
       initial: "icons/svg/village.svg"
     }),
     crestImg: new StringField({
-      required: true,
-      nullable: false,
+      required: false,
+      nullable: true,
       initial: "icons/svg/shield.svg"
     }),
+    image: new StringField({
+      required: false,
+      nullable: true,
+      initial: ""
+    }),
+    imageFit: new StringField({
+      required: false,
+      nullable: false,
+      initial: "cover"
+    }),
+    imageHeight: new NumberField({
+      required: false,
+      nullable: false,
+      initial: 200
+    }),
+    imagePosX: new NumberField({
+      required: false,
+      nullable: false,
+      initial: 50
+    }),
+    imagePosY: new NumberField({
+      required: false,
+      nullable: false,
+      initial: 50
+    }),
+    imageZoom: new NumberField({
+      required: false,
+      nullable: false,
+      initial: 100
+    }),
+    imagePosition: new StringField({
+      required: false,
+      nullable: true,
+      initial: "center"
+    }),
+    gallery: new ArrayField(
+      new StringField({ required: false, nullable: false, blank: true }),
+      { required: false, nullable: false, initial: [] }
+    ),
     themeColorHex: new StringField({
-      required: true,
+      required: false,
       nullable: false,
       initial: "#f59e0b"
     })
   });
 }
-
 export class DomainModel extends foundry.abstract.DataModel {
   static defineSchema() {
     return {
@@ -384,7 +427,10 @@ export class DomainModel extends foundry.abstract.DataModel {
             nullable: false,
             initial: []
           }
-        )
+        ),
+        crestMedia: new SchemaField({
+          path: new StringField({ required: false, nullable: true, blank: true, initial: "" })
+        }, { required: false, nullable: true, initial: null }),
       }),
 
       hierarchy: new SchemaField({
@@ -400,6 +446,12 @@ export class DomainModel extends foundry.abstract.DataModel {
       }),
 
       economy: new SchemaField({
+        sustenanceSettings: new SchemaField({
+          enabled: new BooleanField({ required: false, nullable: false, initial: true }),
+          foodPer100: new NumberField({ required: false, nullable: false, initial: 1.0 }),
+          waterPer100: new NumberField({ required: false, nullable: false, initial: 1.0 }),
+          guardUpkeep: new NumberField({ required: false, nullable: false, initial: 1.0 })
+        }, { required: false, nullable: true, initial: null }),
         stocks: new ArrayField(
           stockSchema(),
           {
