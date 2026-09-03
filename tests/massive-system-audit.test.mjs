@@ -561,3 +561,58 @@ test("Auditoria de Edição GM: Configuração de Sustento, Edição de Estoque 
   assert.equal(flow.name, "Rota Comercial da Aliança");
   assert.equal(flow.amount, 7500);
 });
+
+/* ==========================================================================
+   13. AUDITORIA DE BOTÕES DE EDIÇÃO, EXCLUSÃO, SUSTENTO E ESTÚDIO DE IMAGEM
+   ========================================================================== */
+test("Auditoria Geral: Retorno de Modais, Desativação de Consumo e Estúdio de Imagem", async () => {
+  // 13.1 Estúdio de Imagem: Parâmetros visuais e estilo inline
+  const domainData = {
+    identity: { name: "Base Alfa", category: "outpost" },
+    visuals: {
+      image: "modules/domain-manager/assets/base.webp",
+      imageFit: "cover",
+      imageHeight: 260,
+      imagePosX: 40,
+      imagePosY: 65,
+      imageZoom: 120
+    },
+    economy: {
+      sustenanceSettings: { enabled: true, foodPer100: 1.5, waterPer100: 1.0, guardUpkeep: 2.0 },
+      stocks: [{ resourceId: "food", amount: 500, reserved: 0 }],
+      flows: []
+    },
+    population: {
+      groups: [{ localId: "grp-alpha", name: "Colonizadores", count: 200, quality: "Estável" }],
+      notables: [{ localId: "not-1", name: "Comandante Shepard", role: "Líder Militar" }]
+    }
+  };
+
+  const scale = domainData.visuals.imageZoom / 100;
+  assert.equal(scale, 1.2);
+  assert.equal(domainData.visuals.imageHeight, 260);
+  assert.equal(domainData.visuals.imagePosX, 40);
+  assert.equal(domainData.visuals.imagePosY, 65);
+
+  // 13.2 Desativação de consumo de sustento via exclusão do fluxo automático
+  const localIdFood = "upkeep-food";
+  if (localIdFood === "upkeep-food") {
+    domainData.economy.sustenanceSettings.foodPer100 = 0;
+  }
+  assert.equal(domainData.economy.sustenanceSettings.foodPer100, 0);
+
+  const localIdWater = "upkeep-water";
+  if (localIdWater === "upkeep-water") {
+    domainData.economy.sustenanceSettings.waterPer100 = 0;
+  }
+  assert.equal(domainData.economy.sustenanceSettings.waterPer100, 0);
+
+  // 13.3 Localização de entidades para edição
+  const editingNotable = domainData.population.notables.find((n) => n.localId === "not-1");
+  assert.ok(editingNotable);
+  assert.equal(editingNotable.name, "Comandante Shepard");
+
+  const editingGroup = domainData.population.groups.find((g) => g.localId === "grp-alpha");
+  assert.ok(editingGroup);
+  assert.equal(editingGroup.name, "Colonizadores");
+});

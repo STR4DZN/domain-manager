@@ -1785,9 +1785,14 @@
       <div class="dm-panel dm-panel--overview">
         <!-- Retângulo da Base com Galeria e Ajuste Proporcional -->
         {{#if selectedDomain}}
-          <div class="dm-base-hero {{#if selectedDomain.isContainFit}}is-contain{{/if}}">
+          <div class="dm-base-hero {{#if selectedDomain.isContainFit}}is-contain{{/if}}" style="height: {{selectedDomain.imageHeight}}px;">
             {{#if selectedDomain.activeImage}}
-              <img src="{{selectedDomain.activeImage}}" class="dm-base-hero__img" style="object-position: {{selectedDomain.imagePosition}};" alt="{{selectedDomain.name}}" />
+              <img
+                src="{{selectedDomain.activeImage}}"
+                class="dm-base-hero__img"
+                style="object-fit: {{selectedDomain.imageFit}}; object-position: {{selectedDomain.imagePosX}}% {{selectedDomain.imagePosY}}%; transform: scale({{selectedDomain.imageScale}});"
+                alt="{{selectedDomain.name}}"
+              />
             {{else}}
               <div class="dm-base-hero__placeholder">
                 <i class="fa-solid fa-mountain-sun dm-base-hero__placeholder-icon"></i>
@@ -1970,16 +1975,21 @@
                   </td>
                   {{#if @root.isGM}}
                     <td style="text-align: center; white-space: nowrap;">
-                      {{#unless isAutomaticUpkeep}}
+                      {{#if isAutomaticUpkeep}}
+                        <button type="button" class="dm-icon-btn" data-action="openUpkeepModal" title="Editar Taxa de Sustento">
+                          <i class="fa-solid fa-pen-to-square text-amber"></i>
+                        </button>
+                        <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteFlow" data-local-id="{{localId}}" title="Desativar / Apagar este Consumo">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      {{else}}
                         <button type="button" class="dm-icon-btn" data-action="openEditFlowModal" data-local-id="{{localId}}" title="Editar Fluxo">
                           <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteFlow" data-local-id="{{localId}}" title="Remover Fluxo">
                           <i class="fa-solid fa-trash-can"></i>
                         </button>
-                      {{else}}
-                        <span class="dm-text-muted" title="Fluxo automático de sustento (configure no botão Configurar Sustento)"><i class="fa-solid fa-lock"></i></span>
-                      {{/unless}}
+                      {{/if}}
                     </td>
                   {{/if}}
                 </tr>

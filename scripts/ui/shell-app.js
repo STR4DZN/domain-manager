@@ -441,6 +441,52 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     return this;
   }
 
+  _onRender(context, options) {
+    super._onRender?.(context, options);
+
+    // Live preview para o Editor de Imagem da Base
+    const imgPreview = this.element?.querySelector("#dm-edit-image-preview-img");
+    const containerPreview = this.element?.querySelector("#dm-edit-image-preview-container");
+    if (imgPreview && containerPreview) {
+      const updatePreview = () => {
+        const fit = this.element.querySelector("#dm-edit-domain-image-fit")?.value || "cover";
+        const height = this.element.querySelector("#dm-edit-domain-image-height")?.value || "200";
+        const posX = this.element.querySelector("#dm-edit-domain-image-pos-x")?.value ?? "50";
+        const posY = this.element.querySelector("#dm-edit-domain-image-pos-y")?.value ?? "50";
+        const zoom = this.element.querySelector("#dm-edit-domain-image-zoom")?.value ?? "100";
+        const scale = Number(zoom) / 100;
+
+        const posXVal = this.element.querySelector("#dm-val-pos-x");
+        const posYVal = this.element.querySelector("#dm-val-pos-y");
+        const zoomVal = this.element.querySelector("#dm-val-zoom");
+        if (posXVal) posXVal.textContent = `${posX}%`;
+        if (posYVal) posYVal.textContent = `${posY}%`;
+        if (zoomVal) zoomVal.textContent = `${zoom}%`;
+
+        containerPreview.style.height = `${Math.min(180, Math.round(Number(height) * 0.75))}px`;
+        imgPreview.style.objectFit = fit;
+        imgPreview.style.objectPosition = `${posX}% ${posY}%`;
+        imgPreview.style.transform = `scale(${scale})`;
+      };
+
+      const controls = [
+        "#dm-edit-domain-image-fit",
+        "#dm-edit-domain-image-height",
+        "#dm-edit-domain-image-pos-x",
+        "#dm-edit-domain-image-pos-y",
+        "#dm-edit-domain-image-zoom"
+      ];
+      for (const sel of controls) {
+        const el = this.element.querySelector(sel);
+        if (el) {
+          el.addEventListener("input", updatePreview);
+          el.addEventListener("change", updatePreview);
+        }
+      }
+      updatePreview();
+    }
+  }
+
   #closeAllModals() {
     this.isCreatingDomain = false;
     this.isEditingDomain = false;
@@ -485,7 +531,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static #onToggleFolder(event, target) {
     event?.stopPropagation?.();
-    const uuid = target.dataset.uuid;
+    const uuid = target?.dataset?.uuid || target?.getAttribute?.("data-uuid") || target?.closest?.("[data-uuid]")?.getAttribute("data-uuid");
     if (!uuid) return;
     if (this.collapsedFolderUuids.has(uuid)) {
       this.collapsedFolderUuids.delete(uuid);
@@ -536,7 +582,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onSelectDomain(event, target) {
-    const uuid = target.dataset.uuid;
+    const uuid = target?.dataset?.uuid || target?.getAttribute?.("data-uuid") || target?.closest?.("[data-uuid]")?.getAttribute("data-uuid");
     this.selectedDomainUuid = uuid || null;
     this.#closeAllModals();
     this.render();
@@ -562,7 +608,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onFilterByTag(event, target) {
-    const tag = target.dataset.tag;
+    const tag = target?.dataset?.tag || target?.getAttribute?.("data-tag") || target?.closest?.("[data-tag]")?.getAttribute("data-tag");
     this.selectedTag = this.selectedTag === tag ? null : tag;
     this.render();
   }
@@ -800,6 +846,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         crestImg,
         image: crestImg,
         imageFit,
+        imageHeight,
+        imagePosX,
+        imagePosY,
+        imageZoom,
         imagePosition
       };
       data.economy = data.economy || {};
@@ -1072,7 +1122,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteStock(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const resourceId = target.dataset.resourceId;
+    const resourceId = target?.dataset?.resourceId || target?.getAttribute?.("data-resource-id") || target?.closest?.("[data-resource-id]")?.getAttribute("data-resource-id");
     if (!resourceId) return;
 
     try {
@@ -1153,8 +1203,41 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteFlow(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
+
+    // Se for fluxo de sustento automático da população
+    if (localId.startsWith("upkeep-")) {
+      try {
+        const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+        const record = decodeRecord(doc);
+        const data = foundry.utils.deepClone(record.data);
+        if (!data.economy) data.economy = {};
+        data.economy.sustenanceSettings = data.economy.sustenanceSettings || { enabled: true, foodPer100: 1.0, waterPer100: 1.0, guardUpkeep: 1.0 };
+
+        if (localId === "upkeep-food") {
+          data.economy.sustenanceSettings.foodPer100 = 0;
+          ui.notifications?.info("Consumo de alimentos da população desativado (taxa zerada)!");
+        } else if (localId === "upkeep-water") {
+          data.economy.sustenanceSettings.waterPer100 = 0;
+          ui.notifications?.info("Consumo de água da população desativado (taxa zerada)!");
+        } else if (localId === "upkeep-guards") {
+          data.economy.sustenanceSettings.guardUpkeep = 0;
+          ui.notifications?.info("Manutenção da guarda desativada (taxa zerada)!");
+        }
+
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        this.render();
+        return;
+      } catch (err) {
+        ui.notifications?.error(err.message || "Erro ao desativar consumo populacional.");
+        return;
+      }
+    }
 
     try {
       const { removeDomainFlowAction } = await import("../features/economy/actions.js");
@@ -1241,7 +1324,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static #onOpenEditProjectModal(event, target) {
     if (!game.user.isGM) return;
-    const uuid = target.dataset.uuid;
+    const uuid = target?.dataset?.uuid || target?.getAttribute?.("data-uuid") || target?.closest?.("[data-uuid]")?.getAttribute("data-uuid");
     if (!uuid) return;
     this.#closeAllModals();
     this.editingProjectUuid = uuid;
@@ -1437,7 +1520,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteNotable(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
 
     try {
@@ -1508,7 +1591,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteGroup(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
 
     try {
@@ -1570,7 +1653,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteRelation(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const targetUuid = target.dataset.targetUuid;
+    const targetUuid = target?.dataset?.targetUuid || target?.getAttribute?.("data-target-uuid") || target?.closest?.("[data-target-uuid]")?.getAttribute("data-target-uuid");
     if (!targetUuid) return;
 
     try {
@@ -1648,7 +1731,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onDeleteIntel(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
 
     try {
@@ -1743,7 +1826,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   /* --- Galeria de Imagens da Base --- */
   static #onSelectGalleryImage(event, target) {
-    const src = target.dataset.src;
+    const src = target?.dataset?.src || target?.getAttribute?.("data-src") || target?.closest?.("[data-src]")?.getAttribute("data-src");
     if (src) {
       this.activeGalleryImage = src;
       this.render();
@@ -1784,7 +1867,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async #onRemoveGalleryImage(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const src = target.dataset.src;
+    const src = target?.dataset?.src || target?.getAttribute?.("data-src") || target?.closest?.("[data-src]")?.getAttribute("data-src");
     if (!src) return;
 
     try {
@@ -1812,7 +1895,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Notáveis --- */
   static #onOpenEditNotableModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingNotableModal = true;
@@ -1867,7 +1950,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Grupos Populacionais --- */
   static #onOpenEditGroupModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingGroupModal = true;
@@ -1926,7 +2009,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Relações Diplomáticas --- */
   static #onOpenEditRelationModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const targetUuid = target.dataset.targetUuid;
+    const targetUuid = target?.dataset?.targetUuid || target?.getAttribute?.("data-target-uuid") || target?.closest?.("[data-target-uuid]")?.getAttribute("data-target-uuid");
     if (!targetUuid) return;
     this.#closeAllModals();
     this.isEditingRelationModal = true;
@@ -1978,7 +2061,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Segredos & Intel --- */
   static #onOpenEditIntelModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingIntelModal = true;
@@ -2144,7 +2227,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Estoque Existente --- */
   static #onOpenEditStockModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const resId = target.dataset.resourceId;
+    const resId = target?.dataset?.resourceId || target?.getAttribute?.("data-resource-id") || target?.closest?.("[data-resource-id]")?.getAttribute("data-resource-id");
     if (!resId) return;
     this.#closeAllModals();
     this.isEditingStockModal = true;
@@ -2206,7 +2289,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* --- Edição de Fluxo Existente --- */
   static #onOpenEditFlowModal(event, target) {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
-    const localId = target.dataset.localId;
+    const localId = target?.dataset?.localId || target?.getAttribute?.("data-local-id") || target?.closest?.("[data-local-id]")?.getAttribute("data-local-id");
     if (!localId) return;
     this.#closeAllModals();
     this.isEditingFlowModal = true;
@@ -2582,7 +2665,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const crestRaw = imageRaw || "fa-solid fa-mountain-sun";
       const gallery = Array.isArray(data.visuals?.gallery) ? data.visuals.gallery : [];
       const imageFit = data.visuals?.imageFit || "cover";
-      const imagePosition = data.visuals?.imagePosition || "center";
+      const imageHeight = Number(data.visuals?.imageHeight) || 200;
+      const imagePosX = data.visuals?.imagePosX != null ? Number(data.visuals.imagePosX) : 50;
+      const imagePosY = data.visuals?.imagePosY != null ? Number(data.visuals.imagePosY) : 50;
+      const imageZoom = data.visuals?.imageZoom != null ? Number(data.visuals.imageZoom) : 100;
+      const imageScale = imageZoom / 100;
+      const imagePosition = `${imagePosX}% ${imagePosY}%`;
+
       const allImages = [imageRaw, ...gallery].filter(Boolean);
       const activeImage = (this.activeGalleryImage && allImages.includes(this.activeGalleryImage))
         ? this.activeGalleryImage
@@ -2611,6 +2700,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         image: imageRaw,
         hasImage,
         imageFit,
+        imageHeight,
+        imagePosX,
+        imagePosY,
+        imageZoom,
+        imageScale,
         imagePosition,
         isContainFit: imageFit === "contain",
         gallery,
@@ -2650,6 +2744,84 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         isSelected: selectedDomainControllers.includes(u.id)
       }));
 
+    // 1. Notável em edição
+    let editingNotable = null;
+    if (this.editingNotableLocalId) {
+      editingNotable = notables.find((n) => n.localId === this.editingNotableLocalId) || null;
+    }
+
+    // 2. Grupo em edição
+    let editingGroup = null;
+    if (this.editingGroupLocalId) {
+      editingGroup = groups.find((g) => g.localId === this.editingGroupLocalId) || null;
+    }
+
+    // 3. Relação em edição
+    let editingRelation = null;
+    if (this.editingRelationTargetUuid) {
+      editingRelation = relations.find((r) => r.targetDomainUuid === this.editingRelationTargetUuid) || null;
+    }
+
+    // 4. Intel em edição
+    let editingIntel = null;
+    if (this.editingIntelLocalId) {
+      editingIntel = intelList.find((it) => it.localId === this.editingIntelLocalId) || null;
+    }
+
+    // 5. Histórico em edição
+    let editingHistory = null;
+    if (this.editingHistoryIndex != null) {
+      editingHistory = fullHistory[this.editingHistoryIndex] || null;
+    }
+
+    // 6. Estoque em edição
+    let editingStock = null;
+    if (this.editingStockResourceId && selectedRecord) {
+      const st = (selectedRecord.data?.economy?.stocks || []).find((s) => s.resourceId === this.editingStockResourceId);
+      const resDef = catalog.resources?.find((r) => r.id === this.editingStockResourceId) || { id: this.editingStockResourceId, name: this.editingStockResourceId.toUpperCase(), precision: 0 };
+      const scale = 10 ** (resDef.precision || 0);
+      editingStock = {
+        resourceId: this.editingStockResourceId,
+        name: resDef.name,
+        precision: resDef.precision,
+        stockAmountMajor: (st?.amount || 0) / scale,
+        reservedAmountMajor: (st?.reserved || 0) / scale
+      };
+    }
+
+    // 7. Fluxo em edição
+    let editingFlow = null;
+    if (this.editingFlowLocalId && selectedRecord) {
+      const fl = (selectedRecord.data?.economy?.flows || []).find((f) => f.localId === this.editingFlowLocalId);
+      if (fl) {
+        const resDef = catalog.resources?.find((r) => r.id === fl.resourceId) || { precision: 2 };
+        const scale = 10 ** (resDef.precision || 0);
+        editingFlow = {
+          localId: fl.localId,
+          name: fl.name,
+          resourceId: fl.resourceId,
+          direction: fl.direction,
+          displayAmount: (fl.amount || 0) / scale,
+          periodTicks: fl.periodTicks || 1,
+          category: fl.category || "geral",
+          active: fl.active !== false
+        };
+      }
+    }
+
+    const availableResources = (catalog.resources || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      precision: r.precision
+    }));
+
+    const sustenanceSettings = selectedRecord?.data?.economy?.sustenanceSettings || {
+      enabled: true,
+      foodPer100: 1.0,
+      waterPer100: 1.0,
+      guardUpkeep: 1.0
+    };
+
     return {
       ...context,
       moduleTitle: MODULE_TITLE,
@@ -2678,10 +2850,27 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       isEditingProjectModal: this.isEditingProjectModal,
       editingProject,
       isNotableModalOpen: this.isNotableModalOpen,
+      isEditingNotableModal: this.isEditingNotableModal,
+      editingNotable,
       isGroupModalOpen: this.isGroupModalOpen,
+      isEditingGroupModal: this.isEditingGroupModal,
+      editingGroup,
       isRelationModalOpen: this.isRelationModalOpen,
+      isEditingRelationModal: this.isEditingRelationModal,
+      editingRelation,
       isIntelModalOpen: this.isIntelModalOpen,
+      isEditingIntelModal: this.isEditingIntelModal,
+      editingIntel,
       isHistoryModalOpen: this.isHistoryModalOpen,
+      isEditingHistoryModal: this.isEditingHistoryModal,
+      editingHistory,
+      isUpkeepModalOpen: this.isUpkeepModalOpen,
+      sustenanceSettings,
+      isEditingStockModal: this.isEditingStockModal,
+      editingStock,
+      isEditingFlowModal: this.isEditingFlowModal,
+      editingFlow,
+      availableResources,
       isTagModalOpen: this.isTagModalOpen,
       advanceCustomTicks: this.advanceCustomTicks,
 
