@@ -398,6 +398,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   activeGalleryImage = null;
 
   isTagModalOpen = false;
+  isNotificationModalOpen = false;
+  showNotificationsHistory = false;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -535,7 +537,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       addGalleryImage: DomainManagerShellApp.#onAddGalleryImage,
       removeGalleryImage: DomainManagerShellApp.#onRemoveGalleryImage,
       selectGalleryImage: DomainManagerShellApp.#onSelectGalleryImage,
-      deleteCondition: DomainManagerShellApp.#onDeleteCondition
+      deleteCondition: DomainManagerShellApp.#onDeleteCondition,
+
+      // Notificações e Avisos Importantes da Visão Geral
+      openAddNotificationModal: DomainManagerShellApp.#onOpenAddNotificationModal,
+      cancelNotificationModal: DomainManagerShellApp.#onCancelNotificationModal,
+      submitNotification: DomainManagerShellApp.#onSubmitNotification,
+      dismissNotification: DomainManagerShellApp.#onDismissNotification,
+      dismissAllNotifications: DomainManagerShellApp.#onDismissAllNotifications,
+      deleteNotification: DomainManagerShellApp.#onDeleteNotification,
+      toggleNotificationsHistory: DomainManagerShellApp.#onToggleNotificationsHistory
     }
   };
 
@@ -608,6 +619,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isEditingFlowModal = false;
     this.editingFlowLocalId = null;
     this.isTagModalOpen = false;
+    this.isNotificationModalOpen = false;
   }
 
   /* ------------------------------------------------------------------------
@@ -2565,6 +2577,161 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+
+  /* ------------------------------------------------------------------------
+     Notificações e Avisos da Visão Geral
+     ------------------------------------------------------------------------ */
+  static #onOpenAddNotificationModal() {
+    if (!game.user.isGM) return;
+    this.#closeAllModals();
+    this.isNotificationModalOpen = true;
+    this.render();
+  }
+
+  static #onCancelNotificationModal() {
+    this.isNotificationModalOpen = false;
+    this.render();
+  }
+
+  static async #onSubmitNotification() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const title = this.element?.querySelector("#dm-notif-title")?.value?.trim();
+    const message = this.element?.querySelector("#dm-notif-message")?.value?.trim() || "";
+    const severity = this.element?.querySelector("#dm-notif-severity")?.value || "info";
+    const targetTab = this.element?.querySelector("#dm-notif-target-tab")?.value || "overview";
+
+    if (!title) {
+      ui.notifications?.warn("Informe o título da notificação.");
+      return;
+    }
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!Array.isArray(data.notifications)) data.notifications = [];
+
+      data.notifications.unshift({
+        localId: `notif_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        title,
+        message,
+        category: "gm",
+        severity,
+        targetTab,
+        timestamp: Date.now(),
+        dismissed: false,
+        readByUserIds: []
+      });
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+
+      this.isNotificationModalOpen = false;
+      ui.notifications?.info("Notificação publicada com sucesso!");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao publicar notificação.");
+    }
+  }
+
+  static async #onDismissNotification(event, target) {
+    if (!this.selectedDomainUuid) return;
+    const localId = getActionAttr(target, "local-id");
+    if (!localId) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!Array.isArray(data.notifications)) return;
+
+      const notif = data.notifications.find((n) => n.localId === localId);
+      if (!notif) return;
+
+      if (!Array.isArray(notif.readByUserIds)) notif.readByUserIds = [];
+      const userId = game.user?.id || "unknown";
+      if (!notif.readByUserIds.includes(userId)) {
+        notif.readByUserIds.push(userId);
+      }
+
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+
+      ui.notifications?.info("Notificação marcada como vista.");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao dispensar notificação.");
+    }
+  }
+
+  static async #onDismissAllNotifications() {
+    if (!this.selectedDomainUuid) return;
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!Array.isArray(data.notifications) || !data.notifications.length) return;
+
+      const userId = game.user?.id || "unknown";
+      let count = 0;
+      for (const n of data.notifications) {
+        if (!Array.isArray(n.readByUserIds)) n.readByUserIds = [];
+        if (!n.readByUserIds.includes(userId)) {
+          n.readByUserIds.push(userId);
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info(`${count} notificação(ões) marcada(s) como lida(s).`);
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao dispensar notificações.");
+    }
+  }
+
+  static async #onDeleteNotification(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = getActionAttr(target, "local-id");
+    if (!localId) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (!Array.isArray(data.notifications)) return;
+
+      data.notifications = data.notifications.filter((n) => n.localId !== localId);
+      await updateRecord({
+        uuid: this.selectedDomainUuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        data
+      });
+
+      ui.notifications?.info("Notificação excluída.");
+      this.render();
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao excluir notificação.");
+    }
+  }
+
+  static #onToggleNotificationsHistory() {
+    this.showNotificationsHistory = !this.showNotificationsHistory;
+    this.render();
+  }
+
   async _prepareContext(options) {
     const context = typeof super._prepareContext === "function"
       ? await super._prepareContext(options)
@@ -3089,6 +3256,43 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const totalPop = (typeof popTotal === 'number' ? popTotal : (groups || []).reduce((acc, g) => acc + (Number(g.population || g.count) || 0), 0));
     const activeProjectsCount = (domainProjects || []).filter((p) => !p.isCompleted).length;
 
+    // Processamento de Notificações do Domínio
+    const rawNotifications = Array.isArray(selectedDomain?.notifications) ? selectedDomain.notifications : [];
+    const currentUserId = game.user?.id || "";
+
+    const notificationsWithMeta = rawNotifications.map((n) => {
+      const isRead = (n.readByUserIds || []).includes(currentUserId) || n.dismissed;
+      let icon = "fa-solid fa-circle-info";
+      if (n.severity === "critical") icon = "fa-solid fa-triangle-exclamation";
+      else if (n.severity === "warning") icon = "fa-solid fa-bell";
+      else if (n.severity === "success") icon = "fa-solid fa-circle-check";
+
+      let targetTabLabel = "Visão Geral";
+      if (n.targetTab === "economy") targetTabLabel = "Economia";
+      else if (n.targetTab === "projects") targetTabLabel = "Obras";
+      else if (n.targetTab === "people") targetTabLabel = "População";
+      else if (n.targetTab === "diplomacy") targetTabLabel = "Diplomacia";
+      else if (n.targetTab === "intel") targetTabLabel = "Intel";
+      else if (n.targetTab === "history") targetTabLabel = "Histórico";
+
+      let timeFormatted = "";
+      if (n.timestamp) {
+        const d = new Date(n.timestamp);
+        timeFormatted = d.toLocaleDateString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
+
+      return {
+        ...n,
+        isRead,
+        icon,
+        targetTabLabel,
+        timeFormatted
+      };
+    });
+
+    const unreadNotifications = notificationsWithMeta.filter((n) => !n.isRead);
+    const unreadNotificationsCount = unreadNotifications.length;
+
     const navigationHubItems = [
       {
         index: "01",
@@ -3096,6 +3300,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "VISÃO GERAL & IDENTIDADE",
         shortTitle: "Visão Geral",
         icon: "fa-solid fa-landmark",
+        badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : null,
         status: (selectedDomain?.stateLabel || "Operacional").toUpperCase(),
         statusClass: "active",
         detail: `${selectedDomain?.natureLabel || 'Territorial'} · ${selectedDomain?.categoryLabel || 'Base'}`
@@ -3183,6 +3388,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       // Navigation Hub e Metadados de Aba Ativa
       navigationHubItems,
       activeTabMeta,
+      unreadNotifications,
+      allNotifications: notificationsWithMeta,
+      unreadNotificationsCount,
+      isNotificationModalOpen: this.isNotificationModalOpen,
+      showNotificationsHistory: this.showNotificationsHistory,
 
       // Estados de Modais
       isCreatingDomain: this.isCreatingDomain,

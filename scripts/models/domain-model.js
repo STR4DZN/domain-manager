@@ -380,6 +380,65 @@ function visualsSchema() {
     })
   });
 }
+function notificationSchema() {
+  const { SchemaField, StringField, NumberField, BooleanField, ArrayField } =
+    foundry.data.fields;
+
+  return new SchemaField({
+    localId: new StringField({
+      required: true,
+      nullable: false,
+      blank: false,
+      initial: () => foundry.utils.randomID()
+    }),
+    title: new StringField({
+      required: true,
+      nullable: false,
+      blank: false,
+      initial: "Notificação"
+    }),
+    message: new StringField({
+      required: true,
+      nullable: false,
+      blank: true,
+      initial: ""
+    }),
+    category: new StringField({
+      required: false,
+      nullable: false,
+      initial: "alerta"
+    }),
+    severity: new StringField({
+      required: false,
+      nullable: false,
+      initial: "info"
+    }),
+    targetTab: new StringField({
+      required: false,
+      nullable: false,
+      initial: "overview"
+    }),
+    timestamp: new NumberField({
+      required: false,
+      nullable: false,
+      initial: () => Date.now()
+    }),
+    dismissed: new BooleanField({
+      required: false,
+      nullable: false,
+      initial: false
+    }),
+    readByUserIds: new ArrayField(
+      new StringField({ required: true, nullable: false }),
+      {
+        required: false,
+        nullable: false,
+        initial: []
+      }
+    )
+  });
+}
+
 export class DomainModel extends foundry.abstract.DataModel {
   static defineSchema() {
     return {
@@ -513,6 +572,15 @@ export class DomainModel extends foundry.abstract.DataModel {
         historySchema(),
         {
           required: true,
+          nullable: false,
+          initial: []
+        }
+      ),
+
+      notifications: new ArrayField(
+        notificationSchema(),
+        {
+          required: false,
           nullable: false,
           initial: []
         }

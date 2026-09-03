@@ -874,3 +874,56 @@ test("Auditoria Geral: Navegação Tática Indexada e Limpeza da Visão Geral", 
   const css = fs.readFileSync("styles/shell.css", "utf8");
   assert.strictEqual(css.includes('.dm-tactical-nav'), true, "Estilo .dm-tactical-nav deve existir em shell.css");
 });
+
+test("Auditoria Geral: Sistema de Notificações, Alertas e Panorama da Visão Geral", async () => {
+  // 1. Validar que templates contêm o feed de notificações e panoramas consolidados
+  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  assert.strictEqual(contentHbs.includes("dm-notifications-feed"), true, "Feed de notificações deve existir na Visão Geral");
+  assert.strictEqual(contentHbs.includes("dm-overview-panoramas"), true, "Panorama consolidado deve existir na Visão Geral");
+  assert.strictEqual(contentHbs.includes("dismissNotification"), true, "Ação de marcar como visto deve existir");
+  assert.strictEqual(contentHbs.includes("dismissAllNotifications"), true, "Ação de marcar todos como vistos deve existir");
+
+  // 2. Validar que o schema de notificações está presente em domain-model.js
+  const modelCode = fs.readFileSync("scripts/models/domain-model.js", "utf8");
+  assert.strictEqual(modelCode.includes("function notificationSchema"), true, "notificationSchema deve existir");
+  assert.strictEqual(modelCode.includes("notifications: new ArrayField("), true, "Campo notifications deve existir no DomainModel");
+
+  // 3. Validar que todas as actions de notificações estão presentes em shell-app.js
+  const shellCode = fs.readFileSync("scripts/ui/shell-app.js", "utf8");
+  const requiredActions = [
+    "openAddNotificationModal",
+    "cancelNotificationModal",
+    "submitNotification",
+    "dismissNotification",
+    "dismissAllNotifications",
+    "deleteNotification",
+    "toggleNotificationsHistory"
+  ];
+  for (const act of requiredActions) {
+    assert.strictEqual(shellCode.includes(act + ":"), true, `Action ${act} deve estar registrada em DEFAULT_OPTIONS.actions`);
+  }
+
+  // 4. Teste de ciclo de vida de notificação: leitura e dispensa
+  const userId = "user_player_123";
+  const notif = {
+    localId: "notif_test_1",
+    title: "Crise de Alimentos",
+    message: "Os silos estão vazios!",
+    severity: "critical",
+    targetTab: "economy",
+    timestamp: Date.now(),
+    dismissed: false,
+    readByUserIds: []
+  };
+
+  // Não lida inicialmente
+  assert.strictEqual(!notif.readByUserIds.includes(userId), true, "Notificação deve iniciar como não lida");
+
+  // Usuário clica em 'Visto'
+  notif.readByUserIds.push(userId);
+  assert.strictEqual(notif.readByUserIds.includes(userId), true, "Notificação deve estar marcada como lida pelo usuário");
+
+  // Validar badge na aba de Visão Geral
+  const unreadList = [notif].filter(n => !n.readByUserIds.includes(userId));
+  assert.strictEqual(unreadList.length, 0, "Lista de não lidas deve ser 0 após ser vista pelo player");
+});

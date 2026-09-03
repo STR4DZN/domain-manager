@@ -212,6 +212,39 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
       }
     }
 
+    // 4. Emissão de Notificações Automáticas para a Visão Geral
+    if (!Array.isArray(domainData.notifications)) domainData.notifications = [];
+
+    for (const p of completedProjectsInDom) {
+      domainData.notifications.unshift({
+        localId: `notif_proj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        title: `Obra Concluída: ${p.name || "Obra"}`,
+        message: `A construção do projeto '${p.name || "Obra"}' foi finalizada com sucesso (100%)!`,
+        category: "obra",
+        severity: "success",
+        targetTab: "projects",
+        timestamp: Date.now(),
+        dismissed: false,
+        readByUserIds: []
+      });
+    }
+
+    for (const r of domReport.resources) {
+      if (!r.allowNegative && r.projectedStock < 0) {
+        domainData.notifications.unshift({
+          localId: `notif_shortfall_${Date.now().toString(36)}_${r.resourceId}`,
+          title: `Escassez Crítica: ${r.resourceName || r.resourceId}!`,
+          message: `O estoque de ${r.resourceName || r.resourceId} esgotou durante o ciclo e gerou déficit de abastecimento.`,
+          category: "crise",
+          severity: "critical",
+          targetTab: "economy",
+          timestamp: Date.now(),
+          dismissed: false,
+          readByUserIds: []
+        });
+      }
+    }
+
     await updateRecord({
       uuid: domReport.uuid,
       recordType: RECORD_TYPES.DOMAIN,

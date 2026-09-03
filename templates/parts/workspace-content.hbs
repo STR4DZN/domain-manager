@@ -1574,6 +1574,9 @@
         <span class="dm-tactical-nav__num">{{this.index}}</span>
         <i class="{{this.icon}}"></i>
         <span class="dm-tactical-nav__label">{{this.shortTitle}}</span>
+        {{#if this.badge}}
+          <span class="dm-tactical-nav__badge">{{this.badge}}</span>
+        {{/if}}
       </button>
     {{/each}}
   </nav>
@@ -1637,6 +1640,220 @@
             <p>{{selectedDomain.description}}</p>
           </div>
         {{/if}}
+
+        <!-- PAINEL DE NOTIFICAÇÕES & AVISOS IMPORTANTES -->
+        <div class="dm-notifications-feed">
+          <div class="dm-notifications-feed__header">
+            <div class="dm-notifications-feed__title-group">
+              <i class="fa-solid fa-bell dm-notifications-feed__bell {{#if unreadNotificationsCount}}has-unread{{/if}}"></i>
+              <h3 class="dm-notifications-feed__title">Avisos & Notificações Importantes</h3>
+              {{#if unreadNotificationsCount}}
+                <span class="dm-notifications-feed__count-badge">{{unreadNotificationsCount}} PENDENTE{{#if (gt unreadNotificationsCount 1)}}S{{/if}}</span>
+              {{/if}}
+            </div>
+            <div class="dm-notifications-feed__controls">
+              {{#if unreadNotificationsCount}}
+                <button type="button" class="dm-btn dm-btn--ghost dm-btn--xs" data-action="dismissAllNotifications" title="Marcar todos os avisos como vistos">
+                  <i class="fa-solid fa-check-double"></i>
+                  <span>Marcar Todos Como Vistos</span>
+                </button>
+              {{/if}}
+              {{#if allNotifications.length}}
+                <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="toggleNotificationsHistory" title="Alternar histórico de avisos">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                  <span>{{#if showNotificationsHistory}}Ocultar Histórico{{else}}Histórico ({{allNotifications.length}}){{/if}}</span>
+                </button>
+              {{/if}}
+              {{#if isGM}}
+                <button type="button" class="dm-btn dm-btn--primary dm-btn--xs" data-action="openAddNotificationModal" title="Emitir aviso oficial do GM para os jogadores">
+                  <i class="fa-solid fa-bullhorn"></i>
+                  <span>Novo Aviso</span>
+                </button>
+              {{/if}}
+            </div>
+          </div>
+
+          <!-- Lista de Notificações Ativas Não Lidas -->
+          {{#if unreadNotifications.length}}
+            <div class="dm-notifications-list">
+              {{#each unreadNotifications}}
+                <div class="dm-notification-card is-{{this.severity}}">
+                  <div class="dm-notification-card__icon">
+                    <i class="{{this.icon}}"></i>
+                  </div>
+                  <div class="dm-notification-card__body">
+                    <div class="dm-notification-card__header-row">
+                      <strong class="dm-notification-card__item-title">{{this.title}}</strong>
+                      <span class="dm-notification-card__timestamp">{{this.timeFormatted}}</span>
+                    </div>
+                    {{#if this.message}}
+                      <p class="dm-notification-card__msg">{{this.message}}</p>
+                    {{/if}}
+                    <div class="dm-notification-card__footer">
+                      {{#if (ne this.targetTab 'overview')}}
+                        <button type="button" class="dm-notification-card__goto-btn" data-action="switchTab" data-tab="{{this.targetTab}}">
+                          <span>Acessar {{this.targetTabLabel}}</span>
+                          <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                      {{/if}}
+                    </div>
+                  </div>
+                  <div class="dm-notification-card__actions">
+                    <button type="button" class="dm-notification-card__btn-seen" data-action="dismissNotification" data-local-id="{{this.localId}}" title="Marcar como visto (remover pendência)">
+                      <i class="fa-solid fa-check"></i>
+                      <span>Visto</span>
+                    </button>
+                    {{#if @root.isGM}}
+                      <button type="button" class="dm-notification-card__btn-del" data-action="deleteNotification" data-local-id="{{this.localId}}" title="Excluir notificação">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    {{/if}}
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          {{else}}
+            <div class="dm-notifications-empty">
+              <i class="fa-solid fa-circle-check dm-notifications-empty__icon"></i>
+              <div class="dm-notifications-empty__text">
+                <strong>Tudo em ordem neste domínio!</strong>
+                <span>Nenhum aviso urgente ou pendência ativa aguardando leitura.</span>
+              </div>
+            </div>
+          {{/if}}
+
+          <!-- Histórico Completo de Notificações -->
+          {{#if showNotificationsHistory}}
+            <div class="dm-notifications-history">
+              <h4 class="dm-notifications-history__title"><i class="fa-solid fa-timeline"></i> Registros de Notificações Anteriores</h4>
+              <div class="dm-notifications-history__list">
+                {{#each allNotifications}}
+                  <div class="dm-notification-card is-history {{#if this.isRead}}is-read{{/if}}">
+                    <div class="dm-notification-card__icon"><i class="{{this.icon}}"></i></div>
+                    <div class="dm-notification-card__body">
+                      <div class="dm-notification-card__header-row">
+                        <strong>{{this.title}}</strong>
+                        <span class="dm-notification-card__timestamp">{{this.timeFormatted}}</span>
+                      </div>
+                      <p class="dm-notification-card__msg">{{this.message}}</p>
+                    </div>
+                    {{#if @root.isGM}}
+                      <div class="dm-notification-card__actions">
+                        <button type="button" class="dm-notification-card__btn-del" data-action="deleteNotification" data-local-id="{{this.localId}}" title="Excluir notificação">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      </div>
+                    {{/if}}
+                  </div>
+                {{/each}}
+              </div>
+            </div>
+          {{/if}}
+        </div>
+
+        <!-- PANORAMA GERAL CONSOLIDADO DO DOMÍNIO -->
+        <div class="dm-overview-panoramas">
+          <!-- Card 1: Finanças & Tesouro -->
+          <div class="dm-panorama-card" data-action="switchTab" data-tab="economy" title="Clique para abrir Gestão Econômica">
+            <div class="dm-panorama-card__header">
+              <div class="dm-panorama-card__title-box">
+                <i class="fa-solid fa-coins dm-panorama-card__icon text-amber"></i>
+                <h4>Finanças & Tesouro</h4>
+              </div>
+              <span class="dm-panorama-card__link"><i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+            <div class="dm-panorama-card__metrics">
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Recursos em Estoque</span>
+                <strong class="dm-panorama-card__val">{{domainStocks.length}} tipos</strong>
+              </div>
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Fluxos Registrados</span>
+                <strong class="dm-panorama-card__val">{{domainFlows.length}} ativos</strong>
+              </div>
+            </div>
+            <span class="dm-panorama-card__footnote">{{#if domainFlows.length}}Balanço ativo por ciclo de tempo{{else}}Nenhum fluxo cadastrado{{/if}}</span>
+          </div>
+
+          <!-- Card 2: Obras & Infraestrutura -->
+          <div class="dm-panorama-card" data-action="switchTab" data-tab="projects" title="Clique para abrir Obras & Projetos">
+            <div class="dm-panorama-card__header">
+              <div class="dm-panorama-card__title-box">
+                <i class="fa-solid fa-trowel-bricks dm-panorama-card__icon text-cyan"></i>
+                <h4>Obras & Projetos</h4>
+              </div>
+              <span class="dm-panorama-card__link"><i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+            <div class="dm-panorama-card__metrics">
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Obras Totais</span>
+                <strong class="dm-panorama-card__val">{{domainProjects.length}}</strong>
+              </div>
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Em Construção</span>
+                <strong class="dm-panorama-card__val">{{activeProjectsCount}}</strong>
+              </div>
+            </div>
+            {{#if domainProjects.length}}
+              <div class="dm-panorama-card__mini-list">
+                {{#each domainProjects}}
+                  {{#unless this.isCompleted}}
+                    <div class="dm-panorama-card__progress-row">
+                      <span class="dm-panorama-card__pname">{{this.name}}</span>
+                      <span class="dm-panorama-card__ppct">{{this.work.pct}}%</span>
+                    </div>
+                  {{/unless}}
+                {{/each}}
+              </div>
+            {{else}}
+              <span class="dm-panorama-card__footnote">Nenhuma obra cadastrada</span>
+            {{/if}}
+          </div>
+
+          <!-- Card 3: Censo & Sustentação -->
+          <div class="dm-panorama-card" data-action="switchTab" data-tab="people" title="Clique para abrir População & Notáveis">
+            <div class="dm-panorama-card__header">
+              <div class="dm-panorama-card__title-box">
+                <i class="fa-solid fa-users dm-panorama-card__icon text-violet"></i>
+                <h4>Censo & População</h4>
+              </div>
+              <span class="dm-panorama-card__link"><i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+            <div class="dm-panorama-card__metrics">
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Habitantes Totais</span>
+                <strong class="dm-panorama-card__val">{{totalPop}}</strong>
+              </div>
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Notáveis & Líderes</span>
+                <strong class="dm-panorama-card__val">{{notables.length}}</strong>
+              </div>
+            </div>
+            <span class="dm-panorama-card__footnote">{{groups.length}} grupo(s) populacional(is) registrado(s)</span>
+          </div>
+
+          <!-- Card 4: Defesa & Diplomacia -->
+          <div class="dm-panorama-card" data-action="switchTab" data-tab="diplomacy" title="Clique para abrir Diplomacia & Acordos">
+            <div class="dm-panorama-card__header">
+              <div class="dm-panorama-card__title-box">
+                <i class="fa-solid fa-shield-halved dm-panorama-card__icon text-emerald"></i>
+                <h4>Segurança & Diplomacia</h4>
+              </div>
+              <span class="dm-panorama-card__link"><i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+            <div class="dm-panorama-card__metrics">
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Defesa da Base</span>
+                <strong class="dm-panorama-card__val">DEF {{selectedDomain.defenseRating}}</strong>
+              </div>
+              <div class="dm-panorama-card__metric-item">
+                <span class="dm-panorama-card__label">Tratados Ativos</span>
+                <strong class="dm-panorama-card__val">{{relations.length}}</strong>
+              </div>
+            </div>
+            <span class="dm-panorama-card__footnote">Guarnição militar: {{selectedDomain.securityGuards}} guardas</span>
+          </div>
+        </div>
 
         {{#if activeConditions.length}}
           <div class="dm-section-block">
@@ -2108,3 +2325,49 @@
     {{/if}}
   </div>
 </div>
+
+{{#if isNotificationModalOpen}}
+  <div class="dm-modal-backdrop">
+    <div class="dm-modal dm-modal--sm">
+      <header class="dm-modal__header">
+        <h3><i class="fa-solid fa-bullhorn text-crimson"></i> Emitir Notificação Oficial</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelNotificationModal"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="dm-modal__body">
+        <div class="dm-form-group">
+          <label for="dm-notif-title">Título do Aviso *</label>
+          <input type="text" id="dm-notif-title" class="dm-input" placeholder="Ex: Ataque Iminente, Crise de Fome, Decreto..." required />
+        </div>
+        <div class="dm-form-group">
+          <label for="dm-notif-severity">Severidade / Nível de Urgência</label>
+          <select id="dm-notif-severity" class="dm-select">
+            <option value="info">Informativo (Azul)</option>
+            <option value="warning">Atenção / Alerta (Amarelo)</option>
+            <option value="critical">Crítico / Urgente (Vermelho)</option>
+            <option value="success">Comemoração / Sucesso (Verde)</option>
+          </select>
+        </div>
+        <div class="dm-form-group">
+          <label for="dm-notif-target-tab">Vincular a uma Seção (Opcional)</label>
+          <select id="dm-notif-target-tab" class="dm-select">
+            <option value="overview">Visão Geral</option>
+            <option value="economy">Economia & Finanças</option>
+            <option value="projects">Obras & Projetos</option>
+            <option value="people">População & Notáveis</option>
+            <option value="diplomacy">Diplomacia & Acordos</option>
+            <option value="intel">Intel & Segredos</option>
+            <option value="history">Crônicas & Histórico</option>
+          </select>
+        </div>
+        <div class="dm-form-group">
+          <label for="dm-notif-message">Mensagem / Ordens Oficiais</label>
+          <textarea id="dm-notif-message" class="dm-textarea" rows="4" placeholder="Descreva a mensagem ou ordem oficial que os jogadores devem ler na Visão Geral..."></textarea>
+        </div>
+      </div>
+      <footer class="dm-modal__footer">
+        <button type="button" class="dm-btn dm-btn--ghost" data-action="cancelNotificationModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitNotification"><i class="fa-solid fa-paper-plane"></i> Publicar Aviso</button>
+      </footer>
+    </div>
+  </div>
+{{/if}}
