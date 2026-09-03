@@ -1,85 +1,83 @@
 <div class="dm-shell" data-domain-manager-shell data-section="{{activeSection}}">
-  {{#if isHudTransitionActive}}
   <div class="dm-hud-transition-overlay dm-hud-transition-overlay--fullscreen" aria-hidden="true">
-    <!-- Top HUD Bar Telemetry (Systems / Inventory / Database) -->
-    <div class="dm-hud-transition__top-bar">
-      <div class="dm-hud-transition__sys-pill is-active">SYSTEMS</div>
-      <div class="dm-hud-transition__sys-pill">INVENTORY</div>
-      <div class="dm-hud-transition__sys-pill">DATABASE</div>
-      <div class="dm-hud-transition__sys-meta">HEX: 0x3F81 // KERNEL v2.4.9 · STAMP: 2414761732</div>
+  <!-- Top HUD Bar Telemetry (Systems / Inventory / Database) -->
+  <div class="dm-hud-transition__top-bar">
+    <div class="dm-hud-transition__sys-pill is-active">SYSTEMS</div>
+    <div class="dm-hud-transition__sys-pill">INVENTORY</div>
+    <div class="dm-hud-transition__sys-pill">DATABASE</div>
+    <div class="dm-hud-transition__sys-meta">HEX: 0x3F81 // KERNEL v2.4.9 · STAMP: 2414761732</div>
+  </div>
+
+  <!-- Scanlines & Linhas Táticas de Fundo -->
+  <div class="dm-hud-transition__scanlines"></div>
+  <div class="dm-hud-transition__grid"></div>
+  <div class="dm-hud-transition__glitch-beam"></div>
+
+  <!-- Radar Tático Central com Coordenadas -->
+  <div class="dm-hud-transition__radar-wrap">
+    <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--h"></div>
+    <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--v"></div>
+    <div class="dm-hud-transition__radar-circle"></div>
+    <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--lg"></div>
+    <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--xl"></div>
+    <div class="dm-hud-transition__radar-sweep"></div>
+    <div class="dm-hud-transition__radar-coords">
+      <span>LAT: 44.1209 // LON: -122.9014</span>
+      <span>AZIMUTH: 042° // RANGE: 100KM</span>
     </div>
+  </div>
 
-    <!-- Scanlines & Linhas Táticas de Fundo -->
-    <div class="dm-hud-transition__scanlines"></div>
-    <div class="dm-hud-transition__grid"></div>
-    <div class="dm-hud-transition__glitch-beam"></div>
+  <!-- Banner Central Tático (Fiel a SECTOR 34) -->
+  <div class="dm-hud-transition__sector-banner">
+    <span class="dm-hud-transition__sector-accent"></span>
+    <span class="dm-hud-transition__sector-title">{{sectorCallout}}</span>
+  </div>
 
-    <!-- Radar Tático Central com Coordenadas -->
-    <div class="dm-hud-transition__radar-wrap">
-      <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--h"></div>
-      <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--v"></div>
-      <div class="dm-hud-transition__radar-circle"></div>
-      <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--lg"></div>
-      <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--xl"></div>
-      <div class="dm-hud-transition__radar-sweep"></div>
-      <div class="dm-hud-transition__radar-coords">
-        <span>LAT: 44.1209 // LON: -122.9014</span>
-        <span>AZIMUTH: 042° // RANGE: 100KM</span>
+  <!-- Painéis Inferiores de Telemetria e Código Subindo -->
+  <div class="dm-hud-transition__bottom-panels">
+    <!-- Código Monospace com Linhas e Hex -->
+    <div class="dm-hud-transition__code-panel">
+      <div class="dm-hud-transition__code-header">
+        <span>SYS_ROUTINE // {{sectorIndex}} [SEC_MEM]</span>
+        <span class="text-crimson">{{selectedDomain.name}}</span>
+      </div>
+      <div class="dm-hud-transition__code-stream">
+        <div class="dm-code-line"><span class="dm-line-no">01</span> def __init__(sector="{{activeTab}}", auth=MAX):</div>
+        <div class="dm-code-line"><span class="dm-line-no">02</span>     buffer = alloc_kernel_mem(0x7FFF)</div>
+        <div class="dm-code-line"><span class="dm-line-no">03</span>     verify_encryption_handshake(auth="CONNECTED")</div>
+        <div class="dm-code-line"><span class="dm-line-no">04</span>     load_tactical_assets("{{selectedDomain.name}}")</div>
+        <div class="dm-code-line"><span class="dm-line-no">05</span>     decrypting_sector_payload(stream=1024) -> OK</div>
+        <div class="dm-code-line"><span class="dm-line-no">06</span>     synchronize_telemetry_stream(rate=1.0)</div>
+        <div class="dm-code-line"><span class="dm-line-no">07</span>     render_tactical_viewport(layer="DOM_HUD")</div>
+        <div class="dm-code-line"><span class="dm-line-no">08</span>     return status.READY_SYNCHRONIZED</div>
+      </div>
+      <div class="dm-hud-transition__tag">
+        <span class="dm-hud-transition__tag-accent"></span>
+        <span>INITIALIZING...</span>
       </div>
     </div>
 
-    <!-- Banner Central Tático (Fiel a SECTOR 34) -->
-    <div class="dm-hud-transition__sector-banner">
-      <span class="dm-hud-transition__sector-accent"></span>
-      <span class="dm-hud-transition__sector-title">{{sectorCallout}}</span>
-    </div>
-
-    <!-- Painéis Inferiores de Telemetria e Código Subindo -->
-    <div class="dm-hud-transition__bottom-panels">
-      <!-- Código Monospace com Linhas e Hex -->
-      <div class="dm-hud-transition__code-panel">
-        <div class="dm-hud-transition__code-header">
-          <span>SYS_ROUTINE // {{sectorIndex}} [SEC_MEM]</span>
-          <span class="text-crimson">{{selectedDomain.name}}</span>
-        </div>
-        <div class="dm-hud-transition__code-stream">
-          <div class="dm-code-line"><span class="dm-line-no">01</span> def __init__(sector="{{activeTab}}", auth=MAX):</div>
-          <div class="dm-code-line"><span class="dm-line-no">02</span>     buffer = alloc_kernel_mem(0x7FFF)</div>
-          <div class="dm-code-line"><span class="dm-line-no">03</span>     verify_encryption_handshake(auth="CONNECTED")</div>
-          <div class="dm-code-line"><span class="dm-line-no">04</span>     load_tactical_assets("{{selectedDomain.name}}")</div>
-          <div class="dm-code-line"><span class="dm-line-no">05</span>     decrypting_sector_payload(stream=1024) -> OK</div>
-          <div class="dm-code-line"><span class="dm-line-no">06</span>     synchronize_telemetry_stream(rate=1.0)</div>
-          <div class="dm-code-line"><span class="dm-line-no">07</span>     render_tactical_viewport(layer="DOM_HUD")</div>
-          <div class="dm-code-line"><span class="dm-line-no">08</span>     return status.READY_SYNCHRONIZED</div>
-        </div>
-        <div class="dm-hud-transition__tag">
-          <span class="dm-hud-transition__tag-accent"></span>
-          <span>INITIALIZING...</span>
-        </div>
+    <!-- Matriz Binária com Destaques em Vermelho -->
+    <div class="dm-hud-transition__binary-panel">
+      <div class="dm-hud-transition__code-header">
+        <span>DATA_MATRIX // HEX_DUMP</span>
+        <span class="text-amber">STREAM_ONLINE</span>
       </div>
-
-      <!-- Matriz Binária com Destaques em Vermelho -->
-      <div class="dm-hud-transition__binary-panel">
-        <div class="dm-hud-transition__code-header">
-          <span>DATA_MATRIX // HEX_DUMP</span>
-          <span class="text-amber">STREAM_ONLINE</span>
-        </div>
-        <div class="dm-hud-transition__binary-stream">
-          <div class="dm-bin-line">00101011 00110111 01000110 01111011 [0x8FA1]</div>
-          <div class="dm-bin-line">11110110 11000111 00110101 01110110 [0x00B2]</div>
-          <div class="dm-bin-line">10101100 <span class="text-crimson">00010011 00101001</span> 10011011 [CRIT_BYTE]</div>
-          <div class="dm-bin-line">00011011 11011011 11011011 00011100 [SEC_AUTH]</div>
-          <div class="dm-bin-line">10101011 10110010 10110001 00110010 [SYNC_OK]</div>
-          <div class="dm-bin-line">01110011 01110100 01101111 01101110 [CHIP_CLR]</div>
-        </div>
-        <div class="dm-hud-transition__tag">
-          <span class="dm-hud-transition__tag-accent"></span>
-          <span>DEBUGGING // OK</span>
-        </div>
+      <div class="dm-hud-transition__binary-stream">
+        <div class="dm-bin-line">00101011 00110111 01000110 01111011 [0x8FA1]</div>
+        <div class="dm-bin-line">11110110 11000111 00110101 01110110 [0x00B2]</div>
+        <div class="dm-bin-line">10101100 <span class="text-crimson">00010011 00101001</span> 10011011 [CRIT_BYTE]</div>
+        <div class="dm-bin-line">00011011 11011011 11011011 00011100 [SEC_AUTH]</div>
+        <div class="dm-bin-line">10101011 10110010 10110001 00110010 [SYNC_OK]</div>
+        <div class="dm-bin-line">01110011 01110100 01101111 01101110 [CHIP_CLR]</div>
+      </div>
+      <div class="dm-hud-transition__tag">
+        <span class="dm-hud-transition__tag-accent"></span>
+        <span>DEBUGGING // OK</span>
       </div>
     </div>
   </div>
-{{/if}}
+</div>
 
   <div class="dm-shell__layout">
     <nav class="dm-rail" aria-label="Navegação Global">
@@ -198,11 +196,11 @@
         </div>
       </div>
     {{else}}
-      <!-- MODO RECOLHIDO: Botão de expandir de volta -->
+      <!-- MODO RECOLHIDO: Botão único de expansão alinhado perfeitamente -->
       <div class="dm-sidebar__collapsed-header">
         <button
           type="button"
-          class="dm-icon-btn dm-icon-btn--primary"
+          class="dm-icon-btn dm-icon-btn--primary dm-sidebar__expand-btn"
           data-action="toggleSidebar"
           title="Expandir Painel Lateral"
           aria-label="Expandir Painel Lateral"
@@ -247,7 +245,7 @@
     </nav>
   {{/if}}
 
-  <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO (Exibida quando expandida) -->
+  <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO -->
   {{#if isSidebarOpen}}
     <div class="dm-sidebar__domains-section">
       <div class="dm-sidebar__section-divider">
@@ -311,7 +309,6 @@
                 class="dm-tree-item {{#if isSelected}}is-selected{{/if}} {{#if isFolder}}dm-tree-item--folder{{else}}dm-tree-item--leaf{{/if}}"
                 data-uuid="{{uuid}}"
                 data-depth="{{depth}}"
-                style="--depth: {{depth}};"
                 role="treeitem"
                 tabindex="0"
               >
@@ -326,7 +323,11 @@
                     <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
                   </button>
                 {{else}}
-                  <span class="dm-tree-item__connector"></span>
+                  {{#if (gt depth 0)}}
+                    <span class="dm-tree-branch">└─</span>
+                  {{else}}
+                    <span class="dm-tree-spacer"></span>
+                  {{/if}}
                 {{/if}}
 
                 <div class="dm-tree-item__content" data-action="selectDomain" data-uuid="{{uuid}}">
@@ -368,15 +369,6 @@
       <main class="dm-shell__main">
         <header class="dm-workspace-header dm-hud-header">
   <div class="dm-workspace-header__main">
-    <button
-      type="button"
-      class="dm-icon-btn dm-btn-sidebar-toggle"
-      data-action="toggleSidebar"
-      title="{{#if isSidebarOpen}}Recolher Painel Lateral{{else}}Expandir Painel Lateral{{/if}}"
-      aria-label="Alternar Painel Lateral"
-    >
-      <i class="fa-solid {{#if isSidebarOpen}}fa-bars-staggered{{else}}fa-bars{{/if}}"></i>
-    </button>
 
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">

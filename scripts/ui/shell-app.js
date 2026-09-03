@@ -403,6 +403,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   activeNotableDossierLocalId = null;
   selectedDossierSkillId = null;
   isEditingNotableStatsModal = false;
+  _shouldAnimateNextRender = false;
   isHudTransitionActive = false;
   static #hudTransitionTimeout = null;
 
@@ -583,7 +584,20 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   _onRender(context, options) {
-    super._onRender?.(context, options);
+    if (typeof super._onRender === "function") {
+      super._onRender(context, options);
+    }
+
+    if (this._shouldAnimateNextRender) {
+      this._shouldAnimateNextRender = false;
+      const overlay = this.element?.querySelector(".dm-hud-transition-overlay");
+      if (overlay) {
+        overlay.classList.remove("is-active");
+        void overlay.offsetWidth; // Força reflow para reiniciar keyframes do frame zero
+        overlay.classList.add("is-active");
+      }
+    }
+super._onRender?.(context, options);
 
     if (!this.element) return;
 
@@ -697,6 +711,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onSelectDomain(event, target) {
+    this._shouldAnimateNextRender = true;
     const uuid = getActionAttr(target, "uuid");
     DomainManagerShellApp.#triggerHudTransition();
     this.selectedDomainUuid = uuid || null;
@@ -725,6 +740,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onSwitchTab(event, target) {
+    this._shouldAnimateNextRender = true;
     const tab = target.dataset.tab;
     DomainManagerShellApp.#triggerHudTransition();
     if (tab) {
@@ -2765,6 +2781,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
      Dossiê Tático & Bio-Monitor do Notável (Inspirado em Cyberpunk HUD)
      ------------------------------------------------------------------------ */
   static #onOpenNotableDossier(event, target) {
+    this._shouldAnimateNextRender = true;
     const localId = getActionAttr(target, "local-id");
     if (!localId) return;
     this.activeNotableDossierLocalId = localId;
@@ -2773,6 +2790,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onCloseNotableDossier() {
+    this._shouldAnimateNextRender = true;
     DomainManagerShellApp.#triggerHudTransition();
     this.activeNotableDossierLocalId = null;
     this.selectedDossierSkillId = null;

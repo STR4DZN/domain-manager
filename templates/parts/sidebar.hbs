@@ -32,11 +32,11 @@
         </div>
       </div>
     {{else}}
-      <!-- MODO RECOLHIDO: Botão de expandir de volta -->
+      <!-- MODO RECOLHIDO: Botão único de expansão alinhado perfeitamente -->
       <div class="dm-sidebar__collapsed-header">
         <button
           type="button"
-          class="dm-icon-btn dm-icon-btn--primary"
+          class="dm-icon-btn dm-icon-btn--primary dm-sidebar__expand-btn"
           data-action="toggleSidebar"
           title="Expandir Painel Lateral"
           aria-label="Expandir Painel Lateral"
@@ -81,7 +81,7 @@
     </nav>
   {{/if}}
 
-  <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO (Exibida quando expandida) -->
+  <!-- ÁRVORE DE DOMÍNIOS E PASTAS DO MUNDO -->
   {{#if isSidebarOpen}}
     <div class="dm-sidebar__domains-section">
       <div class="dm-sidebar__section-divider">
@@ -145,7 +145,6 @@
                 class="dm-tree-item {{#if isSelected}}is-selected{{/if}} {{#if isFolder}}dm-tree-item--folder{{else}}dm-tree-item--leaf{{/if}}"
                 data-uuid="{{uuid}}"
                 data-depth="{{depth}}"
-                style="--depth: {{depth}};"
                 role="treeitem"
                 tabindex="0"
               >
@@ -160,7 +159,11 @@
                     <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
                   </button>
                 {{else}}
-                  <span class="dm-tree-item__connector"></span>
+                  {{#if (gt depth 0)}}
+                    <span class="dm-tree-branch">└─</span>
+                  {{else}}
+                    <span class="dm-tree-spacer"></span>
+                  {{/if}}
                 {{/if}}
 
                 <div class="dm-tree-item__content" data-action="selectDomain" data-uuid="{{uuid}}">
