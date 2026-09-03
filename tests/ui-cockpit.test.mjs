@@ -145,6 +145,26 @@ test("todos os templates da interface existem e são válidos", () => {
     assert.equal(fs.existsSync(fullPath), true, `Template ausente: ${tpl}`);
     const content = fs.readFileSync(fullPath, "utf8");
     assert.ok(content.length > 20, `Template vazio ou muito curto: ${tpl}`);
+
+    // Validação estrita de sintaxe de blocos Handlebars (emparelhamento de tags)
+    const lines = content.split("\n");
+    const stack = [];
+    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+      const line = lines[lineNum];
+      const regex = /\{\{#([a-zA-Z0-9_-]+)[^}]*\}\}|\{\{\/([a-zA-Z0-9_-]+)\}\}/g;
+      let m;
+      while ((m = regex.exec(line)) !== null) {
+        if (m[1]) {
+          stack.push({ tag: m[1], line: lineNum + 1 });
+        } else if (m[2]) {
+          const closing = m[2];
+          const opening = stack.pop();
+          assert.ok(opening, `[${tpl}] Linha ${lineNum + 1}: Tag de fechamento sem abertura: {{/${closing}}}`);
+          assert.equal(opening.tag, closing, `[${tpl}] Linha ${lineNum + 1}: Mismatch! Abriu {{#${opening.tag}}} (L${opening.line}) e fechou com {{/${closing}}}`);
+        }
+      }
+    }
+    assert.equal(stack.length, 0, `[${tpl}] Tags não fechadas: ${stack.map((s) => s.tag).join(", ")}`);
   }
 });
 

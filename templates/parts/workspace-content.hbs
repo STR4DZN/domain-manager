@@ -296,7 +296,7 @@
               <label><i class="fa-solid fa-wheat-awn text-amber"></i> Sustento Automático:</label>
               <select class="dm-select dm-input--compact" id="dm-edit-domain-sustenance-enabled">
                 <option value="true" {{#if selectedDomain.sustenanceEnabled}}selected{{/if}}>Ativado (Consome Recursos)</option>
-                <option value="false" {{#unless selectedDomain.sustenanceEnabled}}selected{{/if}}>Desativado (Sem Consumo)</option>
+                <option value="false" {{#unless selectedDomain.sustenanceEnabled}}selected{{/unless}}>Desativado (Sem Consumo)</option>
               </select>
             </div>
             <div class="dm-form-group">
@@ -1335,7 +1335,7 @@
               <label>Status:</label>
               <select class="dm-select dm-input--compact" id="dm-edit-flow-active">
                 <option value="true" {{#if editingFlow.active}}selected{{/if}}>Ativo</option>
-                <option value="false" {{#unless editingFlow.active}}selected{{/if}}>Inativo</option>
+                <option value="false" {{#unless editingFlow.active}}selected{{/unless}}>Inativo</option>
               </select>
             </div>
           </div>
