@@ -1957,31 +1957,22 @@
 
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
 <div class="dm-workspace-content">
-  <!-- SUB-NAVEGAÇÃO TÁTICA (Exibida quando dentro de uma sub-seção) -->
-  {{#unless (eq activeTab 'overview')}}
-    <div class="dm-hub-subnav">
-      <div class="dm-hub-subnav__left">
-        <button type="button" class="dm-btn dm-btn--outline dm-btn--xs dm-hub-back-btn" data-action="switchTab" data-tab="overview" title="Retornar à Central de Comando">
-          <i class="fa-solid fa-arrow-left"></i>
-          <span>Voltar ao Hub</span>
-        </button>
-        <div class="dm-hub-subnav__title-group">
-          <span class="dm-hub-subnav__index">{{activeTabMeta.index}}</span>
-          <h2 class="dm-hub-subnav__title">{{activeTabMeta.title}}</h2>
-        </div>
-      </div>
-      <div class="dm-hub-subnav__quick-chips">
-        {{#each navigationHubItems}}
-          {{#unless (eq this.tab 'overview')}}
-            <button type="button" class="dm-hub-chip {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}" data-action="switchTab" data-tab="{{this.tab}}" title="{{this.title}}">
-              <i class="{{this.icon}}"></i>
-              <span>{{this.shortTitle}}</span>
-            </button>
-          {{/unless}}
-        {{/each}}
-      </div>
-    </div>
-  {{/unless}}
+  <!-- BARRA DE NAVEGAÇÃO TÁTICA INDEXADA (Rápida, compacta e sem scroll lateral) -->
+  <nav class="dm-tactical-nav" aria-label="Navegação Tática do Domínio">
+    {{#each navigationHubItems}}
+      <button
+        type="button"
+        class="dm-tactical-nav__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
+        data-action="switchTab"
+        data-tab="{{this.tab}}"
+        title="{{this.title}}"
+      >
+        <span class="dm-tactical-nav__num">{{this.index}}</span>
+        <i class="{{this.icon}}"></i>
+        <span class="dm-tactical-nav__label">{{this.shortTitle}}</span>
+      </button>
+    {{/each}}
+  </nav>
 
   <!-- Painéis de Conteúdo -->
   <div class="dm-tab-panels dm-scrollable">

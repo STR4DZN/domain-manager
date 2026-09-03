@@ -3106,9 +3106,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "FINANÇAS & TESOURO",
         shortTitle: "Economia",
         icon: "fa-solid fa-coins",
-        status: `${domainStocks?.length || 0} ESTOQUES · ${domainFlows?.length || 0} FLUXOS`,
-        statusClass: "active",
-        detail: "Gestão de Recursos, Sustento e Fluxo de Caixa"
+        status: (domainStocks?.length || domainFlows?.length) ? `${domainStocks?.length || 0} ESTOQUES · ${domainFlows?.length || 0} FLUXOS` : "SEM MOVIMENTAÇÃO",
+        statusClass: (domainStocks?.length || domainFlows?.length) ? "active" : "neutral",
+        detail: "Gestão de Recursos, Sustento e Balanço"
       },
       {
         index: "03",
@@ -3116,9 +3116,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "OBRAS & PROJETOS",
         shortTitle: "Obras",
         icon: "fa-solid fa-trowel-bricks",
-        status: `${activeProjectsCount} EM ANDAMENTO`,
+        status: activeProjectsCount > 0 ? `${activeProjectsCount} EM ANDAMENTO` : "NENHUMA ATIVA",
         statusClass: activeProjectsCount > 0 ? "active" : "neutral",
-        detail: `${domainProjects?.length || 0} Obras Totais Cadastradas`
+        detail: `${domainProjects?.length || 0} Obras Cadastradas`
       },
       {
         index: "04",
@@ -3126,8 +3126,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "POPULAÇÃO & NOTÁVEIS",
         shortTitle: "População",
         icon: "fa-solid fa-users",
-        status: `${totalPop.toLocaleString('pt-BR')} HABITANTES`,
-        statusClass: "active",
+        status: totalPop > 0 ? `${totalPop.toLocaleString('pt-BR')} HABITANTES` : "SEM POPULAÇÃO",
+        statusClass: totalPop > 0 ? "active" : "neutral",
         detail: `${groups?.length || 0} Grupos · ${notables?.length || 0} Notáveis`
       },
       {
@@ -3136,9 +3136,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "DIPLOMACIA & ACORDOS",
         shortTitle: "Diplomacia",
         icon: "fa-solid fa-handshake",
-        status: `${relations?.length || 0} RELAÇÕES`,
+        status: (relations?.length || 0) > 0 ? `${relations?.length} RELAÇÕES` : "ISOLADO",
         statusClass: (relations?.length || 0) > 0 ? "active" : "neutral",
-        detail: "Tratados, Pactos e Políticas Externas"
+        detail: "Tratados, Pactos e Relações Externas"
       },
       {
         index: "06",
@@ -3146,9 +3146,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "INTEL & SEGREDOS",
         shortTitle: "Intel",
         icon: "fa-solid fa-user-secret",
-        status: `${intelList?.length || 0} RELATÓRIOS`,
+        status: (intelList?.length || 0) > 0 ? `${intelList?.length} RELATÓRIOS` : "SEM SEGREDOS",
         statusClass: (intelList?.length || 0) > 0 ? "active" : "neutral",
-        detail: "Informações Confidenciais e Vigilância"
+        detail: "Informações Confidenciais e Espionagem"
       },
       {
         index: "07",
@@ -3156,9 +3156,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         title: "CRÔNICAS & HISTÓRICO",
         shortTitle: "Histórico",
         icon: "fa-solid fa-feather-pointed",
-        status: `${fullHistory?.length || 0} REGISTROS`,
-        statusClass: "active",
-        detail: "Linha do Tempo e Registros de Ticks"
+        status: (fullHistory?.length || 0) > 0 ? `${fullHistory?.length} REGISTROS` : "SEM REGISTROS",
+        statusClass: (fullHistory?.length || 0) > 0 ? "active" : "neutral",
+        detail: "Linha do Tempo e Memória do Domínio"
       }
     ];
 

@@ -868,13 +868,12 @@ test("Auditoria Geral: 01. NAVIGATION HUB e Sub-Navegação Tática Integrada", 
   assert.strictEqual(contentHbs.includes('01. NAVIGATION HUB'), true, "01. NAVIGATION HUB deve estar presente no template");
   assert.strictEqual(contentHbs.includes('dm-hub__table'), true, "dm-hub__table deve existir no template");
 
-  // 3. A sub-navegação com botão de retorno 'Voltar ao Hub' está presente
-  assert.strictEqual(contentHbs.includes('dm-hub-subnav'), true, "dm-hub-subnav deve estar presente no template");
-  assert.strictEqual(contentHbs.includes('Voltar ao Hub'), true, "Botão Voltar ao Hub deve existir no subnav");
+  // 3. A barra tática de navegação dm-tactical-nav está presente
+  assert.strictEqual(contentHbs.includes('dm-tactical-nav'), true, "dm-tactical-nav deve estar presente no template");
 
-  // 4. Os estilos CSS do hub e subnav existem
+  // 4. Os estilos CSS do hub e nav existem
   const css = fs.readFileSync("styles/shell.css", "utf8");
   assert.strictEqual(css.includes('.dm-hub'), true, "Estilo .dm-hub deve existir em shell.css");
-  assert.strictEqual(css.includes('.dm-hub-subnav'), true, "Estilo .dm-hub-subnav deve existir em shell.css");
+  assert.strictEqual(css.includes('.dm-tactical-nav'), true, "Estilo .dm-tactical-nav deve existir em shell.css");
   assert.strictEqual(css.includes('.dm-hub__pill'), true, "Estilo .dm-hub__pill deve existir em shell.css");
 });
