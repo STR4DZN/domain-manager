@@ -26,7 +26,7 @@ test("manifesto carrega apenas o shell visual novo", () => {
 
   assert.deepEqual(manifest.esmodules, ["scripts/main.js"]);
   assert.deepEqual(manifest.styles, ["styles/shell.css"]);
-  assert.equal(manifest.version, "0.1.0-dev.85");
+  assert.equal(manifest.version, "0.1.0-dev.86");
 });
 
 test("interface antiga não está presente", () => {

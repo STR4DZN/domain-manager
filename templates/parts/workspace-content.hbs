@@ -50,7 +50,7 @@
         <h3><i class="fa-solid fa-plus-circle text-emerald"></i> Criar Novo Domínio / Base</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelCreateDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Defina a identidade inicial do domínio. Ele será vinculado à árvore hierárquica na profundidade correta.</p>
+      <p class="dm-dialog-desc">Defina a identidade inicial, donos/jogadores controladores e localização na árvore hierárquica.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
           <label>Nome do Domínio / Base *</label>
@@ -71,6 +71,33 @@
             </select>
           </div>
         </div>
+
+        <div class="dm-form-group">
+          <label>Brasão / Imagem / GIF (Arquivo ou Link URL):</label>
+          <div class="dm-file-input-group">
+            <input type="text" class="dm-input" id="dm-new-domain-crest" placeholder="caminho/brasao.webp ou https://.../gif" />
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-new-domain-crest">
+              <i class="fa-solid fa-file-import"></i> Arquivo
+            </button>
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Jogadores Controladores / Donos do Domínio:</label>
+          <div class="dm-player-list">
+            {{#if worldPlayers.length}}
+              {{#each worldPlayers}}
+                <label class="dm-player-checkbox">
+                  <input type="checkbox" class="dm-create-domain-controller" value="{{id}}" />
+                  <span>{{name}}</span>
+                </label>
+              {{/each}}
+            {{else}}
+              <span class="dm-text-muted">Nenhum jogador comum cadastrado no mundo.</span>
+            {{/if}}
+          </div>
+        </div>
+
         <div class="dm-form-group">
           <label>Tags (separadas por vírgula)</label>
           <input type="text" class="dm-input" id="dm-new-domain-tags" placeholder="Ex: capital, mineração, fronteira" />
@@ -104,7 +131,7 @@
         <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Domínio: {{selectedDomain.name}}</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelEditDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Altere o nome, a categoria, natureza, tags, defesa e hierarquia deste domínio.</p>
+      <p class="dm-dialog-desc">Altere a identidade, brasão, jogadores donos, pontuação de defesa e hierarquia territorial.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
           <label>Nome do Domínio / Base *</label>
@@ -125,6 +152,33 @@
             </select>
           </div>
         </div>
+
+        <div class="dm-form-group">
+          <label>Brasão / Imagem / GIF (Arquivo ou Link URL):</label>
+          <div class="dm-file-input-group">
+            <input type="text" class="dm-input" id="dm-edit-domain-crest" value="{{selectedDomain.crest}}" placeholder="caminho/brasao.webp ou link..." />
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-domain-crest">
+              <i class="fa-solid fa-file-import"></i> Arquivo
+            </button>
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Jogadores Controladores / Donos do Domínio:</label>
+          <div class="dm-player-list">
+            {{#if worldPlayers.length}}
+              {{#each worldPlayers}}
+                <label class="dm-player-checkbox">
+                  <input type="checkbox" class="dm-edit-domain-controller" value="{{id}}" {{#if isSelected}}checked{{/if}} />
+                  <span>{{name}}</span>
+                </label>
+              {{/each}}
+            {{else}}
+              <span class="dm-text-muted">Nenhum jogador comum cadastrado no mundo.</span>
+            {{/if}}
+          </div>
+        </div>
+
         <div class="dm-form-row">
           <div class="dm-form-group">
             <label>Defesa Base (Rating)</label>
@@ -356,6 +410,7 @@
   </div>
 {{/if}}
 
+<!-- MODAL: NOVA OBRA / PROJETO -->
 {{#if isProjectModalOpen}}
   <div class="dm-overlay-panel">
     <div class="dm-dialog-card">
@@ -363,11 +418,11 @@
         <h3><i class="fa-solid fa-trowel-bricks text-amber"></i> Iniciar Nova Obra / Projeto</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelProjectModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Cadastre um empreendimento arquitetônico, militar ou de infraestrutura.</p>
+      <p class="dm-dialog-desc">Cadastre um empreendimento com nível (Tier), imagem/GIF e modificadores que serão ativados após a conclusão.</p>
       <div class="dm-form-grid">
         <div class="dm-form-group">
           <label>Nome do Projeto *</label>
-          <input type="text" class="dm-input" id="dm-project-name" placeholder="Ex: Construção do Escudo Planetário, Expansão Portuária..." />
+          <input type="text" class="dm-input" id="dm-project-name" placeholder="Ex: Escudo Defletor Orbital, Porto Estelar, Mina de Cristais..." />
         </div>
         <div class="dm-form-row">
           <div class="dm-form-group">
@@ -375,22 +430,158 @@
             <input type="text" class="dm-input" id="dm-project-category" value="infraestrutura" />
           </div>
           <div class="dm-form-group">
+            <label>Nível / Tier Inicial:</label>
+            <input type="number" class="dm-input" id="dm-project-tier" min="1" max="10" value="1" />
+          </div>
+        </div>
+        <div class="dm-form-row">
+          <div class="dm-form-group">
             <label>Trabalho Total Necessário:</label>
             <input type="number" class="dm-input" id="dm-project-work" value="100" />
           </div>
+          <div class="dm-form-group">
+            <label>Taxa de Avanço por Tick:</label>
+            <input type="number" class="dm-input" id="dm-project-rate" value="10" />
+          </div>
         </div>
+
         <div class="dm-form-group">
-          <label>Taxa de Progresso por Tick:</label>
-          <input type="number" class="dm-input" id="dm-project-rate" value="10" />
+          <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
+          <div class="dm-file-input-group">
+            <input type="text" class="dm-input" id="dm-project-img" placeholder="caminho/projeto.webp ou link..." />
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-project-img">
+              <i class="fa-solid fa-file-import"></i> Arquivo
+            </button>
+          </div>
         </div>
+
         <div class="dm-form-group">
-          <label>Descrição do Projeto:</label>
-          <textarea class="dm-textarea" id="dm-project-desc" rows="2" placeholder="Propósito e detalhes da obra..."></textarea>
+          <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores ao Concluir (Bônus no Território):</label>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Bônus de Defesa (+DEF):</label>
+              <input type="number" class="dm-input" id="dm-project-mod-def" value="0" />
+            </div>
+            <div class="dm-form-group">
+              <label>Bônus de Renda (+/tick):</label>
+              <input type="number" class="dm-input" id="dm-project-mod-income" value="0" />
+            </div>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Redução de Agitação (-Agit):</label>
+              <input type="number" class="dm-input" id="dm-project-mod-unrest" value="0" />
+            </div>
+            <div class="dm-form-group">
+              <label>Capacidade Pop. (+Pop):</label>
+              <input type="number" class="dm-input" id="dm-project-mod-pop" value="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Descrição da Obra:</label>
+          <textarea class="dm-textarea" id="dm-project-desc" rows="2" placeholder="Propósito e detalhes da construção..."></textarea>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelProjectModal">Cancelar</button>
         <button type="button" class="dm-btn dm-btn--primary" data-action="submitProject"><i class="fa-solid fa-hammer"></i> Iniciar Projeto</button>
+      </div>
+    </div>
+  </div>
+{{/if}}
+
+<!-- MODAL: EDITAR OBRA / PROJETO -->
+{{#if isEditingProjectModal}}
+  <div class="dm-overlay-panel">
+    <div class="dm-dialog-card">
+      <div class="dm-dialog-card__header">
+        <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Obra: {{editingProject.name}}</h3>
+        <button type="button" class="dm-icon-btn" data-action="cancelEditProjectModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="dm-dialog-desc">Altere o progresso, nível/tier, modificadores de território e imagem desta obra.</p>
+      <div class="dm-form-grid">
+        <div class="dm-form-group">
+          <label>Nome do Projeto *</label>
+          <input type="text" class="dm-input" id="dm-edit-proj-name" value="{{editingProject.name}}" />
+        </div>
+        <div class="dm-form-row">
+          <div class="dm-form-group">
+            <label>Categoria:</label>
+            <input type="text" class="dm-input" id="dm-edit-proj-category" value="{{editingProject.category}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Nível / Tier:</label>
+            <input type="number" class="dm-input" id="dm-edit-proj-tier" value="{{editingProject.tier}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Status:</label>
+            <select class="dm-select" id="dm-edit-proj-status">
+              <option value="active" {{#if (eq editingProject.status 'active')}}selected{{/if}}>Em Construção</option>
+              <option value="paused" {{#if (eq editingProject.status 'paused')}}selected{{/if}}>Pausado</option>
+              <option value="blocked" {{#if (eq editingProject.status 'blocked')}}selected{{/if}}>Bloqueado</option>
+              <option value="completed" {{#if (eq editingProject.status 'completed')}}selected{{/if}}>Concluído (Ativar Bônus)</option>
+            </select>
+          </div>
+        </div>
+        <div class="dm-form-row">
+          <div class="dm-form-group">
+            <label>Trabalho Total:</label>
+            <input type="number" class="dm-input" id="dm-edit-proj-work" value="{{editingProject.required}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Trabalho Já Concluído:</label>
+            <input type="number" class="dm-input" id="dm-edit-proj-completed" value="{{editingProject.completed}}" />
+          </div>
+          <div class="dm-form-group">
+            <label>Taxa por Tick:</label>
+            <input type="number" class="dm-input" id="dm-edit-proj-rate" value="{{editingProject.rateAmount}}" />
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
+          <div class="dm-file-input-group">
+            <input type="text" class="dm-input" id="dm-edit-proj-img" value="{{editingProject.image}}" placeholder="caminho/projeto.webp ou link..." />
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-proj-img">
+              <i class="fa-solid fa-file-import"></i> Arquivo
+            </button>
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores Ativos ao Concluir:</label>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Bônus de Defesa (+DEF):</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-mod-def" value="{{editingProject.modifiers.defenseBonus}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Bônus de Renda (+/tick):</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-mod-income" value="{{editingProject.modifiers.incomeBonus}}" />
+            </div>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Redução de Agitação (-Agit):</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-mod-unrest" value="{{editingProject.modifiers.unrestReduction}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Capacidade Pop. (+Pop):</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-mod-pop" value="{{editingProject.modifiers.populationBonus}}" />
+            </div>
+          </div>
+        </div>
+
+        <div class="dm-form-group">
+          <label>Descrição da Obra:</label>
+          <textarea class="dm-textarea" id="dm-edit-proj-desc" rows="2">{{editingProject.description}}</textarea>
+        </div>
+      </div>
+      <div class="dm-dialog-card__actions">
+        <button type="button" class="dm-btn dm-btn--outline" data-action="cancelEditProjectModal">Cancelar</button>
+        <button type="button" class="dm-btn dm-btn--primary" data-action="submitEditProject"><i class="fa-solid fa-floppy-disk"></i> Salvar Obra</button>
       </div>
     </div>
   </div>
@@ -418,6 +609,17 @@
             <input type="text" class="dm-input" id="dm-notable-title" placeholder="Ex: Lorde, Capitão, Almirante" />
           </div>
         </div>
+
+        <div class="dm-form-group">
+          <label>Retrato / GIF do Notável (Arquivo ou Link URL):</label>
+          <div class="dm-file-input-group">
+            <input type="text" class="dm-input" id="dm-notable-portrait" placeholder="caminho/personagem.webp ou link..." />
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-notable-portrait">
+              <i class="fa-solid fa-file-import"></i> Arquivo
+            </button>
+          </div>
+        </div>
+
         <div class="dm-form-row">
           <div class="dm-form-group">
             <label>Lealdade:</label>
@@ -432,8 +634,8 @@
             <label>Status:</label>
             <select class="dm-select" id="dm-notable-status">
               <option value="active" selected>Ativo / Presente</option>
-              <option value="mission">Em Missão Diplomática</option>
-              <option value="injured">Ferido / Hospitalizado</option>
+              <option value="away">Em Missão / Ausente</option>
+              <option value="unavailable">Indisponível</option>
               <option value="retired">Aposentado</option>
             </select>
           </div>
@@ -803,7 +1005,7 @@
     {{#if (eq activeTab 'projects')}}
       <div class="dm-panel dm-panel--projects">
         <div class="dm-panel__header-row">
-          <h3 class="dm-section-title"><i class="fa-solid fa-trowel-bricks"></i> Projetos em Andamento</h3>
+          <h3 class="dm-section-title"><i class="fa-solid fa-trowel-bricks"></i> Obras & Projetos (Com Tiers e Modificadores)</h3>
           {{#if isGM}}
             <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddProjectModal">
               <i class="fa-solid fa-plus"></i> Nova Obra / Projeto
@@ -814,37 +1016,75 @@
         {{#if domainProjects.length}}
           <div class="dm-project-grid">
             {{#each domainProjects}}
-              <div class="dm-project-card is-{{status}}">
+              <div class="dm-project-card is-{{status}} {{#if isCompleted}}is-completed-card{{/if}}">
                 <div class="dm-project-card__top">
-                  <strong class="dm-project-card__name">{{name}}</strong>
+                  <div class="dm-project-card__header-left">
+                    <strong class="dm-project-card__name">{{name}}</strong>
+                    <span class="dm-badge dm-badge--tier">Nível / Tier {{tier}}</span>
+                  </div>
                   <div class="dm-row-actions">
-                    <span class="dm-badge dm-badge--status is-{{status}}">{{status}}</span>
+                    <span class="dm-badge dm-badge--status is-{{status}}">{{statusLabel}}</span>
                     {{#if @root.isGM}}
+                      <button type="button" class="dm-icon-btn" data-action="openEditProjectModal" data-uuid="{{uuid}}" title="Editar Projeto / Obra">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
                       <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteProject" data-uuid="{{uuid}}" title="Excluir Projeto">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
                     {{/if}}
                   </div>
                 </div>
+
+                {{#if hasImage}}
+                  <div class="dm-project-card__media">
+                    <img src="{{image}}" class="dm-project-card__thumb" alt="{{name}}" />
+                  </div>
+                {{/if}}
+
                 {{#if description}}
                   <p class="dm-project-card__desc">{{description}}</p>
-                {{else}}
-                  <p class="dm-project-card__desc font-italic text-muted">Sem descrição detalhada registrada.</p>
                 {{/if}}
+
                 <div class="dm-progress-block">
                   <div class="dm-progress-bar">
                     <div class="dm-progress-bar__fill" style="width: {{progressPercent}}%;"></div>
                   </div>
                   <div class="dm-progress-labels">
-                    <span>{{completed}} / {{required}} trabalho</span>
+                    <span>{{completed}} / {{required}} trabalho (+{{rateAmount}}/tick)</span>
                     <strong class="text-emerald">{{progressPercent}}%</strong>
                   </div>
                 </div>
+
+                {{#if hasModifiers}}
+                  <div class="dm-project-modifiers">
+                    <span class="dm-project-mod-title">
+                      <i class="fa-solid fa-sparkles"></i>
+                      {{#if isCompleted}}Bônus Ativos no Território:{{else}}Modificadores ao Concluir:{{/if}}
+                    </span>
+                    <div class="dm-project-mod-chips">
+                      {{#if modifiers.defenseBonus}}<span class="dm-mod-chip text-blue">+{{modifiers.defenseBonus}} Defesa</span>{{/if}}
+                      {{#if modifiers.incomeBonus}}<span class="dm-mod-chip text-amber">+{{modifiers.incomeBonus}} Renda/tick</span>{{/if}}
+                      {{#if modifiers.unrestReduction}}<span class="dm-mod-chip text-emerald">-{{modifiers.unrestReduction}} Agitação</span>{{/if}}
+                      {{#if modifiers.populationBonus}}<span class="dm-mod-chip text-indigo">+{{modifiers.populationBonus}} População</span>{{/if}}
+                    </div>
+                  </div>
+                {{/if}}
+
+                {{#if isCompleted}}
+                  <div class="dm-project-complete-banner">
+                    <span class="text-emerald font-semibold"><i class="fa-solid fa-circle-check"></i> Obra Concluída — Tier {{tier}}</span>
+                    {{#if @root.isGM}}
+                      <button type="button" class="dm-btn dm-btn--primary dm-btn--xs" data-action="evolveProject" data-uuid="{{uuid}}" title="Evoluir para o Nível {{nextTier}}">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i> Evoluir para Tier {{nextTier}}
+                      </button>
+                    {{/if}}
+                  </div>
+                {{/if}}
               </div>
             {{/each}}
           </div>
         {{else}}
-          <p class="dm-empty-state">Nenhum projeto ativo.</p>
+          <p class="dm-empty-state">Nenhum projeto ou obra cadastrada.</p>
         {{/if}}
       </div>
     {{/if}}
@@ -864,8 +1104,12 @@
           <div class="dm-notable-grid">
             {{#each notables}}
               <div class="dm-notable-card">
-                <div class="dm-notable-portrait dm-notable-portrait--placeholder">
-                  <i class="fa-solid fa-user"></i>
+                <div class="dm-notable-portrait">
+                  {{#if hasPortrait}}
+                    <img src="{{portrait}}" class="dm-notable-portrait-img" alt="{{name}}" />
+                  {{else}}
+                    <div class="dm-notable-portrait--placeholder"><i class="fa-solid fa-user"></i></div>
+                  {{/if}}
                 </div>
                 <div class="dm-notable-info">
                   <div class="dm-notable-title-row">
@@ -878,7 +1122,7 @@
                   </div>
                   {{#if role}}<span class="dm-notable-role">{{role}}</span>{{/if}}
                   {{#if title}}<span class="dm-notable-spec">{{title}}</span>{{/if}}
-                  <span class="dm-badge is-{{status}}">{{status}}</span>
+                  <span class="dm-badge is-{{status}}">{{statusLabel}}</span>
                 </div>
               </div>
             {{/each}}
@@ -979,7 +1223,7 @@
                 <div class="dm-intel-card__top">
                   <strong>{{title}}</strong>
                   <div class="dm-row-actions">
-                    <span class="dm-badge is-{{credibility}}">{{credibility}}</span>
+                    <span class="dm-badge is-{{credibility}}">{{credibilityLabel}}</span>
                     {{#if @root.isGM}}
                       <button type="button" class="dm-icon-btn dm-icon-btn--danger" data-action="deleteIntel" data-local-id="{{localId}}" title="Excluir Segredo">
                         <i class="fa-solid fa-trash-can"></i>
@@ -990,6 +1234,7 @@
                 {{#if content}}<p class="dm-intel-card__text">{{content}}</p>{{/if}}
                 <div class="dm-intel-card__footer">
                   <span class="dm-badge dm-badge--visibility">{{visibility}}</span>
+                  <span class="dm-pill dm-pill--category">{{typeLabel}}</span>
                 </div>
               </div>
             {{/each}}

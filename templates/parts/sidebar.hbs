@@ -69,6 +69,14 @@
 
   <div class="dm-sidebar__content dm-scrollable">
     {{#if (eq sidebarMode 'tags')}}
+      {{#if isGM}}
+        <div class="dm-sidebar__tag-actions">
+          <button type="button" class="dm-btn dm-btn--outline dm-btn--xs w-full" data-action="openAddTagModal">
+            <i class="fa-solid fa-plus"></i> Adicionar Nova Tag
+          </button>
+        </div>
+      {{/if}}
+
       {{#if tagGroups.length}}
         <ul class="dm-tag-list">
           {{#each tagGroups}}
@@ -87,7 +95,7 @@
           {{/each}}
         </ul>
       {{else}}
-        <p class="dm-empty-state">Nenhuma tag encontrada.</p>
+        <p class="dm-empty-state">Nenhuma tag cadastrada.</p>
       {{/if}}
     {{else}}
       {{#if flatDomainTree.length}}
@@ -115,7 +123,11 @@
                   data-action="selectDomain"
                   data-uuid="{{uuid}}"
                 >
-                  <i class="dm-tree__icon {{icon}}"></i>
+                  {{#if isImageCrest}}
+                    <img src="{{icon}}" class="dm-tree__img" alt="" />
+                  {{else}}
+                    <i class="dm-tree__icon {{icon}}"></i>
+                  {{/if}}
                   <span class="dm-tree__label" title="{{name}}">{{name}}</span>
                   {{#if childCount}}
                     <span class="dm-tree__badge" data-action="toggleFolder" data-uuid="{{uuid}}" title="{{childCount}} subdivisões">{{childCount}}</span>

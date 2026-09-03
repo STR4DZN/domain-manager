@@ -62,6 +62,7 @@ export const PROJECT_EDITABLE_STATUSES = Object.freeze([
   "active",
   "paused",
   "blocked",
+  "completed",
   "cancelled"
 ]);
 

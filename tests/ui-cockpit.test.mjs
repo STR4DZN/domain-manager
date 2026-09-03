@@ -584,3 +584,142 @@ test("teste de interface v5: abertura e fechamento da aba lateral e expansão/re
   assert.equal(context.flatDomainTree.length, 3);
   assert.equal(context.flatDomainTree[0].isCollapsed, false);
 });
+
+test("v6: Português 100%, Donos/Players, Tiers & Modificadores de Obra e FilePicker/Imagens", async () => {
+  game.journal = [];
+  game.user = { id: "gm-1", name: "Mestre dos Magos", isGM: true };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  recordIndex.rebuild();
+
+  // Mock de usuários do mundo
+  globalThis.game.users = [
+    { id: "gm-1", name: "Mestre dos Magos", isGM: true },
+    { id: "player-carlos", name: "Carlos Jogador", isGM: false },
+    { id: "player-ana", name: "Ana Jogadora", isGM: false }
+  ];
+  globalThis.game.users.contents = globalThis.game.users;
+
+  // 1. Criar Domínio com jogador controlador Carlos
+  const domainDoc = createMockJournal({
+    uuid: "JournalEntry.fortress-1",
+    name: "Fortaleza da Alvorada",
+    data: {
+      identity: {
+        category: "settlement",
+        nature: "physical",
+        state: "active",
+        tags: ["capital", "fronteira"],
+        crestMedia: { path: "icons/crests/fortress.webp" }
+      },
+      security: {
+        defenseScore: 12,
+        guardCount: 4
+      },
+      governance: {
+        controllers: ["player-carlos"]
+      }
+    }
+  });
+  recordIndex.upsert(domainDoc);
+
+  // 2. Criar Obra Concluída com Nível/Tier 1 e Modificadores (+8 Defesa, +30 Renda)
+  const projectDoc = createMockJournal({
+    uuid: "JournalEntry.proj-defense-1",
+    name: "Muralha Reforçada",
+    recordType: "project",
+    data: {
+      recordType: "project",
+      domainUuid: "JournalEntry.fortress-1",
+      category: "defesa",
+      tier: 1,
+      status: "completed",
+      work: { required: 100, completed: 100 },
+      rate: { amount: 10 },
+      modifiers: {
+        defenseBonus: 8,
+        incomeBonus: 30,
+        unrestReduction: 2,
+        populationBonus: 200
+      },
+      image: "assets/muralha.webp",
+      description: "Muralhas maciças de pedra e adamante."
+    }
+  });
+  recordIndex.upsert(projectDoc);
+
+  // 3. Criar Notável com Retrato
+  const domainWithPeople = createMockJournal({
+    uuid: "JournalEntry.fortress-1",
+    name: "Fortaleza da Alvorada",
+    data: {
+      ...domainDoc.flags["domain-manager"].data,
+      population: {
+        total: 1500,
+        notables: [
+          {
+            localId: "notable-1",
+            name: "Comandante Drake",
+            role: "Capitão da Guarda",
+            portrait: "portraits/drake.gif",
+            status: "active"
+          }
+        ]
+      }
+    }
+  });
+  recordIndex.upsert(domainWithPeople);
+
+  const app = new DomainManagerShellApp();
+  app.setRoute({ domainUuid: "JournalEntry.fortress-1" });
+
+  const context = await app._prepareContext();
+
+  // Teste 1: Termos 100% em Português
+  assert.equal(context.selectedDomain.categoryLabel, "Assentamento");
+  assert.equal(context.selectedDomain.natureLabel, "Físico / Territorial");
+  assert.equal(context.selectedDomain.stateLabel, "Ativo");
+
+  // Teste 2: Seleção de Donos/Jogadores no Contexto
+  assert.equal(context.worldPlayers.length, 2);
+  const carlos = context.worldPlayers.find((p) => p.id === "player-carlos");
+  const ana = context.worldPlayers.find((p) => p.id === "player-ana");
+  assert.equal(carlos.isSelected, true);
+  assert.equal(ana.isSelected, false);
+
+  // Teste 3: Obra com Tier, Imagem e Modificadores
+  assert.equal(context.domainProjects.length, 1);
+  const proj = context.domainProjects[0];
+  assert.equal(proj.name, "Muralha Reforçada");
+  assert.equal(proj.tier, 1);
+  assert.equal(proj.status, "completed");
+  assert.equal(proj.statusLabel, "Concluído");
+  assert.equal(proj.isCompleted, true);
+  assert.equal(proj.image, "assets/muralha.webp");
+  assert.equal(proj.modifiers.defenseBonus, 8);
+
+  // Teste 4: Modificador da Obra Ativo na Defesa do Domínio!
+  // Defesa Base (12) + Guardas (4 * 1.5 = 6) + Bônus Obra Concluída (8) = 26
+  assert.equal(context.metrics.effectiveDefense, 26);
+  assert.equal(context.metrics.projectDefenseBonus, 8);
+
+  // Teste 5: Notável com Retrato/GIF
+  assert.equal(context.notables.length, 1);
+  assert.equal(context.notables[0].portrait, "portraits/drake.gif");
+  assert.equal(context.notables[0].hasPortrait, true);
+  assert.equal(context.notables[0].statusLabel, "Ativo");
+
+  // Teste 6: Brasão do Domínio é Imagem
+  assert.equal(context.selectedDomain.isImageCrest, true);
+  assert.equal(context.selectedDomain.crest, "icons/crests/fortress.webp");
+
+  // Teste 7: Jogador Comum (isGM = false) não tem isGM no context
+  globalThis.game.user = { id: "player-carlos", name: "Carlos Jogador", isGM: false };
+  const playerContext = await app._prepareContext();
+  assert.equal(playerContext.isGM, false);
+
+  // Restaurar GM
+  globalThis.game.user = { id: "gm-1", name: "Mestre dos Magos", isGM: true };
+});

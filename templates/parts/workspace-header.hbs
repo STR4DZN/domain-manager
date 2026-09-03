@@ -1,11 +1,5 @@
 <header class="dm-workspace-header">
   <div class="dm-workspace-header__main">
-    {{#unless isSidebarOpen}}
-      <button type="button" class="dm-btn dm-btn--outline dm-btn--xs mr-3" data-action="toggleSidebar" title="Abrir Painel Lateral de Bases">
-        <i class="fa-solid fa-bars"></i>
-        <span>Bases</span>
-      </button>
-    {{/unless}}
     {{#if breadcrumbs.length}}
       <nav class="dm-breadcrumbs" aria-label="Caminho Hierárquico">
         {{#each breadcrumbs}}
@@ -18,32 +12,34 @@
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
         <div class="dm-crest">
-          <i class="{{selectedDomain.crest}} dm-crest__icon"></i>
+          {{#if selectedDomain.isImageCrest}}
+            <img src="{{selectedDomain.crest}}" class="dm-crest__img" alt="{{selectedDomain.name}}" />
+          {{else}}
+            <i class="{{selectedDomain.crest}} dm-crest__icon"></i>
+          {{/if}}
         </div>
         <div class="dm-workspace-header__titles">
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
-            <span class="dm-pill dm-pill--category">{{selectedDomain.category}}</span>
-            <span class="dm-pill dm-pill--nature">{{selectedDomain.nature}}</span>
-            <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.state}}</span>
+            <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
+            <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
+            <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
           </div>
-          <div class="dm-workspace-header__tags">
-            {{#each selectedDomain.tags}}
-              <span class="dm-tag-chip">
-                #{{this}}
-                {{#if @root.isGM}}
-                  <button type="button" class="dm-tag-chip__del" data-action="removeTag" data-tag="{{this}}" title="Excluir tag #{{this}}">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
-                {{/if}}
-              </span>
-            {{/each}}
-            {{#if isGM}}
-              <button type="button" class="dm-tag-chip dm-tag-chip--add" data-action="openAddTagModal" title="Adicionar nova tag">
-                <i class="fa-solid fa-plus"></i> Adicionar Tag
-              </button>
-            {{/if}}
-          </div>
+
+          {{#if selectedDomain.tags.length}}
+            <div class="dm-workspace-header__tags">
+              {{#each selectedDomain.tags}}
+                <span class="dm-tag-chip">
+                  #{{this}}
+                  {{#if @root.isGM}}
+                    <button type="button" class="dm-tag-chip__del" data-action="removeTag" data-tag="{{this}}" title="Remover tag #{{this}}">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  {{/if}}
+                </span>
+              {{/each}}
+            </div>
+          {{/if}}
         </div>
       </div>
     {{else}}

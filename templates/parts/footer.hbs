@@ -4,16 +4,18 @@
     <span><strong>{{localize 'DOMAIN_MANAGER.Footer.Foundry'}}:</strong> {{foundryVersion}}</span>
   </div>
 
-  <div class="dm-footer__right">
-    <span>
-      <strong>{{localize 'DOMAIN_MANAGER.Footer.Authority'}}:</strong>
-      {{#if authorityReady}}
-        <span class="dm-status-dot is-active"></span> {{localize 'DOMAIN_MANAGER.Footer.AuthorityReady'}}
-      {{else}}
-        <span class="dm-status-dot is-inactive"></span> {{localize 'DOMAIN_MANAGER.Footer.AuthorityDisconnected'}}
-      {{/if}}
-    </span>
-    <span><strong>{{localize 'DOMAIN_MANAGER.Footer.IndexedDomains'}}:</strong> {{counts.domains}}</span>
-    <span><strong>{{localize 'DOMAIN_MANAGER.Footer.SyncStatus'}}:</strong> {{timekeeping.tickDurationLabel}}</span>
-  </div>
+  {{#if isGM}}
+    <div class="dm-footer__right">
+      <span>
+        <strong>{{localize 'DOMAIN_MANAGER.Footer.Authority'}}:</strong>
+        {{#if authorityReady}}
+          <span class="dm-status-dot is-active"></span> {{localize 'DOMAIN_MANAGER.Footer.AuthorityReady'}}
+        {{else}}
+          <span class="dm-status-dot is-inactive"></span> {{localize 'DOMAIN_MANAGER.Footer.AuthorityDisconnected'}}
+        {{/if}}
+      </span>
+      <span><strong>{{localize 'DOMAIN_MANAGER.Footer.IndexedDomains'}}:</strong> {{counts.domains}}</span>
+      <span><strong>{{localize 'DOMAIN_MANAGER.Footer.SyncStatus'}}:</strong> {{timekeeping.tickDurationLabel}}</span>
+    </div>
+  {{/if}}
 </footer>
