@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -755,4 +757,42 @@ test("Auditoria Geral: Suporte a URLs externas (HTTP/HTTPS/Data/CORS) no Image S
   assert.ok(heroStyle.includes("object-position: 75% 25%"));
   assert.ok(heroStyle.includes("transform: scale(1.5)"));
   assert.equal(domainRecord.data.visuals.image, httpsUrl);
+});
+
+/* ==========================================================================
+   16. AUDITORIA DE INTEGRIDADE DE DATA-ACTIONS DOS TEMPLATES
+   ========================================================================== */
+test("Auditoria Geral: 100% das data-actions em templates devem estar registradas em DEFAULT_OPTIONS.actions", async () => {
+  const root = path.resolve("c:/Users/fusio/Documents/A1/domain-manager");
+  const shell = fs.readFileSync(path.join(root, "scripts/ui/shell-app.js"), "utf8");
+  const actionsBlock = shell.substring(shell.indexOf("actions: {"), shell.indexOf("PARTS = {"));
+
+  const tplFiles = [
+    "templates/parts/footer.hbs",
+    "templates/parts/overview-cards.hbs",
+    "templates/parts/rail.hbs",
+    "templates/parts/sidebar.hbs",
+    "templates/parts/workspace-content.hbs",
+    "templates/parts/workspace-header.hbs"
+  ];
+
+  const templateActions = new Set();
+  for (const f of tplFiles) {
+    const fileContent = fs.readFileSync(path.join(root, f), "utf8");
+    const regex = /data-action=["']([^"']+)["']/g;
+    let m;
+    while ((m = regex.exec(fileContent)) !== null) {
+      templateActions.add(m[1]);
+    }
+  }
+
+  const missing = [];
+  for (const act of templateActions) {
+    const pattern = new RegExp(`\\b${act}\\s*:`);
+    if (!pattern.test(actionsBlock)) {
+      missing.push(act);
+    }
+  }
+
+  assert.deepEqual(missing, [], `Nenhuma ação de template pode ficar órfã sem handler: ${missing.join(", ")}`);
 });

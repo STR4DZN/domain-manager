@@ -487,33 +487,55 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       evolveProject: DomainManagerShellApp.#onEvolveProject,
       deleteProject: DomainManagerShellApp.#onDeleteProject,
 
-      // População & Notáveis (CRUD)
+      // População & Notáveis (CRUD Completo com Edição)
       openAddNotableModal: DomainManagerShellApp.#onOpenAddNotableModal,
       cancelNotableModal: DomainManagerShellApp.#onCancelNotableModal,
       submitNotable: DomainManagerShellApp.#onSubmitNotable,
+      openEditNotableModal: DomainManagerShellApp.#onOpenEditNotableModal,
+      cancelEditNotableModal: DomainManagerShellApp.#onCancelEditNotableModal,
+      submitEditNotable: DomainManagerShellApp.#onSubmitEditNotable,
       deleteNotable: DomainManagerShellApp.#onDeleteNotable,
+
       openAddGroupModal: DomainManagerShellApp.#onOpenAddGroupModal,
       cancelGroupModal: DomainManagerShellApp.#onCancelGroupModal,
       submitGroup: DomainManagerShellApp.#onSubmitGroup,
+      openEditGroupModal: DomainManagerShellApp.#onOpenEditGroupModal,
+      cancelEditGroupModal: DomainManagerShellApp.#onCancelEditGroupModal,
+      submitEditGroup: DomainManagerShellApp.#onSubmitEditGroup,
       deleteGroup: DomainManagerShellApp.#onDeleteGroup,
 
-      // Diplomacia (CRUD)
+      // Diplomacia (CRUD Completo com Edição)
       openAddRelationModal: DomainManagerShellApp.#onOpenAddRelationModal,
       cancelRelationModal: DomainManagerShellApp.#onCancelRelationModal,
       submitRelation: DomainManagerShellApp.#onSubmitRelation,
+      openEditRelationModal: DomainManagerShellApp.#onOpenEditRelationModal,
+      cancelEditRelationModal: DomainManagerShellApp.#onCancelEditRelationModal,
+      submitEditRelation: DomainManagerShellApp.#onSubmitEditRelation,
       deleteRelation: DomainManagerShellApp.#onDeleteRelation,
 
-      // Intel (CRUD)
+      // Intel (CRUD Completo com Edição)
       openAddIntelModal: DomainManagerShellApp.#onOpenAddIntelModal,
       cancelIntelModal: DomainManagerShellApp.#onCancelIntelModal,
       submitIntel: DomainManagerShellApp.#onSubmitIntel,
+      openEditIntelModal: DomainManagerShellApp.#onOpenEditIntelModal,
+      cancelEditIntelModal: DomainManagerShellApp.#onCancelEditIntelModal,
+      submitEditIntel: DomainManagerShellApp.#onSubmitEditIntel,
       deleteIntel: DomainManagerShellApp.#onDeleteIntel,
 
-      // Histórico / Crônicas (CRUD)
+      // Histórico / Crônicas (CRUD Completo com Edição)
       openAddHistoryModal: DomainManagerShellApp.#onOpenAddHistoryModal,
       cancelHistoryModal: DomainManagerShellApp.#onCancelHistoryModal,
       submitHistory: DomainManagerShellApp.#onSubmitHistory,
-      deleteHistory: DomainManagerShellApp.#onDeleteHistory
+      openEditHistoryModal: DomainManagerShellApp.#onOpenEditHistoryModal,
+      cancelEditHistoryModal: DomainManagerShellApp.#onCancelEditHistoryModal,
+      submitEditHistory: DomainManagerShellApp.#onSubmitEditHistory,
+      deleteHistory: DomainManagerShellApp.#onDeleteHistory,
+
+      // Galeria e Condições
+      addGalleryImage: DomainManagerShellApp.#onAddGalleryImage,
+      removeGalleryImage: DomainManagerShellApp.#onRemoveGalleryImage,
+      selectGalleryImage: DomainManagerShellApp.#onSelectGalleryImage,
+      deleteCondition: DomainManagerShellApp.#onDeleteCondition
     }
   };
 
@@ -1558,6 +1580,31 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   /* ------------------------------------------------------------------------
      5. Pessoas: Notáveis (com Imagem/GIF) e Grupos Populacionais
      ------------------------------------------------------------------------ */
+  
+  static async #onDeleteCondition(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = getActionAttr(target, "local-id");
+    if (!localId) return;
+
+    try {
+      const doc = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      const record = decodeRecord(doc);
+      const data = foundry.utils.deepClone(record.data);
+      if (Array.isArray(data.conditions)) {
+        data.conditions = data.conditions.filter((c) => c.localId !== localId);
+        await updateRecord({
+          uuid: this.selectedDomainUuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          data
+        });
+        ui.notifications?.info("Condição removida!");
+        this.render();
+      }
+    } catch (err) {
+      ui.notifications?.error(err.message || "Erro ao remover condição.");
+    }
+  }
+
   static #onOpenAddNotableModal() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
     this.#closeAllModals();
