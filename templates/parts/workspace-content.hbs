@@ -1561,42 +1561,89 @@
 
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
 <div class="dm-workspace-content">
-  <!-- Barra de Abas -->
-  <nav class="dm-tabs" role="tablist" aria-label="Abas do Cockpit">
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'overview')}}is-active{{/if}}" data-action="switchTab" data-tab="overview">
-      <i class="fa-solid fa-landmark"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.Overview'}}</span>
-    </button>
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'economy')}}is-active{{/if}}" data-action="switchTab" data-tab="economy">
-      <i class="fa-solid fa-coins"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.Economy'}}</span>
-    </button>
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'projects')}}is-active{{/if}}" data-action="switchTab" data-tab="projects">
-      <i class="fa-solid fa-trowel-bricks"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.Projects'}}</span>
-    </button>
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'people')}}is-active{{/if}}" data-action="switchTab" data-tab="people">
-      <i class="fa-solid fa-users"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.People'}}</span>
-    </button>
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'diplomacy')}}is-active{{/if}}" data-action="switchTab" data-tab="diplomacy">
-      <i class="fa-solid fa-handshake"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.Diplomacy'}}</span>
-    </button>
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'intel')}}is-active{{/if}}" data-action="switchTab" data-tab="intel">
-      <i class="fa-solid fa-user-secret"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.Intel'}}</span>
-    </button>
-    <button type="button" class="dm-tabs__btn {{#if (eq activeTab 'history')}}is-active{{/if}}" data-action="switchTab" data-tab="history">
-      <i class="fa-solid fa-feather-pointed"></i>
-      <span>{{localize 'DOMAIN_MANAGER.Tabs.History'}}</span>
-    </button>
-  </nav>
+  <!-- SUB-NAVEGAÇÃO TÁTICA (Exibida quando dentro de uma sub-seção) -->
+  {{#unless (eq activeTab 'overview')}}
+    <div class="dm-hub-subnav">
+      <div class="dm-hub-subnav__left">
+        <button type="button" class="dm-btn dm-btn--outline dm-btn--xs dm-hub-back-btn" data-action="switchTab" data-tab="overview" title="Retornar à Central de Comando">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Voltar ao Hub</span>
+        </button>
+        <div class="dm-hub-subnav__title-group">
+          <span class="dm-hub-subnav__index">{{activeTabMeta.index}}</span>
+          <h2 class="dm-hub-subnav__title">{{activeTabMeta.title}}</h2>
+        </div>
+      </div>
+      <div class="dm-hub-subnav__quick-chips">
+        {{#each navigationHubItems}}
+          {{#unless (eq this.tab 'overview')}}
+            <button type="button" class="dm-hub-chip {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}" data-action="switchTab" data-tab="{{this.tab}}" title="{{this.title}}">
+              <i class="{{this.icon}}"></i>
+              <span>{{this.shortTitle}}</span>
+            </button>
+          {{/unless}}
+        {{/each}}
+      </div>
+    </div>
+  {{/unless}}
 
   <!-- Painéis de Conteúdo -->
   <div class="dm-tab-panels dm-scrollable">
     {{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
+        <!-- TABELA TÁTICA: 01. NAVIGATION HUB (Inspiração Direta da Referência) -->
+        <div class="dm-hub">
+          <div class="dm-hub__header">
+            <div class="dm-hub__title-group">
+              <i class="fa-solid fa-torii-gate dm-hub__torii"></i>
+              <h2 class="dm-hub__main-title">01. NAVIGATION HUB <span class="dm-hub__pulse-dot">●</span></h2>
+            </div>
+            <div class="dm-hub__view-badge">
+              <i class="fa-solid fa-table-cells"></i>
+              <span>Matriz Tática</span>
+            </div>
+          </div>
+
+          <div class="dm-hub__table-wrap">
+            <table class="dm-hub__table">
+              <thead>
+                <tr>
+                  <th class="dm-hub__th-section"><i class="fa-solid fa-font"></i> Seção Operacional</th>
+                  <th class="dm-hub__th-status"><i class="fa-solid fa-circle-notch"></i> Status</th>
+                  <th class="dm-hub__th-action"><i class="fa-solid fa-arrow-up-right-from-square"></i> Acesso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each navigationHubItems}}
+                  <tr class="dm-hub__row" data-action="switchTab" data-tab="{{this.tab}}">
+                    <td class="dm-hub__td-section">
+                      <span class="dm-hub__num">{{this.index}}</span>
+                      <div class="dm-hub__icon-box">
+                        <i class="{{this.icon}}"></i>
+                      </div>
+                      <div class="dm-hub__name-box">
+                        <strong class="dm-hub__name">{{this.title}}</strong>
+                        <span class="dm-hub__detail">{{this.detail}}</span>
+                      </div>
+                    </td>
+                    <td class="dm-hub__td-status">
+                      <span class="dm-hub__pill is-{{this.statusClass}}">
+                        <span class="dm-hub__pill-dot">●</span>
+                        <span>{{this.status}}</span>
+                      </span>
+                    </td>
+                    <td class="dm-hub__td-action">
+                      <button type="button" class="dm-hub__open-btn" data-action="switchTab" data-tab="{{this.tab}}" title="Acessar {{this.title}}">
+                        <i class="fa-solid fa-arrow-right"></i>
+                        <span>Acessar</span>
+                      </button>
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
         <!-- Retângulo da Base com Galeria e Ajuste Proporcional -->
         {{#if selectedDomain}}
           <div class="dm-base-hero {{#if selectedDomain.isContainFit}}is-contain{{/if}}" style="height: {{selectedDomain.imageHeight}}px;">

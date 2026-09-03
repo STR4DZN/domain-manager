@@ -857,3 +857,24 @@ test("Auditoria Geral: Preservação de schema do Image Studio e sincronização
   assert.ok(bannerImgStyle.includes("transform: scale(1.4)"));
   assert.ok(bannerImgStyle.includes("transform-origin: 80% 20%"));
 });
+
+test("Auditoria Geral: 01. NAVIGATION HUB e Sub-Navegação Tática Integrada", async () => {
+  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  
+  // 1. A antiga barra de scroll horizontal dm-tabs foi completamente removida
+  assert.strictEqual(contentHbs.includes('<nav class="dm-tabs"'), false, "dm-tabs horizontal antiga deve ter sido removida");
+
+  // 2. A nova tabela tática 01. NAVIGATION HUB está presente no template
+  assert.strictEqual(contentHbs.includes('01. NAVIGATION HUB'), true, "01. NAVIGATION HUB deve estar presente no template");
+  assert.strictEqual(contentHbs.includes('dm-hub__table'), true, "dm-hub__table deve existir no template");
+
+  // 3. A sub-navegação com botão de retorno 'Voltar ao Hub' está presente
+  assert.strictEqual(contentHbs.includes('dm-hub-subnav'), true, "dm-hub-subnav deve estar presente no template");
+  assert.strictEqual(contentHbs.includes('Voltar ao Hub'), true, "Botão Voltar ao Hub deve existir no subnav");
+
+  // 4. Os estilos CSS do hub e subnav existem
+  const css = fs.readFileSync("styles/shell.css", "utf8");
+  assert.strictEqual(css.includes('.dm-hub'), true, "Estilo .dm-hub deve existir em shell.css");
+  assert.strictEqual(css.includes('.dm-hub-subnav'), true, "Estilo .dm-hub-subnav deve existir em shell.css");
+  assert.strictEqual(css.includes('.dm-hub__pill'), true, "Estilo .dm-hub__pill deve existir em shell.css");
+});

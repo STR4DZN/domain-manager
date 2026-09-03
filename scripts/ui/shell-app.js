@@ -3085,6 +3085,85 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       guardUpkeep: 1.0
     };
 
+    // --- NAVIGATION HUB DATA (Inspirado no 01. NAVIGATION HUB da Referência) ---
+    const totalPop = (typeof popTotal === 'number' ? popTotal : (groups || []).reduce((acc, g) => acc + (Number(g.population || g.count) || 0), 0));
+    const activeProjectsCount = (domainProjects || []).filter((p) => !p.isCompleted).length;
+
+    const navigationHubItems = [
+      {
+        index: "01",
+        tab: "overview",
+        title: "VISÃO GERAL & IDENTIDADE",
+        shortTitle: "Visão Geral",
+        icon: "fa-solid fa-landmark",
+        status: (selectedDomain?.stateLabel || "Operacional").toUpperCase(),
+        statusClass: "active",
+        detail: `${selectedDomain?.natureLabel || 'Territorial'} · ${selectedDomain?.categoryLabel || 'Base'}`
+      },
+      {
+        index: "02",
+        tab: "economy",
+        title: "FINANÇAS & TESOURO",
+        shortTitle: "Economia",
+        icon: "fa-solid fa-coins",
+        status: `${domainStocks?.length || 0} ESTOQUES · ${domainFlows?.length || 0} FLUXOS`,
+        statusClass: "active",
+        detail: "Gestão de Recursos, Sustento e Fluxo de Caixa"
+      },
+      {
+        index: "03",
+        tab: "projects",
+        title: "OBRAS & PROJETOS",
+        shortTitle: "Obras",
+        icon: "fa-solid fa-trowel-bricks",
+        status: `${activeProjectsCount} EM ANDAMENTO`,
+        statusClass: activeProjectsCount > 0 ? "active" : "neutral",
+        detail: `${domainProjects?.length || 0} Obras Totais Cadastradas`
+      },
+      {
+        index: "04",
+        tab: "people",
+        title: "POPULAÇÃO & NOTÁVEIS",
+        shortTitle: "População",
+        icon: "fa-solid fa-users",
+        status: `${totalPop.toLocaleString('pt-BR')} HABITANTES`,
+        statusClass: "active",
+        detail: `${groups?.length || 0} Grupos · ${notables?.length || 0} Notáveis`
+      },
+      {
+        index: "05",
+        tab: "diplomacy",
+        title: "DIPLOMACIA & ACORDOS",
+        shortTitle: "Diplomacia",
+        icon: "fa-solid fa-handshake",
+        status: `${relations?.length || 0} RELAÇÕES`,
+        statusClass: (relations?.length || 0) > 0 ? "active" : "neutral",
+        detail: "Tratados, Pactos e Políticas Externas"
+      },
+      {
+        index: "06",
+        tab: "intel",
+        title: "INTEL & SEGREDOS",
+        shortTitle: "Intel",
+        icon: "fa-solid fa-user-secret",
+        status: `${intelList?.length || 0} RELATÓRIOS`,
+        statusClass: (intelList?.length || 0) > 0 ? "active" : "neutral",
+        detail: "Informações Confidenciais e Vigilância"
+      },
+      {
+        index: "07",
+        tab: "history",
+        title: "CRÔNICAS & HISTÓRICO",
+        shortTitle: "Histórico",
+        icon: "fa-solid fa-feather-pointed",
+        status: `${fullHistory?.length || 0} REGISTROS`,
+        statusClass: "active",
+        detail: "Linha do Tempo e Registros de Ticks"
+      }
+    ];
+
+    const activeTabMeta = navigationHubItems.find((item) => item.tab === this.activeTab) || navigationHubItems[0];
+
     return {
       ...context,
       moduleTitle: MODULE_TITLE,
@@ -3100,6 +3179,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       selectedTag: this.selectedTag,
       isSidebarOpen: this.isSidebarOpen,
       allFoldersCollapsed: this.collapsedFolderUuids.size > 0,
+
+      // Navigation Hub e Metadados de Aba Ativa
+      navigationHubItems,
+      activeTabMeta,
 
       // Estados de Modais
       isCreatingDomain: this.isCreatingDomain,
