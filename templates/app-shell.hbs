@@ -233,17 +233,8 @@
 
 
       <main class="dm-shell__main">
-        <header class="dm-workspace-header">
+        <header class="dm-workspace-header dm-hud-strip">
   <div class="dm-workspace-header__main">
-    {{#if breadcrumbs.length}}
-      <nav class="dm-breadcrumbs" aria-label="Caminho Hierárquico">
-        {{#each breadcrumbs}}
-          <span class="dm-breadcrumbs__item" data-action="selectDomain" data-uuid="{{uuid}}" title="{{name}}">{{name}}</span>
-          {{#unless @last}}<span class="dm-breadcrumbs__separator">/</span>{{/unless}}
-        {{/each}}
-      </nav>
-    {{/if}}
-
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
         {{#if selectedDomain.hasImage}}
@@ -258,24 +249,28 @@
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
             <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
-            <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
             <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
           </div>
+        </div>
 
-          {{#if selectedDomain.tags.length}}
-            <div class="dm-workspace-header__tags">
-              {{#each selectedDomain.tags}}
-                <span class="dm-tag-chip">
-                  #{{this}}
-                  {{#if @root.isGM}}
-                    <button type="button" class="dm-tag-chip__del" data-action="removeTag" data-tag="{{this}}" title="Remover tag #{{this}}">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
-                  {{/if}}
-                </span>
-              {{/each}}
-            </div>
-          {{/if}}
+        <!-- Telemetria Inline HUD -->
+        <div class="dm-hud-telemetry">
+          <span class="dm-hud-telemetry__item" title="Tesouro e Recursos Primários">
+            <i class="fa-solid fa-coins text-amber"></i>
+            <strong>{{metrics.primaryStockDisplay}}</strong>
+          </span>
+          <span class="dm-hud-telemetry__item" title="Defesa da Base">
+            <i class="fa-solid fa-shield-halved text-blue"></i>
+            <strong>{{metrics.defenseRating}} DEF</strong>
+          </span>
+          <span class="dm-hud-telemetry__item" title="População Total">
+            <i class="fa-solid fa-users text-emerald"></i>
+            <strong>{{metrics.populationTotal}} POP</strong>
+          </span>
+          <span class="dm-hud-telemetry__item" title="Obras Ativas">
+            <i class="fa-solid fa-trowel-bricks text-indigo"></i>
+            <strong>{{metrics.activeProjectsCount}} OBRAS</strong>
+          </span>
         </div>
       </div>
     {{else}}
@@ -291,7 +286,7 @@
       {{#if selectedDomain}}
         <button
           type="button"
-          class="dm-btn dm-btn--outline"
+          class="dm-btn dm-btn--outline dm-btn--sm"
           data-action="openEditDomain"
           title="Editar identidade deste Domínio"
         >
@@ -301,39 +296,38 @@
 
         <button
           type="button"
-          class="dm-btn dm-btn--danger"
+          class="dm-btn dm-btn--danger dm-btn--sm"
           data-action="openDeleteDomainModal"
           title="Excluir permanentemente este Domínio"
         >
           <i class="fa-solid fa-trash-can"></i>
-          <span>Excluir</span>
         </button>
       {{/if}}
 
       <button
         type="button"
-        class="dm-btn dm-btn--outline"
+        class="dm-btn dm-btn--outline dm-btn--sm"
         data-action="openEventModal"
         title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
       >
         <i class="fa-solid fa-dice-d20"></i>
-        <span>{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}</span>
+        <span>Evento</span>
       </button>
 
       <button
         type="button"
-        class="dm-btn dm-btn--primary"
+        class="dm-btn dm-btn--primary dm-btn--sm"
         data-action="openAdvanceModal"
         title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
       >
         <i class="fa-solid fa-forward-step"></i>
-        <span>{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}</span>
+        <span>Avançar Tempo</span>
       </button>
     {{/if}}
   </div>
 </header>
 
-        {{#unless activeNotableDossier}}
+        {{#if (eq activeTab 'overview')}}
 <section class="dm-overview-cards" aria-label="Métricas Gerais">
   <!-- Card 1: Economia -->
   <article class="dm-card dm-card--stat">
@@ -395,7 +389,8 @@
     </div>
   </article>
 </section>
-{{/unless}}
+{{/if}}
+
         <!-- MODAIS IN-PAGE COMPACTOS COM CONTENÇÃO E SCROLL INTERNO -->
 
 <!-- 1. MODAL: ADICIONAR TAGS -->
@@ -1958,31 +1953,36 @@
 {{/if}}
 
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
-<div class="dm-workspace-content">
-  <!-- BARRA DE NAVEGAÇÃO TÁTICA INDEXADA (Rápida, compacta e sem scroll lateral) -->
+<div class="dm-tactical-workspace">
+  <!-- COLUNA DE NAVEGAÇÃO TÁTICA (COMP/CON STYLE) -->
   {{#unless activeNotableDossier}}
-<nav class="dm-tactical-nav" aria-label="Navegação Tática do Domínio">
-    {{#each navigationHubItems}}
-      <button
-        type="button"
-        class="dm-tactical-nav__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
-        data-action="switchTab"
-        data-tab="{{this.tab}}"
-        title="{{this.title}}"
-      >
-        <span class="dm-tactical-nav__num">{{this.index}}</span>
-        <i class="{{this.icon}}"></i>
-        <span class="dm-tactical-nav__label">{{this.shortTitle}}</span>
-        {{#if this.badge}}
-          <span class="dm-tactical-nav__badge">{{this.badge}}</span>
-        {{/if}}
-      </button>
-    {{/each}}
-  </nav>
-{{/unless}}
+    <aside class="dm-tactical-rail dm-tactical-nav" aria-label="Terminal Tático">
+      <div class="dm-tactical-rail__header">
+        <span class="dm-tactical-rail__title">// SECTORES TÁTICOS</span>
+      </div>
+      <div class="dm-tactical-rail__nav">
+        {{#each navigationHubItems}}
+          <button
+            type="button"
+            class="dm-tactical-rail__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
+            data-action="switchTab"
+            data-tab="{{this.tab}}"
+            title="{{this.title}}"
+          >
+            <span class="dm-tactical-rail__idx">{{this.index}}</span>
+            <i class="{{this.icon}} dm-tactical-rail__icon"></i>
+            <span class="dm-tactical-rail__label">{{this.shortTitle}}</span>
+            {{#if this.badge}}
+              <span class="dm-tactical-rail__badge">{{this.badge}}</span>
+            {{/if}}
+          </button>
+        {{/each}}
+      </div>
+    </aside>
+  {{/unless}}
 
-  <!-- Painéis de Conteúdo -->
-  <div class="dm-tab-panels dm-scrollable">
+  <!-- CANVAS TÁTICO PRINCIPAL (100% DA ALTURA) -->
+  <div class="dm-tactical-canvas">
     {{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
         <!-- Retângulo da Base com Galeria e Ajuste Proporcional -->

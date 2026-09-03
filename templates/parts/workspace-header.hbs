@@ -1,14 +1,5 @@
-<header class="dm-workspace-header">
+<header class="dm-workspace-header dm-hud-strip">
   <div class="dm-workspace-header__main">
-    {{#if breadcrumbs.length}}
-      <nav class="dm-breadcrumbs" aria-label="Caminho Hierárquico">
-        {{#each breadcrumbs}}
-          <span class="dm-breadcrumbs__item" data-action="selectDomain" data-uuid="{{uuid}}" title="{{name}}">{{name}}</span>
-          {{#unless @last}}<span class="dm-breadcrumbs__separator">/</span>{{/unless}}
-        {{/each}}
-      </nav>
-    {{/if}}
-
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
         {{#if selectedDomain.hasImage}}
@@ -23,24 +14,28 @@
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
             <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
-            <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
             <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
           </div>
+        </div>
 
-          {{#if selectedDomain.tags.length}}
-            <div class="dm-workspace-header__tags">
-              {{#each selectedDomain.tags}}
-                <span class="dm-tag-chip">
-                  #{{this}}
-                  {{#if @root.isGM}}
-                    <button type="button" class="dm-tag-chip__del" data-action="removeTag" data-tag="{{this}}" title="Remover tag #{{this}}">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
-                  {{/if}}
-                </span>
-              {{/each}}
-            </div>
-          {{/if}}
+        <!-- Telemetria Inline HUD -->
+        <div class="dm-hud-telemetry">
+          <span class="dm-hud-telemetry__item" title="Tesouro e Recursos Primários">
+            <i class="fa-solid fa-coins text-amber"></i>
+            <strong>{{metrics.primaryStockDisplay}}</strong>
+          </span>
+          <span class="dm-hud-telemetry__item" title="Defesa da Base">
+            <i class="fa-solid fa-shield-halved text-blue"></i>
+            <strong>{{metrics.defenseRating}} DEF</strong>
+          </span>
+          <span class="dm-hud-telemetry__item" title="População Total">
+            <i class="fa-solid fa-users text-emerald"></i>
+            <strong>{{metrics.populationTotal}} POP</strong>
+          </span>
+          <span class="dm-hud-telemetry__item" title="Obras Ativas">
+            <i class="fa-solid fa-trowel-bricks text-indigo"></i>
+            <strong>{{metrics.activeProjectsCount}} OBRAS</strong>
+          </span>
         </div>
       </div>
     {{else}}
@@ -56,7 +51,7 @@
       {{#if selectedDomain}}
         <button
           type="button"
-          class="dm-btn dm-btn--outline"
+          class="dm-btn dm-btn--outline dm-btn--sm"
           data-action="openEditDomain"
           title="Editar identidade deste Domínio"
         >
@@ -66,33 +61,32 @@
 
         <button
           type="button"
-          class="dm-btn dm-btn--danger"
+          class="dm-btn dm-btn--danger dm-btn--sm"
           data-action="openDeleteDomainModal"
           title="Excluir permanentemente este Domínio"
         >
           <i class="fa-solid fa-trash-can"></i>
-          <span>Excluir</span>
         </button>
       {{/if}}
 
       <button
         type="button"
-        class="dm-btn dm-btn--outline"
+        class="dm-btn dm-btn--outline dm-btn--sm"
         data-action="openEventModal"
         title="{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}"
       >
         <i class="fa-solid fa-dice-d20"></i>
-        <span>{{localize 'DOMAIN_MANAGER.Actions.RollEvent'}}</span>
+        <span>Evento</span>
       </button>
 
       <button
         type="button"
-        class="dm-btn dm-btn--primary"
+        class="dm-btn dm-btn--primary dm-btn--sm"
         data-action="openAdvanceModal"
         title="{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}"
       >
         <i class="fa-solid fa-forward-step"></i>
-        <span>{{localize 'DOMAIN_MANAGER.Actions.AdvanceTime'}}</span>
+        <span>Avançar Tempo</span>
       </button>
     {{/if}}
   </div>

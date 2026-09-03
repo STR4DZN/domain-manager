@@ -1560,31 +1560,36 @@
 {{/if}}
 
 <!-- CORPO PRINCIPAL DO WORKSPACE -->
-<div class="dm-workspace-content">
-  <!-- BARRA DE NAVEGAÇÃO TÁTICA INDEXADA (Rápida, compacta e sem scroll lateral) -->
+<div class="dm-tactical-workspace">
+  <!-- COLUNA DE NAVEGAÇÃO TÁTICA (COMP/CON STYLE) -->
   {{#unless activeNotableDossier}}
-<nav class="dm-tactical-nav" aria-label="Navegação Tática do Domínio">
-    {{#each navigationHubItems}}
-      <button
-        type="button"
-        class="dm-tactical-nav__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
-        data-action="switchTab"
-        data-tab="{{this.tab}}"
-        title="{{this.title}}"
-      >
-        <span class="dm-tactical-nav__num">{{this.index}}</span>
-        <i class="{{this.icon}}"></i>
-        <span class="dm-tactical-nav__label">{{this.shortTitle}}</span>
-        {{#if this.badge}}
-          <span class="dm-tactical-nav__badge">{{this.badge}}</span>
-        {{/if}}
-      </button>
-    {{/each}}
-  </nav>
-{{/unless}}
+    <aside class="dm-tactical-rail dm-tactical-nav" aria-label="Terminal Tático">
+      <div class="dm-tactical-rail__header">
+        <span class="dm-tactical-rail__title">// SECTORES TÁTICOS</span>
+      </div>
+      <div class="dm-tactical-rail__nav">
+        {{#each navigationHubItems}}
+          <button
+            type="button"
+            class="dm-tactical-rail__item {{#if (eq this.tab @root.activeTab)}}is-active{{/if}}"
+            data-action="switchTab"
+            data-tab="{{this.tab}}"
+            title="{{this.title}}"
+          >
+            <span class="dm-tactical-rail__idx">{{this.index}}</span>
+            <i class="{{this.icon}} dm-tactical-rail__icon"></i>
+            <span class="dm-tactical-rail__label">{{this.shortTitle}}</span>
+            {{#if this.badge}}
+              <span class="dm-tactical-rail__badge">{{this.badge}}</span>
+            {{/if}}
+          </button>
+        {{/each}}
+      </div>
+    </aside>
+  {{/unless}}
 
-  <!-- Painéis de Conteúdo -->
-  <div class="dm-tab-panels dm-scrollable">
+  <!-- CANVAS TÁTICO PRINCIPAL (100% DA ALTURA) -->
+  <div class="dm-tactical-canvas">
     {{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
         <!-- Retângulo da Base com Galeria e Ajuste Proporcional -->

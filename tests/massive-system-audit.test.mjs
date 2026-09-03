@@ -867,12 +867,12 @@ test("Auditoria Geral: Navegação Tática Indexada e Limpeza da Visão Geral", 
   // 2. A tabela pesada dm-hub foi removida a pedido do usuário
   assert.strictEqual(contentHbs.includes('dm-hub__table'), false, "dm-hub__table não deve mais poluir a visão geral");
 
-  // 3. A barra tática de navegação dm-tactical-nav está presente
-  assert.strictEqual(contentHbs.includes('dm-tactical-nav'), true, "dm-tactical-nav deve estar presente no template");
+  // 3. A navegação tática indexada COMP/CON está presente
+  assert.strictEqual(contentHbs.includes('dm-tactical-rail') || contentHbs.includes('dm-tactical-nav'), true, "Navegação tática deve estar presente no template");
 
   // 4. Os estilos CSS de navegação existem
   const css = fs.readFileSync("styles/shell.css", "utf8");
-  assert.strictEqual(css.includes('.dm-tactical-nav'), true, "Estilo .dm-tactical-nav deve existir em shell.css");
+  assert.strictEqual(css.includes('.dm-tactical-rail') || css.includes('.dm-tactical-nav'), true, "Estilo de navegação tática deve existir em shell.css");
 });
 
 test("Auditoria Geral: Sistema de Notificações, Alertas e Panorama da Visão Geral", async () => {
@@ -966,4 +966,28 @@ test("Auditoria Geral: Dossiê Tático e Bio-Monitor de Notáveis (Inspirado em 
   assert.strictEqual(css.includes(".dm-biomonitor"), true, "Estilo .dm-biomonitor deve existir");
   assert.strictEqual(css.includes(".dm-biomonitor__diamond"), true, "Estilo .dm-biomonitor__diamond deve existir");
   assert.strictEqual(css.includes(".dm-btn-dossier"), true, "Estilo .dm-btn-dossier deve existir");
+});
+
+test("Auditoria Geral: Layout COMP/CON de Terminal Tático Unificado (Single HUD Strip & Tactical Rail)", async () => {
+  // 1. Validar que o cabeçalho possui a estrutura do HUD Strip único com telemetria inline
+  const headerHbs = fs.readFileSync("templates/parts/workspace-header.hbs", "utf8");
+  assert.strictEqual(headerHbs.includes("dm-hud-strip"), true, "Cabeçalho deve possuir a classe dm-hud-strip");
+  assert.strictEqual(headerHbs.includes("dm-hud-telemetry"), true, "Cabeçalho deve possuir a telemetria inline");
+
+  // 2. Validar que o workspace-content.hbs possui a coluna tática e o canvas de altura total
+  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  assert.strictEqual(contentHbs.includes("dm-tactical-workspace"), true, "Container dm-tactical-workspace deve existir");
+  assert.strictEqual(contentHbs.includes("dm-tactical-rail"), true, "Coluna dm-tactical-rail deve existir");
+  assert.strictEqual(contentHbs.includes("dm-tactical-canvas"), true, "Canvas dm-tactical-canvas deve existir");
+
+  // 3. Validar que overview-cards.hbs está restrito à aba overview
+  const cardsHbs = fs.readFileSync("templates/parts/overview-cards.hbs", "utf8");
+  assert.strictEqual(cardsHbs.includes("activeTab 'overview'"), true, "Cartões globais devem estar restritos à aba overview");
+
+  // 4. Validar os estilos COMP/CON em shell.css
+  const css = fs.readFileSync("styles/shell.css", "utf8");
+  assert.strictEqual(css.includes(".dm-hud-strip"), true, "Estilo .dm-hud-strip deve existir em shell.css");
+  assert.strictEqual(css.includes(".dm-hud-telemetry"), true, "Estilo .dm-hud-telemetry deve existir em shell.css");
+  assert.strictEqual(css.includes(".dm-tactical-workspace"), true, "Estilo .dm-tactical-workspace deve existir em shell.css");
+  assert.strictEqual(css.includes(".dm-tactical-rail"), true, "Estilo .dm-tactical-rail deve existir em shell.css");
 });
