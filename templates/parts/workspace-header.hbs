@@ -11,13 +11,14 @@
 
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
-        <div class="dm-crest">
-          {{#if selectedDomain.isImageCrest}}
-            <img src="{{selectedDomain.crest}}" class="dm-crest__img" alt="{{selectedDomain.name}}" />
-          {{else}}
-            <i class="{{selectedDomain.crest}} dm-crest__icon"></i>
-          {{/if}}
-        </div>
+        {{#if selectedDomain.hasImage}}
+          <img src="{{selectedDomain.image}}" class="dm-base-thumb" alt="{{selectedDomain.name}}" />
+        {{else}}
+          <div class="dm-base-thumb dm-base-thumb--empty">
+            <i class="fa-solid fa-mountain-sun"></i>
+          </div>
+        {{/if}}
+
         <div class="dm-workspace-header__titles">
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>

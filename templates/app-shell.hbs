@@ -246,13 +246,14 @@
 
     {{#if selectedDomain}}
       <div class="dm-workspace-header__identity">
-        <div class="dm-crest">
-          {{#if selectedDomain.isImageCrest}}
-            <img src="{{selectedDomain.crest}}" class="dm-crest__img" alt="{{selectedDomain.name}}" />
-          {{else}}
-            <i class="{{selectedDomain.crest}} dm-crest__icon"></i>
-          {{/if}}
-        </div>
+        {{#if selectedDomain.hasImage}}
+          <img src="{{selectedDomain.image}}" class="dm-base-thumb" alt="{{selectedDomain.name}}" />
+        {{else}}
+          <div class="dm-base-thumb dm-base-thumb--empty">
+            <i class="fa-solid fa-mountain-sun"></i>
+          </div>
+        {{/if}}
+
         <div class="dm-workspace-header__titles">
           <div class="dm-workspace-header__title-row">
             <h1 class="dm-workspace-header__title">{{selectedDomain.name}}</h1>
@@ -393,19 +394,21 @@
     </div>
   </article>
 </section>
-        <!-- MODAIS IN-PAGE (EXCLUSIVOS GM) -->
+        <!-- MODAIS IN-PAGE COM ARQUITETURA COMPACTA E SCROLL INTERNO -->
 
 {{#if isTagModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-tag text-emerald"></i> Adicionar Tags ao Domínio</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelTagModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Digite uma ou mais tags separadas por vírgula para categorizar este domínio.</p>
-      <div class="dm-form-group">
-        <label>Novas Tags (separadas por vírgula):</label>
-        <input type="text" class="dm-input" id="dm-new-tag-input" placeholder="Ex: capital, mineração, setor-3, estratégico" autofocus />
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Digite uma ou mais tags separadas por vírgula para categorizar este domínio.</p>
+        <div class="dm-form-group mt-2">
+          <label>Novas Tags (separadas por vírgula):</label>
+          <input type="text" class="dm-input" id="dm-new-tag-input" placeholder="Ex: capital, mineração, setor-3, estratégico" autofocus />
+        </div>
       </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelTagModal">Cancelar</button>
@@ -417,17 +420,19 @@
 
 {{#if isDeletingDomain}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card dm-dialog-card--danger">
+    <div class="dm-dialog-card dm-dialog-card--danger dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-triangle-exclamation text-rose"></i> Confirmar Exclusão do Domínio</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelDeleteDomainModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc font-semibold text-rose">
-        Tem certeza que deseja excluir o domínio "<strong>{{selectedDomain.name}}</strong>"?
-      </p>
-      <p class="dm-dialog-desc">
-        Esta ação é <strong>irreversível</strong> e só pode ser executada pelo Mestre. Se este domínio possuir subdivisões ou bases subordinadas, elas serão desvinculadas automaticamente para a raiz territorial para evitar perda de dados.
-      </p>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc font-semibold text-rose">
+          Tem certeza que deseja excluir o domínio "<strong>{{selectedDomain.name}}</strong>"?
+        </p>
+        <p class="dm-dialog-desc mt-2">
+          Esta ação é <strong>irreversível</strong> e só pode ser executada pelo Mestre. Se este domínio possuir subdivisões ou bases subordinadas, elas serão desvinculadas automaticamente para a raiz territorial para evitar perda de dados.
+        </p>
+      </div>
       <div class="dm-dialog-card__actions">
         <button type="button" class="dm-btn dm-btn--outline" data-action="cancelDeleteDomainModal">Cancelar</button>
         <button type="button" class="dm-btn dm-btn--danger-fill" data-action="confirmDeleteDomain">
@@ -440,75 +445,85 @@
 
 {{#if isCreatingDomain}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-plus-circle text-emerald"></i> Criar Novo Domínio / Base</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelCreateDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Defina a identidade inicial, donos/jogadores controladores e localização na árvore hierárquica.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome do Domínio / Base *</label>
-          <input type="text" class="dm-input" id="dm-new-domain-name" placeholder="Ex: Base Alpha, Forte Solar, Cidade Baixa..." autofocus />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Defina a identidade, imagem da base, jogadores controladores e hierarquia.</p>
+        
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Categoria (Customizável)</label>
-            <input type="text" class="dm-input" id="dm-new-domain-category" placeholder="Ex: settlement, outpost, planet, galaxy..." value="settlement" />
+            <label>Nome do Domínio / Base *</label>
+            <input type="text" class="dm-input" id="dm-new-domain-name" placeholder="Ex: Base Alpha, Forte Solar, Cidade Baixa..." autofocus />
           </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Categoria (Customizável)</label>
+              <input type="text" class="dm-input" id="dm-new-domain-category" placeholder="Ex: settlement, outpost, planet, galaxy..." value="settlement" />
+            </div>
+            <div class="dm-form-group">
+              <label>Natureza</label>
+              <select class="dm-select" id="dm-new-domain-nature">
+                <option value="physical">Físico / Territorial</option>
+                <option value="organization">Organização / Guilda</option>
+                <option value="hybrid">Híbrido</option>
+                <option value="abstract">Esfera Abstrata</option>
+              </select>
+            </div>
+          </div>
+
           <div class="dm-form-group">
-            <label>Natureza</label>
-            <select class="dm-select" id="dm-new-domain-nature">
-              <option value="physical">Físico / Territorial</option>
-              <option value="organization">Organização / Guilda</option>
-              <option value="hybrid">Híbrido</option>
-              <option value="abstract">Esfera Abstrata</option>
-            </select>
+            <label>Imagem / Ilustração da Base (Arquivo ou Link URL):</label>
+            <div class="dm-file-input-group">
+              <input type="text" class="dm-input dm-img-input" id="dm-new-domain-crest" placeholder="caminho/imagem.webp ou https://.../imagem.png" />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-new-domain-crest">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+            </div>
+            <div class="dm-image-preview-container mt-1" style="display: none;">
+              <img src="" class="dm-image-preview-rect" alt="Prévia da Base" />
+            </div>
           </div>
-        </div>
 
-        <div class="dm-form-group">
-          <label>Brasão / Imagem / GIF (Arquivo ou Link URL):</label>
-          <div class="dm-file-input-group">
-            <input type="text" class="dm-input" id="dm-new-domain-crest" placeholder="caminho/brasao.webp ou https://.../gif" />
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-new-domain-crest">
-              <i class="fa-solid fa-file-import"></i> Arquivo
-            </button>
+          <div class="dm-form-group">
+            <label>Jogadores Controladores / Donos do Domínio:</label>
+            <div class="dm-player-list">
+              {{#if worldPlayers.length}}
+                {{#each worldPlayers}}
+                  <label class="dm-player-checkbox">
+                    <input type="checkbox" class="dm-create-domain-controller" value="{{id}}" />
+                    <span>{{name}}</span>
+                  </label>
+                {{/each}}
+              {{else}}
+                <span class="dm-text-muted">Nenhum jogador cadastrado no mundo.</span>
+              {{/if}}
+            </div>
           </div>
-        </div>
 
-        <div class="dm-form-group">
-          <label>Jogadores Controladores / Donos do Domínio:</label>
-          <div class="dm-player-list">
-            {{#if worldPlayers.length}}
-              {{#each worldPlayers}}
-                <label class="dm-player-checkbox">
-                  <input type="checkbox" class="dm-create-domain-controller" value="{{id}}" />
-                  <span>{{name}}</span>
-                </label>
-              {{/each}}
-            {{else}}
-              <span class="dm-text-muted">Nenhum jogador comum cadastrado no mundo.</span>
-            {{/if}}
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Tags (separadas por vírgula)</label>
+              <input type="text" class="dm-input" id="dm-new-domain-tags" placeholder="Ex: capital, mineração, fronteira" />
+            </div>
+            <div class="dm-form-group">
+              <label>Domínio Superior (Hierarquia)</label>
+              <select class="dm-select" id="dm-new-domain-parent">
+                <option value="">Nenhum (Raiz / Independente)</option>
+                {{#each availableParentDomains}}
+                  <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div class="dm-form-group">
-          <label>Tags (separadas por vírgula)</label>
-          <input type="text" class="dm-input" id="dm-new-domain-tags" placeholder="Ex: capital, mineração, fronteira" />
-        </div>
-        <div class="dm-form-group">
-          <label>Descrição Geral</label>
-          <textarea class="dm-textarea" id="dm-new-domain-description" rows="2" placeholder="Breve resumo sobre a base..."></textarea>
-        </div>
-        <div class="dm-form-group">
-          <label>Pertence a qual Domínio Superior? (Hierarquia Territorial)</label>
-          <select class="dm-select" id="dm-new-domain-parent">
-            <option value="">Nenhum (Raiz / Independente / Galáxia)</option>
-            {{#each availableParentDomains}}
-              <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
-            {{/each}}
-          </select>
+          <div class="dm-form-group">
+            <label>Descrição Geral</label>
+            <textarea class="dm-textarea" id="dm-new-domain-description" rows="2" placeholder="Breve resumo sobre a base..."></textarea>
+          </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -521,85 +536,98 @@
 
 {{#if isEditingDomain}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
-        <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Domínio: {{selectedDomain.name}}</h3>
+        <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Base / Território: {{selectedDomain.name}}</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelEditDomain" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Altere a identidade, brasão, jogadores donos, pontuação de defesa e hierarquia territorial.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome do Domínio / Base *</label>
-          <input type="text" class="dm-input" id="dm-edit-domain-name" value="{{selectedDomain.name}}" />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Altere a ilustração da base, donos, categoria, defesa e hierarquia.</p>
+        
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Categoria (Customizável)</label>
-            <input type="text" class="dm-input" id="dm-edit-domain-category" value="{{selectedDomain.category}}" />
+            <label>Nome do Domínio / Base *</label>
+            <input type="text" class="dm-input" id="dm-edit-domain-name" value="{{selectedDomain.name}}" />
           </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Categoria (Customizável)</label>
+              <input type="text" class="dm-input" id="dm-edit-domain-category" value="{{selectedDomain.category}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Natureza</label>
+              <select class="dm-select" id="dm-edit-domain-nature">
+                <option value="physical" {{#if (eq selectedDomain.nature 'physical')}}selected{{/if}}>Físico / Territorial</option>
+                <option value="organization" {{#if (eq selectedDomain.nature 'organization')}}selected{{/if}}>Organização / Guilda</option>
+                <option value="hybrid" {{#if (eq selectedDomain.nature 'hybrid')}}selected{{/if}}>Híbrido</option>
+                <option value="abstract" {{#if (eq selectedDomain.nature 'abstract')}}selected{{/if}}>Esfera Abstrata</option>
+              </select>
+            </div>
+          </div>
+
           <div class="dm-form-group">
-            <label>Natureza</label>
-            <select class="dm-select" id="dm-edit-domain-nature">
-              <option value="physical" {{#if (eq selectedDomain.nature 'physical')}}selected{{/if}}>Físico / Territorial</option>
-              <option value="organization" {{#if (eq selectedDomain.nature 'organization')}}selected{{/if}}>Organização / Guilda</option>
-              <option value="hybrid" {{#if (eq selectedDomain.nature 'hybrid')}}selected{{/if}}>Híbrido</option>
-              <option value="abstract" {{#if (eq selectedDomain.nature 'abstract')}}selected{{/if}}>Esfera Abstrata</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="dm-form-group">
-          <label>Brasão / Imagem / GIF (Arquivo ou Link URL):</label>
-          <div class="dm-file-input-group">
-            <input type="text" class="dm-input" id="dm-edit-domain-crest" value="{{selectedDomain.crest}}" placeholder="caminho/brasao.webp ou link..." />
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-domain-crest">
-              <i class="fa-solid fa-file-import"></i> Arquivo
-            </button>
-          </div>
-        </div>
-
-        <div class="dm-form-group">
-          <label>Jogadores Controladores / Donos do Domínio:</label>
-          <div class="dm-player-list">
-            {{#if worldPlayers.length}}
-              {{#each worldPlayers}}
-                <label class="dm-player-checkbox">
-                  <input type="checkbox" class="dm-edit-domain-controller" value="{{id}}" {{#if isSelected}}checked{{/if}} />
-                  <span>{{name}}</span>
-                </label>
-              {{/each}}
-            {{else}}
-              <span class="dm-text-muted">Nenhum jogador comum cadastrado no mundo.</span>
+            <label>Imagem / Ilustração da Base (Arquivo ou Link URL):</label>
+            <div class="dm-file-input-group">
+              <input type="text" class="dm-input dm-img-input" id="dm-edit-domain-crest" value="{{selectedDomain.crest}}" placeholder="caminho/imagem.webp ou link..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-domain-crest">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+            </div>
+            {{#if selectedDomain.crest}}
+              <div class="dm-image-preview-container mt-1">
+                <img src="{{selectedDomain.crest}}" class="dm-image-preview-rect" alt="Ilustração da Base" onerror="this.style.display='none'" />
+              </div>
             {{/if}}
           </div>
-        </div>
 
-        <div class="dm-form-row">
           <div class="dm-form-group">
-            <label>Defesa Base (Rating)</label>
-            <input type="number" class="dm-input" id="dm-edit-domain-defense" value="{{selectedDomain.defenseScore}}" />
+            <label>Jogadores Controladores / Donos do Domínio:</label>
+            <div class="dm-player-list">
+              {{#if worldPlayers.length}}
+                {{#each worldPlayers}}
+                  <label class="dm-player-checkbox">
+                    <input type="checkbox" class="dm-edit-domain-controller" value="{{id}}" {{#if isSelected}}checked{{/if}} />
+                    <span>{{name}}</span>
+                  </label>
+                {{/each}}
+              {{else}}
+                <span class="dm-text-muted">Nenhum jogador cadastrado no mundo.</span>
+              {{/if}}
+            </div>
           </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Defesa Base (Rating)</label>
+              <input type="number" class="dm-input" id="dm-edit-domain-defense" value="{{selectedDomain.defenseScore}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Número de Guardas</label>
+              <input type="number" class="dm-input" id="dm-edit-domain-guards" value="{{selectedDomain.guardCount}}" />
+            </div>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Tags (separadas por vírgula)</label>
+              <input type="text" class="dm-input" id="dm-edit-domain-tags" value="{{selectedDomainTagsFormatted}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Domínio Superior / Localização</label>
+              <select class="dm-select" id="dm-edit-domain-parent">
+                <option value="">Nenhum (Raiz / Independente)</option>
+                {{#each availableParentDomains}}
+                  <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
+          </div>
+
           <div class="dm-form-group">
-            <label>Número de Guardas</label>
-            <input type="number" class="dm-input" id="dm-edit-domain-guards" value="{{selectedDomain.guardCount}}" />
+            <label>Descrição Geral</label>
+            <textarea class="dm-textarea" id="dm-edit-domain-description" rows="2">{{selectedDomain.description}}</textarea>
           </div>
-        </div>
-        <div class="dm-form-group">
-          <label>Tags (separadas por vírgula)</label>
-          <input type="text" class="dm-input" id="dm-edit-domain-tags" value="{{selectedDomainTagsFormatted}}" />
-        </div>
-        <div class="dm-form-group">
-          <label>Descrição Geral</label>
-          <textarea class="dm-textarea" id="dm-edit-domain-description" rows="2">{{selectedDomain.description}}</textarea>
-        </div>
-        <div class="dm-form-group">
-          <label>Domínio Superior / Localização</label>
-          <select class="dm-select" id="dm-edit-domain-parent">
-            <option value="">Nenhum (Raiz / Independente / Galáxia)</option>
-            {{#each availableParentDomains}}
-              <option value="{{uuid}}" {{#if isSelected}}selected{{/if}}>{{name}}</option>
-            {{/each}}
-          </select>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -612,26 +640,28 @@
 
 {{#if isAdvancingTimeModal}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-clock-rotate-left text-blue"></i> Avançar Tempo do Mundo</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelAdvanceModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Simula e avança deterministicamente a economia, as obras, os acordos e as condições de todos os domínios.</p>
-      <div class="dm-advance-options">
-        <label class="dm-label">Opções Rápidas:</label>
-        <div class="dm-pill-row">
-          <button type="button" class="dm-btn dm-btn--outline" data-action="quickAdvanceTicks" data-ticks="1">+1 Dia (1 Tick)</button>
-          <button type="button" class="dm-btn dm-btn--outline" data-action="quickAdvanceTicks" data-ticks="7">+1 Semana (7 Ticks)</button>
-          <button type="button" class="dm-btn dm-btn--outline" data-action="quickAdvanceTicks" data-ticks="30">+1 Mês (30 Ticks)</button>
-        </div>
-        <div class="dm-form-group mt-3">
-          <label class="dm-label">Ou digite a quantidade de Ticks:</label>
-          <input type="number" class="dm-input" id="dm-advance-ticks-input" min="1" max="1000" value="{{advanceCustomTicks}}" />
-        </div>
-        <div class="dm-sync-info">
-          <i class="fa-solid fa-link text-emerald"></i>
-          <span>Sincronização ativada com o relógio do mundo ({{timekeeping.tickDurationLabel}})</span>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Simula deterministicamente a economia, as obras, os acordos e as condições de todos os domínios.</p>
+        <div class="dm-advance-options mt-3">
+          <label class="dm-label">Opções Rápidas:</label>
+          <div class="dm-pill-row">
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="quickAdvanceTicks" data-ticks="1">+1 Dia (1 Tick)</button>
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="quickAdvanceTicks" data-ticks="7">+1 Semana (7 Ticks)</button>
+            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="quickAdvanceTicks" data-ticks="30">+1 Mês (30 Ticks)</button>
+          </div>
+          <div class="dm-form-group mt-3">
+            <label class="dm-label">Ou digite a quantidade de Ticks:</label>
+            <input type="number" class="dm-input" id="dm-advance-ticks-input" min="1" max="1000" value="{{advanceCustomTicks}}" />
+          </div>
+          <div class="dm-sync-info mt-2">
+            <i class="fa-solid fa-link text-emerald"></i>
+            <span>Sincronização ativada com o relógio do mundo ({{timekeeping.tickDurationLabel}})</span>
+          </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -644,68 +674,70 @@
 
 {{#if isEventModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card dm-dialog-card--wide">
+    <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-dice-d20 text-purple"></i> Central de Eventos de Domínio</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelEventModal" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Role um evento customizado com filtros ou crie um evento autoral do Mestre para aplicar na base.</p>
-      <div class="dm-event-split">
-        <div class="dm-event-col">
-          <h4 class="dm-event-col__title"><i class="fa-solid fa-dice"></i> Sorteio com Filtros</h4>
-          <div class="dm-form-group">
-            <label>Filtrar por Categoria:</label>
-            <select class="dm-select" id="dm-event-filter-category">
-              <option value="all">Todas as Categorias</option>
-              <option value="economy">Economia & Comércio</option>
-              <option value="security">Segurança & Conflito</option>
-              <option value="population">Social & População</option>
-              <option value="crisis">Crise & Desastre</option>
-              <option value="opportunity">Oportunidade & Bonança</option>
-            </select>
-          </div>
-          <button type="button" class="dm-btn dm-btn--primary mt-4" data-action="submitCustomRollEvent">
-            <i class="fa-solid fa-dice-d20"></i> Rolar com Filtro
-          </button>
-        </div>
-        <div class="dm-event-divider"></div>
-        <div class="dm-event-col">
-          <h4 class="dm-event-col__title"><i class="fa-solid fa-feather"></i> Evento Autoral do Mestre</h4>
-          <div class="dm-form-group">
-            <label>Título do Evento:</label>
-            <input type="text" class="dm-input" id="dm-author-event-title" placeholder="Ex: Chuva de Meteoros, Festival Estelar..." />
-          </div>
-          <div class="dm-form-group">
-            <label>Descrição do Acontecimento:</label>
-            <textarea class="dm-textarea" id="dm-author-event-desc" rows="2" placeholder="O que aconteceu no território..."></textarea>
-          </div>
-          <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Role um evento com filtros ou crie um evento autoral do Mestre para aplicar na base.</p>
+        <div class="dm-event-split mt-3">
+          <div class="dm-event-col">
+            <h4 class="dm-event-col__title"><i class="fa-solid fa-dice"></i> Sorteio com Filtros</h4>
             <div class="dm-form-group">
-              <label>Severidade:</label>
-              <select class="dm-select" id="dm-author-event-severity">
-                <option value="neutral">Neutra / Comum</option>
-                <option value="crisis">Crise Severa</option>
-                <option value="opportunity">Oportunidade Positiva</option>
+              <label>Filtrar por Categoria:</label>
+              <select class="dm-select" id="dm-event-filter-category">
+                <option value="all">Todas as Categorias</option>
+                <option value="economy">Economia & Comércio</option>
+                <option value="security">Segurança & Conflito</option>
+                <option value="population">Social & População</option>
+                <option value="crisis">Crise & Desastre</option>
+                <option value="opportunity">Oportunidade & Bonança</option>
               </select>
             </div>
-            <div class="dm-form-group">
-              <label>Impacto no Tesouro:</label>
-              <input type="number" class="dm-input" id="dm-author-event-stock" placeholder="+/- valor" value="0" />
-            </div>
+            <button type="button" class="dm-btn dm-btn--primary mt-3 w-full" data-action="submitCustomRollEvent">
+              <i class="fa-solid fa-dice-d20"></i> Rolar com Filtro
+            </button>
           </div>
-          <div class="dm-form-row">
+          <div class="dm-event-divider"></div>
+          <div class="dm-event-col">
+            <h4 class="dm-event-col__title"><i class="fa-solid fa-feather"></i> Evento Autoral do Mestre</h4>
             <div class="dm-form-group">
-              <label>Condição Gerada (Opcional):</label>
-              <input type="text" class="dm-input" id="dm-author-event-cond-name" placeholder="Ex: Blecaute, Quarentena" />
+              <label>Título do Evento:</label>
+              <input type="text" class="dm-input" id="dm-author-event-title" placeholder="Ex: Chuva de Meteoros, Festival Estelar..." />
             </div>
             <div class="dm-form-group">
-              <label>Duração (Ticks):</label>
-              <input type="number" class="dm-input" id="dm-author-event-cond-ticks" value="3" />
+              <label>Descrição do Acontecimento:</label>
+              <textarea class="dm-textarea" id="dm-author-event-desc" rows="2" placeholder="O que aconteceu no território..."></textarea>
             </div>
+            <div class="dm-form-row">
+              <div class="dm-form-group">
+                <label>Severidade:</label>
+                <select class="dm-select" id="dm-author-event-severity">
+                  <option value="neutral">Neutra / Comum</option>
+                  <option value="crisis">Crise Severa</option>
+                  <option value="opportunity">Oportunidade Positiva</option>
+                </select>
+              </div>
+              <div class="dm-form-group">
+                <label>Impacto no Tesouro:</label>
+                <input type="number" class="dm-input" id="dm-author-event-stock" placeholder="+/- valor" value="0" />
+              </div>
+            </div>
+            <div class="dm-form-row">
+              <div class="dm-form-group">
+                <label>Condição Gerada:</label>
+                <input type="text" class="dm-input" id="dm-author-event-cond-name" placeholder="Ex: Blecaute, Quarentena" />
+              </div>
+              <div class="dm-form-group">
+                <label>Duração (Ticks):</label>
+                <input type="number" class="dm-input" id="dm-author-event-cond-ticks" value="3" />
+              </div>
+            </div>
+            <button type="button" class="dm-btn dm-btn--outline mt-2 w-full" data-action="submitAuthorEvent">
+              <i class="fa-solid fa-check"></i> Aplicar Evento do Mestre
+            </button>
           </div>
-          <button type="button" class="dm-btn dm-btn--outline mt-2" data-action="submitAuthorEvent">
-            <i class="fa-solid fa-check"></i> Aplicar Evento do Mestre
-          </button>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -717,35 +749,37 @@
 
 {{#if isStockModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-cubes-stacked text-amber"></i> Adicionar / Ajustar Estoque</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelStockModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Cadastre um recurso com saldo para este domínio ou selecione um existente.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Recurso Existente no Catálogo:</label>
-          <select class="dm-select" id="dm-stock-resource-select">
-            <option value="">-- Ou digite um novo recurso abaixo --</option>
-            {{#each catalogResources}}
-              <option value="{{id}}">{{name}} ({{id}})</option>
-            {{/each}}
-          </select>
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Cadastre um recurso com saldo para este domínio ou selecione um existente.</p>
+        <div class="dm-form-grid mt-2">
           <div class="dm-form-group">
-            <label>Novo ID de Recurso (se novo):</label>
-            <input type="text" class="dm-input" id="dm-stock-resource-custom" placeholder="Ex: ore, energy, food..." />
+            <label>Recurso Existente no Catálogo:</label>
+            <select class="dm-select" id="dm-stock-resource-select">
+              <option value="">-- Ou digite um novo recurso abaixo --</option>
+              {{#each catalogResources}}
+                <option value="{{id}}">{{name}} ({{id}})</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Novo ID de Recurso (se novo):</label>
+              <input type="text" class="dm-input" id="dm-stock-resource-custom" placeholder="Ex: ore, energy, food..." />
+            </div>
+            <div class="dm-form-group">
+              <label>Nome Amigável do Recurso:</label>
+              <input type="text" class="dm-input" id="dm-stock-resource-name" placeholder="Ex: Minério de Ferro, Energia Solar..." />
+            </div>
           </div>
           <div class="dm-form-group">
-            <label>Nome Amigável do Recurso:</label>
-            <input type="text" class="dm-input" id="dm-stock-resource-name" placeholder="Ex: Minério de Ferro, Energia Solar..." />
+            <label>Quantidade / Saldo Total:</label>
+            <input type="number" class="dm-input" id="dm-stock-amount" placeholder="0" value="100" />
           </div>
-        </div>
-        <div class="dm-form-group">
-          <label>Quantidade / Saldo Total:</label>
-          <input type="number" class="dm-input" id="dm-stock-amount" placeholder="0" value="100" />
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -758,42 +792,44 @@
 
 {{#if isFlowModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-arrow-right-arrow-left text-blue"></i> Adicionar Fluxo Econômico</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelFlowModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Configure uma entrada ou saída automática. Você pode digitar qualquer categoria personalizada.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome / Descrição do Fluxo:</label>
-          <input type="text" class="dm-input" id="dm-flow-name" placeholder="Ex: Rota Comercial, Manutenção da Frota, Impostos..." />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Configure uma entrada ou saída automática de recursos por tick.</p>
+        <div class="dm-form-grid mt-2">
           <div class="dm-form-group">
-            <label>Recurso:</label>
-            <select class="dm-select" id="dm-flow-resource">
-              {{#each catalogResources}}
-                <option value="{{id}}">{{name}}</option>
-              {{/each}}
-            </select>
+            <label>Nome / Descrição do Fluxo:</label>
+            <input type="text" class="dm-input" id="dm-flow-name" placeholder="Ex: Rota Comercial, Manutenção da Frota, Impostos..." />
           </div>
-          <div class="dm-form-group">
-            <label>Direção:</label>
-            <select class="dm-select" id="dm-flow-direction">
-              <option value="inflow">Entrada (Ganho por Tick)</option>
-              <option value="outflow">Saída (Gasto / Custo)</option>
-            </select>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Recurso:</label>
+              <select class="dm-select" id="dm-flow-resource">
+                {{#each catalogResources}}
+                  <option value="{{id}}">{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Direção:</label>
+              <select class="dm-select" id="dm-flow-direction">
+                <option value="inflow">Entrada (Ganho por Tick)</option>
+                <option value="outflow">Saída (Gasto / Custo)</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div class="dm-form-row">
-          <div class="dm-form-group">
-            <label>Quantidade por Tick:</label>
-            <input type="number" class="dm-input" id="dm-flow-amount" value="50" />
-          </div>
-          <div class="dm-form-group">
-            <label>Categoria (Livre / Customizável):</label>
-            <input type="text" class="dm-input" id="dm-flow-category" placeholder="Ex: comércio, mineração, impostos, manutenção..." value="comércio" />
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Quantidade por Tick:</label>
+              <input type="number" class="dm-input" id="dm-flow-amount" value="50" />
+            </div>
+            <div class="dm-form-group">
+              <label>Categoria (Livre):</label>
+              <input type="text" class="dm-input" id="dm-flow-category" placeholder="Ex: comércio, mineração, impostos..." value="comércio" />
+            </div>
           </div>
         </div>
       </div>
@@ -805,78 +841,82 @@
   </div>
 {{/if}}
 
-<!-- MODAL: NOVA OBRA / PROJETO -->
+<!-- MODAL: NOVA OBRA / PROJETO (COMPACTO COM SCROLL E PRÉVIA) -->
 {{#if isProjectModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-trowel-bricks text-amber"></i> Iniciar Nova Obra / Projeto</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelProjectModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Cadastre um empreendimento com nível (Tier), imagem/GIF e modificadores que serão ativados após a conclusão.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome do Projeto *</label>
-          <input type="text" class="dm-input" id="dm-project-name" placeholder="Ex: Escudo Defletor Orbital, Porto Estelar, Mina de Cristais..." />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Cadastre um empreendimento com nível (Tier), imagem e modificadores ativados na conclusão.</p>
+        
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Categoria:</label>
-            <input type="text" class="dm-input" id="dm-project-category" value="infraestrutura" />
+            <label>Nome do Projeto *</label>
+            <input type="text" class="dm-input" id="dm-project-name" placeholder="Ex: Escudo Defletor Orbital, Porto Estelar, Mina de Cristais..." />
           </div>
-          <div class="dm-form-group">
-            <label>Nível / Tier Inicial:</label>
-            <input type="number" class="dm-input" id="dm-project-tier" min="1" max="10" value="1" />
-          </div>
-        </div>
-        <div class="dm-form-row">
-          <div class="dm-form-group">
-            <label>Trabalho Total Necessário:</label>
-            <input type="number" class="dm-input" id="dm-project-work" value="100" />
-          </div>
-          <div class="dm-form-group">
-            <label>Taxa de Avanço por Tick:</label>
-            <input type="number" class="dm-input" id="dm-project-rate" value="10" />
-          </div>
-        </div>
-
-        <div class="dm-form-group">
-          <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
-          <div class="dm-file-input-group">
-            <input type="text" class="dm-input" id="dm-project-img" placeholder="caminho/projeto.webp ou link..." />
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-project-img">
-              <i class="fa-solid fa-file-import"></i> Arquivo
-            </button>
-          </div>
-        </div>
-
-        <div class="dm-form-group">
-          <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores ao Concluir (Bônus no Território):</label>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Bônus de Defesa (+DEF):</label>
-              <input type="number" class="dm-input" id="dm-project-mod-def" value="0" />
+              <label>Categoria:</label>
+              <input type="text" class="dm-input" id="dm-project-category" value="infraestrutura" />
             </div>
             <div class="dm-form-group">
-              <label>Bônus de Renda (+/tick):</label>
-              <input type="number" class="dm-input" id="dm-project-mod-income" value="0" />
+              <label>Nível / Tier Inicial:</label>
+              <input type="number" class="dm-input" id="dm-project-tier" min="1" max="10" value="1" />
             </div>
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Redução de Agitação (-Agit):</label>
-              <input type="number" class="dm-input" id="dm-project-mod-unrest" value="0" />
+              <label>Trabalho Total Necessário:</label>
+              <input type="number" class="dm-input" id="dm-project-work" value="100" />
             </div>
             <div class="dm-form-group">
-              <label>Capacidade Pop. (+Pop):</label>
-              <input type="number" class="dm-input" id="dm-project-mod-pop" value="0" />
+              <label>Taxa de Avanço por Tick:</label>
+              <input type="number" class="dm-input" id="dm-project-rate" value="10" />
             </div>
           </div>
-        </div>
 
-        <div class="dm-form-group">
-          <label>Descrição da Obra:</label>
-          <textarea class="dm-textarea" id="dm-project-desc" rows="2" placeholder="Propósito e detalhes da construção..."></textarea>
+          <div class="dm-form-group">
+            <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
+            <div class="dm-file-input-group">
+              <input type="text" class="dm-input dm-img-input" id="dm-project-img" placeholder="caminho/projeto.webp ou https://.../art.png" />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-project-img">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+            </div>
+            <div class="dm-image-preview-container mt-1" style="display: none;">
+              <img src="" class="dm-image-preview-rect" alt="Prévia da Obra" />
+            </div>
+          </div>
+
+          <div class="dm-form-group">
+            <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores ao Concluir (Bônus no Território):</label>
+            <div class="dm-mod-grid-4">
+              <div class="dm-mod-box">
+                <label>+DEF Defesa</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-project-mod-def" value="0" />
+              </div>
+              <div class="dm-mod-box">
+                <label>+/tick Renda</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-project-mod-income" value="0" />
+              </div>
+              <div class="dm-mod-box">
+                <label>-Agit Agitação</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-project-mod-unrest" value="0" />
+              </div>
+              <div class="dm-mod-box">
+                <label>+Pop População</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-project-mod-pop" value="0" />
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-form-group">
+            <label>Descrição da Obra:</label>
+            <textarea class="dm-textarea" id="dm-project-desc" rows="2" placeholder="Propósito e detalhes da construção..."></textarea>
+          </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -887,91 +927,99 @@
   </div>
 {{/if}}
 
-<!-- MODAL: EDITAR OBRA / PROJETO -->
+<!-- MODAL: EDITAR OBRA / PROJETO (COMPACTO COM SCROLL E PRÉVIA) -->
 {{#if isEditingProjectModal}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-large">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-pen-to-square text-amber"></i> Editar Obra: {{editingProject.name}}</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelEditProjectModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Altere o progresso, nível/tier, modificadores de território e imagem desta obra.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome do Projeto *</label>
-          <input type="text" class="dm-input" id="dm-edit-proj-name" value="{{editingProject.name}}" />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Altere o progresso, nível/tier, modificadores de território e imagem desta obra.</p>
+        
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Categoria:</label>
-            <input type="text" class="dm-input" id="dm-edit-proj-category" value="{{editingProject.category}}" />
+            <label>Nome do Projeto *</label>
+            <input type="text" class="dm-input" id="dm-edit-proj-name" value="{{editingProject.name}}" />
           </div>
-          <div class="dm-form-group">
-            <label>Nível / Tier:</label>
-            <input type="number" class="dm-input" id="dm-edit-proj-tier" value="{{editingProject.tier}}" />
-          </div>
-          <div class="dm-form-group">
-            <label>Status:</label>
-            <select class="dm-select" id="dm-edit-proj-status">
-              <option value="active" {{#if (eq editingProject.status 'active')}}selected{{/if}}>Em Construção</option>
-              <option value="paused" {{#if (eq editingProject.status 'paused')}}selected{{/if}}>Pausado</option>
-              <option value="blocked" {{#if (eq editingProject.status 'blocked')}}selected{{/if}}>Bloqueado</option>
-              <option value="completed" {{#if (eq editingProject.status 'completed')}}selected{{/if}}>Concluído (Ativar Bônus)</option>
-            </select>
-          </div>
-        </div>
-        <div class="dm-form-row">
-          <div class="dm-form-group">
-            <label>Trabalho Total:</label>
-            <input type="number" class="dm-input" id="dm-edit-proj-work" value="{{editingProject.required}}" />
-          </div>
-          <div class="dm-form-group">
-            <label>Trabalho Já Concluído:</label>
-            <input type="number" class="dm-input" id="dm-edit-proj-completed" value="{{editingProject.completed}}" />
-          </div>
-          <div class="dm-form-group">
-            <label>Taxa por Tick:</label>
-            <input type="number" class="dm-input" id="dm-edit-proj-rate" value="{{editingProject.rateAmount}}" />
-          </div>
-        </div>
-
-        <div class="dm-form-group">
-          <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
-          <div class="dm-file-input-group">
-            <input type="text" class="dm-input" id="dm-edit-proj-img" value="{{editingProject.image}}" placeholder="caminho/projeto.webp ou link..." />
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-proj-img">
-              <i class="fa-solid fa-file-import"></i> Arquivo
-            </button>
-          </div>
-        </div>
-
-        <div class="dm-form-group">
-          <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores Ativos ao Concluir:</label>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Bônus de Defesa (+DEF):</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-mod-def" value="{{editingProject.modifiers.defenseBonus}}" />
+              <label>Categoria:</label>
+              <input type="text" class="dm-input" id="dm-edit-proj-category" value="{{editingProject.category}}" />
             </div>
             <div class="dm-form-group">
-              <label>Bônus de Renda (+/tick):</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-mod-income" value="{{editingProject.modifiers.incomeBonus}}" />
+              <label>Nível / Tier:</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-tier" value="{{editingProject.tier}}" />
             </div>
           </div>
           <div class="dm-form-row">
             <div class="dm-form-group">
-              <label>Redução de Agitação (-Agit):</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-mod-unrest" value="{{editingProject.modifiers.unrestReduction}}" />
+              <label>Status:</label>
+              <select class="dm-select" id="dm-edit-proj-status">
+                <option value="active" {{#if (eq editingProject.status 'active')}}selected{{/if}}>Em Construção</option>
+                <option value="paused" {{#if (eq editingProject.status 'paused')}}selected{{/if}}>Pausado</option>
+                <option value="blocked" {{#if (eq editingProject.status 'blocked')}}selected{{/if}}>Bloqueado</option>
+                <option value="completed" {{#if (eq editingProject.status 'completed')}}selected{{/if}}>Concluído (Ativar Bônus)</option>
+              </select>
             </div>
             <div class="dm-form-group">
-              <label>Capacidade Pop. (+Pop):</label>
-              <input type="number" class="dm-input" id="dm-edit-proj-mod-pop" value="{{editingProject.modifiers.populationBonus}}" />
+              <label>Taxa por Tick:</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-rate" value="{{editingProject.rateAmount}}" />
             </div>
           </div>
-        </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Trabalho Total:</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-work" value="{{editingProject.required}}" />
+            </div>
+            <div class="dm-form-group">
+              <label>Trabalho Já Concluído:</label>
+              <input type="number" class="dm-input" id="dm-edit-proj-completed" value="{{editingProject.completed}}" />
+            </div>
+          </div>
 
-        <div class="dm-form-group">
-          <label>Descrição da Obra:</label>
-          <textarea class="dm-textarea" id="dm-edit-proj-desc" rows="2">{{editingProject.description}}</textarea>
+          <div class="dm-form-group">
+            <label>Imagem / GIF da Obra (Arquivo ou Link URL):</label>
+            <div class="dm-file-input-group">
+              <input type="text" class="dm-input dm-img-input" id="dm-edit-proj-img" value="{{editingProject.image}}" placeholder="caminho/projeto.webp ou link..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-edit-proj-img">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+            </div>
+            {{#if editingProject.image}}
+              <div class="dm-image-preview-container mt-1">
+                <img src="{{editingProject.image}}" class="dm-image-preview-rect" alt="Prévia da Obra" onerror="this.style.display='none'" />
+              </div>
+            {{/if}}
+          </div>
+
+          <div class="dm-form-group">
+            <label class="font-semibold text-emerald"><i class="fa-solid fa-wand-magic-sparkles"></i> Modificadores Ativos ao Concluir:</label>
+            <div class="dm-mod-grid-4">
+              <div class="dm-mod-box">
+                <label>+DEF Defesa</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-mod-def" value="{{editingProject.modifiers.defenseBonus}}" />
+              </div>
+              <div class="dm-mod-box">
+                <label>+/tick Renda</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-mod-income" value="{{editingProject.modifiers.incomeBonus}}" />
+              </div>
+              <div class="dm-mod-box">
+                <label>-Agit Agitação</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-mod-unrest" value="{{editingProject.modifiers.unrestReduction}}" />
+              </div>
+              <div class="dm-mod-box">
+                <label>+Pop População</label>
+                <input type="number" class="dm-input dm-input--compact" id="dm-edit-proj-mod-pop" value="{{editingProject.modifiers.populationBonus}}" />
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-form-group">
+            <label>Descrição da Obra:</label>
+            <textarea class="dm-textarea" id="dm-edit-proj-desc" rows="2">{{editingProject.description}}</textarea>
+          </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -984,55 +1032,57 @@
 
 {{#if isNotableModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
-        <h3><i class="fa-solid fa-user-tie text-blue"></i> Registrar Novo Personagem Notável</h3>
+        <h3><i class="fa-solid fa-user-tie text-blue"></i> Registrar Personagem Notável</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelNotableModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome do Notável *</label>
-          <input type="text" class="dm-input" id="dm-notable-name" placeholder="Ex: General Vane, Grão-Mestre Thorne..." />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Cargo / Função:</label>
-            <input type="text" class="dm-input" id="dm-notable-role" placeholder="Ex: Comandante da Guarda, Ministro da Fazenda" value="Conselheiro" />
+            <label>Nome do Notável *</label>
+            <input type="text" class="dm-input" id="dm-notable-name" placeholder="Ex: General Vane, Grão-Mestre Thorne..." />
           </div>
-          <div class="dm-form-group">
-            <label>Título Honorífico:</label>
-            <input type="text" class="dm-input" id="dm-notable-title" placeholder="Ex: Lorde, Capitão, Almirante" />
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Cargo / Função:</label>
+              <input type="text" class="dm-input" id="dm-notable-role" placeholder="Ex: Comandante da Guarda" value="Conselheiro" />
+            </div>
+            <div class="dm-form-group">
+              <label>Título Honorífico:</label>
+              <input type="text" class="dm-input" id="dm-notable-title" placeholder="Ex: Lorde, Capitão, Almirante" />
+            </div>
           </div>
-        </div>
 
-        <div class="dm-form-group">
-          <label>Retrato / GIF do Notável (Arquivo ou Link URL):</label>
-          <div class="dm-file-input-group">
-            <input type="text" class="dm-input" id="dm-notable-portrait" placeholder="caminho/personagem.webp ou link..." />
-            <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-notable-portrait">
-              <i class="fa-solid fa-file-import"></i> Arquivo
-            </button>
+          <div class="dm-form-group">
+            <label>Retrato / GIF do Notável (Arquivo ou Link URL):</label>
+            <div class="dm-file-input-group">
+              <input type="text" class="dm-input dm-img-input" id="dm-notable-portrait" placeholder="caminho/personagem.webp ou link..." />
+              <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openFilePicker" data-target="#dm-notable-portrait">
+                <i class="fa-solid fa-file-import"></i> Arquivo
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="dm-form-row">
-          <div class="dm-form-group">
-            <label>Lealdade:</label>
-            <select class="dm-select" id="dm-notable-loyalty">
-              <option value="Inabalável">Inabalável</option>
-              <option value="Alta" selected>Alta</option>
-              <option value="Estável">Estável</option>
-              <option value="Duvidosa">Duvidosa</option>
-            </select>
-          </div>
-          <div class="dm-form-group">
-            <label>Status:</label>
-            <select class="dm-select" id="dm-notable-status">
-              <option value="active" selected>Ativo / Presente</option>
-              <option value="away">Em Missão / Ausente</option>
-              <option value="unavailable">Indisponível</option>
-              <option value="retired">Aposentado</option>
-            </select>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Lealdade:</label>
+              <select class="dm-select" id="dm-notable-loyalty">
+                <option value="Inabalável">Inabalável</option>
+                <option value="Alta" selected>Alta</option>
+                <option value="Estável">Estável</option>
+                <option value="Duvidosa">Duvidosa</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Status:</label>
+              <select class="dm-select" id="dm-notable-status">
+                <option value="active" selected>Ativo / Presente</option>
+                <option value="away">Em Missão / Ausente</option>
+                <option value="unavailable">Indisponível</option>
+                <option value="retired">Aposentado</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -1046,35 +1096,37 @@
 
 {{#if isGroupModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-people-group text-emerald"></i> Adicionar Grupo Populacional</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelGroupModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="dm-dialog-desc">Cadastre uma população. O sistema calcula a agitação ponderada automaticamente com base na satisfação.</p>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Nome do Grupo *</label>
-          <input type="text" class="dm-input" id="dm-group-name" placeholder="Ex: Mineiros das Crateras, Cidadãos da Capital, Cientistas..." />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <p class="dm-dialog-desc">Cadastre uma população. O sistema calcula a agitação ponderada automaticamente.</p>
+        <div class="dm-form-grid mt-2">
           <div class="dm-form-group">
-            <label>População (Contagem):</label>
-            <input type="number" class="dm-input" id="dm-group-count" value="1000" />
+            <label>Nome do Grupo *</label>
+            <input type="text" class="dm-input" id="dm-group-name" placeholder="Ex: Mineiros das Crateras, Cidadãos da Capital..." />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>População (Contagem):</label>
+              <input type="number" class="dm-input" id="dm-group-count" value="1000" />
+            </div>
+            <div class="dm-form-group">
+              <label>Satisfação:</label>
+              <select class="dm-select" id="dm-group-happiness">
+                <option value="Muito Alta">Muito Alta (Agitação 0)</option>
+                <option value="Estável" selected>Estável (Agitação 2)</option>
+                <option value="Insatisfeito">Insatisfeito (Agitação 6)</option>
+                <option value="Rebelde">Rebelde / Em Revolta (Agitação 9)</option>
+              </select>
+            </div>
           </div>
           <div class="dm-form-group">
-            <label>Satisfação:</label>
-            <select class="dm-select" id="dm-group-happiness">
-              <option value="Muito Alta">Muito Alta (Agitação 0)</option>
-              <option value="Estável" selected>Estável (Agitação 2)</option>
-              <option value="Insatisfeito">Insatisfeito (Agitação 6)</option>
-              <option value="Rebelde">Rebelde / Em Revolta (Agitação 9)</option>
-            </select>
+            <label>Ajuste Fino de Agitação (Opcional, 0 a 10):</label>
+            <input type="number" class="dm-input" id="dm-group-unrest" min="0" max="10" placeholder="Automático pela satisfação" />
           </div>
-        </div>
-        <div class="dm-form-group">
-          <label>Ajuste Fino de Agitação (Opcional, 0 a 10 - deixe vazio para cálculo automático):</label>
-          <input type="number" class="dm-input" id="dm-group-unrest" min="0" max="10" placeholder="Automático pela satisfação" />
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -1087,34 +1139,36 @@
 
 {{#if isRelationModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-handshake text-purple"></i> Nova Relação Diplomática</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelRelationModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Domínio Parceiro *</label>
-          <select class="dm-select" id="dm-relation-target">
-            {{#each availableParentDomains}}
-              <option value="{{uuid}}">{{name}}</option>
-            {{/each}}
-          </select>
-        </div>
-        <div class="dm-form-group">
-          <label>Postura Diplomática:</label>
-          <select class="dm-select" id="dm-relation-posture">
-            <option value="allied">Aliança Firme</option>
-            <option value="friendly">Amigável / Cooperativo</option>
-            <option value="neutral" selected>Neutro</option>
-            <option value="tense">Tenso / Fricção</option>
-            <option value="hostile">Hostil / Beligerante</option>
-            <option value="at_war">Em Guerra Declarada</option>
-          </select>
-        </div>
-        <div class="dm-form-group">
-          <label>Termos e Notas Diplomáticas:</label>
-          <textarea class="dm-textarea" id="dm-relation-notes" rows="2" placeholder="Tratados assinados, embaixadas, histórico..."></textarea>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Domínio Parceiro *</label>
+            <select class="dm-select" id="dm-relation-target">
+              {{#each availableParentDomains}}
+                <option value="{{uuid}}">{{name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Postura Diplomática:</label>
+            <select class="dm-select" id="dm-relation-posture">
+              <option value="allied">Aliança Firme</option>
+              <option value="friendly">Amigável / Cooperativo</option>
+              <option value="neutral" selected>Neutro</option>
+              <option value="tense">Tenso / Fricção</option>
+              <option value="hostile">Hostil / Beligerante</option>
+              <option value="at_war">Em Guerra Declarada</option>
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Termos e Notas Diplomáticas:</label>
+            <textarea class="dm-textarea" id="dm-relation-notes" rows="2" placeholder="Tratados assinados, embaixadas, histórico..."></textarea>
+          </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -1127,48 +1181,50 @@
 
 {{#if isIntelModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-user-secret text-rose"></i> Registrar Segredo ou Informe</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelIntelModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Título do Segredo / Informe *</label>
-          <input type="text" class="dm-input" id="dm-intel-title" placeholder="Ex: Planos de Invasão dos Piratas, Jazida Oculta de Cristais..." />
-        </div>
-        <div class="dm-form-row">
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
           <div class="dm-form-group">
-            <label>Tipo:</label>
-            <select class="dm-select" id="dm-intel-category">
-              <option value="secret" selected>Segredo Confidencial</option>
-              <option value="rumor">Boato / Rumor</option>
-              <option value="fact">Fato Comprovado</option>
-              <option value="clue">Pista / Investigação</option>
-              <option value="lore">História / Tradição</option>
+            <label>Título do Segredo / Informe *</label>
+            <input type="text" class="dm-input" id="dm-intel-title" placeholder="Ex: Planos de Invasão dos Piratas..." />
+          </div>
+          <div class="dm-form-row">
+            <div class="dm-form-group">
+              <label>Tipo:</label>
+              <select class="dm-select" id="dm-intel-category">
+                <option value="secret" selected>Segredo Confidencial</option>
+                <option value="rumor">Boato / Rumor</option>
+                <option value="fact">Fato Comprovado</option>
+                <option value="clue">Pista / Investigação</option>
+                <option value="lore">História / Tradição</option>
+              </select>
+            </div>
+            <div class="dm-form-group">
+              <label>Credibilidade:</label>
+              <select class="dm-select" id="dm-intel-credibility">
+                <option value="confirmed" selected>Confirmada</option>
+                <option value="likely">Provável</option>
+                <option value="doubtful">Duvidosa</option>
+                <option value="false">Falsa / Desinformação</option>
+              </select>
+            </div>
+          </div>
+          <div class="dm-form-group">
+            <label>Visibilidade:</label>
+            <select class="dm-select" id="dm-intel-visibility">
+              <option value="gm_only" selected>Apenas o Mestre (GM)</option>
+              <option value="all_controllers">Controladores do Domínio</option>
+              <option value="public">Público / Todos os Jogadores</option>
             </select>
           </div>
           <div class="dm-form-group">
-            <label>Credibilidade:</label>
-            <select class="dm-select" id="dm-intel-credibility">
-              <option value="confirmed" selected>Confirmada</option>
-              <option value="likely">Provável</option>
-              <option value="doubtful">Duvidosa</option>
-              <option value="false">Falsa / Desinformação</option>
-            </select>
+            <label>Conteúdo Detalhado:</label>
+            <textarea class="dm-textarea" id="dm-intel-content" rows="3" placeholder="Informação confidencial..."></textarea>
           </div>
-        </div>
-        <div class="dm-form-group">
-          <label>Visibilidade:</label>
-          <select class="dm-select" id="dm-intel-visibility">
-            <option value="gm_only" selected>Apenas o Mestre (GM)</option>
-            <option value="all_controllers">Controladores do Domínio</option>
-            <option value="public">Público / Todos os Jogadores</option>
-          </select>
-        </div>
-        <div class="dm-form-group">
-          <label>Conteúdo Detalhado:</label>
-          <textarea class="dm-textarea" id="dm-intel-content" rows="3" placeholder="Informação confidencial..."></textarea>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -1181,33 +1237,35 @@
 
 {{#if isHistoryModalOpen}}
   <div class="dm-overlay-panel">
-    <div class="dm-dialog-card">
+    <div class="dm-dialog-card dm-modal-compact">
       <div class="dm-dialog-card__header">
         <h3><i class="fa-solid fa-feather-pointed text-blue"></i> Registrar Crônica no Histórico</h3>
         <button type="button" class="dm-icon-btn" data-action="cancelHistoryModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="dm-form-grid">
-        <div class="dm-form-group">
-          <label>Título do Evento Histórico *</label>
-          <input type="text" class="dm-input" id="dm-history-title" placeholder="Ex: Inauguração da Cidadela, Grande Vitória na Batalha Orbital..." />
-        </div>
-        <div class="dm-form-group">
-          <label>Categoria:</label>
-          <select class="dm-select" id="dm-history-category">
-            <option value="conquest">Conquista / Triunfo</option>
-            <option value="crisis">Crise / Calamidade</option>
-            <option value="project">Obra Concluída</option>
-            <option value="politics">Tratado / Política</option>
-            <option value="story" selected>Crônica Geral</option>
-          </select>
-        </div>
-        <div class="dm-form-group">
-          <label>Resumo Narrativo:</label>
-          <input type="text" class="dm-input" id="dm-history-summary" placeholder="Uma frase de resumo..." />
-        </div>
-        <div class="dm-form-group">
-          <label>Detalhes Históricos:</label>
-          <textarea class="dm-textarea" id="dm-history-details" rows="3" placeholder="O relato completo para a posteridade..."></textarea>
+      <div class="dm-dialog-card__body dm-scrollable">
+        <div class="dm-form-grid">
+          <div class="dm-form-group">
+            <label>Título do Evento Histórico *</label>
+            <input type="text" class="dm-input" id="dm-history-title" placeholder="Ex: Inauguração da Cidadela, Grande Vitória..." />
+          </div>
+          <div class="dm-form-group">
+            <label>Categoria:</label>
+            <select class="dm-select" id="dm-history-category">
+              <option value="conquest">Conquista / Triunfo</option>
+              <option value="crisis">Crise / Calamidade</option>
+              <option value="project">Obra Concluída</option>
+              <option value="politics">Tratado / Política</option>
+              <option value="story" selected>Crônica Geral</option>
+            </select>
+          </div>
+          <div class="dm-form-group">
+            <label>Resumo Narrativo:</label>
+            <input type="text" class="dm-input" id="dm-history-summary" placeholder="Uma frase de resumo..." />
+          </div>
+          <div class="dm-form-group">
+            <label>Detalhes Históricos:</label>
+            <textarea class="dm-textarea" id="dm-history-details" rows="3" placeholder="O relato completo para a posteridade..."></textarea>
+          </div>
         </div>
       </div>
       <div class="dm-dialog-card__actions">
@@ -1255,6 +1313,36 @@
   <div class="dm-tab-panels dm-scrollable">
     {{#if (eq activeTab 'overview')}}
       <div class="dm-panel dm-panel--overview">
+        <!-- Retângulo da Base (Ilustração / Imagem Real da Base) -->
+        {{#if selectedDomain}}
+          <div class="dm-base-hero">
+            {{#if selectedDomain.hasImage}}
+              <img src="{{selectedDomain.image}}" class="dm-base-hero__img" alt="{{selectedDomain.name}}" />
+            {{else}}
+              <div class="dm-base-hero__placeholder">
+                <i class="fa-solid fa-mountain-sun dm-base-hero__placeholder-icon"></i>
+                <span>Nenhuma ilustração definida para esta base</span>
+              </div>
+            {{/if}}
+            <div class="dm-base-hero__overlay">
+              <div class="dm-base-hero__text">
+                <h2 class="dm-base-hero__name">{{selectedDomain.name}}</h2>
+                <div class="dm-base-hero__badges">
+                  <span class="dm-pill dm-pill--category">{{selectedDomain.categoryLabel}}</span>
+                  <span class="dm-pill dm-pill--nature">{{selectedDomain.natureLabel}}</span>
+                  <span class="dm-badge dm-badge--{{selectedDomain.state}}">{{selectedDomain.stateLabel}}</span>
+                </div>
+              </div>
+              {{#if @root.isGM}}
+                <button type="button" class="dm-btn dm-btn--outline dm-btn--xs dm-base-hero__edit-btn" data-action="openEditDomain" title="Definir / Alterar Imagem da Base">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Alterar Imagem</span>
+                </button>
+              {{/if}}
+            </div>
+          </div>
+        {{/if}}
+
         {{#if selectedDomain.description}}
           <div class="dm-prose">
             <p>{{selectedDomain.description}}</p>
@@ -1400,7 +1488,7 @@
     {{#if (eq activeTab 'projects')}}
       <div class="dm-panel dm-panel--projects">
         <div class="dm-panel__header-row">
-          <h3 class="dm-section-title"><i class="fa-solid fa-trowel-bricks"></i> Obras & Projetos (Com Tiers e Modificadores)</h3>
+          <h3 class="dm-section-title"><i class="fa-solid fa-trowel-bricks"></i> Obras & Projetos</h3>
           {{#if isGM}}
             <button type="button" class="dm-btn dm-btn--outline dm-btn--sm" data-action="openAddProjectModal">
               <i class="fa-solid fa-plus"></i> Nova Obra / Projeto

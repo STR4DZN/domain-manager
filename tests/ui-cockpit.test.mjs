@@ -723,3 +723,59 @@ test("v6: Português 100%, Donos/Players, Tiers & Modificadores de Obra e FilePi
   // Restaurar GM
   globalThis.game.user = { id: "gm-1", name: "Mestre dos Magos", isGM: true };
 });
+
+test("v7: Hero retangular da base, modais compactos com scroll e botões no-wrap", async () => {
+  game.journal = [];
+  game.user = { id: "gm-1", name: "Mestre dos Magos", isGM: true };
+
+  const { recordIndex } = await import("../scripts/data/record-index.js");
+  const { DomainManagerShellApp } = await import("../scripts/ui/shell-app.js");
+
+  recordIndex.rebuild();
+
+  // 1. Criar Domínio com ilustração da base (imagem real da base, não bandeira)
+  const baseDoc = createMockJournal({
+    uuid: "JournalEntry.citadel-prime",
+    name: "Cidadela Prime",
+    data: {
+      identity: {
+        category: "settlement",
+        nature: "physical",
+        state: "active",
+        tags: ["capital"]
+      },
+      visuals: {
+        image: "assets/illustrations/citadel-showcase.webp"
+      },
+      security: { defenseScore: 15, guardCount: 10 },
+      governance: { controllers: ["gm-1"] }
+    }
+  });
+  recordIndex.upsert(baseDoc);
+
+  const app = new DomainManagerShellApp();
+  app.setRoute({ domainUuid: "JournalEntry.citadel-prime" });
+
+  const context = await app._prepareContext();
+
+  // Verificação 1: A base possui ilustração real com retângulo próprio (hasImage = true)
+  assert.equal(context.selectedDomain.hasImage, true);
+  assert.equal(context.selectedDomain.image, "assets/illustrations/citadel-showcase.webp");
+
+  // Verificação 2: O template possui o bloco do retângulo de ilustração da base (dm-base-hero)
+  const templateContent = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/parts/workspace-content.hbs"), "utf8");
+  assert.ok(templateContent.includes("dm-base-hero"));
+  assert.ok(templateContent.includes("dm-base-hero__img"));
+
+  // Verificação 3: Todos os modais possuem a arquitetura de contenção com body scrollável e actions fixas
+  assert.ok(templateContent.includes("dm-dialog-card__body dm-scrollable"));
+  assert.ok(templateContent.includes("dm-dialog-card__actions"));
+  assert.ok(templateContent.includes("dm-image-preview-container"));
+
+  // Verificação 4: O CSS possui regras estritas de white-space: nowrap e max-height nos modais
+  const cssContent = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
+  assert.ok(cssContent.includes("white-space: nowrap !important;"));
+  assert.ok(cssContent.includes("max-height: 84vh !important;"));
+  assert.ok(cssContent.includes(".dm-base-hero"));
+  assert.ok(cssContent.includes(".dm-project-card__media"));
+});

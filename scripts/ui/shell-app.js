@@ -521,6 +521,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         current: input.value || "",
         callback: (selectedPath) => {
           input.value = selectedPath;
+          const container = input.closest(".dm-form-group")?.querySelector(".dm-image-preview-container");
+          if (container) {
+            const img = container.querySelector("img");
+            if (img) {
+              img.src = selectedPath;
+              container.style.display = "block";
+            }
+          }
         }
       }).render(true);
     } else {
@@ -1953,7 +1961,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         unrestRiskLevel: unrestLevel
       };
 
-      const crestRaw = data.identity?.crestMedia?.path || data.visuals?.crestImg || "fa-solid fa-landmark";
+      const imageRaw = data.visuals?.image || data.identity?.crestMedia?.path || data.visuals?.crestImg || "";
+      const hasImage = Boolean(imageRaw && isImageSource(imageRaw));
+      const crestRaw = imageRaw || "fa-solid fa-mountain-sun";
 
       selectedDomain = {
         uuid: selectedRecord.document.uuid,
@@ -1964,8 +1974,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         natureLabel: LABELS_PTBR.natures[data.identity?.nature] || data.identity?.nature || "Físico / Territorial",
         state: data.identity?.state || "active",
         stateLabel: LABELS_PTBR.states[data.identity?.state] || data.identity?.state || "Ativo",
+        image: imageRaw,
+        hasImage,
         crest: crestRaw,
-        isImageCrest: isImageSource(crestRaw),
+        isImageCrest: hasImage,
         tags: data.identity?.tags || [],
         description: data.identity?.description || "Sem descrição registrada.",
         defenseScore: defenseBase,

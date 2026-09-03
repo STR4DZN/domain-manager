@@ -1603,3 +1603,352 @@
 
 .w-full { width: 100%; }
 .mb-3 { margin-bottom: 12px; }
+
+/* ==========================================================================
+   V7 ENHANCEMENTS: NO-WRAP BUTTONS, COMPACT SCROLLING MODALS, BASE HERO RECTANGLE
+   ========================================================================== */
+
+/* 1. Header Buttons & Badges (Fix definitivo da quebra de texto em duas linhas) */
+.dm-workspace-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 18px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-workspace-header__main {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.dm-workspace-header__actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+.dm-btn {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+}
+
+.dm-btn span {
+  white-space: nowrap !important;
+  display: inline !important;
+}
+
+.dm-workspace-header__title-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+}
+
+.dm-workspace-header__title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 1.25rem !important;
+  margin: 0 !important;
+}
+
+.dm-pill,
+.dm-badge,
+.dm-tag-chip {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* 2. Base Artwork Thumbnail no Header (Substituindo o brasão medieval) */
+.dm-base-thumb {
+  width: 48px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  display: block;
+}
+
+.dm-base-thumb--empty {
+  background: #18181c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717a;
+  font-size: 1rem;
+}
+
+/* 3. Base Hero Rectangle (Retângulo de Ilustração da Base na Visão Geral) */
+.dm-base-hero {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 14px;
+  background: #111114;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dm-base-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dm-base-hero__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: radial-gradient(circle at center, #1e1e24 0%, #111114 100%);
+  color: #71717a;
+  font-size: 0.85rem;
+}
+
+.dm-base-hero__placeholder-icon {
+  font-size: 2.2rem;
+  color: #52525b;
+}
+
+.dm-base-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 8, 12, 0.92) 0%, rgba(8, 8, 12, 0.35) 50%, transparent 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 14px 18px;
+}
+
+.dm-base-hero__name {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.dm-base-hero__tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+/* 4. Modais com Arquitetura Anti-Estouro (Header fixo, Body com Scroll e Actions fixas) */
+.dm-overlay-panel {
+  position: absolute !important;
+  inset: 0 !important;
+  background: rgba(4, 4, 6, 0.82) !important;
+  backdrop-filter: blur(5px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.dm-dialog-card {
+  background: #18181c !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75) !important;
+  width: 100% !important;
+  max-height: 84vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  animation: dmFadeIn 0.15s ease-out;
+}
+
+.dm-modal-compact {
+  max-width: 520px !important;
+}
+
+.dm-modal-large {
+  max-width: 660px !important;
+}
+
+.dm-dialog-card__header {
+  padding: 14px 18px !important;
+  background: #141418 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-dialog-card__header h3 {
+  margin: 0 !important;
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  color: #f4f4f5 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.dm-dialog-card__body {
+  padding: 16px 18px !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.dm-dialog-card__actions {
+  padding: 12px 18px !important;
+  background: #131317 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+/* 5. Live Image Preview Box nos Modais */
+.dm-image-preview-container {
+  width: 100%;
+  height: 110px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #111114;
+  margin-top: 6px;
+}
+
+.dm-image-preview-rect {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 6. Modificadores de Projeto em Grid Compacto */
+.dm-mod-grid-4 {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+  margin-top: 4px;
+}
+
+.dm-mod-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dm-mod-box label {
+  font-size: 0.72rem !important;
+  color: #a1a1aa !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}
+
+.dm-input--compact {
+  padding: 4px 8px !important;
+  font-size: 0.8rem !important;
+  height: 28px !important;
+}
+
+/* 7. Lista Compacta de Jogadores */
+.dm-player-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  background: #111114 !important;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  max-height: 80px !important;
+  overflow-y: auto !important;
+}
+
+.dm-player-checkbox {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 2px 7px !important;
+  border-radius: 5px !important;
+  font-size: 0.74rem !important;
+  color: #d4d4d8 !important;
+  cursor: pointer !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  user-select: none;
+}
+
+.dm-player-checkbox:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dm-player-checkbox input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  accent-color: #34d399;
+}
+
+/* 8. Retângulos Decentes para Obras e Notáveis */
+.dm-project-card__media {
+  width: 100% !important;
+  height: 130px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  margin: 8px 0 !important;
+  background: #111114 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dm-project-card__thumb {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.dm-notable-portrait {
+  width: 64px !important;
+  height: 76px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background: #141418 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  flex-shrink: 0 !important;
+}
+
+.dm-notable-portrait-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
