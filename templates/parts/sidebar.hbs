@@ -24,8 +24,8 @@
             type="button"
             class="dm-icon-btn"
             data-action="toggleSidebar"
-            title="Recolher para Mini-Barra"
-            aria-label="Recolher para Mini-Barra"
+            title="Recolher Painel Lateral"
+            aria-label="Recolher Painel Lateral"
           >
             <i class="fa-solid fa-chevron-left"></i>
           </button>
@@ -144,7 +144,8 @@
               <div
                 class="dm-tree-item {{#if isSelected}}is-selected{{/if}} {{#if isFolder}}dm-tree-item--folder{{else}}dm-tree-item--leaf{{/if}}"
                 data-uuid="{{uuid}}"
-                style="padding-left: {{indentPx}}px;"
+                data-depth="{{depth}}"
+                style="--depth: {{depth}};"
                 role="treeitem"
                 tabindex="0"
               >
@@ -159,14 +160,14 @@
                     <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
                   </button>
                 {{else}}
-                  <span class="dm-tree-item__spacer"></span>
+                  <span class="dm-tree-item__connector"></span>
                 {{/if}}
 
                 <div class="dm-tree-item__content" data-action="selectDomain" data-uuid="{{uuid}}">
                   {{#if hasImage}}
                     <img src="{{image}}" class="dm-tree-item__thumb" alt="{{name}}" />
                   {{else}}
-                    <i class="fa-solid {{#if isFolder}}fa-folder{{else}}fa-shield-halved{{/if}} dm-tree-item__icon"></i>
+                    <i class="fa-solid {{#if isFolder}}fa-folder text-amber{{else}}fa-shield-halved text-blue{{/if}} dm-tree-item__icon"></i>
                   {{/if}}
                   <span class="dm-tree-item__label" title="{{name}}">{{name}}</span>
                   {{#if childCount}}

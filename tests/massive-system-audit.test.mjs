@@ -859,7 +859,7 @@ test("Auditoria Geral: Preservação de schema do Image Studio e sincronização
 });
 
 test("Auditoria Geral: Navegação Tática Indexada e Limpeza da Visão Geral", async () => {
-  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  const contentHbs = fs.readFileSync("templates/app-shell.hbs", "utf8");
   const sidebarHbs = fs.readFileSync("templates/parts/sidebar.hbs", "utf8");
   
   // 1. A antiga barra de scroll horizontal dm-tabs foi completamente removida
@@ -990,8 +990,8 @@ test("Auditoria Geral: Layout COMP/CON de Terminal Tático Unificado (Single Sid
 });
 
 test("Auditoria Geral: Efeito Diegético de Transição Tática (HUD Boot Animation)", async () => {
-  // 1. Validar que o workspace-content.hbs possui a estrutura da animação de transição do HUD
-  const contentHbs = fs.readFileSync("templates/parts/workspace-content.hbs", "utf8");
+  // 1. Validar que o app-shell.hbs possui a estrutura da animação de transição do HUD
+  const contentHbs = fs.readFileSync("templates/app-shell.hbs", "utf8");
   assert.strictEqual(contentHbs.includes("dm-hud-transition-overlay"), true, "Overlay de transição deve existir");
   assert.strictEqual(contentHbs.includes("dm-hud-transition__sector-banner"), true, "Banner tático de setor deve existir");
   assert.strictEqual(contentHbs.includes("dm-hud-transition__code-stream"), true, "Fluxo de código subindo deve existir");

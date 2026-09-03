@@ -403,6 +403,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   activeNotableDossierLocalId = null;
   selectedDossierSkillId = null;
   isEditingNotableStatsModal = false;
+  isHudTransitionActive = false;
+  static #hudTransitionTimeout = null;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -696,6 +698,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static #onSelectDomain(event, target) {
     const uuid = getActionAttr(target, "uuid");
+    DomainManagerShellApp.#triggerHudTransition();
     this.selectedDomainUuid = uuid || null;
     this.#closeAllModals();
     this.render();
@@ -709,8 +712,21 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  
+  static #triggerHudTransition() {
+    if (DomainManagerShellApp.#hudTransitionTimeout) {
+      clearTimeout(DomainManagerShellApp.#hudTransitionTimeout);
+    }
+    this.isHudTransitionActive = true;
+    DomainManagerShellApp.#hudTransitionTimeout = setTimeout(() => {
+      this.isHudTransitionActive = false;
+      this.render();
+    }, 1350);
+  }
+
   static #onSwitchTab(event, target) {
     const tab = target.dataset.tab;
+    DomainManagerShellApp.#triggerHudTransition();
     if (tab) {
       this.activeTab = tab;
       if (tab === "economy") this.activeSection = "economy";
@@ -2757,6 +2773,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onCloseNotableDossier() {
+    DomainManagerShellApp.#triggerHudTransition();
     this.activeNotableDossierLocalId = null;
     this.selectedDossierSkillId = null;
     this.render();
@@ -3543,6 +3560,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       searchQuery: this.searchQuery,
       selectedTag: this.selectedTag,
       isSidebarOpen: this.isSidebarOpen,
+      isHudTransitionActive: this.isHudTransitionActive,
       allFoldersCollapsed: this.collapsedFolderUuids.size > 0,
 
       // Navigation Hub e Metadados de Aba Ativa

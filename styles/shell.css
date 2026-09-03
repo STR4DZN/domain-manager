@@ -1286,17 +1286,7 @@
   flex-direction: column;
 }
 
-.dm-sidebar.is-collapsed {
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border-right: none !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  visibility: hidden;
-}
+/* dm-sidebar.is-collapsed limpo */
 
 /* Tree Expander Button (Chevron) */
 .dm-tree__expander {
@@ -4604,4 +4594,285 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ==========================================================================
+   ADVANCED TREE GUIDELINES & SELECTION HIERARCHY
+   ========================================================================== */
+
+.dm-tree {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 0.5rem 0.65rem !important;
+  position: relative !important;
+}
+
+.dm-tree-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  min-height: 34px !important;
+  padding: 0.35rem 0.65rem !important;
+  border-radius: 6px !important;
+  border: 1px solid transparent !important;
+  color: #d4d4d8 !important;
+  font-size: 0.83rem !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: rgba(255, 255, 255, 0.01) !important;
+}
+
+/* Linhas finas de conexão em árvore para nós aninhados */
+.dm-tree-item[data-depth="1"] {
+  margin-left: 1.25rem !important;
+  position: relative !important;
+}
+
+.dm-tree-item[data-depth="1"]::before {
+  content: "" !important;
+  position: absolute !important;
+  left: -12px !important;
+  top: 50% !important;
+  width: 10px !important;
+  height: 1px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dm-tree-item[data-depth="1"]::after {
+  content: "" !important;
+  position: absolute !important;
+  left: -12px !important;
+  top: -10px !important;
+  bottom: 50% !important;
+  width: 1px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dm-tree-item[data-depth="2"] {
+  margin-left: 2.5rem !important;
+  position: relative !important;
+}
+
+.dm-tree-item[data-depth="2"]::before {
+  content: "" !important;
+  position: absolute !important;
+  left: -12px !important;
+  top: 50% !important;
+  width: 10px !important;
+  height: 1px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dm-tree-item[data-depth="2"]::after {
+  content: "" !important;
+  position: absolute !important;
+  left: -12px !important;
+  top: -10px !important;
+  bottom: 50% !important;
+  width: 1px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dm-tree-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  transform: translateX(2px) !important;
+}
+
+.dm-tree-item.is-selected {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.04) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.18) !important;
+}
+
+.dm-tree-item.is-selected::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  width: 3px !important;
+  background: #ef4444 !important;
+  border-radius: 2px !important;
+  box-shadow: 0 0 6px #ef4444 !important;
+}
+
+.dm-tree-item__content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.dm-tree-item__icon {
+  font-size: 0.85rem !important;
+  width: 16px !important;
+  text-align: center !important;
+}
+
+.dm-tree-item__label {
+  flex: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.dm-tree-item__count {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.68rem !important;
+  color: #71717a !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 0.1rem 0.35rem !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dm-btn-sidebar-toggle {
+  margin-right: 0.65rem !important;
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.dm-btn-sidebar-toggle:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   FULLSCREEN DIEGETIC HUD TRANSITION (COVERING 100% OF THE ENTIRE WINDOW)
+   ========================================================================== */
+
+.dm-hud-transition-overlay--fullscreen {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: radial-gradient(circle at center, rgba(12, 10, 16, 0.94) 0%, rgba(6, 6, 8, 0.99) 100%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 1.5rem 2rem !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes dmHudTransitionFade {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  75% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 0.5;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Top Bar Systems Telemetry */
+.dm-hud-transition__top-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding-bottom: 0.75rem !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.dm-hud-transition__sys-pill {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: #71717a !important;
+  padding: 0.25rem 0.75rem !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 3px !important;
+}
+
+.dm-hud-transition__sys-pill.is-active {
+  color: #ffffff !important;
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.dm-hud-transition__sys-meta {
+  margin-left: auto !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.65rem !important;
+  color: #71717a !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Glitch Beam */
+.dm-hud-transition__glitch-beam {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 4px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.8) 50%, transparent 100%) !important;
+  opacity: 0.7 !important;
+  animation: dmGlitchBeamScan 1.35s linear forwards !important;
+}
+
+@keyframes dmGlitchBeamScan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(600px); }
+}
+
+/* Radar e Coordenadas */
+.dm-hud-transition__radar-crosshair {
+  position: absolute !important;
+  background: rgba(239, 68, 68, 0.2) !important;
+}
+
+.dm-hud-transition__radar-crosshair--h {
+  width: 100% !important;
+  height: 1px !important;
+}
+
+.dm-hud-transition__radar-crosshair--v {
+  height: 100% !important;
+  width: 1px !important;
+}
+
+.dm-hud-transition__radar-circle--xl {
+  width: 420px !important;
+  height: 420px !important;
+  border: 1px dotted rgba(239, 68, 68, 0.15) !important;
+}
+
+.dm-hud-transition__radar-coords {
+  position: absolute !important;
+  bottom: -40px !important;
+  display: flex !important;
+  gap: 1.5rem !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.65rem !important;
+  color: #ef4444 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.dm-line-no {
+  color: #71717a !important;
+  margin-right: 0.5rem !important;
+  font-weight: 700 !important;
 }
