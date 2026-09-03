@@ -4339,246 +4339,9 @@
   white-space: nowrap;
 }
 
-/* ==========================================================================
-   DIEGETIC HUD TRANSITION & BOOT ANIMATION (LANCER / COMP/CON STYLE)
-   ========================================================================== */
 
-/* Overlay Container */
-.dm-hud-transition-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-  background: radial-gradient(circle at center, rgba(13, 13, 18, 0.92) 0%, rgba(9, 9, 12, 0.98) 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 2rem 2.5rem;
-  overflow: hidden;
-  animation: dmHudTransitionFade 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+/* (Animações de HUD e Boot consolidadas na seção master abaixo) */
 
-@keyframes dmHudTransitionFade {
-  0% {
-    opacity: 1;
-    visibility: visible;
-  }
-  65% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 0.4;
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
-/* Scanlines de CRT */
-.dm-hud-transition__scanlines {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-  background-size: 100% 4px;
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* Grid Tático */
-.dm-hud-transition__grid {
-  position: absolute;
-  inset: 0;
-  background-image: 
-    linear-gradient(to right, rgba(239, 68, 68, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(239, 68, 68, 0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-}
-
-/* Radar Central */
-.dm-hud-transition__radar-wrap {
-  position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 320px;
-  height: 320px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.dm-hud-transition__radar-circle {
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  border: 1px dashed rgba(239, 68, 68, 0.2);
-  border-radius: 50%;
-  animation: dmRadarRotate 8s linear infinite;
-}
-
-.dm-hud-transition__radar-circle--lg {
-  width: 300px;
-  height: 300px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.dm-hud-transition__radar-sweep {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg at 50% 50%, rgba(239, 68, 68, 0.15) 0deg, transparent 60deg);
-  animation: dmRadarRotate 1.5s linear infinite;
-}
-
-@keyframes dmRadarRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Banner Central Tático (Estilo SECTOR 34) */
-.dm-hud-transition__sector-banner {
-  position: absolute;
-  top: 38%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  color: #09090c;
-  display: flex;
-  align-items: center;
-  padding: 0.65rem 1.75rem 0.65rem 0;
-  border-radius: 2px;
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), 0 8px 25px rgba(0, 0, 0, 0.8);
-  animation: dmSectorBannerPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  z-index: 10;
-}
-
-@keyframes dmSectorBannerPop {
-  0% {
-    transform: translate(-50%, -50%) scale(0.85);
-    opacity: 0;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.04);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-
-.dm-hud-transition__sector-accent {
-  width: 14px;
-  align-self: stretch;
-  background: #ef4444;
-  margin-right: 1.25rem;
-}
-
-.dm-hud-transition__sector-title {
-  font-family: var(--dm-font-mono, monospace);
-  font-size: 1.35rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #09090c;
-}
-
-/* Painéis Inferiores de Telemetria */
-.dm-hud-transition__bottom-panels {
-  margin-top: auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  position: relative;
-  z-index: 10;
-}
-
-.dm-hud-transition__code-panel,
-.dm-hud-transition__binary-panel {
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  padding: 0.85rem 1rem;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-  height: 120px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
-}
-
-.dm-hud-transition__code-header {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--dm-font-mono, monospace);
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #71717a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 0.25rem;
-  margin-bottom: 0.35rem;
-}
-
-.dm-hud-transition__code-stream,
-.dm-hud-transition__binary-stream {
-  font-family: var(--dm-font-mono, monospace);
-  font-size: 0.68rem;
-  line-height: 1.4;
-  color: #a1a1aa;
-  animation: dmCodeStreamUp 0.65s linear forwards;
-}
-
-@keyframes dmCodeStreamUp {
-  0% {
-    transform: translateY(20px);
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-25px);
-    opacity: 0.9;
-  }
-}
-
-.dm-code-line {
-  white-space: nowrap;
-  color: #86efac;
-}
-
-.dm-bin-line {
-  white-space: nowrap;
-  letter-spacing: 0.1em;
-  color: #93c5fd;
-}
-
-.dm-hud-transition__tag {
-  align-self: flex-start;
-  margin-top: auto;
-  background: #ffffff;
-  color: #09090c;
-  font-family: var(--dm-font-mono, monospace);
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 0.15rem 0.65rem 0.15rem 0;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 2px;
-}
-
-.dm-hud-transition__tag-accent {
-  width: 6px;
-  align-self: stretch;
-  background: #ef4444;
-  margin-right: 0.5rem;
-}
 
 /* Efeito suave de entrada para o conteúdo que está por baixo */
 .dm-panel {
@@ -4745,137 +4508,7 @@
   color: #ffffff !important;
 }
 
-/* ==========================================================================
-   FULLSCREEN DIEGETIC HUD TRANSITION (COVERING 100% OF THE ENTIRE WINDOW)
-   ========================================================================== */
-
-.dm-hud-transition-overlay--fullscreen {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 9999 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: radial-gradient(circle at center, rgba(12, 10, 16, 0.94) 0%, rgba(6, 6, 8, 0.99) 100%) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  padding: 1.5rem 2rem !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-}
-
-@keyframes dmHudTransitionFade {
-  0% {
-    opacity: 1;
-    visibility: visible;
-  }
-  75% {
-    opacity: 1;
-  }
-  92% {
-    opacity: 0.5;
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
-/* Top Bar Systems Telemetry */
-.dm-hud-transition__top-bar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  padding-bottom: 0.75rem !important;
-  position: relative !important;
-  z-index: 10 !important;
-}
-
-.dm-hud-transition__sys-pill {
-  font-family: var(--dm-font-mono, monospace) !important;
-  font-size: 0.72rem !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.1em !important;
-  color: #71717a !important;
-  padding: 0.25rem 0.75rem !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 3px !important;
-}
-
-.dm-hud-transition__sys-pill.is-active {
-  color: #ffffff !important;
-  background: rgba(239, 68, 68, 0.2) !important;
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
-}
-
-.dm-hud-transition__sys-meta {
-  margin-left: auto !important;
-  font-family: var(--dm-font-mono, monospace) !important;
-  font-size: 0.65rem !important;
-  color: #71717a !important;
-  letter-spacing: 0.08em !important;
-}
-
-/* Glitch Beam */
-.dm-hud-transition__glitch-beam {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 4px !important;
-  background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.8) 50%, transparent 100%) !important;
-  opacity: 0.7 !important;
-  animation: dmGlitchBeamScan 1.35s linear forwards !important;
-}
-
-@keyframes dmGlitchBeamScan {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(600px); }
-}
-
-/* Radar e Coordenadas */
-.dm-hud-transition__radar-crosshair {
-  position: absolute !important;
-  background: rgba(239, 68, 68, 0.2) !important;
-}
-
-.dm-hud-transition__radar-crosshair--h {
-  width: 100% !important;
-  height: 1px !important;
-}
-
-.dm-hud-transition__radar-crosshair--v {
-  height: 100% !important;
-  width: 1px !important;
-}
-
-.dm-hud-transition__radar-circle--xl {
-  width: 420px !important;
-  height: 420px !important;
-  border: 1px dotted rgba(239, 68, 68, 0.15) !important;
-}
-
-.dm-hud-transition__radar-coords {
-  position: absolute !important;
-  bottom: -40px !important;
-  display: flex !important;
-  gap: 1.5rem !important;
-  font-family: var(--dm-font-mono, monospace) !important;
-  font-size: 0.65rem !important;
-  color: #ef4444 !important;
-  letter-spacing: 0.08em !important;
-}
-
-.dm-line-no {
-  color: #71717a !important;
-  margin-right: 0.5rem !important;
-  font-weight: 700 !important;
-}
+/* (Transição Fullscreen e Telemetria unificadas na seção master abaixo) */
 
 /* ==========================================================================
    MÓDULOS OPERACIONAIS ESPAÇOSOS E REFINADOS (COMP/CON TACTICAL NAV)
@@ -5064,30 +4697,7 @@
   border-radius: 0 6px 6px 0 !important;
 }
 
-/* ==========================================================================
-   TRANSIÇÃO FULLSCREEN DO HUD (.is-active CONTROLADO VIA _onRender)
-   ========================================================================== */
-
-.dm-hud-transition-overlay--fullscreen {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 9999 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: radial-gradient(circle at center, rgba(12, 10, 16, 0.96) 0%, rgba(6, 6, 8, 0.99) 100%) !important;
-  display: none !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  padding: 1.5rem 2rem !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
-}
-
-.dm-hud-transition-overlay--fullscreen.is-active {
-  display: flex !important;
-  animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-}
+/* (Transição Fullscreen consolidada na seção master abaixo) */
 
 /* ==========================================================================
    FIXES CRÍTICOS: SIDEBAR HEIGHT, PASTAS VISÍVEIS & ANIMAÇÃO HUD
@@ -5243,30 +4853,7 @@
   user-select: none !important;
 }
 
-/* 5. Overlay Fullscreen Funcional Sem Conflito de Opacity */
-.dm-hud-transition-overlay--fullscreen {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 9999 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: radial-gradient(circle at center, rgba(12, 10, 16, 0.96) 0%, rgba(6, 6, 8, 0.99) 100%) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  padding: 1.5rem 2rem !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-.dm-hud-transition-overlay--fullscreen.is-active {
-  opacity: 1 !important;
-  visibility: visible !important;
-  animation: dmHudTransitionFade 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-}
+/* (Transição Fullscreen consolidada na seção master abaixo) */
 
 /* ==========================================================================
    RESPONSIVIDADE INTELIGENTE: ADAPTAÇÃO PARA QUALQUER TAMANHO DE MONITOR
@@ -5487,6 +5074,7 @@
    ========================================================================== */
 
 /* Overlay Container: 100% Sólido no Void Deep-Space (#04060a) sem vazamentos */
+.dm-hud-transition-overlay,
 .dm-hud-transition-overlay--fullscreen {
   position: absolute !important;
   inset: 0 !important;
@@ -5509,6 +5097,7 @@
   box-sizing: border-box !important;
 }
 
+.dm-hud-transition-overlay.is-active,
 .dm-hud-transition-overlay--fullscreen.is-active {
   opacity: 1 !important;
   visibility: visible !important;
@@ -5530,7 +5119,8 @@
 }
 
 /* Cantoneiras Táticas de Enquadramento Militar (COMP/CON MIL-SPEC) */
-.dm-hud-bracket {
+.dm-hud-bracket,
+.dm-boot-bracket {
   position: absolute !important;
   width: 32px !important;
   height: 32px !important;
@@ -5540,7 +5130,8 @@
   box-sizing: border-box !important;
 }
 
-.dm-hud-bracket::before {
+.dm-hud-bracket::before,
+.dm-boot-bracket::before {
   content: '';
   position: absolute;
   width: 5px;
@@ -5549,39 +5140,48 @@
   box-shadow: 0 0 6px #ef4444;
 }
 
-.dm-hud-bracket--tl {
+.dm-hud-bracket--tl,
+.dm-boot-bracket--tl {
   top: 14px !important;
   left: 14px !important;
   border-right: none !important;
   border-bottom: none !important;
 }
-.dm-hud-bracket--tl::before { top: -2px; left: -2px; }
+.dm-hud-bracket--tl::before,
+.dm-boot-bracket--tl::before { top: -2px; left: -2px; }
 
-.dm-hud-bracket--tr {
+.dm-hud-bracket--tr,
+.dm-boot-bracket--tr {
   top: 14px !important;
   right: 14px !important;
   border-left: none !important;
   border-bottom: none !important;
 }
-.dm-hud-bracket--tr::before { top: -2px; right: -2px; }
+.dm-hud-bracket--tr::before,
+.dm-boot-bracket--tr::before { top: -2px; right: -2px; }
 
-.dm-hud-bracket--bl {
+.dm-hud-bracket--bl,
+.dm-boot-bracket--bl {
   bottom: 14px !important;
   left: 14px !important;
   border-right: none !important;
   border-top: none !important;
 }
-.dm-hud-bracket--bl::before { bottom: -2px; left: -2px; }
+.dm-hud-bracket--bl::before,
+.dm-boot-bracket--bl::before { bottom: -2px; left: -2px; }
 
-.dm-hud-bracket--br {
+.dm-hud-bracket--br,
+.dm-boot-bracket--br {
   bottom: 14px !important;
   right: 14px !important;
   border-left: none !important;
   border-top: none !important;
 }
-.dm-hud-bracket--br::before { bottom: -2px; right: -2px; }
+.dm-hud-bracket--br::before,
+.dm-boot-bracket--br::before { bottom: -2px; right: -2px; }
 
-.dm-hud-bracket__tag {
+.dm-hud-bracket__tag,
+.dm-boot-bracket__tag {
   position: absolute;
   font-family: var(--dm-font-mono, monospace);
   font-size: 0.58rem;
@@ -5592,10 +5192,14 @@
   opacity: 0.85;
   text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
 }
-.dm-hud-bracket--tl .dm-hud-bracket__tag { top: 0; left: 36px; }
-.dm-hud-bracket--tr .dm-hud-bracket__tag { top: 0; right: 36px; }
-.dm-hud-bracket--bl .dm-hud-bracket__tag { bottom: 0; left: 36px; }
-.dm-hud-bracket--br .dm-hud-bracket__tag { bottom: 0; right: 36px; }
+.dm-hud-bracket--tl .dm-hud-bracket__tag,
+.dm-boot-bracket--tl .dm-boot-bracket__tag { top: 0; left: 36px; }
+.dm-hud-bracket--tr .dm-hud-bracket__tag,
+.dm-boot-bracket--tr .dm-boot-bracket__tag { top: 0; right: 36px; }
+.dm-hud-bracket--bl .dm-hud-bracket__tag,
+.dm-boot-bracket--bl .dm-boot-bracket__tag { bottom: 0; left: 36px; }
+.dm-hud-bracket--br .dm-hud-bracket__tag,
+.dm-boot-bracket--br .dm-boot-bracket__tag { bottom: 0; right: 36px; }
 
 /* Grid Hexagonal Tático (GIF 3 & COMP/CON) */
 .dm-hud-transition__hex-grid {
@@ -5623,7 +5227,8 @@
 }
 
 /* Grid de Pontos Tático (Dot-Matrix) */
-.dm-hud-transition__dot-grid {
+.dm-hud-transition__dot-grid,
+.dm-boot-dot-grid {
   position: absolute !important;
   inset: 0 !important;
   background-image: radial-gradient(rgba(0, 229, 255, 0.16) 1px, transparent 0) !important;
@@ -5633,7 +5238,8 @@
 }
 
 /* Glitch / Laser Beam Sweeper */
-.dm-hud-transition__glitch-beam {
+.dm-hud-transition__glitch-beam,
+.dm-boot-glitch-beam {
   position: absolute !important;
   left: 0 !important;
   right: 0 !important;
@@ -5787,6 +5393,25 @@
 .dm-hud-eq-bar:nth-child(4) { height: 100%; animation-delay: 0.35s; }
 .dm-hud-eq-bar:nth-child(5) { height: 50%; animation-delay: 0.2s; }
 
+.dm-hud-transition__freq-tag {
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  padding: 0.15rem 0.5rem !important;
+  border-radius: 2px !important;
+  text-shadow: 0 0 6px rgba(245, 158, 11, 0.4) !important;
+}
+
+.dm-hud-transition__spec-tag {
+  color: #00e5ff !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+}
+
 .dm-hud-transition__sys-meta {
   margin-left: auto !important;
   display: flex !important;
@@ -5817,18 +5442,57 @@
   z-index: 10 !important;
 }
 
-.dm-hud-transition__radar-crosshair {
+.dm-hud-transition__radar-crosshair,
+.dm-boot-crosshair {
   position: absolute !important;
   background: rgba(0, 229, 255, 0.4) !important;
 }
-.dm-hud-transition__radar-crosshair--h {
+.dm-hud-transition__radar-crosshair--h,
+.dm-boot-crosshair--h {
   width: 100% !important;
   height: 1px !important;
 }
-.dm-hud-transition__radar-crosshair--v {
+.dm-hud-transition__radar-crosshair--v,
+.dm-boot-crosshair--v {
   height: 100% !important;
   width: 1px !important;
 }
+
+.dm-hud-transition__radar-crosshair::before,
+.dm-boot-crosshair::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.dm-hud-transition__radar-crosshair--h::before,
+.dm-boot-crosshair--h::before {
+  background-image: repeating-linear-gradient(90deg, #00e5ff 0, #00e5ff 1px, transparent 1px, transparent 24px);
+  opacity: 0.55;
+}
+.dm-hud-transition__radar-crosshair--v::before,
+.dm-boot-crosshair--v::before {
+  background-image: repeating-linear-gradient(180deg, #00e5ff 0, #00e5ff 1px, transparent 1px, transparent 24px);
+  opacity: 0.55;
+}
+
+/* Marcadores Cardinais Diegéticos (000°, 090°, 180°, 270°) */
+.dm-hud-cardinal,
+.dm-boot-cardinal {
+  position: absolute !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.55rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  color: #00e5ff !important;
+  opacity: 0.8 !important;
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.6) !important;
+  pointer-events: none !important;
+  z-index: 12 !important;
+}
+.dm-hud-cardinal--n, .dm-boot-cardinal--n { top: 10px; left: 50%; transform: translateX(-50%); }
+.dm-hud-cardinal--e, .dm-boot-cardinal--e { right: 10px; top: 50%; transform: translateY(-50%); }
+.dm-hud-cardinal--s, .dm-boot-cardinal--s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.dm-hud-cardinal--w, .dm-boot-cardinal--w { left: 10px; top: 50%; transform: translateY(-50%); }
 
 .dm-hud-transition__radar-circle {
   position: absolute !important;
@@ -5904,6 +5568,7 @@
   box-shadow: 0 0 35px rgba(0, 229, 255, 0.3), 0 0 60px rgba(239, 68, 68, 0.25), inset 0 0 20px rgba(0, 229, 255, 0.1) !important;
   z-index: 30 !important;
   overflow: hidden !important;
+  max-width: calc(100% - 32px) !important;
   animation: dmSectorBannerPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
@@ -5974,6 +5639,16 @@
   height: 14px !important;
   border-bottom: 2px solid #00e5ff !important;
   border-right: 2px solid #00e5ff !important;
+}
+
+/* Faixa de Advertência Tática / Hazard Striping (Padrão Lancer / COMP/CON) */
+.dm-hud-transition__sector-hazard,
+.dm-boot-card-hazard {
+  width: 100% !important;
+  height: 4px !important;
+  background-image: repeating-linear-gradient(-45deg, rgba(239, 68, 68, 0.5) 0, rgba(239, 68, 68, 0.5) 5px, transparent 5px, transparent 10px) !important;
+  border-top: 1px solid rgba(239, 68, 68, 0.3) !important;
+  opacity: 0.85 !important;
 }
 
 /* Painéis Inferiores Dinâmicos com Estilo COMP/CON (Sem estouro e sem blur) */
@@ -6671,10 +6346,31 @@
   flex-direction: column !important;
   gap: 2px !important;
   font-size: 9px !important;
+  overflow: hidden !important;
+}
+
+.dm-boot-stream-scroller {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  animation: dmBootStreamScroll 1.8s ease-out forwards !important;
+}
+
+@keyframes dmBootStreamScroll {
+  0% { transform: translateY(8px); opacity: 0.4; }
+  100% { transform: translateY(0); opacity: 1; }
 }
 
 .dm-boot-mini-line {
   color: #cbd5e1 !important;
+  white-space: nowrap !important;
+}
+
+.dm-boot-cursor-blink {
+  color: #00e5ff !important;
+  font-weight: 800 !important;
+  animation: dmCursorBlink 0.8s steps(1) infinite !important;
+  display: inline-block !important;
 }
 
 /* 7. Card Central de Boas-Vindas ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) */
@@ -6683,7 +6379,8 @@
   bottom: 45px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: 620px !important;
+  width: min(620px, calc(100% - 32px)) !important;
+  max-width: 92vw !important;
   background: rgba(6, 12, 20, 0.96) !important;
   border: 1px solid rgba(0, 229, 255, 0.7) !important;
   clip-path: polygon(16px 0%, 100% 0%, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0% 100%, 0% 16px) !important;

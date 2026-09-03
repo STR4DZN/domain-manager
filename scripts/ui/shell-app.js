@@ -579,7 +579,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   _shouldAnimateNextRender = false;
   isHudTransitionActive = false;
   shouldPlayBootWelcome = true;
+  isBootWelcomePlaying = false;
   static #hudTransitionTimeout = null;
+  static #bootWelcomeTimeout = null;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -765,11 +767,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     if (this.shouldPlayBootWelcome) {
       this.shouldPlayBootWelcome = false;
+      this.isBootWelcomePlaying = true;
       const bootOverlay = this.element?.querySelector(".dm-boot-welcome-overlay");
       if (bootOverlay) {
         bootOverlay.classList.remove("is-finished");
         bootOverlay.classList.add("is-active");
-        setTimeout(() => {
+        if (DomainManagerShellApp.#bootWelcomeTimeout) {
+          clearTimeout(DomainManagerShellApp.#bootWelcomeTimeout);
+        }
+        DomainManagerShellApp.#bootWelcomeTimeout = setTimeout(() => {
+          this.isBootWelcomePlaying = false;
           bootOverlay.classList.add("is-finished");
           bootOverlay.classList.remove("is-active");
         }, 2300);
@@ -3873,7 +3880,7 @@ super._onRender?.(context, options);
         requests: recordIndex.count(RECORD_TYPES.REQUEST)
       },
       currentUserName: (game.user?.name || "Operador").toUpperCase(),
-      shouldPlayBootWelcome: this.shouldPlayBootWelcome
+      shouldPlayBootWelcome: Boolean(this.shouldPlayBootWelcome || this.isBootWelcomePlaying)
     };
   }
 }

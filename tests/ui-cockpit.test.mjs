@@ -977,6 +977,9 @@ test("v10: Harmonização e Unificação de HUD Lancer / COMP/CON (Transição d
   assert.ok(appShell.includes("dm-hud-transition__sector-badge"), "Transição deve possuir badge de protocolo COMP/CON");
   assert.ok(appShell.includes("dm-hud-bracket__tag"), "Transição deve possuir tags militares nas cantoneiras");
   assert.ok(appShell.includes("dm-hud-cursor-blink"), "Transição deve possuir cursor piscante");
+  assert.ok(appShell.includes("dm-hud-cardinal"), "Transição deve possuir marcadores cardinais de mira");
+  assert.ok(appShell.includes("dm-hud-transition__sector-hazard"), "Transição deve possuir faixa de hazard COMP/CON");
+  assert.ok(appShell.includes("dm-hud-transition__freq-tag"), "Transição deve possuir tag de frequência RF");
 
   // 2. Validar elementos compartilhados no overlay de boot welcome
   assert.ok(appShell.includes("dm-boot-crosshair"), "Boot deve possuir retículo de mira");
@@ -986,6 +989,12 @@ test("v10: Harmonização e Unificação de HUD Lancer / COMP/CON (Transição d
   assert.ok(appShell.includes("dm-boot-stream-mini"), "Boot deve possuir mini stream de boot");
   assert.ok(appShell.includes("dm-boot-card-accent"), "Boot deve possuir acento carmesim no card igual ao setor");
   assert.ok(appShell.includes("dm-boot-card-meta"), "Boot deve possuir metadados de criptografia no card");
+  assert.ok(appShell.includes("dm-boot-bracket"), "Boot deve possuir cantoneiras militares de enquadramento");
+  assert.ok(appShell.includes("dm-boot-dot-grid"), "Boot deve possuir dot grid");
+  assert.ok(appShell.includes("dm-boot-glitch-beam"), "Boot deve possuir glitch beam");
+  assert.ok(appShell.includes("dm-boot-cardinal"), "Boot deve possuir marcadores cardinais de mira");
+  assert.ok(appShell.includes("dm-boot-card-hazard"), "Boot deve possuir faixa de hazard COMP/CON");
+  assert.ok(appShell.includes("dm-boot-stream-scroller"), "Boot deve possuir stream animado de inicialização");
 
   // 3. Validar estilos correspondentes em shell.css
   assert.ok(shellCss.includes(".dm-hud-transition__hex-grid"), "CSS deve estilizar hex grid da transição");
@@ -994,5 +1003,9 @@ test("v10: Harmonização e Unificação de HUD Lancer / COMP/CON (Transição d
   assert.ok(shellCss.includes(".dm-boot-welcome-card"), "CSS deve estilizar card de boas-vindas");
   assert.ok(shellCss.includes(".dm-boot-card-accent"), "CSS deve estilizar acento do card");
   assert.ok(shellCss.includes(".dm-boot-crosshair"), "CSS deve estilizar mira do boot");
+  assert.ok(shellCss.includes(".dm-boot-bracket"), "CSS deve estilizar cantoneiras do boot");
+  assert.ok(shellCss.includes(".dm-boot-dot-grid"), "CSS deve estilizar dot grid do boot");
+  assert.ok(shellCss.includes(".dm-boot-cardinal"), "CSS deve estilizar marcadores cardinais");
+  assert.ok(shellCss.includes(".dm-boot-card-hazard"), "CSS deve estilizar faixa de hazard");
 });
 

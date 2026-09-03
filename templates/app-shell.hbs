@@ -21,9 +21,11 @@
         <span class="dm-hud-eq-bar"></span>
         <span class="dm-hud-eq-bar"></span>
       </div>
+      <span class="dm-hud-transition__freq-tag">FREQ: 142.80 MHz // GAIN: +6dB</span>
       <div class="dm-hud-transition__sys-meta">
         <span><i class="fa-solid fa-shield-halved"></i> CANAL SEGURO: CRIPTO-SHA256</span>
         <span>NÚCLEO TÁTICO v2.4 // REGISTRO: {{selectedDomain.name}}</span>
+        <span class="dm-hud-transition__spec-tag">// MIL-SPEC COMP/CON</span>
       </div>
     </div>
 
@@ -39,10 +41,14 @@
     <div class="dm-hud-transition__laser-tracer dm-hud-transition__laser-tracer--left"></div>
     <div class="dm-hud-transition__laser-tracer dm-hud-transition__laser-tracer--right"></div>
 
-    <!-- Radar Tático Central com Mira e Coordenadas (COMP/CON Reticle) -->
+    <!-- Radar Tático Central com Mira, Coordenadas e Marcadores Cardinais (COMP/CON Reticle) -->
     <div class="dm-hud-transition__radar-wrap">
       <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--h"></div>
       <div class="dm-hud-transition__radar-crosshair dm-hud-transition__radar-crosshair--v"></div>
+      <span class="dm-hud-cardinal dm-hud-cardinal--n">000°</span>
+      <span class="dm-hud-cardinal dm-hud-cardinal--e">090°</span>
+      <span class="dm-hud-cardinal dm-hud-cardinal--s">180°</span>
+      <span class="dm-hud-cardinal dm-hud-cardinal--w">270°</span>
       <div class="dm-hud-transition__radar-circle"></div>
       <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--ticks"></div>
       <div class="dm-hud-transition__radar-circle dm-hud-transition__radar-circle--lg"></div>
@@ -65,6 +71,7 @@
         <div class="dm-hud-transition__sector-title">{{sectorCallout}}</div>
         <div class="dm-hud-transition__sector-sub">ACESSO AUTORIZADO · TELEMETRIA SINCRONIZADA</div>
       </div>
+      <div class="dm-hud-transition__sector-hazard"></div>
       <div class="dm-hud-transition__sector-corner-notch"></div>
     </div>
 
@@ -120,11 +127,19 @@
 
   <!-- OVERLAY DE BOOT TÁTICO AAA (EXECUTA EXCLUSIVAMENTE NA ABERTURA DO MÓDULO) -->
   <div class="dm-boot-welcome-overlay {{#if shouldPlayBootWelcome}}is-active{{else}}is-finished{{/if}}" aria-hidden="true">
-    <!-- 1. Textura Hexagonal de Fundo (GIF 3) -->
+    <!-- Cantoneiras Táticas de Enquadramento Militar (Harmonizadas com Transição) -->
+    <div class="dm-boot-bracket dm-boot-bracket--tl"><span class="dm-boot-bracket__tag">SYS.BOOT // 00</span></div>
+    <div class="dm-boot-bracket dm-boot-bracket--tr"><span class="dm-boot-bracket__tag">OMNI-LINK // ON</span></div>
+    <div class="dm-boot-bracket dm-boot-bracket--bl"><span class="dm-boot-bracket__tag">ORBIT.450KM</span></div>
+    <div class="dm-boot-bracket dm-boot-bracket--br"><span class="dm-boot-bracket__tag">PILOT.READY</span></div>
+
+    <!-- Texturas Táticas de Fundo (Hex Grid, Dot Matrix, Scanlines, Glitch Beam & Runway 3D) -->
     <div class="dm-boot-hex-grid"></div>
     <div class="dm-boot-scanline"></div>
+    <div class="dm-boot-dot-grid"></div>
+    <div class="dm-boot-glitch-beam"></div>
 
-    <!-- 2. Pista em Perspectiva e Horizonte (GIF 2) -->
+    <!-- Pista em Perspectiva e Horizonte (GIF 2 & Harmonização) -->
     <div class="dm-boot-runway-perspective">
       <div class="dm-boot-runway-plane"></div>
     </div>
@@ -132,7 +147,7 @@
     <div class="dm-boot-laser-tracer dm-boot-laser-tracer--left"></div>
     <div class="dm-boot-laser-tracer dm-boot-laser-tracer--right"></div>
 
-    <!-- 3. Cantoneiras de Cockpit (GIF 1 & 2 com Tags COMP/CON) -->
+    <!-- Cantoneiras de Cockpit (GIF 1 & 2 com Tags COMP/CON) -->
     <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--left">
       <span class="dm-boot-bracket-tag">PILOT.LINK // 01</span>
     </div>
@@ -140,10 +155,14 @@
       <span class="dm-boot-bracket-tag">OMNI-NET // ALFA</span>
     </div>
 
-    <!-- 4. Núcleo Holográfico com Globo, Anéis Concéntricos e Mira Tática (GIF 3 + COMP/CON Crosshairs) -->
+    <!-- Núcleo Holográfico com Globo, Anéis Concéntricos, Retículo de Mira e Marcadores Cardinais -->
     <div class="dm-boot-core-system">
       <div class="dm-boot-crosshair dm-boot-crosshair--h"></div>
       <div class="dm-boot-crosshair dm-boot-crosshair--v"></div>
+      <span class="dm-boot-cardinal dm-boot-cardinal--n">000°</span>
+      <span class="dm-boot-cardinal dm-boot-cardinal--e">090°</span>
+      <span class="dm-boot-cardinal dm-boot-cardinal--s">180°</span>
+      <span class="dm-boot-cardinal dm-boot-cardinal--w">270°</span>
       <div class="dm-boot-ring dm-boot-ring-outer"></div>
       <div class="dm-boot-ring dm-boot-ring-ticks"></div>
       <div class="dm-boot-ring dm-boot-ring-inner"></div>
@@ -154,7 +173,7 @@
       </div>
     </div>
 
-    <!-- 5. Painel de Holo-Projeção Superior Direito (GIF 3 com Acentos Militares) -->
+    <!-- Painel de Holo-Projeção Superior Direito (GIF 3 com Acentos Militares) -->
     <div class="dm-boot-holo-projector">
       <div class="dm-boot-holo-projector__header">
         <span>// COMP/CON HOLO-DIAG</span>
@@ -168,7 +187,7 @@
       </div>
     </div>
 
-    <!-- 6. Painel de Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) -->
+    <!-- Painel de Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) -->
     <div class="dm-boot-telemetry-panel">
       <div class="dm-boot-telemetry-header">
         <span>// SISTEMA TÁTICO COMP/CON</span>
@@ -189,14 +208,20 @@
         ENCRIPTADOR: ATIVO // SHA-256 ALFA
       </div>
       <div class="dm-boot-stream-mini">
-        <div class="dm-boot-mini-line"><span class="text-cyan">></span> KERNEL: CARREGADO</div>
-        <div class="dm-boot-mini-line"><span class="text-amber">></span> DIRETRIZ: COMP/CON OK</div>
+        <div class="dm-boot-stream-scroller">
+          <div class="dm-boot-mini-line"><span class="text-cyan">></span> [SYS.01] OMNI-BUS ONLINE // 100%</div>
+          <div class="dm-boot-mini-line"><span class="text-amber">></span> [SYS.02] PROTOCOLO COMP/CON... OK</div>
+          <div class="dm-boot-mini-line"><span class="text-cyan">></span> [SYS.03] NÚCLEO DIEGÉTICO ATIVO</div>
+          <div class="dm-boot-mini-line"><span class="text-emerald">></span> [AUTH] PILOTO AUTORIZADO: {{currentUserName}}</div>
+        </div>
+        <span class="dm-boot-cursor-blink">_</span>
       </div>
     </div>
 
-    <!-- 7. Card de Boas-Vindas Central ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) -->
+    <!-- Card de Boas-Vindas Central ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) -->
     <div class="dm-boot-welcome-card">
       <div class="dm-boot-card-accent"></div>
+      <div class="dm-boot-card-hazard"></div>
       <div class="dm-boot-card-content">
         <div class="dm-boot-status-badge">
           <span class="dm-boot-status-dot"></span>
@@ -208,8 +233,8 @@
           <div class="dm-boot-progress-fill"></div>
         </div>
         <div class="dm-boot-card-meta">
-          <span><i class="fa-solid fa-lock"></i> CANAL CRIPTOGRAFADO</span>
-          <span>STATUS: ONLINE</span>
+          <span><i class="fa-solid fa-lock"></i> CANAL CRIPTOGRAFADO // PING: 12ms</span>
+          <span>STATUS: ONLINE // COMP/CON MIL-SPEC</span>
         </div>
       </div>
     </div>
