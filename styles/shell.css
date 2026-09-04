@@ -1,4 +1,51 @@
 /* ==========================================================================
+   DOMAIN MANAGER - DESIGN SYSTEM: TEORIA DAS CORES & COCKPIT TÁTICO UNIFICADO
+   Regra 60-30-10, Harmonia Analógica + Acentos Táticos (Lancer COMP/CON)
+   ========================================================================== */
+
+:root {
+  /* 60% — Superfície Base & Atmosfera (Deep Cosmic Slate) */
+  --dm-bg-void: #070a12;
+  --dm-bg-app: #0a0e1a;
+  --dm-bg-workspace: #0c111e;
+  --dm-bg-surface: rgba(17, 24, 39, 0.75);
+  --dm-bg-surface-solid: #111827;
+  --dm-bg-surface-elevated: #162033;
+  --dm-border-subtle: rgba(148, 163, 184, 0.12);
+  --dm-border-focus: rgba(0, 229, 255, 0.45);
+
+  /* Neutros Táticos (Contraste Frio Sem Ofuscamento) */
+  --dm-text-primary: #f1f5f9;
+  --dm-text-secondary: #cbd5e1;
+  --dm-text-muted: #94a3b8;
+  --dm-text-dim: #64748b;
+
+  /* 10% — Assinatura Primária do Cockpit (Ciano Elétrico Tático) */
+  --dm-cyan: #00e5ff;
+  --dm-cyan-bright: #7df9ff;
+  --dm-cyan-deep: #0284c7;
+  --dm-cyan-glow: 0 0 14px rgba(0, 229, 255, 0.4);
+  --dm-cyan-tint: rgba(0, 229, 255, 0.08);
+
+  /* 10% — Assinatura Militar de Alerta (Carmesim Lancer) */
+  --dm-crimson: #ef4444;
+  --dm-crimson-bright: #f87171;
+  --dm-crimson-deep: #b91c1c;
+  --dm-crimson-glow: 0 0 14px rgba(239, 68, 68, 0.4);
+  --dm-crimson-tint: rgba(239, 68, 68, 0.1);
+
+  /* Sinais Semânticos Secundários (Contidos & Elegantes) */
+  --dm-amber: #f59e0b;
+  --dm-amber-bright: #fbbf24;
+  --dm-emerald: #10b981;
+  --dm-emerald-bright: #34d399;
+  --dm-orange: #f97316;
+  --dm-orange-bright: #fb923c;
+  --dm-blue: #38bdf8;
+  --dm-purple: #c084fc;
+}
+
+/* ==========================================================================
    DOMAIN MANAGER - DESIGN SYSTEM: TOKENS DE CORES & PALETAS PADRONIZADAS
    Foundry VTT v13 ApplicationV2
    ========================================================================== */
@@ -6703,33 +6750,46 @@
 }
 
 
+
+
 /* ==========================================================================
-   CAMADA DE HARMONIZAÇÃO CROMÁTICA, PALETAS PADRONIZADAS & GRADIENTES RICOS
-   Inspirado em cockpits militares táticos diegéticos (Lancer / COMP/CON)
-   Preserva 100% da estrutura de layout, dimensões e posicionamento existente.
+   CAMADA DE HARMONIZAÇÃO CROMÁTICA PROFISSIONAL — TEORIA DAS CORES EM UI
+   1. Unificação das superfícies (fim do efeito arco-íris em cards e barras)
+   2. Hierarquia consistente de botões e controles
+   3. Barra lateral limpa e focada no item ativo
+   4. Harmonização total das animações de Boot Welcome e Transição de Setor
    ========================================================================== */
 
-/* --- 1. BASE ATMOSFÉRICA DO SHELL & JANELA --- */
-.domain-manager-shell-window .window-content {
-  background-color: var(--dm-bg-app) !important;
-  color: var(--dm-text-primary) !important;
-}
-
+/* --- 1. SUPERFÍCIE GLOBAL & BACKDROP --- */
+.domain-manager-shell-window .window-content,
 .dm-shell {
-  background: var(--dm-bg-app) !important;
+  background-color: var(--dm-bg-void) !important;
   color: var(--dm-text-primary) !important;
 }
 
-/* --- 2. BARRA LATERAL (RAIL) & DOCK GLOBAL --- */
+.dm-workspace-canvas {
+  background: var(--dm-bg-workspace) !important;
+}
+
+.dm-workspace-header {
+  background: linear-gradient(180deg, #0e1424 0%, #0a0f1b 100%) !important;
+  border-bottom: 1px solid var(--dm-border-subtle) !important;
+}
+
+.dm-workspace-header__title {
+  color: var(--dm-text-primary) !important;
+}
+
+/* --- 2. DOCK LATERAL GLOBAL (RAIL) --- */
 .dm-rail {
-  background: linear-gradient(180deg, #070a12 0%, #05080e 100%) !important;
+  background: linear-gradient(180deg, #070912 0%, #05070e 100%) !important;
   border-right: 1px solid var(--dm-border-subtle) !important;
 }
 
 .dm-rail__brand {
-  background: rgba(0, 229, 255, 0.08) !important;
+  background: var(--dm-cyan-tint) !important;
   border: 1px solid rgba(0, 229, 255, 0.25) !important;
-  color: var(--dm-tech-primary) !important;
+  color: var(--dm-cyan) !important;
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.2) !important;
 }
 
@@ -6739,22 +6799,22 @@
 
 .dm-rail__item:hover {
   color: var(--dm-text-primary) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
 }
 
 .dm-rail__item.is-active {
-  color: var(--dm-tech-primary) !important;
-  background: rgba(0, 229, 255, 0.12) !important;
+  color: var(--dm-cyan) !important;
+  background: rgba(0, 229, 255, 0.1) !important;
 }
 
 .dm-rail__indicator {
-  background: var(--dm-tech-gradient) !important;
-  box-shadow: var(--dm-tech-glow) !important;
+  background: linear-gradient(180deg, #00e5ff 0%, #0284c7 100%) !important;
+  box-shadow: var(--dm-cyan-glow) !important;
 }
 
-/* --- 3. SIDEBAR DE EXPLORAÇÃO & NAVEGAÇÃO TÁTICA --- */
+/* --- 3. BARRA LATERAL (SIDEBAR) & NAVEGAÇÃO TÁTICA --- */
 .dm-sidebar {
-  background: linear-gradient(180deg, #0b101c 0%, #080c15 100%) !important;
+  background: linear-gradient(180deg, #0a0e1a 0%, #080b14 100%) !important;
   border-right: 1px solid var(--dm-border-subtle) !important;
 }
 
@@ -6765,35 +6825,48 @@
 .dm-sidebar__brand-title {
   color: var(--dm-text-primary) !important;
   font-weight: 700 !important;
-  letter-spacing: 1px !important;
 }
 
-/* Botões do Switcher Módulos / Territórios */
+/* Switcher Módulos / Territórios */
 .dm-sidebar__view-btn {
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid var(--dm-border-subtle) !important;
   color: var(--dm-text-muted) !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.18s ease !important;
 }
 
 .dm-sidebar__view-btn:hover {
-  background: rgba(255, 255, 255, 0.07) !important;
   color: var(--dm-text-primary) !important;
-  border-color: var(--dm-border-medium) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
 }
 
 .dm-sidebar__view-btn.is-active {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.16) 0%, rgba(2, 132, 199, 0.06) 100%) !important;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.05) 100%) !important;
   border-color: rgba(0, 229, 255, 0.45) !important;
-  color: var(--dm-tech-bright) !important;
-  box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.12) !important;
+  color: var(--dm-cyan-bright) !important;
+  box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.1) !important;
 }
 
-/* Ícones dos Módulos Táticos com Identidade Cromática Específica */
+/* Itens da Navegação Tática: Fim do Carnaval de Cores */
 .dm-sidebar__nav-item {
-  color: var(--dm-text-secondary) !important;
+  color: var(--dm-text-muted) !important;
+  border: 1px solid transparent !important;
   border-left: 3px solid transparent !important;
-  transition: all 0.18s ease !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.dm-sidebar__nav-item .dm-sidebar__nav-icon {
+  color: var(--dm-text-muted) !important;
+  transition: all 0.15s ease !important;
+}
+
+.dm-sidebar__nav-item .dm-sidebar__nav-idx {
+  color: var(--dm-text-dim) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: all 0.15s ease !important;
 }
 
 .dm-sidebar__nav-item:hover {
@@ -6801,145 +6874,108 @@
   color: var(--dm-text-primary) !important;
 }
 
+.dm-sidebar__nav-item:hover .dm-sidebar__nav-icon {
+  color: var(--dm-cyan) !important;
+}
+
+/* Item Ativo: Puro Ciano Tático Sem Mistura com Vermelho */
 .dm-sidebar__nav-item.is-active {
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.14) 0%, rgba(2, 132, 199, 0.03) 100%) !important;
-  border-left-color: var(--dm-tech-primary) !important;
-  color: var(--dm-text-primary) !important;
-  box-shadow: inset 0 0 14px rgba(0, 229, 255, 0.07) !important;
-}
-
-.dm-sidebar__nav-item[data-tab="overview"] .dm-sidebar__nav-icon {
-  color: var(--dm-tech-primary) !important;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
-}
-.dm-sidebar__nav-item[data-tab="economy"] .dm-sidebar__nav-icon {
-  color: var(--dm-econ-bright) !important;
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important;
-}
-.dm-sidebar__nav-item[data-tab="projects"] .dm-sidebar__nav-icon {
-  color: var(--dm-proj-bright) !important;
-  text-shadow: 0 0 8px rgba(249, 115, 22, 0.5) !important;
-}
-.dm-sidebar__nav-item[data-tab="people"] .dm-sidebar__nav-icon {
-  color: var(--dm-pop-bright) !important;
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
-}
-.dm-sidebar__nav-item[data-tab="diplomacy"] .dm-sidebar__nav-icon {
-  color: var(--dm-diplo-bright) !important;
-  text-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important;
-}
-.dm-sidebar__nav-item[data-tab="intel"] .dm-sidebar__nav-icon {
-  color: var(--dm-intel-bright) !important;
-  text-shadow: 0 0 8px rgba(168, 85, 247, 0.5) !important;
-}
-.dm-sidebar__nav-item[data-tab="history"] .dm-sidebar__nav-icon {
-  color: var(--dm-chron-bright) !important;
-  text-shadow: 0 0 8px rgba(20, 184, 166, 0.5) !important;
-}
-
-.dm-sidebar__nav-badge {
-  background: var(--dm-def-gradient) !important;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.14) 0%, rgba(2, 132, 199, 0.02) 100%) !important;
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+  border-left: 3px solid var(--dm-cyan) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.12), inset 0 0 12px rgba(0, 229, 255, 0.06) !important;
 }
 
-/* Árvore de Territórios / Pastas */
-.dm-tree-node__header:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-idx {
+  background: rgba(0, 229, 255, 0.18) !important;
+  color: var(--dm-cyan) !important;
+  border-color: rgba(0, 229, 255, 0.5) !important;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3) !important;
 }
 
+.dm-sidebar__nav-item.is-active .dm-sidebar__nav-icon {
+  color: var(--dm-cyan) !important;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.6) !important;
+}
+
+/* Árvore de Territórios */
 .dm-tree-node__header.is-selected {
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.03) 100%) !important;
-  border-left: 2px solid var(--dm-tech-primary) !important;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.14) 0%, transparent 100%) !important;
+  border-left: 2px solid var(--dm-cyan) !important;
 }
 
-/* --- 4. ÁREA DE TRABALHO & CABEÇALHO DO WORKSPACE --- */
-.dm-workspace-header {
-  background: linear-gradient(180deg, #0f1626 0%, #0b111c 100%) !important;
-  border-bottom: 1px solid var(--dm-border-subtle) !important;
-}
-
-.dm-workspace-header__title {
-  color: var(--dm-text-primary) !important;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
-}
-
-.dm-workspace-canvas {
-  background: var(--dm-bg-workspace) !important;
-}
-
-/* --- 5. CARDS DE ESTATÍSTICA (TOP OVERVIEW CARDS) --- */
+/* --- 4. CARDS DE ESTATÍSTICA (SUPERFÍCIE UNIFICADA & MICRO-ACENTOS) --- */
 .dm-overview-cards .dm-card {
-  background: var(--dm-bg-surface) !important;
-  border: 1px solid var(--dm-border-medium) !important;
-  border-radius: 10px !important;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.8) 0%, rgba(12, 18, 30, 0.92) 100%) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  border-radius: 8px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  position: relative !important;
+  overflow: hidden !important;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .dm-overview-cards .dm-card:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(0, 229, 255, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 229, 255, 0.1) !important;
 }
 
-/* Card 1: Tesouraria & Economia (Âmbar Solar) */
-.dm-overview-cards .dm-card:nth-child(1) {
-  background: var(--dm-econ-card-bg) !important;
-  border-color: var(--dm-econ-border) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(251, 191, 36, 0.25) !important;
+.dm-overview-cards .dm-card::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  opacity: 0.85 !important;
 }
-.dm-overview-cards .dm-card:nth-child(1):hover {
-  border-color: rgba(245, 158, 11, 0.55) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(245, 158, 11, 0.25) !important;
+
+/* Card 1: Tesouraria */
+.dm-overview-cards .dm-card:nth-child(1)::before {
+  background: linear-gradient(90deg, #f59e0b 0%, rgba(245, 158, 11, 0.1) 100%) !important;
 }
 .dm-overview-cards .dm-card:nth-child(1) .dm-card__icon {
-  color: var(--dm-econ-bright) !important;
-  text-shadow: 0 0 12px rgba(245, 158, 11, 0.6) !important;
+  color: var(--dm-amber-bright) !important;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5) !important;
 }
 
-/* Card 2: Segurança & Defesa (Azul Safira Tático & Escudo) */
-.dm-overview-cards .dm-card:nth-child(2) {
-  background: linear-gradient(145deg, rgba(59, 130, 246, 0.09) 0%, rgba(16, 23, 38, 0.92) 100%) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(96, 165, 250, 0.25) !important;
-}
-.dm-overview-cards .dm-card:nth-child(2):hover {
-  border-color: rgba(59, 130, 246, 0.55) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(59, 130, 246, 0.25) !important;
+/* Card 2: Segurança & Defesa */
+.dm-overview-cards .dm-card:nth-child(2)::before {
+  background: linear-gradient(90deg, #38bdf8 0%, rgba(56, 189, 248, 0.1) 100%) !important;
 }
 .dm-overview-cards .dm-card:nth-child(2) .dm-card__icon {
-  color: var(--dm-diplo-bright) !important;
-  text-shadow: 0 0 12px rgba(59, 130, 246, 0.6) !important;
+  color: var(--dm-blue) !important;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5) !important;
 }
 
-/* Card 3: População & Sustento (Verde Esmeralda Vital) */
-.dm-overview-cards .dm-card:nth-child(3) {
-  background: var(--dm-pop-card-bg) !important;
-  border-color: var(--dm-pop-border) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(52, 211, 153, 0.25) !important;
-}
-.dm-overview-cards .dm-card:nth-child(3):hover {
-  border-color: rgba(16, 185, 129, 0.55) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(16, 185, 129, 0.25) !important;
+/* Card 3: População Total */
+.dm-overview-cards .dm-card:nth-child(3)::before {
+  background: linear-gradient(90deg, #10b981 0%, rgba(16, 185, 129, 0.1) 100%) !important;
 }
 .dm-overview-cards .dm-card:nth-child(3) .dm-card__icon {
-  color: var(--dm-pop-bright) !important;
-  text-shadow: 0 0 12px rgba(16, 185, 129, 0.6) !important;
+  color: var(--dm-emerald-bright) !important;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5) !important;
 }
 
-/* Card 4: Obras & Infraestrutura (Laranja Industrial) */
-.dm-overview-cards .dm-card:nth-child(4) {
-  background: var(--dm-proj-card-bg) !important;
-  border-color: var(--dm-proj-border) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(251, 146, 60, 0.25) !important;
-}
-.dm-overview-cards .dm-card:nth-child(4):hover {
-  border-color: rgba(249, 115, 22, 0.55) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(249, 115, 22, 0.25) !important;
+/* Card 4: Obras Ativas */
+.dm-overview-cards .dm-card:nth-child(4)::before {
+  background: linear-gradient(90deg, #f97316 0%, rgba(249, 115, 22, 0.1) 100%) !important;
 }
 .dm-overview-cards .dm-card:nth-child(4) .dm-card__icon {
-  color: var(--dm-proj-bright) !important;
-  text-shadow: 0 0 12px rgba(249, 115, 22, 0.6) !important;
+  color: var(--dm-orange-bright) !important;
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.5) !important;
+}
+
+/* Barra de Progresso no Card de Obras: Laranja Harmônico (Nunca Ciano Desconexo) */
+.dm-overview-cards .dm-card:nth-child(4) .dm-mini-progress {
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+.dm-overview-cards .dm-card:nth-child(4) .dm-mini-progress__bar {
+  background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%) !important;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5) !important;
 }
 
 .dm-card__value {
@@ -6951,548 +6987,419 @@
 .dm-card__title {
   color: var(--dm-text-muted) !important;
   font-weight: 600 !important;
-  letter-spacing: 0.5px !important;
 }
 
-/* --- 6. BOTÕES DO SISTEMA (VIBRANTES, COM CONTRASTE & GRADIENTES) --- */
+/* --- 5. HIERARQUIA DE BOTÕES EQUILIBRADA --- */
+/* Botão Primário Tático (Avançar Tempo / Ação Principal) */
 .dm-btn--primary {
-  background: linear-gradient(135deg, #00e5ff 0%, #0284c7 100%) !important;
-  color: #03101c !important;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.22) 0%, rgba(2, 132, 199, 0.28) 100%) !important;
+  border: 1px solid var(--dm-cyan) !important;
+  color: #ffffff !important;
   font-weight: 700 !important;
-  border: 1px solid #00e5ff !important;
-  box-shadow: 0 2px 10px rgba(0, 229, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
-  transition: all 0.2s ease !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+  box-shadow: 0 2px 10px rgba(0, 229, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.18s ease !important;
 }
 
 .dm-btn--primary:hover {
-  background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%) !important;
-  color: #ffffff !important;
-  border-color: #7df9ff !important;
-  box-shadow: 0 0 16px rgba(0, 229, 255, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  background: linear-gradient(135deg, #00e5ff 0%, #0284c7 100%) !important;
+  color: #030e18 !important;
+  text-shadow: none !important;
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
+/* Botões Secundários / Utilitários (Editar, Evento, etc.) */
 .dm-btn--outline {
-  background: rgba(30, 41, 59, 0.55) !important;
-  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  background: rgba(30, 41, 59, 0.45) !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
   color: var(--dm-text-secondary) !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
-  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.18s ease !important;
 }
 
 .dm-btn--outline:hover {
-  background: rgba(51, 65, 85, 0.75) !important;
-  border-color: var(--dm-tech-primary) !important;
+  background: rgba(51, 65, 85, 0.65) !important;
+  border-color: rgba(0, 229, 255, 0.45) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.3) !important;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.25) !important;
 }
 
+/* Botão Destrutivo / Lixeira: Contido com Alerta Carmesim */
 .dm-btn--danger,
-.dm-btn--danger-fill {
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid #ef4444 !important;
-  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35) !important;
-  transition: all 0.2s ease !important;
+.dm-btn--danger-fill,
+.dm-icon-btn--danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+  transition: all 0.18s ease !important;
 }
 
 .dm-btn--danger:hover,
-.dm-btn--danger-fill:hover {
-  background: linear-gradient(135deg, #f87171 0%, #991b1b 100%) !important;
-  border-color: #fca5a5 !important;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.65) !important;
-}
-
-.dm-icon-btn--primary {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.18) 0%, rgba(2, 132, 199, 0.18) 100%) !important;
-  border: 1px solid rgba(0, 229, 255, 0.45) !important;
-  color: var(--dm-tech-primary) !important;
-  transition: all 0.2s ease !important;
-}
-
-.dm-icon-btn--primary:hover {
-  background: linear-gradient(135deg, #00e5ff 0%, #0284c7 100%) !important;
-  color: #03101c !important;
-  border-color: #7df9ff !important;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.6) !important;
-}
-
-.dm-icon-btn--danger {
-  background: rgba(239, 68, 68, 0.15) !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-  color: #f87171 !important;
-  transition: all 0.2s ease !important;
-}
-
+.dm-btn--danger-fill:hover,
 .dm-icon-btn--danger:hover {
   background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+  border-color: #ef4444 !important;
   color: #ffffff !important;
-  border-color: #fca5a5 !important;
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.55) !important;
 }
 
-/* --- 7. BARRAS DE PROGRESSO COM GRADIENTE LUMINOSO --- */
-.dm-progress-bar {
-  background: rgba(15, 23, 42, 0.8) !important;
-  border: 1px solid var(--dm-border-subtle) !important;
+/* --- 6. BADGES, TAGS & PÍLULAS DA BASE --- */
+.dm-pill--category {
+  background: rgba(0, 229, 255, 0.08) !important;
+  border: 1px solid rgba(0, 229, 255, 0.25) !important;
+  color: var(--dm-cyan-bright) !important;
 }
 
-.dm-progress-bar__fill {
-  background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%) !important;
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.6) !important;
-}
-
-.dm-mini-progress {
-  background: rgba(15, 23, 42, 0.8) !important;
-}
-
-.dm-mini-progress__bar {
-  background: linear-gradient(90deg, #3b82f6 0%, #00e5ff 100%) !important;
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
-}
-
-/* --- 8. CARDS DE PANORAMA & SEÇÃO NA VISÃO GERAL --- */
-.dm-panorama-card {
-  background: linear-gradient(165deg, rgba(19, 28, 46, 0.75) 0%, rgba(12, 17, 29, 0.88) 100%) !important;
-  border: 1px solid var(--dm-border-medium) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-.dm-panorama-card:hover {
-  border-color: rgba(0, 229, 255, 0.4) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 14px rgba(0, 229, 255, 0.15) !important;
-}
-
-.dm-panorama-card__header {
-  border-bottom: 1px solid var(--dm-border-subtle) !important;
-}
-
-.dm-panorama-card__label {
-  color: var(--dm-text-primary) !important;
-  font-weight: 600 !important;
-}
-
-.dm-panorama-card__val {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-}
-
-/* Notificações e Avisos */
-.dm-notification-card {
-  background: linear-gradient(165deg, rgba(20, 28, 44, 0.75) 0%, rgba(12, 18, 28, 0.85) 100%) !important;
-  border: 1px solid var(--dm-border-subtle) !important;
-  border-left: 3px solid var(--dm-tech-primary) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-.dm-notification-card:hover {
-  border-color: rgba(0, 229, 255, 0.4) !important;
-  border-left-color: var(--dm-tech-bright) !important;
-}
-
-.dm-notification-card__item-title {
-  color: var(--dm-text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Condições Ativas / Crises */
-.dm-condition-card {
-  background: linear-gradient(145deg, rgba(239, 68, 68, 0.1) 0%, rgba(18, 24, 38, 0.9) 100%) !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 10px rgba(239, 68, 68, 0.12) !important;
-}
-
-.dm-condition-card:hover {
-  border-color: rgba(239, 68, 68, 0.6) !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), 0 0 16px rgba(239, 68, 68, 0.25) !important;
-}
-
-/* --- 9. SUBSISTEMA DE PROJETOS & OBRAS --- */
-.dm-project-card {
-  background: var(--dm-proj-card-bg) !important;
-  border: 1px solid var(--dm-proj-border) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
-  transition: border-color 0.2s ease, transform 0.2s ease !important;
-}
-
-.dm-project-card:hover {
-  border-color: rgba(249, 115, 22, 0.55) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 0 14px rgba(249, 115, 22, 0.2) !important;
-}
-
-.dm-project-card__name {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-}
-
-.dm-mod-chip {
-  background: rgba(249, 115, 22, 0.14) !important;
-  border: 1px solid rgba(249, 115, 22, 0.35) !important;
-  color: var(--dm-proj-bright) !important;
-  border-radius: 4px !important;
-}
-
-.dm-project-complete-banner {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
-  border: 1px solid rgba(16, 185, 129, 0.4) !important;
-  color: var(--dm-pop-bright) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2) !important;
-}
-
-/* --- 10. SUBSISTEMA DE ECONOMIA & TABELAS DE FLUXO --- */
-.dm-table {
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
-}
-
-.dm-table thead th {
-  background: linear-gradient(90deg, rgba(26, 36, 56, 0.8) 0%, rgba(17, 24, 39, 0.7) 100%) !important;
-  border-bottom: 1px solid var(--dm-border-medium) !important;
-  color: var(--dm-text-muted) !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-}
-
-.dm-table tbody tr {
-  transition: background 0.15s ease !important;
-}
-
-.dm-table tbody tr:hover {
-  background: rgba(0, 229, 255, 0.05) !important;
-}
-
-.dm-rate--inflow {
-  color: var(--dm-pop-primary) !important;
-  font-weight: 700 !important;
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.45) !important;
-}
-
-.dm-rate--outflow {
-  color: var(--dm-def-primary) !important;
-  font-weight: 700 !important;
-  text-shadow: 0 0 8px rgba(239, 68, 68, 0.45) !important;
-}
-
-/* --- 11. SUBSISTEMA DE POPULAÇÃO, GRUPOS & NOTÁVEIS --- */
-.dm-notable-card {
-  background: var(--dm-pop-card-bg) !important;
-  border: 1px solid var(--dm-pop-border) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
-  transition: all 0.2s ease !important;
-}
-
-.dm-notable-card:hover {
-  border-color: rgba(16, 185, 129, 0.55) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(16, 185, 129, 0.25) !important;
-}
-
-.dm-notable-name {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-}
-
-.dm-group-item {
-  background: linear-gradient(165deg, rgba(20, 28, 44, 0.7) 0%, rgba(12, 17, 28, 0.85) 100%) !important;
-  border: 1px solid var(--dm-border-subtle) !important;
-  border-radius: 8px !important;
-}
-
-.dm-group-item:hover {
-  border-color: var(--dm-pop-border) !important;
-}
-
-/* --- 12. SUBSISTEMA DE DIPLOMACIA & TRATADOS --- */
-.dm-relation-item {
-  background: var(--dm-diplo-card-bg) !important;
-  border: 1px solid var(--dm-diplo-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
-  transition: all 0.2s ease !important;
-}
-
-.dm-relation-item:hover {
-  border-color: rgba(59, 130, 246, 0.55) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 14px rgba(59, 130, 246, 0.2) !important;
-}
-
-.dm-relation-target {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-}
-
-/* --- 13. SUBSISTEMA DE INTEL & SEGREDOS --- */
-.dm-intel-card {
-  background: var(--dm-intel-card-bg) !important;
-  border: 1px solid var(--dm-intel-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
-  transition: all 0.2s ease !important;
-}
-
-.dm-intel-card:hover {
-  border-color: rgba(168, 85, 247, 0.55) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(168, 85, 247, 0.25) !important;
-}
-
-/* --- 14. SUBSISTEMA DE CRÔNICAS & HISTÓRICO --- */
-.dm-feed__item {
-  background: var(--dm-chron-card-bg) !important;
-  border: 1px solid var(--dm-chron-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-.dm-feed__item:hover {
-  border-color: rgba(20, 184, 166, 0.5) !important;
-}
-
-.dm-feed__tick {
-  color: var(--dm-chron-bright) !important;
-  font-weight: 700 !important;
-  text-shadow: 0 0 8px rgba(20, 184, 166, 0.5) !important;
-}
-
-/* --- 15. PILLS, BADGES & STATUS TAGS --- */
-.dm-pill,
-.dm-badge {
-  border-radius: 4px !important;
-  font-weight: 600 !important;
+.dm-pill--nature {
+  background: rgba(148, 163, 184, 0.08) !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  color: var(--dm-text-secondary) !important;
 }
 
 .dm-badge--risk-high,
-.dm-badge--risk-severe,
 .dm-badge--danger {
-  background: rgba(239, 68, 68, 0.16) !important;
-  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  background: rgba(239, 68, 68, 0.14) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
   color: #f87171 !important;
 }
 
 .dm-badge--risk-medium,
 .dm-badge--warning {
-  background: rgba(245, 158, 11, 0.16) !important;
-  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
   color: #fbbf24 !important;
 }
 
 .dm-badge--risk-low,
 .dm-badge--success {
-  background: rgba(16, 185, 129, 0.16) !important;
-  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
   color: #34d399 !important;
 }
 
-.dm-pill--category {
-  background: rgba(0, 229, 255, 0.12) !important;
-  border: 1px solid rgba(0, 229, 255, 0.35) !important;
-  color: var(--dm-tech-bright) !important;
+/* --- 7. CARDS DE SEÇÃO, PANORAMAS & PROJETOS --- */
+.dm-panorama-card,
+.dm-project-card,
+.dm-notable-card,
+.dm-relation-item,
+.dm-intel-card,
+.dm-feed__item {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.75) 0%, rgba(11, 16, 28, 0.9) 100%) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  transition: all 0.2s ease !important;
 }
 
-.dm-pill--nature {
-  background: rgba(168, 85, 247, 0.12) !important;
-  border: 1px solid rgba(168, 85, 247, 0.35) !important;
-  color: var(--dm-intel-bright) !important;
+.dm-panorama-card:hover,
+.dm-project-card:hover,
+.dm-notable-card:hover,
+.dm-relation-item:hover,
+.dm-intel-card:hover,
+.dm-feed__item:hover {
+  border-color: rgba(0, 229, 255, 0.35) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(0, 229, 255, 0.1) !important;
 }
 
-/* --- 16. FORMULÁRIOS, INPUTS, SELECTS & TEXTAREAS --- */
-.dm-input,
-.dm-select,
-.dm-textarea {
-  background: rgba(15, 23, 42, 0.85) !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  color: var(--dm-text-primary) !important;
-  border-radius: 6px !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+/* Obras: Barra de Progresso com Gradiente Energizado Laranja/Âmbar */
+.dm-progress-bar {
+  background: rgba(11, 16, 28, 0.8) !important;
+  border: 1px solid var(--dm-border-subtle) !important;
 }
 
-.dm-input:focus,
-.dm-select:focus,
-.dm-textarea:focus {
-  border-color: var(--dm-tech-primary) !important;
-  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.25), 0 0 12px rgba(0, 229, 255, 0.2) !important;
-  outline: none !important;
+.dm-progress-bar__fill {
+  background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%) !important;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.55) !important;
 }
 
-/* --- 17. MODAIS, DIÁLOGOS & BACKDROPS --- */
-.dm-modal-backdrop {
-  background: rgba(3, 7, 18, 0.82) !important;
-  backdrop-filter: blur(8px) !important;
+/* Notificações */
+.dm-notification-card {
+  background: linear-gradient(165deg, rgba(18, 26, 42, 0.8) 0%, rgba(11, 16, 26, 0.9) 100%) !important;
+  border: 1px solid var(--dm-border-subtle) !important;
+  border-left: 3px solid var(--dm-cyan) !important;
 }
 
-.dm-dialog-card,
-.dm-modal,
-.dm-modal-compact {
-  background: linear-gradient(165deg, #111827 0%, #0a0e17 100%) !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 229, 255, 0.08) !important;
-  position: relative !important;
+/* Condições Ativas */
+.dm-condition-card {
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.08) 0%, rgba(18, 24, 38, 0.9) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
 }
 
-.dm-dialog-card::before,
-.dm-modal::before,
-.dm-modal-compact::before {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 2px !important;
-  background: linear-gradient(90deg, #00e5ff 0%, #3b82f6 50%, #a855f7 100%) !important;
-  border-radius: 6px 6px 0 0 !important;
-}
-
-.dm-modal__header,
-.dm-dialog-card__header {
-  border-bottom: 1px solid var(--dm-border-subtle) !important;
-}
-
-.dm-modal__footer,
-.dm-dialog-card__actions {
-  border-top: 1px solid var(--dm-border-subtle) !important;
-}
-
-/* --- 18. SCROLLBARS LUMINOSAS MODERNAS --- */
-.dm-shell *::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
-}
-
-.dm-shell *::-webkit-scrollbar-track {
-  background: rgba(11, 17, 28, 0.5) !important;
-}
-
-.dm-shell *::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25) !important;
-  border-radius: 3px !important;
-  transition: background 0.2s ease !important;
-}
-
-.dm-shell *::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.5) !important;
-}
-
-/* --- 19. HERO DA BASE, TÍTULOS DE SEÇÃO & DETALHES VISUAIS --- */
+/* Hero da Base */
 .dm-base-hero {
+  border: 1px solid rgba(0, 229, 255, 0.22) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 229, 255, 0.06) !important;
+}
+
+/* --- 8. ANIMAÇÕES HUD: SINCRONIZAÇÃO TOTAL COM A TEORIA DAS CORES --- */
+
+/* A. OVERLAY DE TRANSIÇÃO DE SETOR (.dm-hud-transition-overlay) */
+.dm-hud-transition-overlay {
+  background: rgba(6, 10, 18, 0.97) !important;
+}
+
+.dm-hud-transition__hex-grid {
+  opacity: 0.12 !important;
+}
+
+.dm-hud-transition__scanlines {
+  opacity: 0.15 !important;
+}
+
+/* Cantoneiras Táticas de Enquadramento */
+.dm-hud-bracket {
+  border-color: #ef4444 !important;
+}
+
+.dm-hud-bracket__tag {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+}
+
+/* Barra Superior de Telemetria */
+.dm-hud-transition__top-bar {
+  border-bottom: 1px solid rgba(0, 229, 255, 0.25) !important;
+}
+
+.dm-hud-transition__sys-pill {
+  background: rgba(0, 229, 255, 0.08) !important;
   border: 1px solid rgba(0, 229, 255, 0.25) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 229, 255, 0.08) !important;
+  color: #7df9ff !important;
 }
 
-.dm-gallery-thumb-btn.is-active,
-.dm-gallery-thumb-btn:hover {
-  border-color: var(--dm-tech-primary) !important;
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important;
-}
-
-.dm-section-title {
-  color: var(--dm-text-primary) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-}
-
-.dm-section-title i {
-  color: var(--dm-tech-primary) !important;
-  margin-right: 6px !important;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important;
-}
-
-.dm-panel--economy .dm-section-title i {
-  color: var(--dm-econ-bright) !important;
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important;
-}
-
-.dm-panel--projects .dm-section-title i {
-  color: var(--dm-proj-bright) !important;
-  text-shadow: 0 0 8px rgba(249, 115, 22, 0.4) !important;
-}
-
-.dm-panel--people .dm-section-title i {
-  color: var(--dm-pop-bright) !important;
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4) !important;
-}
-
-.dm-panel--diplomacy .dm-section-title i {
-  color: var(--dm-diplo-bright) !important;
-  text-shadow: 0 0 8px rgba(59, 130, 246, 0.4) !important;
-}
-
-.dm-panel--intel .dm-section-title i {
-  color: var(--dm-intel-bright) !important;
-  text-shadow: 0 0 8px rgba(168, 85, 247, 0.4) !important;
-}
-
-.dm-panel--history .dm-section-title i {
-  color: var(--dm-chron-bright) !important;
-  text-shadow: 0 0 8px rgba(20, 184, 166, 0.4) !important;
-}
-
-.dm-empty-state__icon {
-  color: var(--dm-text-dim) !important;
-  opacity: 0.65 !important;
-}
-
-/* --- 20. ELEVAÇÃO CROMÁTICA DO DOSSIÊ TÁTICO & BIO-MONITOR --- */
-.dm-btn-dossier {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.08) 100%) !important;
-  border: 1px solid rgba(0, 229, 255, 0.45) !important;
-  color: var(--dm-tech-bright) !important;
-}
-
-.dm-btn-dossier:hover {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.3) 0%, rgba(2, 132, 199, 0.2) 100%) !important;
+.dm-hud-transition__sys-pill.is-active {
+  background: rgba(0, 229, 255, 0.22) !important;
   border-color: #00e5ff !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.45) !important;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4) !important;
 }
 
-.dm-biomonitor {
-  background: linear-gradient(165deg, #0a0f1c 0%, #060911 100%) !important;
-  border: 1px solid rgba(0, 229, 255, 0.3) !important;
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.08), inset 0 0 25px rgba(0, 0, 0, 0.8) !important;
+.dm-hud-transition__eq-mini .dm-hud-eq-bar {
+  background: #00e5ff !important;
+  box-shadow: 0 0 6px #00e5ff !important;
 }
 
-.dm-biomonitor::before {
-  background: linear-gradient(90deg, transparent 0%, #00e5ff 50%, transparent 100%) !important;
-}
-
-.dm-biomonitor__chip-icon {
-  color: var(--dm-tech-primary) !important;
-  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6) !important;
-}
-
-.dm-biomonitor__spec {
-  color: var(--dm-tech-bright) !important;
-}
-
-.dm-biomonitor__diamond.is-filled {
-  background: var(--dm-tech-gradient) !important;
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6) !important;
-}
-
-.dm-biomonitor__skill-level {
-  color: var(--dm-pop-bright) !important;
-}
-
-.dm-biomonitor__col-title {
-  color: var(--dm-text-primary) !important;
-}
-
-.dm-biomonitor__col-title i {
-  color: var(--dm-tech-primary) !important;
+.dm-hud-transition__freq-tag {
+  color: #00e5ff !important;
   text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
 }
 
-/* Utilitários de Texto Luminosos */
-.text-emerald { color: #10b981 !important; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4) !important; }
-.text-amber { color: #fbbf24 !important; text-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important; }
-.text-blue { color: #38bdf8 !important; text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important; }
-.text-indigo { color: #818cf8 !important; text-shadow: 0 0 8px rgba(129, 140, 248, 0.4) !important; }
-.text-purple { color: #c084fc !important; text-shadow: 0 0 8px rgba(192, 132, 252, 0.4) !important; }
-.text-crimson, .text-rose { color: #f87171 !important; text-shadow: 0 0 8px rgba(239, 68, 68, 0.4) !important; }
-.text-cyan { color: #00e5ff !important; text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important; }
+.dm-hud-transition__sys-meta {
+  color: #94a3b8 !important;
+}
+
+.dm-hud-transition__sys-meta i {
+  color: #00e5ff !important;
+}
+
+/* Radar Tático e Retículo Central */
+.dm-hud-transition__radar-circle:not(.dm-hud-transition__radar-circle--lg):not(.dm-hud-transition__radar-circle--xl):not(.dm-hud-transition__radar-circle--ticks) {
+  border-color: rgba(0, 229, 255, 0.4) !important;
+}
+
+.dm-hud-transition__radar-circle--ticks {
+  border-top-color: #00e5ff !important;
+  border-bottom-color: #00e5ff !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.3) !important;
+}
+
+.dm-hud-transition__radar-circle--lg {
+  border-color: rgba(0, 229, 255, 0.22) !important;
+}
+
+.dm-hud-transition__radar-circle--xl {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.dm-hud-transition__radar-sweep {
+  background: conic-gradient(from 0deg at 50% 50%, rgba(0, 229, 255, 0.28) 0deg, rgba(2, 132, 199, 0.1) 30deg, transparent 65deg) !important;
+}
+
+.dm-hud-cardinal {
+  color: #00e5ff !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+}
+
+.dm-hud-transition__radar-coords {
+  color: #00e5ff !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+}
+
+/* Banner Central da Transição */
+.dm-hud-transition__sector-banner {
+  background: rgba(8, 14, 24, 0.96) !important;
+  border: 1px solid rgba(0, 229, 255, 0.65) !important;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.28), 0 0 60px rgba(2, 132, 199, 0.15) !important;
+}
+
+.dm-hud-transition__sector-badge {
+  background: rgba(0, 229, 255, 0.12) !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  color: #00e5ff !important;
+}
+
+.dm-hud-transition__badge-dot {
+  background: #00e5ff !important;
+  box-shadow: 0 0 8px #00e5ff !important;
+}
+
+.dm-hud-transition__sector-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 16px rgba(0, 229, 255, 0.8), 0 0 30px rgba(0, 229, 255, 0.35) !important;
+}
+
+.dm-hud-transition__sector-sub {
+  color: #94a3b8 !important;
+}
+
+.dm-hud-transition__sector-hazard {
+  background: repeating-linear-gradient(45deg, #ef4444, #ef4444 6px, #080c14 6px, #080c14 12px) !important;
+}
+
+.dm-hud-transition__sector-corner-notch {
+  background: #ef4444 !important;
+  box-shadow: 0 0 8px #ef4444 !important;
+}
+
+/* Painéis Inferiores Dinâmicos de Telemetria */
+.dm-hud-transition__code-panel,
+.dm-hud-transition__binary-panel {
+  background: rgba(8, 14, 24, 0.92) !important;
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+}
+
+.dm-hud-panel-title {
+  color: #00e5ff !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important;
+}
+
+.dm-hud-badge--crimson {
+  background: rgba(239, 68, 68, 0.16) !important;
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  color: #f87171 !important;
+}
+
+.dm-hud-transition__code-stream .dm-code-line {
+  color: #cbd5e1 !important;
+}
+
+.dm-hud-transition__code-stream .dm-line-no {
+  color: #00e5ff !important;
+}
+
+.dm-hud-cursor-blink {
+  color: #00e5ff !important;
+  text-shadow: 0 0 8px #00e5ff !important;
+}
+
+/* B. OVERLAY DE BOOT WELCOME (.dm-boot-welcome-overlay) */
+.dm-boot-welcome-overlay {
+  background: rgba(6, 10, 18, 0.97) !important;
+}
+
+.dm-boot-cockpit-bracket {
+  border-color: rgba(0, 229, 255, 0.55) !important;
+}
+
+.dm-boot-bracket-tag {
+  background: rgba(0, 229, 255, 0.12) !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  color: #7df9ff !important;
+}
+
+/* Núcleo Holográfico 3D */
+.dm-boot-sphere {
+  border: 1.5px solid rgba(0, 229, 255, 0.7) !important;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4) !important;
+}
+
+.dm-boot-sphere::before {
+  border: 1.5px solid rgba(0, 229, 255, 0.8) !important;
+}
+
+.dm-boot-sphere::after {
+  border: 1.5px solid rgba(0, 229, 255, 0.65) !important;
+}
+
+.dm-boot-sphere-orbit {
+  border: 1.5px dashed rgba(0, 229, 255, 0.6) !important;
+}
+
+.dm-boot-ring-outer {
+  border-color: rgba(0, 229, 255, 0.3) !important;
+}
+
+.dm-boot-ring-ticks {
+  border-top-color: #00e5ff !important;
+  border-bottom-color: #00e5ff !important;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.35) !important;
+}
+
+.dm-boot-ring-inner {
+  border-color: rgba(0, 229, 255, 0.4) !important;
+}
+
+.dm-boot-sweep {
+  background: conic-gradient(from 0deg at 50% 50%, rgba(0, 229, 255, 0.28) 0deg, rgba(2, 132, 199, 0.1) 40deg, transparent 70deg) !important;
+}
+
+.dm-boot-cardinal {
+  color: #00e5ff !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+}
+
+.dm-boot-core-coords {
+  color: #00e5ff !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+}
+
+/* Card de Boas-Vindas Central */
+.dm-boot-welcome-card {
+  background: rgba(8, 14, 24, 0.96) !important;
+  border: 1px solid rgba(0, 229, 255, 0.65) !important;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.3), 0 0 60px rgba(2, 132, 199, 0.2) !important;
+}
+
+.dm-boot-card-hazard {
+  background: repeating-linear-gradient(45deg, #ef4444, #ef4444 6px, #080c14 6px, #080c14 12px) !important;
+}
+
+.dm-boot-status-badge {
+  background: rgba(0, 229, 255, 0.12) !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  color: #00e5ff !important;
+}
+
+.dm-boot-status-dot {
+  background: #00e5ff !important;
+  box-shadow: 0 0 8px #00e5ff !important;
+}
+
+.dm-boot-welcome-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.7), 0 0 28px rgba(0, 229, 255, 0.3) !important;
+}
+
+.dm-boot-welcome-title span {
+  color: #00e5ff !important;
+  text-shadow: 0 0 16px rgba(0, 229, 255, 0.9) !important;
+}
+
+.dm-boot-welcome-subtitle {
+  color: #94a3b8 !important;
+}
+
+.dm-boot-progress-fill {
+  background: linear-gradient(90deg, #00e5ff 0%, #38bdf8 50%, #ffffff 100%) !important;
+  box-shadow: 0 0 12px #00e5ff !important;
+}
+
+.dm-boot-card-meta {
+  color: #94a3b8 !important;
+}
+
+.dm-boot-card-meta i {
+  color: #00e5ff !important;
+}
