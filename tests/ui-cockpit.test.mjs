@@ -1058,6 +1058,13 @@ test("v11: Boot Welcome Card Centralizado, Simétrico e Núcleo Holográfico 3D 
   }
   assert.strictEqual(earlyClose, false, "app-shell.hbs não deve fechar a div raiz antes do final");
   assert.strictEqual(depth, 0, "app-shell.hbs deve ter balanço perfeito de tags div");
+
+  // 5. Posicionamento Tático sem Sobreposição e Órbita Holográfica Desobstruída
+  assert.ok(shellCss.includes("top: 35% !important"), "Núcleo holográfico deve ter top: 35% para desobstrução vertical completa");
+  assert.ok(shellCss.includes(".dm-boot-sphere-orbit"), "Anel orbital deve estar estilizado");
+  assert.ok(shellCss.includes("bottom: -20px !important"), "Coordenadas do núcleo devem estar compactas sob o anel");
 });
+
+
 
 
