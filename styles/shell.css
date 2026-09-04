@@ -7436,3 +7436,63 @@
   color: var(--dm-text-dim) !important;
   opacity: 0.65 !important;
 }
+
+/* --- 20. ELEVAÇÃO CROMÁTICA DO DOSSIÊ TÁTICO & BIO-MONITOR --- */
+.dm-btn-dossier {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.08) 100%) !important;
+  border: 1px solid rgba(0, 229, 255, 0.45) !important;
+  color: var(--dm-tech-bright) !important;
+}
+
+.dm-btn-dossier:hover {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.3) 0%, rgba(2, 132, 199, 0.2) 100%) !important;
+  border-color: #00e5ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.45) !important;
+}
+
+.dm-biomonitor {
+  background: linear-gradient(165deg, #0a0f1c 0%, #060911 100%) !important;
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.08), inset 0 0 25px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dm-biomonitor::before {
+  background: linear-gradient(90deg, transparent 0%, #00e5ff 50%, transparent 100%) !important;
+}
+
+.dm-biomonitor__chip-icon {
+  color: var(--dm-tech-primary) !important;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.6) !important;
+}
+
+.dm-biomonitor__spec {
+  color: var(--dm-tech-bright) !important;
+}
+
+.dm-biomonitor__diamond.is-filled {
+  background: var(--dm-tech-gradient) !important;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6) !important;
+}
+
+.dm-biomonitor__skill-level {
+  color: var(--dm-pop-bright) !important;
+}
+
+.dm-biomonitor__col-title {
+  color: var(--dm-text-primary) !important;
+}
+
+.dm-biomonitor__col-title i {
+  color: var(--dm-tech-primary) !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+}
+
+/* Utilitários de Texto Luminosos */
+.text-emerald { color: #10b981 !important; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4) !important; }
+.text-amber { color: #fbbf24 !important; text-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important; }
+.text-blue { color: #38bdf8 !important; text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important; }
+.text-indigo { color: #818cf8 !important; text-shadow: 0 0 8px rgba(129, 140, 248, 0.4) !important; }
+.text-purple { color: #c084fc !important; text-shadow: 0 0 8px rgba(192, 132, 252, 0.4) !important; }
+.text-crimson, .text-rose { color: #f87171 !important; text-shadow: 0 0 8px rgba(239, 68, 68, 0.4) !important; }
+.text-cyan { color: #00e5ff !important; text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important; }
