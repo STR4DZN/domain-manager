@@ -45,7 +45,7 @@ https://raw.githubusercontent.com/STR4DZN/domain-manager/main/module.json
 ```
 
 ### Instalação Manual
-1. Baixe o arquivo `domain-manager-v0.1.0-dev.121.zip` da [última release](https://github.com/STR4DZN/domain-manager/releases).
+1. Baixe o arquivo `domain-manager-v0.1.0-dev.123.zip` da [última release](https://github.com/STR4DZN/domain-manager/releases).
 2. Extraia o conteúdo na pasta `Data/modules/domain-manager` do seu Foundry VTT.
 3. Ative o módulo e sua dependência (`socketlib`) nas configurações do seu mundo.
 
