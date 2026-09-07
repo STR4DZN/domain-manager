@@ -987,14 +987,24 @@ test("v11: Integridade da Div Raiz Única, Ausência de Telas Bloqueantes e Agil
   assert.strictEqual(earlyClose, false, "app-shell.hbs não deve fechar a div raiz antes do final");
   assert.strictEqual(depth, 0, "app-shell.hbs deve ter balanço perfeito de tags div (depth 0 ao final)");
 
-  // 2. Validar transição sutil ágil (não-bloqueante)
+  // 2. Validar transição sutil ágil (não-bloqueante) e boot welcome AAA
   assert.ok(appShell.includes("dm-hud-transition-overlay"), "Template deve conter overlay de transição tática ágil");
   assert.ok(appShell.includes("dm-hud-transition__sector-banner"), "Template deve conter banner de setor");
+  assert.ok(appShell.includes("dm-boot-welcome-overlay"), "Template deve conter overlay de boot welcome");
+  assert.ok(appShell.includes("dm-boot-welcome-card"), "Template deve conter card de boas-vindas do boot");
 
-  // 3. Validar integração no shell-app.js
+  // 3. Validar estilos e layout flexível em shell.css
+  const shellCss = fs.readFileSync(path.join(ROOT, "styles/shell.css"), "utf8");
+  assert.ok(shellCss.includes(".dm-shell__body"), "shell.css deve conter .dm-shell__body");
+  assert.ok(shellCss.includes(".dm-shell__main"), "shell.css deve conter .dm-shell__main");
+  assert.ok(shellCss.includes(".dm-boot-welcome-overlay"), "shell.css deve conter .dm-boot-welcome-overlay");
+  assert.ok(shellCss.includes("dmBootStreamScroll"), "shell.css deve conter keyframes dmBootStreamScroll");
+
+  // 4. Validar integração no shell-app.js
   const shellAppCode = fs.readFileSync(path.join(ROOT, "scripts/ui/shell-app.js"), "utf8");
   assert.ok(shellAppCode.includes("sectorCallout"), "shell-app.js deve fornecer sectorCallout");
   assert.ok(shellAppCode.includes("currentUserName"), "shell-app.js deve fornecer currentUserName");
+  assert.ok(shellAppCode.includes("shouldPlayBootWelcome"), "shell-app.js deve controlar shouldPlayBootWelcome");
 });
 
 test("v12: Arquitetura Avançada do Image Studio Universal e Estilização de Sub-páginas (v0.1.0-dev.127)", async () => {

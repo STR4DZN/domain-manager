@@ -61,11 +61,30 @@ const SHELL_SHELL_BASE = `/* ===================================================
   overflow: hidden;
 }
 
+.dm-shell__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dm-shell__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
 .dm-workspace {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 

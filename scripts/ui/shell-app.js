@@ -768,7 +768,29 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     if (this.shouldPlayBootWelcome) {
       this.shouldPlayBootWelcome = false;
-      this.isBootWelcomePlaying = false;
+      this.isBootWelcomePlaying = true;
+      const bootOverlay = this.element?.querySelector(".dm-boot-welcome-overlay");
+      if (bootOverlay) {
+        bootOverlay.classList.remove("is-finished");
+        bootOverlay.classList.add("is-active");
+
+        const dismissBoot = () => {
+          if (DomainManagerShellApp.#bootWelcomeTimeout) {
+            clearTimeout(DomainManagerShellApp.#bootWelcomeTimeout);
+            DomainManagerShellApp.#bootWelcomeTimeout = null;
+          }
+          this.isBootWelcomePlaying = false;
+          bootOverlay.classList.add("is-finished");
+          bootOverlay.classList.remove("is-active");
+        };
+
+        bootOverlay.addEventListener("click", dismissBoot, { once: true });
+
+        if (DomainManagerShellApp.#bootWelcomeTimeout) {
+          clearTimeout(DomainManagerShellApp.#bootWelcomeTimeout);
+        }
+        DomainManagerShellApp.#bootWelcomeTimeout = setTimeout(dismissBoot, 2300);
+      }
     }
 
     if (this._shouldAnimateNextRender) {
@@ -923,22 +945,22 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   
-  static #triggerHudTransition() {
+  static #triggerHudTransition(app) {
     if (DomainManagerShellApp.#hudTransitionTimeout) {
       clearTimeout(DomainManagerShellApp.#hudTransitionTimeout);
     }
-    this.isHudTransitionActive = true;
+    if (app) app.isHudTransitionActive = true;
     DomainManagerShellApp.#hudTransitionTimeout = setTimeout(() => {
-      this.isHudTransitionActive = false;
-      this.render();
+      DomainManagerShellApp.#hudTransitionTimeout = null;
+      if (app) app.isHudTransitionActive = false;
     }, 1350);
   }
 
   static #onSwitchTab(event, target) {
-    this._shouldAnimateNextRender = true;
     const tab = target.dataset.tab;
-    DomainManagerShellApp.#triggerHudTransition();
-    if (tab) {
+    if (tab && tab !== this.activeTab) {
+      this._shouldAnimateNextRender = true;
+      DomainManagerShellApp.#triggerHudTransition(this);
       this.activeTab = tab;
       if (tab === "economy") this.activeSection = "economy";
       else if (tab === "projects") this.activeSection = "projects";
@@ -2995,7 +3017,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static #onCloseNotableDossier() {
     this._shouldAnimateNextRender = true;
-    DomainManagerShellApp.#triggerHudTransition();
+    DomainManagerShellApp.#triggerHudTransition(this);
     this.activeNotableDossierLocalId = null;
     this.selectedDossierSkillId = null;
     this.render();
