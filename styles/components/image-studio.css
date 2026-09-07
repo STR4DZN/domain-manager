@@ -1,0 +1,198 @@
+﻿/* ==========================================================================
+   DOMAIN MANAGER - COMPONENTES: ESTÚDIO DE IMAGEM UNIVERSAL (IMAGE STUDIO)
+   Inspirado no visual sci-fi de alta fidelidade do teste-hud
+   Suporte a Enquadramento, Posição X/Y, Zoom, Formatos de Retrato e Galeria
+   ========================================================================== */
+
+/* Contêiner de Controles do Image Studio */
+.dm-image-studio-controls {
+  background: var(--dm-bg-panel, #041822);
+  border: 1px solid var(--dm-border-tech, #0d4a5c);
+  border-radius: var(--dm-radius-md, 6px);
+  padding: 10px 12px;
+  box-sizing: border-box;
+  margin-top: 6px;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
+  transition: border-color var(--dm-transition-fast, 0.15s ease);
+}
+
+.dm-image-studio-controls:focus-within {
+  border-color: var(--dm-border-bright, #1da3b0);
+}
+
+/* Área de Prévia ao Vivo do Image Studio */
+.dm-image-studio-preview {
+  position: relative;
+  width: 100%;
+  border-radius: var(--dm-radius-sm, 4px);
+  overflow: hidden;
+  border: 1px solid var(--dm-border-bright, #1da3b0);
+  background-color: var(--dm-bg-void, #02070e);
+  background-image: radial-gradient(circle, rgba(63, 244, 213, 0.12) 1px, transparent 1px);
+  background-size: 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.9), 0 0 10px rgba(63, 244, 213, 0.1);
+  margin-top: 8px;
+  box-sizing: border-box;
+}
+
+.dm-image-studio-preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: transform 0.15s ease-out, object-position 0.15s ease-out;
+}
+
+/* Formatos de Prévia de Retrato / Biomonitor */
+.dm-image-preview-portrait {
+  width: 72px;
+  height: 72px;
+  margin: 8px auto;
+  border-radius: var(--dm-radius-sm, 4px);
+  flex-shrink: 0;
+}
+
+.dm-image-preview-portrait.is-portrait {
+  width: 72px;
+  height: 96px;
+}
+
+.dm-image-preview-portrait.is-wide {
+  width: 96px;
+  height: 72px;
+}
+
+/* Linha de Sliders de Ajuste Fino */
+.dm-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.dm-slider-row input[type="range"] {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(13, 74, 92, 0.5);
+  border: 1px solid rgba(29, 163, 176, 0.3);
+  accent-color: var(--dm-cyan-neon, #3ff4d5);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--dm-transition-fast, 0.15s ease);
+}
+
+.dm-slider-row input[type="range"]:hover {
+  background: rgba(13, 74, 92, 0.8);
+  border-color: var(--dm-cyan-neon, #3ff4d5);
+  box-shadow: 0 0 8px rgba(63, 244, 213, 0.3);
+}
+
+/* Badge de Valor do Slider */
+.dm-slider-val {
+  font-family: var(--dm-font-mono, "Share Tech Mono", monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dm-cyan-neon, #3ff4d5);
+  background: rgba(2, 7, 14, 0.85);
+  border: 1px solid rgba(63, 244, 213, 0.3);
+  border-radius: var(--dm-radius-xs, 2px);
+  padding: 1px 6px;
+  margin-left: 4px;
+  letter-spacing: 0.05em;
+  min-width: 32px;
+  text-align: center;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(63, 244, 213, 0.2);
+}
+
+/* Galeria de Miniaturas / Chips */
+.dm-gallery-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  background: rgba(2, 6, 11, 0.85) !important;
+  padding: 6px 8px !important;
+  border-radius: var(--dm-radius-sm, 4px) !important;
+  border: 1px solid var(--dm-border-tech, #0d4a5c) !important;
+  max-height: 80px !important;
+  overflow-y: auto !important;
+}
+
+.dm-gallery-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(4, 24, 34, 0.9) !important;
+  padding: 3px 6px !important;
+  border-radius: var(--dm-radius-xs, 2px) !important;
+  border: 1px solid rgba(29, 163, 176, 0.3) !important;
+  font-family: var(--dm-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  color: var(--dm-text-main, #f5fffd) !important;
+}
+
+.dm-gallery-chip__thumb {
+  width: 26px !important;
+  height: 20px !important;
+  border-radius: 2px !important;
+  object-fit: cover !important;
+  border: 1px solid rgba(63, 244, 213, 0.3) !important;
+}
+
+.dm-gallery-thumb-btn {
+  width: 40px !important;
+  height: 28px !important;
+  border-radius: var(--dm-radius-xs, 2px) !important;
+  border: 1px solid rgba(29, 163, 176, 0.4) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  background: var(--dm-bg-void, #02070e) !important;
+  transition: all var(--dm-transition-fast, 0.15s ease) !important;
+}
+
+.dm-gallery-thumb-btn:hover {
+  border-color: var(--dm-cyan-neon, #3ff4d5) !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 8px rgba(63, 244, 213, 0.5) !important;
+}
+
+.dm-gallery-thumb-btn.is-active {
+  border-color: var(--dm-cyan-neon, #3ff4d5) !important;
+  box-shadow: 0 0 10px rgba(63, 244, 213, 0.7) !important;
+}
+
+.dm-gallery-thumb-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* Compatibilidade com Caixas Legadas de Prévia Simples */
+.dm-image-preview-container {
+  width: 100% !important;
+  height: 90px !important;
+  border-radius: var(--dm-radius-sm, 4px) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--dm-border-tech, #0d4a5c) !important;
+  background: var(--dm-bg-void, #02070e) !important;
+  margin-top: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.dm-image-preview-rect {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.dm-image-preview-container.is-contain .dm-image-preview-rect {
+  object-fit: contain !important;
+}

@@ -1,0 +1,103 @@
+﻿/* ==========================================================================
+   DOMAIN MANAGER - VIEWS: INTEL & SEGREDOS TÁTICOS
+   ========================================================================== */
+
+.dm-panel--intel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.dm-intel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.dm-intel-card {
+  background: var(--dm-bg-card, #031722);
+  border: 1px solid var(--dm-border-tech, #0d4a5c);
+  border-left: 3px solid var(--dm-blue-intel, #0284c7);
+  border-radius: var(--dm-radius-md, 6px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all var(--dm-transition-fast, 0.15s ease);
+}
+
+.dm-intel-card:hover {
+  border-color: var(--dm-border-bright, #1da3b0);
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.25);
+  transform: translateY(-1px);
+}
+
+.dm-intel-card.is-secret {
+  border-left-color: #f43f5e;
+}
+
+.dm-intel-card.is-rumor {
+  border-left-color: var(--dm-amber-gold, #ffd15c);
+}
+
+.dm-intel-card.is-fact {
+  border-left-color: var(--dm-cyan-neon, #3ff4d5);
+}
+
+.dm-intel-card.is-clue {
+  border-left-color: #a855f7;
+}
+
+.dm-intel-card.is-lore {
+  border-left-color: #3b82f6;
+}
+
+.dm-intel-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dm-intel-card__top strong {
+  font-family: var(--dm-font-primary, sans-serif);
+  font-size: 0.95rem;
+  color: var(--dm-text-white, #ffffff);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.dm-intel-card__text {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--dm-text-main, #f5fffd);
+  margin: 0;
+}
+
+.dm-intel-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--dm-border-dark, #072b38);
+}
+
+.dm-badge--visibility {
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.7rem;
+  color: var(--dm-text-dim, #1e5a66);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dm-pill--category {
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: var(--dm-radius-xs, 2px);
+  background: rgba(13, 74, 92, 0.4);
+  color: var(--dm-text-sec, #9ee5df);
+  border: 1px solid rgba(29, 163, 176, 0.25);
+}

@@ -1,0 +1,43 @@
+/* ==========================================================================
+   DOMAIN MANAGER - VIEWS: DIPLOMACIA & INTEL
+   ========================================================================== */
+
+.dm-diplomacy-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.dm-relations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-relation-card {
+  background: var(--dm-bg-card);
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dm-intel-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-intel-card {
+  background: var(--dm-bg-card);
+  border: 1px solid var(--dm-border-dark);
+  border-left: 3px solid var(--dm-blue-intel);
+  border-radius: var(--dm-radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

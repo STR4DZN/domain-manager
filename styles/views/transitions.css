@@ -1,0 +1,62 @@
+/* ==========================================================================
+   DOMAIN MANAGER - VIEWS: TRANSIÇÕES TÁTICAS (ÁGEIS & NÃO-BLOQUEANTES)
+   ========================================================================== */
+
+.dm-hud-transition-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  overflow: hidden;
+  animation: dmHudTransitionFade 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.dm-hud-transition__sector-banner {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  padding: 4px 12px;
+  background: rgba(4, 24, 34, 0.9);
+  border: 1px solid var(--dm-cyan-neon);
+  border-radius: var(--dm-radius-xs);
+  font-family: var(--dm-font-mono);
+  font-size: 0.8rem;
+  color: var(--dm-cyan-bright);
+  animation: dmSectorBannerPop 0.2s ease-out;
+}
+
+.dm-hud-transition__code-stream {
+  position: absolute;
+  left: 16px;
+  top: 10px;
+  font-family: var(--dm-font-mono);
+  font-size: 0.65rem;
+  color: rgba(63, 244, 213, 0.35);
+  animation: dmCodeStreamUp 0.3s linear;
+}
+
+.dm-hud-transition__binary-stream {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  font-family: var(--dm-font-mono);
+  font-size: 0.65rem;
+  color: rgba(255, 209, 92, 0.35);
+}
+
+@keyframes dmHudTransitionFade {
+  0% { opacity: 0.8; }
+  70% { opacity: 0.4; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes dmSectorBannerPop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes dmCodeStreamUp {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0.8; }
+}

@@ -1,0 +1,191 @@
+/* ==========================================================================
+   DOMAIN MANAGER - VIEWS: VISÃO GERAL (COCKPIT PRINCIPAL EM 3 LINHAS)
+   ========================================================================== */
+
+.dm-workspace-canvas {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--dm-bg-slate);
+  box-sizing: border-box;
+}
+
+/* LINHA 2 DO GRID: 2 COLUNAS (Hero/Identidade vs Projetos/Notáveis) */
+.dm-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .dm-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dm-overview-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card de Identidade Tática */
+.dm-base-identity-card {
+  background: var(--dm-bg-card);
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dm-base-identity-card__desc {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--dm-text-main);
+  margin: 0;
+}
+
+.dm-quick-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Listas Resumidas da Coluna Direita */
+.dm-overview-panel {
+  background: var(--dm-bg-card);
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-overview-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--dm-border-dark);
+  padding-bottom: 6px;
+}
+
+.dm-overview-panel__title {
+  font-family: var(--dm-font-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--dm-text-white);
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.dm-overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dm-overview-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: var(--dm-radius-sm);
+  background: rgba(3, 17, 24, 0.5);
+  border: 1px solid var(--dm-border-dark);
+  font-size: 0.82rem;
+}
+
+/* LINHA 3 DO GRID: FEED DE NOTIFICAÇÕES & ALERTAS */
+.dm-notifications-feed,
+.dm-overview-panoramas {
+  width: 100%;
+  background: var(--dm-bg-card);
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-md);
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+.dm-notifications-feed__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.dm-notifications-feed__title {
+  font-family: var(--dm-font-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--dm-text-white);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.dm-notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dm-notification-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--dm-radius-sm);
+  background: rgba(4, 24, 34, 0.7);
+  border: 1px solid var(--dm-border-dark);
+  gap: 12px;
+}
+
+.dm-notification-card--critical {
+  border-left: 3px solid var(--dm-red-alert);
+  background: rgba(255, 59, 92, 0.06);
+}
+
+.dm-notification-card--warning {
+  border-left: 3px solid var(--dm-amber-gold);
+  background: rgba(255, 209, 92, 0.06);
+}
+
+.dm-notification-card--info {
+  border-left: 3px solid var(--dm-cyan-neon);
+  background: rgba(63, 244, 213, 0.06);
+}
+
+.dm-notification-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dm-notification-card__title {
+  font-family: var(--dm-font-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--dm-text-white);
+}
+
+.dm-notification-card__msg {
+  font-size: 0.8rem;
+  color: var(--dm-text-sec);
+}

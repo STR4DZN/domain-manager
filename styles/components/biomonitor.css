@@ -1,0 +1,103 @@
+/* ==========================================================================
+   DOMAIN MANAGER - COMPONENTES: BIOMONITOR & DOSSIÊ TÁTICO
+   ========================================================================== */
+
+.dm-biomonitor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(2, 6, 11, 0.95) 0%, rgba(4, 24, 34, 0.95) 100%);
+  border: 1px solid var(--dm-border-bright);
+  border-radius: var(--dm-radius-md);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(63, 244, 213, 0.15);
+}
+
+.dm-biomonitor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--dm-border-tech);
+  padding-bottom: 8px;
+}
+
+.dm-biomonitor__title {
+  font-family: var(--dm-font-mono);
+  font-size: 0.85rem;
+  color: var(--dm-cyan-neon);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dm-biomonitor__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.dm-biomonitor__diamond {
+  position: relative;
+  background: rgba(7, 38, 51, 0.6);
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-sm);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all var(--dm-transition-fast);
+}
+
+.dm-biomonitor__diamond:hover {
+  border-color: var(--dm-cyan-neon);
+  box-shadow: 0 0 12px rgba(63, 244, 213, 0.3);
+  transform: translateY(-1px);
+}
+
+.dm-biomonitor__diamond-label {
+  font-family: var(--dm-font-mono);
+  font-size: 0.68rem;
+  color: var(--dm-text-sec);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dm-biomonitor__diamond-val {
+  font-family: var(--dm-font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--dm-cyan-bright);
+}
+
+.dm-biomonitor__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dm-biomonitor__skill-chip {
+  padding: 3px 8px;
+  background: rgba(13, 74, 92, 0.3);
+  border: 1px solid var(--dm-border-dark);
+  border-radius: var(--dm-radius-xs);
+  font-family: var(--dm-font-mono);
+  font-size: 0.72rem;
+  color: var(--dm-text-main);
+  cursor: pointer;
+  transition: all var(--dm-transition-fast);
+}
+
+.dm-biomonitor__skill-chip:hover,
+.dm-biomonitor__skill-chip.is-selected {
+  background: rgba(63, 244, 213, 0.15);
+  border-color: var(--dm-cyan-neon);
+  color: var(--dm-cyan-bright);
+}

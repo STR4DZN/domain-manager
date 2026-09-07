@@ -1,0 +1,75 @@
+/* ==========================================================================
+   DOMAIN MANAGER - COMPONENTES: BADGES & PÍLULAS TÁTICAS
+   ========================================================================== */
+
+.dm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--dm-radius-xs);
+  font-family: var(--dm-font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--dm-border-tech);
+  background: rgba(13, 74, 92, 0.3);
+  color: var(--dm-text-main);
+  white-space: nowrap;
+}
+
+.dm-badge--active {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--dm-green-track);
+}
+
+.dm-badge--alert,
+.dm-badge--critical {
+  border-color: rgba(255, 59, 92, 0.45);
+  background: rgba(255, 59, 92, 0.12);
+  color: var(--dm-red-alert);
+}
+
+.dm-badge--warning,
+.dm-badge--construction {
+  border-color: rgba(255, 209, 92, 0.45);
+  background: rgba(255, 209, 92, 0.12);
+  color: var(--dm-amber-gold);
+}
+
+.dm-badge--inactive {
+  border-color: rgba(158, 229, 223, 0.2);
+  background: rgba(158, 229, 223, 0.05);
+  color: var(--dm-text-dim);
+}
+
+.dm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--dm-radius-xs);
+  font-family: var(--dm-font-mono);
+  font-size: 0.7rem;
+  color: var(--dm-text-sec);
+  background: rgba(4, 24, 34, 0.6);
+  border: 1px solid var(--dm-border-dark);
+}
+
+.dm-pill--category {
+  border-color: var(--dm-border-tech);
+  color: var(--dm-cyan-neon);
+}
+
+.dm-pill--nature {
+  border-color: rgba(255, 209, 92, 0.35);
+  color: var(--dm-amber-gold);
+}
+
+.dm-pill--tag {
+  background: rgba(63, 244, 213, 0.05);
+  border-color: rgba(63, 244, 213, 0.25);
+  color: var(--dm-text-main);
+}

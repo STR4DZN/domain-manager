@@ -125,123 +125,6 @@
     </div>
   </div>
 
-  <!-- OVERLAY DE BOOT TÁTICO AAA (EXECUTA EXCLUSIVAMENTE NA ABERTURA DO MÓDULO) -->
-  <div class="dm-boot-welcome-overlay {{#if shouldPlayBootWelcome}}is-active{{else}}is-finished{{/if}}" aria-hidden="true">
-    <!-- Cantoneiras Táticas de Enquadramento Militar (Harmonizadas com Transição) -->
-    <div class="dm-boot-bracket dm-boot-bracket--tl"><span class="dm-boot-bracket__tag">SYS.BOOT // 00</span></div>
-    <div class="dm-boot-bracket dm-boot-bracket--tr"><span class="dm-boot-bracket__tag">OMNI-LINK // ON</span></div>
-    <div class="dm-boot-bracket dm-boot-bracket--bl"><span class="dm-boot-bracket__tag">ORBIT.450KM</span></div>
-    <div class="dm-boot-bracket dm-boot-bracket--br"><span class="dm-boot-bracket__tag">PILOT.READY</span></div>
-
-    <!-- Texturas Táticas de Fundo (Hex Grid, Dot Matrix, Scanlines, Glitch Beam & Runway 3D) -->
-    <div class="dm-boot-hex-grid"></div>
-    <div class="dm-boot-scanline"></div>
-    <div class="dm-boot-dot-grid"></div>
-    <div class="dm-boot-glitch-beam"></div>
-
-    <!-- Pista em Perspectiva e Horizonte (GIF 2 & Harmonização) -->
-    <div class="dm-boot-runway-perspective">
-      <div class="dm-boot-runway-plane"></div>
-    </div>
-    <div class="dm-boot-horizon"></div>
-    <div class="dm-boot-laser-tracer dm-boot-laser-tracer--left"></div>
-    <div class="dm-boot-laser-tracer dm-boot-laser-tracer--right"></div>
-
-    <!-- Cantoneiras de Cockpit (GIF 1 & 2 com Tags COMP/CON) -->
-    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--left">
-      <span class="dm-boot-bracket-tag">PILOT.LINK // 01</span>
-    </div>
-    <div class="dm-boot-cockpit-bracket dm-boot-cockpit-bracket--right">
-      <span class="dm-boot-bracket-tag">OMNI-NET // ALFA</span>
-    </div>
-
-    <!-- Núcleo Holográfico com Globo, Anéis Concéntricos, Retículo de Mira e Marcadores Cardinais -->
-    <div class="dm-boot-core-system">
-      <div class="dm-boot-crosshair dm-boot-crosshair--h"></div>
-      <div class="dm-boot-crosshair dm-boot-crosshair--v"></div>
-      <span class="dm-boot-cardinal dm-boot-cardinal--n">000°</span>
-      <span class="dm-boot-cardinal dm-boot-cardinal--e">090°</span>
-      <span class="dm-boot-cardinal dm-boot-cardinal--s">180°</span>
-      <span class="dm-boot-cardinal dm-boot-cardinal--w">270°</span>
-      <div class="dm-boot-ring dm-boot-ring-outer"></div>
-      <div class="dm-boot-ring dm-boot-ring-ticks"></div>
-      <div class="dm-boot-ring dm-boot-ring-inner"></div>
-      <div class="dm-boot-sweep"></div>
-      <div class="dm-boot-sphere">
-        <div class="dm-boot-sphere-orbit"></div>
-      </div>
-      <div class="dm-boot-core-coords">
-        <span>ORBITAL AZ: 128.4° // ELEV: 450KM // COMP/CON</span>
-      </div>
-    </div>
-
-    <!-- Painel de Holo-Projeção Superior Direito (GIF 3 com Acentos Militares) -->
-    <div class="dm-boot-holo-projector">
-      <div class="dm-boot-holo-projector__header">
-        <span>// COMP/CON HOLO-DIAG</span>
-        <span class="dm-boot-tag--active">ESTRUTURA: ATIVA</span>
-      </div>
-      <div class="dm-boot-holo-mesh">
-        <div class="dm-boot-holo-rig"></div>
-      </div>
-      <div class="dm-boot-holo-footer">
-        <span>GRID: LNC-42 // POLÍGONOS: 1024</span>
-      </div>
-    </div>
-
-    <!-- Painel de Telemetria e Frequência Superior Esquerdo (GIF 3 & 1) -->
-    <div class="dm-boot-telemetry-panel">
-      <div class="dm-boot-telemetry-header">
-        <span>// SISTEMA TÁTICO COMP/CON</span>
-        <span class="dm-boot-badge--emerald">LINK 100%</span>
-      </div>
-      <div class="dm-boot-equalizer">
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-        <div class="dm-boot-eq-bar"></div>
-      </div>
-      <div class="dm-boot-port-check">
-        PORT CHECK: 399.160.01:60.000<br>
-        ENCRIPTADOR: ATIVO // SHA-256 ALFA
-      </div>
-      <div class="dm-boot-stream-mini">
-        <div class="dm-boot-stream-scroller">
-          <div class="dm-boot-mini-line"><span class="text-cyan">></span> [SYS.01] OMNI-BUS ONLINE // 100%</div>
-          <div class="dm-boot-mini-line"><span class="text-amber">></span> [SYS.02] PROTOCOLO COMP/CON... OK</div>
-          <div class="dm-boot-mini-line"><span class="text-cyan">></span> [SYS.03] NÚCLEO DIEGÉTICO ATIVO</div>
-          <div class="dm-boot-mini-line"><span class="text-emerald">></span> [AUTH] PILOTO AUTORIZADO: {{currentUserName}}</div>
-        </div>
-        <span class="dm-boot-cursor-blink">_</span>
-      </div>
-    </div>
-
-    <!-- Card de Boas-Vindas Central ao Usuário (Militarizado COMP/CON com Chanfro e Acento Carmesim) -->
-    <div class="dm-boot-welcome-card">
-      <div class="dm-boot-card-accent"></div>
-      <div class="dm-boot-card-hazard"></div>
-      <div class="dm-boot-card-content">
-        <div class="dm-boot-status-badge">
-          <span class="dm-boot-status-dot"></span>
-          <span>AUTORIZAÇÃO NÍVEL ALFA CONCEDIDA // COMP/CON</span>
-        </div>
-        <h1 class="dm-boot-welcome-title">SEJA BEM-VINDO, <span>{{currentUserName}}</span></h1>
-        <p class="dm-boot-welcome-subtitle">// TERMINAL DE SOBERANIA OPERACIONAL CARREGADO //</p>
-        <div class="dm-boot-progress-bar">
-          <div class="dm-boot-progress-fill"></div>
-        </div>
-        <div class="dm-boot-card-meta">
-          <span><i class="fa-solid fa-lock"></i> CANAL CRIPTOGRAFADO // PING: 12ms</span>
-          <span>STATUS: ONLINE // COMP/CON MIL-SPEC</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="dm-shell__layout">
     <nav class="dm-rail" aria-label="Navegação Global">
   <div class="dm-rail__brand" title="{{localize 'DOMAIN_MANAGER.Title'}}">
@@ -1265,16 +1148,67 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO DE IMAGEM DA OBRA (CRIAÇÃO) -->
           <div class="dm-form-group">
-            <label>Imagem / GIF da Obra:</label>
+            <label><i class="fa-solid fa-camera text-sky"></i> Imagem / GIF da Obra:</label>
             <div class="dm-file-input-group">
               <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-project-img" placeholder="caminho/projeto.webp ou link..." />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-project-img">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
-            <div class="dm-image-preview-container mt-1" style="display: none;">
-              <img src="" class="dm-image-preview-rect" alt="Prévia" />
+
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Enquadramento:</label>
+                  <select class="dm-select dm-input--compact" id="dm-project-img-fit">
+                    <option value="cover" selected>Preencher (Cortar excesso)</option>
+                    <option value="contain">Conter (Sem corte)</option>
+                    <option value="fill">Esticar</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Altura do Card:</label>
+                  <select class="dm-select dm-input--compact" id="dm-project-img-height">
+                    <option value="140">Compacto (140px)</option>
+                    <option value="180" selected>Padrão (180px)</option>
+                    <option value="220">Médio (220px)</option>
+                    <option value="280">Grande (280px)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco X: <span class="dm-slider-val" id="dm-project-img-val-x">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-project-img-pos-x" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Y: <span class="dm-slider-val" id="dm-project-img-val-y">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-project-img-pos-y" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom: <span class="dm-slider-val" id="dm-project-img-val-zoom">100%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-project-img-zoom" value="100" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="dm-image-studio-preview dm-image-preview-container" id="dm-project-image-preview-container" style="height: 120px;">
+                <img
+                  src=""
+                  id="dm-project-image-preview-img"
+                  class="dm-image-preview-rect"
+                  alt="Prévia da Obra"
+                  onerror="this.style.display='none'"
+                />
+              </div>
             </div>
           </div>
 

@@ -242,6 +242,7 @@ function bindLiveImagePreview(element, prefix, previewImgId, previewContainerId,
     img.style.objectFit = fit;
     img.style.objectPosition = `${posX}% ${posY}%`;
     img.style.transform = `scale(${scale})`;
+    img.style.transformOrigin = `${posX}% ${posY}%`;
   };
 
   const selectors = [`${prefix}-fit`, `${prefix}-height`, `${prefix}-shape`, `${prefix}-pos-x`, `${prefix}-pos-y`, `${prefix}-zoom`];
@@ -767,20 +768,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     if (this.shouldPlayBootWelcome) {
       this.shouldPlayBootWelcome = false;
-      this.isBootWelcomePlaying = true;
-      const bootOverlay = this.element?.querySelector(".dm-boot-welcome-overlay");
-      if (bootOverlay) {
-        bootOverlay.classList.remove("is-finished");
-        bootOverlay.classList.add("is-active");
-        if (DomainManagerShellApp.#bootWelcomeTimeout) {
-          clearTimeout(DomainManagerShellApp.#bootWelcomeTimeout);
-        }
-        DomainManagerShellApp.#bootWelcomeTimeout = setTimeout(() => {
-          this.isBootWelcomePlaying = false;
-          bootOverlay.classList.add("is-finished");
-          bootOverlay.classList.remove("is-active");
-        }, 2300);
-      }
+      this.isBootWelcomePlaying = false;
     }
 
     if (this._shouldAnimateNextRender) {
@@ -797,7 +785,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         });
       }
     }
-super._onRender?.(context, options);
 
     if (!this.element) return;
 
@@ -983,11 +970,15 @@ super._onRender?.(context, options);
         current: input.value || "",
         callback: (selectedPath) => {
           input.value = selectedPath;
-          const container = input.closest(".dm-form-group")?.querySelector(".dm-image-preview-container");
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+
+          const container = input.closest(".dm-form-group")?.querySelector(".dm-image-preview-container, .dm-image-studio-preview");
           if (container) {
             const img = container.querySelector("img");
             if (img) {
               img.src = selectedPath;
+              img.style.display = "block";
               container.style.display = "block";
             }
           }

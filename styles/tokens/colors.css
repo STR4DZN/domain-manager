@@ -1,0 +1,66 @@
+/* ==========================================================================
+   DOMAIN MANAGER - DESIGN TOKENS: PALETA TÁTICA SCI-FI
+   Extraída e harmonizada dos consoles teste-hud (Data Topology + Satview + Oficina)
+   ========================================================================== */
+
+:root {
+  /* 1. Fundos Táticos Void & Painéis */
+  --dm-bg-void: #02060b;
+  --dm-bg-deep: #030812;
+  --dm-bg-slate: #031118;
+  --dm-bg-panel: #041822;
+  --dm-bg-panel-elevated: #072633;
+  --dm-bg-surface: #0a1f2c;
+  --dm-bg-surface-hover: #0f2c3d;
+  --dm-bg-card: rgba(4, 24, 34, 0.88);
+
+  /* 2. Bordas e Grades Técnicas */
+  --dm-border-dark: #072b38;
+  --dm-border-tech: #0d4a5c;
+  --dm-border-bright: #1da3b0;
+  --dm-border-subtle: rgba(13, 74, 92, 0.45);
+  --dm-border-medium: rgba(29, 163, 176, 0.55);
+
+  /* 3. Acentos Primários: Ciano Neon / Teal Espacial */
+  --dm-cyan-neon: #3ff4d5;
+  --dm-cyan-bright: #00f0ff;
+  --dm-cyan-deep: #00e5c8;
+  --dm-cyan-glow: rgba(63, 244, 213, 0.45);
+  --dm-cyan-glow-intense: 0 0 16px rgba(63, 244, 213, 0.65);
+  --dm-cyan-faint: rgba(63, 244, 213, 0.08);
+
+  /* 4. Acentos Secundários: Âmbar Ouro & Laranja Fogo (Finanças, Obras, Alertas) */
+  --dm-amber-gold: #ffd15c;
+  --dm-amber-bright: #ffb830;
+  --dm-orange-fire: #ff9f1c;
+  --dm-amber-glow: rgba(255, 209, 92, 0.45);
+  --dm-amber-faint: rgba(255, 159, 28, 0.10);
+
+  /* 5. Estados Operacionais & Alertas */
+  --dm-green-track: #00ff88;
+  --dm-green-glow: rgba(0, 255, 136, 0.45);
+  --dm-red-alert: #ff3b5c;
+  --dm-red-glow: rgba(255, 59, 92, 0.55);
+  --dm-blue-intel: #38bdf8;
+  --dm-purple-spec: #a855f7;
+
+  /* 6. Tipografia & Contrastes Nítidos */
+  --dm-text-white: #f5fffd;
+  --dm-text-main: #9de5df;
+  --dm-text-sec: #5da39e;
+  --dm-text-dim: #1e5a66;
+  --dm-text-muted: #417580;
+
+  /* 7. Aliases de compatibilidade para subsistemas */
+  --dm-bg-app: var(--dm-bg-void);
+  --dm-bg-workspace: var(--dm-bg-slate);
+  --dm-text-primary: var(--dm-text-white);
+  --dm-text-secondary: var(--dm-text-main);
+  --dm-tech-primary: var(--dm-cyan-neon);
+  --dm-tech-bright: var(--dm-cyan-bright);
+  --dm-tech-glow: var(--dm-cyan-glow-intense);
+  --dm-econ-primary: var(--dm-amber-gold);
+  --dm-econ-bright: var(--dm-amber-bright);
+  --dm-econ-glow: var(--dm-amber-glow);
+  --dm-pop-primary: var(--dm-green-track);
+}

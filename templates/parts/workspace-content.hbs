@@ -622,16 +622,67 @@
             </div>
           </div>
 
+          <!-- ESTÚDIO DE IMAGEM DA OBRA (CRIAÇÃO) -->
           <div class="dm-form-group">
-            <label>Imagem / GIF da Obra:</label>
+            <label><i class="fa-solid fa-camera text-sky"></i> Imagem / GIF da Obra:</label>
             <div class="dm-file-input-group">
               <input type="text" class="dm-input dm-input--compact dm-img-input" id="dm-project-img" placeholder="caminho/projeto.webp ou link..." />
               <button type="button" class="dm-btn dm-btn--outline dm-btn--xs" data-action="openFilePicker" data-target="#dm-project-img">
                 <i class="fa-solid fa-file-import"></i> Arquivo
               </button>
             </div>
-            <div class="dm-image-preview-container mt-1" style="display: none;">
-              <img src="" class="dm-image-preview-rect" alt="Prévia" />
+
+            <div class="dm-image-studio-controls mt-2">
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Enquadramento:</label>
+                  <select class="dm-select dm-input--compact" id="dm-project-img-fit">
+                    <option value="cover" selected>Preencher (Cortar excesso)</option>
+                    <option value="contain">Conter (Sem corte)</option>
+                    <option value="fill">Esticar</option>
+                  </select>
+                </div>
+                <div class="dm-form-group">
+                  <label>Altura do Card:</label>
+                  <select class="dm-select dm-input--compact" id="dm-project-img-height">
+                    <option value="140">Compacto (140px)</option>
+                    <option value="180" selected>Padrão (180px)</option>
+                    <option value="220">Médio (220px)</option>
+                    <option value="280">Grande (280px)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="dm-form-row">
+                <div class="dm-form-group">
+                  <label>Foco X: <span class="dm-slider-val" id="dm-project-img-val-x">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-project-img-pos-x" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Foco Y: <span class="dm-slider-val" id="dm-project-img-val-y">50%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="0" max="100" step="1" id="dm-project-img-pos-y" value="50" />
+                  </div>
+                </div>
+                <div class="dm-form-group">
+                  <label>Zoom: <span class="dm-slider-val" id="dm-project-img-val-zoom">100%</span></label>
+                  <div class="dm-slider-row">
+                    <input type="range" min="50" max="250" step="5" id="dm-project-img-zoom" value="100" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="dm-image-studio-preview dm-image-preview-container" id="dm-project-image-preview-container" style="height: 120px;">
+                <img
+                  src=""
+                  id="dm-project-image-preview-img"
+                  class="dm-image-preview-rect"
+                  alt="Prévia da Obra"
+                  onerror="this.style.display='none'"
+                />
+              </div>
             </div>
           </div>
 

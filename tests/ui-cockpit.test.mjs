@@ -911,23 +911,64 @@ test("v8: Auto-cura de ciclo hierárquico, galeria múltipla, ajuste contain/cov
 });
 
 
-test("v9: Animação de Boot Welcome (Seja bem-vindo, {Usuário}) com referências dos 3 GIFs e acionamento exclusivo na abertura", async () => {
-  // 1. Validar que templates/app-shell.hbs possui o overlay e todas as camadas dos 3 GIFs
-  const appShell = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/app-shell.hbs"), "utf8");
-  assert.ok(appShell.includes("dm-boot-welcome-overlay"), "Deve possuir o overlay de boot welcome");
-  assert.ok(appShell.includes("dm-boot-hex-grid"), "Camada 1: Grade hexagonal (GIF 3)");
-  assert.ok(appShell.includes("dm-boot-scanline"), "Camada 1: Scanline (GIF 1)");
-  assert.ok(appShell.includes("dm-boot-runway-perspective"), "Camada 2: Pista em perspectiva 3D (GIF 2)");
-  assert.ok(appShell.includes("dm-boot-horizon"), "Camada 2: Horizonte tático com ticks (GIF 2)");
-  assert.ok(appShell.includes("dm-boot-laser-tracer"), "Camada 2: Traçadores laser snappy (GIF 2)");
-  assert.ok(appShell.includes("dm-boot-cockpit-bracket"), "Camada 3: Cantoneiras do cockpit (GIF 1 e 2)");
-  assert.ok(appShell.includes("dm-boot-core-system"), "Camada 4: Núcleo holográfico com anéis concêntricos (GIF 3)");
-  assert.ok(appShell.includes("dm-boot-sphere"), "Camada 4: Globo planetário wireframe (GIF 3)");
-  assert.ok(appShell.includes("dm-boot-holo-projector"), "Camada 5: Holo-projetor superior direito com base militar (GIF 3)");
-  assert.ok(appShell.includes("dm-boot-telemetry-panel"), "Camada 6: Telemetria superior esquerda com equalizador e port check (GIF 3 e 1)");
-  assert.ok(appShell.includes("dm-boot-welcome-card"), "Camada 7: Card de boas-vindas com {{currentUserName}}");
+test("v9: Arquitetura Modular de Design Tokens e Estilos Táticos (Ciano Neon, Âmbar e Fundos Void)", async () => {
+  // 1. Validar existência e conteúdo dos arquivos de tokens modulares
+  const colorsCssPath = path.join(ROOT, "styles/tokens/colors.css");
+  const typoCssPath = path.join(ROOT, "styles/tokens/typography.css");
+  const layoutCssPath = path.join(ROOT, "styles/tokens/layout.css");
 
-  // 2. Validar que templates/app-shell.hbs mantém ESTRITAMENTE elemento raiz único
+  assert.equal(fs.existsSync(colorsCssPath), true, "styles/tokens/colors.css deve existir");
+  assert.equal(fs.existsSync(typoCssPath), true, "styles/tokens/typography.css deve existir");
+  assert.equal(fs.existsSync(layoutCssPath), true, "styles/tokens/layout.css deve existir");
+
+  const colorsCss = fs.readFileSync(colorsCssPath, "utf8");
+  assert.ok(colorsCss.includes("--dm-cyan-neon: #3ff4d5;"), "Tokens de cores devem conter Ciano Neon (#3ff4d5)");
+  assert.ok(colorsCss.includes("--dm-amber-gold: #ffd15c;"), "Tokens de cores devem conter Âmbar Ouro (#ffd15c)");
+  assert.ok(colorsCss.includes("--dm-bg-void: #02060b;"), "Tokens de cores devem conter Fundo Void (#02060b)");
+  assert.ok(colorsCss.includes("--dm-border-tech: #0d4a5c;"), "Tokens de cores devem conter Borda Técnica (#0d4a5c)");
+
+  const typoCss = fs.readFileSync(typoCssPath, "utf8");
+  assert.ok(typoCss.includes("Rajdhani"), "Tipografia deve incluir a fonte Rajdhani");
+  assert.ok(typoCss.includes("Share Tech Mono"), "Tipografia deve incluir a fonte Share Tech Mono");
+
+  // 2. Validar que shell.css contém o bundle gerado
+  const shellCss = fs.readFileSync(path.join(ROOT, "styles/shell.css"), "utf8");
+  assert.ok(shellCss.includes("--dm-cyan-neon"), "shell.css deve conter tokens de cor");
+  assert.ok(shellCss.includes(".domain-manager-shell-window .window-content"), "shell.css deve conter reset de janela");
+  assert.ok(shellCss.includes(".dm-shell"), "shell.css deve conter .dm-shell");
+  assert.ok(shellCss.includes(".dm-workspace"), "shell.css deve conter .dm-workspace");
+});
+
+test("v10: Componentes Visuais Táticos e Layouts Desacoplados (Buttons, Cards, Badges, Tree e Biomonitor)", async () => {
+  // 1. Validar existência dos arquivos de componentes modulares
+  const requiredComponentFiles = [
+    "styles/components/buttons.css",
+    "styles/components/cards.css",
+    "styles/components/badges.css",
+    "styles/components/tree.css",
+    "styles/components/modals.css",
+    "styles/components/biomonitor.css"
+  ];
+
+  for (const comp of requiredComponentFiles) {
+    assert.equal(fs.existsSync(path.join(ROOT, comp)), true, `Componente CSS deve existir: ${comp}`);
+  }
+
+  // 2. Validar estilos e contenções essenciais em shell.css
+  const shellCss = fs.readFileSync(path.join(ROOT, "styles/shell.css"), "utf8");
+  assert.ok(shellCss.includes(".dm-overview-cards"), "shell.css deve estilizar .dm-overview-cards");
+  assert.ok(shellCss.includes(".dm-base-hero"), "shell.css deve estilizar .dm-base-hero");
+  assert.ok(shellCss.includes(".dm-tree"), "shell.css deve estilizar .dm-tree");
+  assert.ok(shellCss.includes(".dm-biomonitor"), "shell.css deve estilizar .dm-biomonitor");
+  assert.ok(shellCss.includes(".dm-dialog-card__body"), "shell.css deve conter o corpo dos modais");
+  assert.ok(shellCss.includes(".dm-workspace-canvas"), "shell.css deve conter .dm-workspace-canvas");
+  assert.ok(shellCss.includes(".dm-sidebar__nav-item"), "shell.css deve conter .dm-sidebar__nav-item");
+});
+
+test("v11: Integridade da Div Raiz Única, Ausência de Telas Bloqueantes e Agilidade do Cockpit", async () => {
+  const appShell = fs.readFileSync(path.join(ROOT, "templates/app-shell.hbs"), "utf8");
+
+  // 1. Validar que templates/app-shell.hbs mantém ESTRITAMENTE elemento raiz único
   let depth = 0;
   let earlyClose = false;
   const regex = /<\/?div\b[^>]*>/gi;
@@ -946,124 +987,49 @@ test("v9: Animação de Boot Welcome (Seja bem-vindo, {Usuário}) com referênci
   assert.strictEqual(earlyClose, false, "app-shell.hbs não deve fechar a div raiz antes do final");
   assert.strictEqual(depth, 0, "app-shell.hbs deve ter balanço perfeito de tags div (depth 0 ao final)");
 
-  // 3. Validar estilos no shell.css
-  const shellCss = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
-  assert.ok(shellCss.includes(".dm-boot-welcome-overlay"), "CSS deve estilizar .dm-boot-welcome-overlay");
-  assert.ok(shellCss.includes(".dm-boot-hex-grid"), "CSS deve estilizar a textura hexagonal");
-  assert.ok(shellCss.includes(".dm-boot-runway-perspective"), "CSS deve estilizar a pista 3D");
-  assert.ok(shellCss.includes(".dm-boot-core-system"), "CSS deve estilizar os anéis concêntricos");
-  assert.ok(shellCss.includes(".dm-boot-sphere"), "CSS deve estilizar a esfera wireframe");
+  // 2. Validar transição sutil ágil (não-bloqueante)
+  assert.ok(appShell.includes("dm-hud-transition-overlay"), "Template deve conter overlay de transição tática ágil");
+  assert.ok(appShell.includes("dm-hud-transition__sector-banner"), "Template deve conter banner de setor");
 
-  // 4. Validar integração no shell-app.js e app.js
-  const shellAppCode = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/scripts/ui/shell-app.js"), "utf8");
-  assert.ok(shellAppCode.includes("shouldPlayBootWelcome"), "shell-app.js deve gerenciar a flag shouldPlayBootWelcome");
-  assert.ok(shellAppCode.includes("currentUserName"), "shell-app.js deve fornecer currentUserName no contexto");
-
-  const appJsCode = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/scripts/ui/app.js"), "utf8");
-  assert.ok(appJsCode.includes("isAlreadyOpen"), "app.js deve verificar se o app já está aberto para não disparar boot em re-renders");
+  // 3. Validar integração no shell-app.js
+  const shellAppCode = fs.readFileSync(path.join(ROOT, "scripts/ui/shell-app.js"), "utf8");
+  assert.ok(shellAppCode.includes("sectorCallout"), "shell-app.js deve fornecer sectorCallout");
+  assert.ok(shellAppCode.includes("currentUserName"), "shell-app.js deve fornecer currentUserName");
 });
 
-test("v10: Harmonização e Unificação de HUD Lancer / COMP/CON (Transição de Setor e Boot Welcome)", async () => {
-  const appShell = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/app-shell.hbs"), "utf8");
-  const shellCss = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
+test("v12: Arquitetura Avançada do Image Studio Universal e Estilização de Sub-páginas (v0.1.0-dev.127)", async () => {
+  // 1. Validar versão 0.1.0-dev.127
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "module.json"), "utf8"));
+  assert.equal(manifest.version, "0.1.0-dev.127");
 
-  // 1. Validar elementos compartilhados no overlay de transição
-  assert.ok(appShell.includes("dm-hud-transition__hex-grid"), "Transição deve possuir hex grid");
-  assert.ok(appShell.includes("dm-hud-transition__runway-perspective"), "Transição deve possuir pista 3D");
-  assert.ok(appShell.includes("dm-hud-transition__horizon"), "Transição deve possuir horizonte");
-  assert.ok(appShell.includes("dm-hud-transition__laser-tracer"), "Transição deve possuir laser tracer");
-  assert.ok(appShell.includes("dm-hud-transition__eq-mini"), "Transição deve possuir equalizador mini");
-  assert.ok(appShell.includes("dm-hud-transition__radar-circle--ticks"), "Transição deve possuir anel de ticks");
-  assert.ok(appShell.includes("dm-hud-transition__sector-badge"), "Transição deve possuir badge de protocolo COMP/CON");
-  assert.ok(appShell.includes("dm-hud-bracket__tag"), "Transição deve possuir tags militares nas cantoneiras");
-  assert.ok(appShell.includes("dm-hud-cursor-blink"), "Transição deve possuir cursor piscante");
-  assert.ok(appShell.includes("dm-hud-cardinal"), "Transição deve possuir marcadores cardinais de mira");
-  assert.ok(appShell.includes("dm-hud-transition__sector-hazard"), "Transição deve possuir faixa de hazard COMP/CON");
-  assert.ok(appShell.includes("dm-hud-transition__freq-tag"), "Transição deve possuir tag de frequência RF");
+  // 2. Validar existência dos novos módulos CSS
+  assert.equal(fs.existsSync(path.join(ROOT, "styles/components/image-studio.css")), true);
+  assert.equal(fs.existsSync(path.join(ROOT, "styles/views/intel.css")), true);
 
-  // 2. Validar elementos compartilhados no overlay de boot welcome
-  assert.ok(appShell.includes("dm-boot-crosshair"), "Boot deve possuir retículo de mira");
-  assert.ok(appShell.includes("dm-boot-sweep"), "Boot deve possuir radar sweep");
-  assert.ok(appShell.includes("dm-boot-core-coords"), "Boot deve possuir coordenadas orbitais");
-  assert.ok(appShell.includes("dm-boot-holo-footer"), "Boot deve possuir telemetria no holo projector");
-  assert.ok(appShell.includes("dm-boot-stream-mini"), "Boot deve possuir mini stream de boot");
-  assert.ok(appShell.includes("dm-boot-card-accent"), "Boot deve possuir acento carmesim no card igual ao setor");
-  assert.ok(appShell.includes("dm-boot-card-meta"), "Boot deve possuir metadados de criptografia no card");
-  assert.ok(appShell.includes("dm-boot-bracket"), "Boot deve possuir cantoneiras militares de enquadramento");
-  assert.ok(appShell.includes("dm-boot-dot-grid"), "Boot deve possuir dot grid");
-  assert.ok(appShell.includes("dm-boot-glitch-beam"), "Boot deve possuir glitch beam");
-  assert.ok(appShell.includes("dm-boot-cardinal"), "Boot deve possuir marcadores cardinais de mira");
-  assert.ok(appShell.includes("dm-boot-card-hazard"), "Boot deve possuir faixa de hazard COMP/CON");
-  assert.ok(appShell.includes("dm-boot-stream-scroller"), "Boot deve possuir stream animado de inicialização");
+  // 3. Validar que shell.css contém os estilos do Image Studio e Sub-páginas
+  const shellCss = fs.readFileSync(path.join(ROOT, "styles/shell.css"), "utf8");
+  assert.ok(shellCss.includes(".dm-image-studio-controls"), "shell.css deve conter .dm-image-studio-controls");
+  assert.ok(shellCss.includes(".dm-image-studio-preview"), "shell.css deve conter .dm-image-studio-preview");
+  assert.ok(shellCss.includes(".dm-slider-row"), "shell.css deve conter .dm-slider-row");
+  assert.ok(shellCss.includes(".dm-slider-val"), "shell.css deve conter .dm-slider-val");
+  assert.ok(shellCss.includes(".dm-gallery-thumb-btn"), "shell.css deve conter .dm-gallery-thumb-btn");
+  assert.ok(shellCss.includes(".dm-gallery-chips"), "shell.css deve conter .dm-gallery-chips");
+  assert.ok(shellCss.includes(".dm-panel--intel"), "shell.css deve conter .dm-panel--intel");
 
-  // 3. Validar estilos correspondentes em shell.css
-  assert.ok(shellCss.includes(".dm-hud-transition__hex-grid"), "CSS deve estilizar hex grid da transição");
-  assert.ok(shellCss.includes(".dm-hud-transition__runway-perspective"), "CSS deve estilizar pista 3D da transição");
-  assert.ok(shellCss.includes(".dm-hud-transition__sector-banner"), "CSS deve estilizar banner de setor");
-  assert.ok(shellCss.includes(".dm-boot-welcome-card"), "CSS deve estilizar card de boas-vindas");
-  assert.ok(shellCss.includes(".dm-boot-card-accent"), "CSS deve estilizar acento do card");
-  assert.ok(shellCss.includes(".dm-boot-crosshair"), "CSS deve estilizar mira do boot");
-  assert.ok(shellCss.includes(".dm-boot-bracket"), "CSS deve estilizar cantoneiras do boot");
-  assert.ok(shellCss.includes(".dm-boot-dot-grid"), "CSS deve estilizar dot grid do boot");
-  assert.ok(shellCss.includes(".dm-boot-cardinal"), "CSS deve estilizar marcadores cardinais");
-  assert.ok(shellCss.includes(".dm-boot-card-hazard"), "CSS deve estilizar faixa de hazard");
+  // 4. Validar Image Studio completo no modal de Nova Obra/Projeto
+  const appShell = fs.readFileSync(path.join(ROOT, "templates/app-shell.hbs"), "utf8");
+  assert.ok(appShell.includes("id=\"dm-project-img-fit\""), "app-shell.hbs deve conter id dm-project-img-fit");
+  assert.ok(appShell.includes("id=\"dm-project-img-pos-x\""), "app-shell.hbs deve conter id dm-project-img-pos-x");
+  assert.ok(appShell.includes("id=\"dm-project-img-zoom\""), "app-shell.hbs deve conter id dm-project-img-zoom");
+  assert.ok(appShell.includes("id=\"dm-project-image-preview-img\""), "app-shell.hbs deve conter id dm-project-image-preview-img");
+
+  // 5. Validar dispatch de eventos no FilePicker para reatividade imediata
+  const shellAppCode = fs.readFileSync(path.join(ROOT, "scripts/ui/shell-app.js"), "utf8");
+  assert.ok(shellAppCode.includes("input.dispatchEvent(new Event(\"input\""), "FilePicker deve despachar evento input");
+  assert.ok(shellAppCode.includes("input.dispatchEvent(new Event(\"change\""), "FilePicker deve despachar evento change");
+  assert.ok(shellAppCode.includes("transformOrigin"), "bindLiveImagePreview deve configurar transformOrigin");
 });
 
-test("v11: Boot Welcome Card Centralizado, Simétrico e Núcleo Holográfico 3D com Todas Animações Keyframes", async () => {
-  const appShell = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/templates/app-shell.hbs"), "utf8");
-  const shellCss = fs.readFileSync(path.resolve("c:/Users/fusio/Documents/A1/domain-manager/styles/shell.css"), "utf8");
-
-  // 1. Template: anel orbital e estrutura de esfera 3D
-  assert.ok(appShell.includes("dm-boot-sphere-orbit"), "Template deve conter anel orbital 3D");
-
-  // 2. CSS: Todos os @keyframes de animação devem estar estritamente definidos
-  const requiredKeyframes = [
-    "dmRotateClockwise",
-    "dmRotateCounter",
-    "dmSphereLongitude",
-    "dmSphereLatitude",
-    "dmRunwayScroll",
-    "dmLaserSnapLeft",
-    "dmLaserSnapRight",
-    "dmRigRotate",
-    "dmEqBounce",
-    "dmPulseDot",
-    "dmBootLoadProgress"
-  ];
-  for (const kf of requiredKeyframes) {
-    assert.ok(shellCss.includes(`@keyframes ${kf}`), `CSS deve conter @keyframes ${kf}`);
-  }
-
-  // 3. Centralização e Simetria do Card de Boas-Vindas
-  assert.ok(shellCss.includes(".dm-boot-welcome-card"), "CSS deve estilizar .dm-boot-welcome-card");
-  assert.ok(shellCss.includes("flex-direction: column"), "Card deve ter flex-direction: column para evitar vão horizontal");
-  assert.ok(shellCss.includes(".dm-boot-card-accent"), "CSS deve estilizar .dm-boot-card-accent");
-  assert.ok(shellCss.includes(".dm-boot-sphere-orbit"), "CSS deve estilizar o anel orbital da esfera 3D");
-
-  // 4. Integridade da árvore HTML do template app-shell.hbs
-  let depth = 0;
-  let earlyClose = false;
-  const regex = /<\/?div\b[^>]*>/gi;
-  let match;
-  while ((match = regex.exec(appShell)) !== null) {
-    if (match[0].startsWith("</")) {
-      depth--;
-      if (depth === 0 && match.index < appShell.lastIndexOf("</div>")) {
-        earlyClose = true;
-        break;
-      }
-    } else {
-      depth++;
-    }
-  }
-  assert.strictEqual(earlyClose, false, "app-shell.hbs não deve fechar a div raiz antes do final");
-  assert.strictEqual(depth, 0, "app-shell.hbs deve ter balanço perfeito de tags div");
-
-  // 5. Posicionamento Tático sem Sobreposição e Órbita Holográfica Desobstruída
-  assert.ok(shellCss.includes("top: 35% !important"), "Núcleo holográfico deve ter top: 35% para desobstrução vertical completa");
-  assert.ok(shellCss.includes(".dm-boot-sphere-orbit"), "Anel orbital deve estar estilizado");
-  assert.ok(shellCss.includes("bottom: -20px !important"), "Coordenadas do núcleo devem estar compactas sob o anel");
-});
 
 
 

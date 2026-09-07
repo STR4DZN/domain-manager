@@ -1,0 +1,170 @@
+/* ==========================================================================
+   DOMAIN MANAGER - COMPONENTES: CARDS TÁTICOS & HERO
+   ========================================================================== */
+
+.dm-card {
+  background: var(--dm-bg-card);
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-md);
+  padding: 12px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Faixa Superior de Métricas / KPIs */
+.dm-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dm-metric-card {
+  background: linear-gradient(135deg, rgba(4, 25, 36, 0.95) 0%, rgba(2, 6, 11, 0.95) 100%);
+  border: 1px solid var(--dm-border-dark);
+  border-top: 2px solid var(--dm-border-bright);
+  border-radius: var(--dm-radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--dm-transition-fast), box-shadow var(--dm-transition-fast);
+}
+
+.dm-metric-card:hover {
+  border-color: var(--dm-border-bright);
+  box-shadow: 0 0 12px rgba(29, 163, 176, 0.25);
+}
+
+.dm-metric-card--econ {
+  border-top-color: var(--dm-amber-gold);
+}
+.dm-metric-card--econ:hover {
+  box-shadow: 0 0 12px var(--dm-amber-glow);
+}
+
+.dm-metric-card--pop {
+  border-top-color: var(--dm-green-track);
+}
+.dm-metric-card--pop:hover {
+  box-shadow: 0 0 12px var(--dm-green-glow);
+}
+
+.dm-metric-card--alert {
+  border-top-color: var(--dm-red-alert);
+}
+.dm-metric-card--alert:hover {
+  box-shadow: 0 0 12px var(--dm-red-glow);
+}
+
+.dm-metric-card__label {
+  font-family: var(--dm-font-mono);
+  font-size: 0.72rem;
+  color: var(--dm-text-sec);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dm-metric-card__value {
+  font-family: var(--dm-font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--dm-text-white);
+  line-height: 1.1;
+}
+
+.dm-metric-card__sub {
+  font-family: var(--dm-font-mono);
+  font-size: 0.7rem;
+  color: var(--dm-text-muted);
+}
+
+/* Retângulo Hero de Ilustração da Base */
+.dm-base-hero {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  border-radius: var(--dm-radius-md);
+  border: 1px solid var(--dm-border-tech);
+  background: var(--dm-bg-void);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.dm-base-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.dm-base-hero.is-contain .dm-base-hero__img {
+  object-fit: contain;
+}
+
+.dm-base-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(2, 6, 11, 0.85) 100%);
+  pointer-events: none;
+}
+
+.dm-base-hero__badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 2;
+}
+
+/* Faixa de Galeria de Mídia */
+.dm-base-gallery-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+  max-width: 100%;
+}
+
+.dm-base-gallery-strip img {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--dm-radius-sm);
+  border: 1px solid var(--dm-border-tech);
+  object-fit: cover;
+  cursor: pointer;
+  transition: border-color var(--dm-transition-fast);
+}
+
+.dm-base-gallery-strip img:hover {
+  border-color: var(--dm-cyan-neon);
+}
+
+/* Card de Mídia de Projetos */
+.dm-project-card__media {
+  width: 100%;
+  height: 90px;
+  border-radius: var(--dm-radius-sm);
+  border: 1px solid var(--dm-border-tech);
+  overflow: hidden;
+  background: var(--dm-bg-slate);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dm-project-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
