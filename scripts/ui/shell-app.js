@@ -287,6 +287,24 @@ import { formatMinorUnits } from "../core/numbers.js";
 import { isAuthorityReady } from "../authority/socket.js";
 import { getTimekeepingStatus } from "../integration/timekeeping.js";
 import { getResourceCatalogSetting } from "../core/settings.js";
+import { DomainDialogs as DomainModals } from "./modals/domain-modals.js";
+import { EconomyModals } from "./modals/economy-modals.js";
+import { ProjectModals } from "./modals/project-modals.js";
+import { PeopleModals } from "./modals/people-modals.js";
+import { DiplomacyModals } from "./modals/diplomacy-modals.js";
+import { IntelModals } from "./modals/intel-modals.js";
+import { HistoryModals } from "./modals/history-modals.js";
+import { SimulationModals } from "./modals/simulation-modals.js";
+import { TagModals } from "./modals/tag-modals.js";
+import { OverviewView } from "./views/overview-view.js";
+import { EconomyView } from "./views/economy-view.js";
+import { ProjectsView } from "./views/projects-view.js";
+import { PeopleView } from "./views/people-view.js";
+import { DiplomacyView } from "./views/diplomacy-view.js";
+import { IntelView } from "./views/intel-view.js";
+import { HistoryView } from "./views/history-view.js";
+import { tacticalAudio } from "./audio/tactical-audio.js";
+import { TelemetryCanvasController } from "./components/telemetry-canvas.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -581,6 +599,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isHudTransitionActive = false;
   shouldPlayBootWelcome = true;
   isBootWelcomePlaying = false;
+  _telemetryCanvas = null;
   static #hudTransitionTimeout = null;
   static #bootWelcomeTimeout = null;
 
@@ -821,6 +840,31 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     // 3. Live preview para Personagens Notáveis (Novo e Edição)
     bindLiveImagePreview(this.element, "#dm-notable-portrait", "#dm-notable-image-preview-img", "#dm-notable-image-preview-container", "#dm-notable-portrait");
     bindLiveImagePreview(this.element, "#dm-edit-notable-portrait", "#dm-edit-notable-image-preview-img", "#dm-edit-notable-image-preview-container", "#dm-edit-notable-portrait");
+
+    // 4. Telemetria e Radar Orbital Canvas 2D (60 FPS com DPR Scaling)
+    const radarCanvas = this.element?.querySelector("#dm-orbital-radar-canvas");
+    if (radarCanvas) {
+      if (this._telemetryCanvas) {
+        this._telemetryCanvas.destroy();
+        this._telemetryCanvas = null;
+      }
+      this._telemetryCanvas = new TelemetryCanvasController(radarCanvas);
+      this._telemetryCanvas.start();
+    }
+  }
+
+  _onClose(options) {
+    if (this._telemetryCanvas) {
+      this._telemetryCanvas.destroy();
+      this._telemetryCanvas = null;
+    }
+    if (typeof super._onClose === "function") {
+      super._onClose(options);
+    }
+  }
+
+  _closeAllModals() {
+    this.#closeAllModals();
   }
 
   #closeAllModals() {
@@ -863,6 +907,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
      Navegação, Sidebar e FilePicker
      ------------------------------------------------------------------------ */
   static #onToggleSidebar() {
+    tacticalAudio.playPinClick(500);
     this.isSidebarOpen = !this.isSidebarOpen;
     this.render();
   }
@@ -871,6 +916,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     event?.stopPropagation?.();
     const uuid = getActionAttr(target, "uuid");
     if (!uuid) return;
+    tacticalAudio.playPinClick(600);
     if (this.collapsedFolderUuids.has(uuid)) {
       this.collapsedFolderUuids.delete(uuid);
     } else {
@@ -880,6 +926,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static #onToggleAllFolders() {
+    tacticalAudio.playPinClick(650);
     const domainRecords = listVisibleDomainRecords(game.user);
     if (this.collapsedFolderUuids.size > 0) {
       this.collapsedFolderUuids.clear();
@@ -895,6 +942,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const section = target.dataset.section;
     if (!section) return;
 
+    tacticalAudio.playRelayClick(true);
     this.#closeAllModals();
 
     if (section === "domains") {
@@ -924,6 +972,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this._shouldAnimateNextRender = false;
     const uuid = getActionAttr(target, "uuid");
     this.selectedDomainUuid = uuid || null;
+    tacticalAudio.playTargetLock();
     this.#closeAllModals();
     this.render();
   }
@@ -3794,9 +3843,55 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
     const sectorIndex = activeTabMeta?.index || "01";
 
+    const overviewView = OverviewView.prepareContext({
+      selectedRecord,
+      selectedDomain,
+      metrics,
+      domainProjects,
+      notables,
+      activeConditions
+    });
+    const economyView = EconomyView.prepareContext({
+      domainStocks,
+      domainFlows,
+      upkeepSettings: selectedRecord?.data?.upkeepSettings,
+      catalog
+    });
+    const projectsView = ProjectsView.prepareContext({
+      domainProjects
+    });
+    const peopleView = PeopleView.prepareContext({
+      notables,
+      groups,
+      metrics,
+      activeNotableDossierLocalId: this.activeNotableDossierLocalId
+    });
+    const diplomacyView = DiplomacyView.prepareContext({
+      relations,
+      agreements,
+      selectedDomain
+    });
+    const intelView = IntelView.prepareContext({
+      intelList,
+      user: game.user
+    });
+    const historyView = HistoryView.prepareContext({
+      fullHistory,
+      recentChronicles,
+      user: game.user
+    });
+
     const currentHudTelemetry = HUD_SECTOR_TELEMETRY[this.activeTab] || HUD_SECTOR_TELEMETRY.overview;
     return {
       ...context,
+      overviewView,
+      economyView,
+      projectsView,
+      peopleView,
+      diplomacyView,
+      intelView,
+      historyView,
+      tacticalAudioMuted: !tacticalAudio.isEnabled,
       hudTelemetry: currentHudTelemetry,
       moduleTitle: MODULE_TITLE,
       foundryVersion: game.version,

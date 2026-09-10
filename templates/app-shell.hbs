@@ -2377,6 +2377,17 @@
           </div>
         {{/if}}
 
+        <!-- CONSOLE DE RADAR ORBITAL & TELEMETRIA PROCEDURAL (CANVAS 2D 60 FPS) -->
+        <div class="dm-orbital-radar-container mt-3 mb-3">
+          <canvas id="dm-orbital-radar-canvas"></canvas>
+          <div class="dm-radar-overlay-badge">
+            <i class="fa-solid fa-satellite-dish"></i> SCAN.RADIAL // {{selectedDomain.name}}
+          </div>
+          <div class="dm-radar-overlay-coords">
+            AZIMUTE: 042° // ELEV: 850M // SECTOR.SYS
+          </div>
+        </div>
+
         {{#if selectedDomain.description}}
           <div class="dm-prose">
             <p>{{selectedDomain.description}}</p>

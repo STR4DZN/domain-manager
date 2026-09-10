@@ -1007,10 +1007,10 @@ test("v11: Integridade da Div Raiz Única, Ausência de Telas Bloqueantes e Agil
   assert.ok(shellAppCode.includes("shouldPlayBootWelcome"), "shell-app.js deve controlar shouldPlayBootWelcome");
 });
 
-test("v12: Arquitetura Avançada do Image Studio Universal e Estilização de Sub-páginas (v0.1.0-dev.128)", async () => {
-  // 1. Validar versão 0.1.0-dev.128
+test("v12: Arquitetura Avançada do Image Studio Universal e Estilização de Sub-páginas (v0.1.0-dev.129)", async () => {
+  // 1. Validar versão 0.1.0-dev.129
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "module.json"), "utf8"));
-  assert.equal(manifest.version, "0.1.0-dev.128");
+  assert.equal(manifest.version, "0.1.0-dev.129");
 
   // 2. Validar existência dos novos módulos CSS
   assert.equal(fs.existsSync(path.join(ROOT, "styles/components/image-studio.css")), true);

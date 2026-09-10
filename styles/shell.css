@@ -1652,6 +1652,71 @@
   color: var(--dm-text-sec);
 }
 
+/* ==========================================================================
+   RADAR ORBITAL E TELEMETRIA PROCEDURAL (CANVAS 2D 60 FPS)
+   ========================================================================== */
+.dm-orbital-radar-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #02060b;
+  border: 1px solid var(--dm-border-tech);
+  border-radius: var(--dm-radius-md);
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.08);
+}
+
+.dm-orbital-radar-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 240, 255, 0.03) 0px,
+    rgba(0, 240, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+#dm-orbital-radar-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dm-radar-overlay-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--dm-cyan-neon);
+  background: rgba(2, 6, 11, 0.75);
+  padding: 2px 6px;
+  border: 1px solid rgba(63, 244, 213, 0.3);
+  border-radius: 2px;
+  z-index: 3;
+}
+
+.dm-radar-overlay-coords {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-family: var(--dm-font-mono, monospace);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--dm-text-dim);
+  background: rgba(2, 6, 11, 0.75);
+  padding: 2px 6px;
+  border-radius: 2px;
+  z-index: 3;
+}
+
+
 
 /* --- styles/views/economy.css --- */
 /* ==========================================================================
