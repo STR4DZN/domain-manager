@@ -757,7 +757,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       selectDossierSkill: DomainManagerShellApp.#onSelectDossierSkill,
       openEditNotableStatsModal: DomainManagerShellApp.#onOpenEditNotableStatsModal,
       cancelNotableStatsModal: DomainManagerShellApp.#onCancelNotableStatsModal,
-      submitNotableStats: DomainManagerShellApp.#onSubmitNotableStats
+      submitNotableStats: DomainManagerShellApp.#onSubmitNotableStats,
+      toggleAudio: DomainManagerShellApp.#onToggleAudio
     }
   };
 
@@ -1008,6 +1009,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static #onSwitchTab(event, target) {
     const tab = target.dataset.tab;
     if (tab && tab !== this.activeTab) {
+      tacticalAudio.playPinClick(720);
       this._shouldAnimateNextRender = true;
       DomainManagerShellApp.#triggerHudTransition(this);
       this.activeTab = tab;
@@ -1018,7 +1020,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  static #onToggleAudio() {
+    const isEnabled = tacticalAudio.toggleMute();
+    if (isEnabled) {
+      tacticalAudio.playRelayClick(true);
+    }
+    this.render();
+  }
+
   static #onFilterByTag(event, target) {
+    tacticalAudio.playTelemetryBeep(true);
     const tag = target?.dataset?.tag || target?.getAttribute?.("data-tag") || target?.closest?.("[data-tag]")?.getAttribute("data-tag");
     this.selectedTag = this.selectedTag === tag ? null : tag;
     this.render();

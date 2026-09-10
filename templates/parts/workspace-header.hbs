@@ -71,5 +71,15 @@
         <span>Avançar Tempo</span>
       </button>
     {{/if}}
+
+    <button
+      type="button"
+      class="dm-btn dm-btn--outline dm-btn--sm"
+      data-action="toggleAudio"
+      title="Alternar Efeitos Sonoros Táticos"
+      aria-label="Alternar Efeitos Sonoros Táticos"
+    >
+      <i class="fa-solid {{#if tacticalAudioMuted}}fa-volume-xmark text-crimson{{else}}fa-volume-high text-cyan{{/if}}"></i>
+    </button>
   </div>
 </header>

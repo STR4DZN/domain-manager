@@ -67,6 +67,10 @@ test("Arquitetura de Apresentação: Sintetizador Procedural de Áudio Tático (
   assert.strictEqual(typeof tacticalAudio.playTargetLock, "function");
   assert.strictEqual(typeof tacticalAudio.playDataPulse, "function");
   assert.strictEqual(typeof tacticalAudio.playAlertBeep, "function");
+  assert.strictEqual(typeof tacticalAudio.playRadarPing, "function");
+  assert.strictEqual(typeof tacticalAudio.playDialPulse, "function");
+  assert.strictEqual(typeof tacticalAudio.playTelemetryBeep, "function");
+  assert.strictEqual(typeof tacticalAudio.playDataBurst, "function");
   assert.strictEqual(typeof tacticalAudio.toggleMute, "function");
 
   // Validar independência de arquivos de áudio externos
@@ -74,6 +78,10 @@ test("Arquitetura de Apresentação: Sintetizador Procedural de Áudio Tático (
   assert.strictEqual(audioSource.includes(".mp3"), false, "Audio procedural não deve referenciar .mp3");
   assert.strictEqual(audioSource.includes(".wav"), false, "Audio procedural não deve referenciar .wav");
   assert.strictEqual(audioSource.includes(".ogg"), false, "Audio procedural não deve referenciar .ogg");
+
+  // Validar integração de toggleAudio no shell
+  const shellSource = fs.readFileSync(path.join(ROOT, "scripts/ui/shell-app.js"), "utf8");
+  assert.ok(shellSource.includes("toggleAudio: DomainManagerShellApp.#onToggleAudio"), "toggleAudio deve estar em actions");
 
   // Validar comutador de mute
   const initialState = tacticalAudio.isEnabled;
@@ -299,4 +307,54 @@ test("Arquitetura de Apresentação: Estilos Táticos e Radar Orbital em styles/
   // Validar compilação automática no bundle styles/shell.css
   const shellCss = fs.readFileSync(path.join(ROOT, "styles/shell.css"), "utf8");
   assert.ok(shellCss.includes(".dm-orbital-radar-container"), "shell.css compilado deve conter o container do radar orbital");
+});
+
+test("Arquitetura de Apresentação: 12 Pilares da Linguagem Visual Battlespace Operational C2", async () => {
+  const shellAppCode = fs.readFileSync(path.join(ROOT, "scripts/ui/shell-app.js"), "utf8");
+  const headerTpl = fs.readFileSync(path.join(ROOT, "templates/parts/workspace-header.hbs"), "utf8");
+  const appShellTpl = fs.readFileSync(path.join(ROOT, "templates/app-shell.hbs"), "utf8");
+
+  // 1. Densidade de Informação: Matrizes e Rotinas táticas por setor
+  assert.ok(shellAppCode.includes("HUD_SECTOR_TELEMETRY"), "Telemetria de setor deve existir");
+  assert.ok(shellAppCode.includes("def compilar_visao_geral"), "Rotinas táticas detalhadas devem existir");
+
+  // 2. Telemetria: Radar Canvas 2D
+  assert.ok(appShellTpl.includes("dm-orbital-radar-canvas"), "Canvas do radar orbital deve estar no app-shell");
+
+  // 3. Hierarquia de Alertas: Notificações e severidades
+  assert.ok(shellAppCode.includes("OverviewView.prepareContext"), "OverviewView deve ser invocado para estruturar o panorama e alertFeed");
+
+  // 4. HUD & Instrumentação: Cantoneiras e tags MIL-SPEC
+  assert.ok(appShellTpl.includes("dm-hud-bracket"), "Cantoneiras de enquadramento militar devem estar presentes");
+  assert.ok(appShellTpl.includes("OMNI-LINK"), "Tags de telemetria devem estar presentes");
+
+  // 5. Mapas: Radar orbital de varredura topográfica
+  assert.ok(shellAppCode.includes("TelemetryCanvasController"), "Controlador do radar orbital deve ser integrado");
+
+  // 6. Autenticação: Autorização de piloto e canal seguro
+  assert.ok(appShellTpl.includes("currentUserName"), "Identificação do piloto deve estar no cockpit");
+  assert.ok(appShellTpl.includes("CANAL SEGURO"), "Indicador de canal seguro deve existir");
+
+  // 7. Logs: Console de auditoria operacional
+  assert.ok(appShellTpl.includes("dm-code-line"), "Linhas de código de rotina devem ser renderizadas");
+
+  // 8. Nomenclatura Operacional em Português
+  assert.ok(appShellTpl.includes("SISTEMAS // NAVEGAÇÃO"), "Nomenclatura militar em PT-BR deve ser utilizada");
+  assert.ok(appShellTpl.includes("TERMINAL TÁTICO"), "Terminal Tático deve ser o cabeçalho do sidebar");
+
+  // 9. Microinterações: Áudio procedural
+  assert.ok(shellAppCode.includes("tacticalAudio.playRelayClick"), "Relé mecânico deve ser acionado");
+  assert.ok(shellAppCode.includes("tacticalAudio.playPinClick"), "Pino sonoro deve ser acionado");
+  assert.ok(shellAppCode.includes("tacticalAudio.playTargetLock"), "Trava de mira deve ser acionada");
+
+  // 10. Motion Design: Transições diegéticas e sweep 60 FPS
+  assert.ok(appShellTpl.includes("dm-hud-transition-overlay"), "Overlay de transição tática deve existir");
+
+  // 11. Sensação de Equipamento Real: Scanlines e Grid CRT
+  assert.ok(appShellTpl.includes("dm-hud-transition__scanlines"), "Scanlines diegéticas devem existir");
+  assert.ok(appShellTpl.includes("dm-hud-transition__dot-grid"), "Grade de pontos deve existir");
+
+  // 12. Comutador de Áudio Tático: Botão no cabeçalho e ação registrada
+  assert.ok(headerTpl.includes('data-action="toggleAudio"'), "Botão toggleAudio deve estar no workspace header");
+  assert.ok(shellAppCode.includes("toggleAudio: DomainManagerShellApp.#onToggleAudio"), "Ação toggleAudio deve estar em actions");
 });
