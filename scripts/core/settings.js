@@ -2,6 +2,7 @@ import {
   MODULE_ID,
   SETTINGS
 } from "./constants.js";
+import { assertPrimaryActiveGM } from "../authority/primary-gm.js";
 
 const DEFAULT_RESOURCE_CATALOG =
   Object.freeze({
@@ -66,6 +67,18 @@ export function registerSettings() {
       default: true
     }
   );
+
+  game.settings.register(
+    MODULE_ID,
+    SETTINGS.OPERATION_LEDGER,
+    {
+      name: `${MODULE_ID}.operationLedger`,
+      scope: "world",
+      config: false,
+      type: Object,
+      default: { version: 1, receipts: [] }
+    }
+  );
 }
 
 export function getResourceCatalogSetting() {
@@ -82,6 +95,7 @@ export function getResourceCatalogSetting() {
 export async function setResourceCatalogSetting(
   catalog
 ) {
+  assertPrimaryActiveGM();
   return game.settings.set(
     MODULE_ID,
     SETTINGS.RESOURCE_CATALOG,

@@ -21,6 +21,9 @@ export function normalizeMissionDraft({
   briefing = "",
   audienceUserIds = [],
   objectives = [],
+  assignments = [],
+  startedAtWorldTime = null,
+  resolvedAtWorldTime = null,
   outcomeSummary = ""
 }) {
   if (!primaryDomainUuid) {
@@ -93,6 +96,12 @@ export function normalizeMissionDraft({
     audienceUserIds: audience,
     objectives:
       structuredClone(objectives ?? []),
+    assignments:
+      structuredClone(assignments ?? []),
+    startedAtWorldTime:
+      Number.isFinite(startedAtWorldTime) ? Number(startedAtWorldTime) : null,
+    resolvedAtWorldTime:
+      Number.isFinite(resolvedAtWorldTime) ? Number(resolvedAtWorldTime) : null,
     outcomeSummary:
       clean(outcomeSummary)
   };

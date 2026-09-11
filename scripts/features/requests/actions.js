@@ -21,6 +21,7 @@ import {
   normalizeRequestDraft,
   planRequestDecision
 } from "./rules.js";
+import { transactionQueue } from "../../authority/transaction-queue.js";
 
 function userFromId(userId) {
   const user = game.users.get(userId);
@@ -67,12 +68,10 @@ function findRequestByOperationId(operationId) {
   return null;
 }
 
-export async function performCreateRequest(
+async function performCreateRequestUnlocked(
   payload,
   callerUserId
 ) {
-  assertGM();
-
   const caller = userFromId(callerUserId);
   const duplicate = findRequestByOperationId(
     payload.operationId
@@ -134,6 +133,22 @@ export async function performCreateRequest(
     uuid: record.uuid,
     duplicate: false
   };
+}
+
+export async function performCreateRequest(
+  payload,
+  callerUserId
+) {
+  assertGM();
+
+  // O check de idempotência e a criação precisam ocorrer dentro da mesma fila;
+  // caso contrário duas chamadas simultâneas com o mesmo operationId podem
+  // observar "nenhum duplicado" e criar dois registros.
+  return transactionQueue.enqueue(
+    "requests:create",
+    () => performCreateRequestUnlocked(payload, callerUserId),
+    { callerUserId }
+  );
 }
 
 export async function reviewRequestAction({

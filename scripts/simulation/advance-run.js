@@ -7,12 +7,14 @@ import { calculateDomainUpkeep } from "../features/economy/upkeep.js";
 import { MODULE_ID, RECORD_TYPES } from "../core/constants.js";
 import { recordIndex } from "../data/record-index.js";
 import { decodeRecord } from "../models/record-codec.js";
-import { updateRecord } from "../data/journal-store.js";
+import { updateRecordsBatch } from "../data/journal-store.js";
 import { getResourceCatalogSetting } from "../core/settings.js";
 import { buildSimulationSnapshot } from "./snapshot.js";
 import { simulateAdvance } from "./simulate.js";
 
-import { syncWorldTimeAdvance, getTimekeepingStatus } from "../integration/timekeeping.js";
+import { syncWorldTimeAdvance } from "../integration/timekeeping.js";
+import { transactionQueue } from "../authority/transaction-queue.js";
+import { assertPrimaryActiveGM } from "../authority/primary-gm.js";
 
 /**
  * Executa o avanço temporal real e persiste as mudanças nos JournalEntries.
@@ -21,32 +23,68 @@ import { syncWorldTimeAdvance, getTimekeepingStatus } from "../integration/timek
  * @returns {Promise<Object>} Resultado do avanço { success, report, updatedDomains, updatedProjects, timekeeping }
  */
 export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } = {}) {
-  if (!game.user.isGM) {
-    throw new Error("Apenas o Mestre (GM) possui autoridade para avançar o tempo do mundo.");
-  }
+  assertPrimaryActiveGM();
+
+  return transactionQueue.enqueue(
+    "simulation:world",
+    () => performAdvanceRun({ deltaTicks, fromWorldTimeHook }),
+    { callerUserId: game.user.id }
+  );
+}
+
+async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } = {}) {
 
   const ticks = Math.max(1, Math.floor(Number(deltaTicks) || 1));
 
   // 1. Obter snapshot atual e simular
   const domainDocs = recordIndex.list(RECORD_TYPES.DOMAIN);
   const projectDocs = recordIndex.list(RECORD_TYPES.PROJECT);
+  const structureDocs = recordIndex.list(RECORD_TYPES.STRUCTURE);
   const domains = domainDocs.map(decodeRecord);
   const projects = projectDocs.map(decodeRecord);
+  const structures = structureDocs.map(decodeRecord);
   const catalog = getResourceCatalogSetting();
 
-  const snapshot = buildSimulationSnapshot({ domains, projects, catalog });
+  const snapshot = buildSimulationSnapshot({ domains, projects, structures, catalog });
   const report = simulateAdvance({ snapshot, deltaTicks: ticks });
 
   const updatedDomains = [];
   const updatedProjects = [];
+  const updatedStructures = [];
+  const batchUpdates = [];
+  const rollbackUpdates = [];
 
-  // 2. Aplicar mutações nos Domínios (Estoques e decaimento de Condições)
+  const completedProjectKeys = new Set();
+  for (const projectReport of report.projects ?? []) {
+    if (!projectReport.wouldComplete) continue;
+    if (projectReport.uuid) completedProjectKeys.add(projectReport.uuid);
+    if (projectReport.entityId) completedProjectKeys.add(projectReport.entityId);
+  }
+  const commissioningStructures = structures.filter((structure) => {
+    if (structure.data.status !== "planned" || !structure.data.activeProject) return false;
+    return completedProjectKeys.has(structure.data.activeProject.uuid)
+      || completedProjectKeys.has(structure.data.activeProject.entityId);
+  });
+  const commissioningByDomain = new Map();
+  for (const structure of commissioningStructures) {
+    for (const key of [structure.data.domain?.uuid, structure.data.domain?.entityId]) {
+      if (!key) continue;
+      let list = commissioningByDomain.get(key);
+      if (!list) { list = []; commissioningByDomain.set(key, list); }
+      if (!list.some((entry) => entry.uuid === structure.uuid)) list.push(structure);
+    }
+  }
+
+  // 2. Preparar mutações nos Domínios (Estoques e decaimento de Condições)
   for (const domReport of report.domains) {
     const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domReport.uuid);
     if (!doc) continue;
 
     const decoded = decodeRecord(doc);
+    const domainDataBefore = foundry.utils.deepClone(decoded.data);
     const domainData = foundry.utils.deepClone(decoded.data);
+
+    if (!domainData.economy) domainData.economy = { stocks: [], flows: [] };
 
     // Atualizar estoques com os valores projetados (clampando em 0 caso allowNegative seja false)
     const newStocks = domReport.resources.map((r) => {
@@ -58,14 +96,28 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
     });
     domainData.economy.stocks = newStocks;
 
+    // Persistir o carry dos fluxos reais do Domain. Fluxos sintéticos de upkeep
+    // não aparecem em domReport.flows e, portanto, nunca poluem o documento.
+    if (Array.isArray(domainData.economy.flows) && Array.isArray(domReport.flows)) {
+      const flowReportMap = new Map(domReport.flows.map((flow) => [flow.localId, flow]));
+      domainData.economy.flows = domainData.economy.flows.map((flow) => {
+        const flowReport = flowReportMap.get(flow.localId);
+        return flowReport
+          ? { ...flow, carry: flowReport.projectedCarry }
+          : flow;
+      });
+    }
+
     // Impacto do Sustento da População (Fome e Desabastecimento)
     const upkeepInfo = calculateDomainUpkeep({ domainData, catalog });
     const hasFoodShortfall = domReport.resources.some(
-      (r) => !r.allowNegative && r.projectedStock <= 0 && r.resourceId === upkeepInfo.foodResId && upkeepInfo.rawFoodUnits > 0
+      (r) => r.shortfall && r.resourceId === upkeepInfo.foodResId && upkeepInfo.rawFoodUnits > 0
     );
     const hasWaterShortfall = domReport.resources.some(
-      (r) => !r.allowNegative && r.projectedStock <= 0 && r.resourceId === upkeepInfo.waterResId && upkeepInfo.rawWaterUnits > 0
+      (r) => r.shortfall && r.resourceId === upkeepInfo.waterResId && upkeepInfo.rawWaterUnits > 0
     );
+
+    let famineRefreshedThisRun = false;
 
     if (hasFoodShortfall || hasWaterShortfall) {
       // Degradar agitação e satisfação da população
@@ -84,15 +136,18 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
       if (existingFamine) {
         existingFamine.durationTicks = 3;
         existingFamine.active = true;
+        existingFamine.severity = "severe";
+        famineRefreshedThisRun = true;
       } else {
         domainData.conditions.push({
           localId: "cond_famine",
           name: "Escassez & Fome",
-          severity: "crisis",
+          severity: "severe",
           durationTicks: 3,
           active: true,
           description: `A base ${decoded.document.name} sofre com desabastecimento de provisões básicas. Agitação elevada e segurança comprometida.`
         });
+        famineRefreshedThisRun = true;
       }
 
       // Registrar Crônica histórica
@@ -116,6 +171,9 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
     if (Array.isArray(domainData.conditions)) {
       domainData.conditions = domainData.conditions
         .map((cond) => {
+          if (famineRefreshedThisRun && cond.localId === "cond_famine") {
+            return cond;
+          }
           if (typeof cond.durationTicks === "number" && cond.durationTicks > 0) {
             const remaining = Math.max(0, cond.durationTicks - ticks);
             return { ...cond, durationTicks: remaining, active: remaining > 0 };
@@ -160,13 +218,20 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
     // Registro Histórico Automático do Avanço (Bloco 12)
     if (!Array.isArray(domainData.history)) domainData.history = [];
     const completedProjectsInDom = (report.projects ?? []).filter(
-      (p) => p.domainUuid === domReport.uuid && p.projectedStatus === "completed"
+      (p) => p.domainUuid === domReport.uuid && p.wouldComplete === true
     );
+    const commissionedStructuresInDom = [
+      ...(commissioningByDomain.get(domReport.uuid) ?? []),
+      ...(commissioningByDomain.get(decoded.data.entityId) ?? [])
+    ].filter((entry, index, array) => array.findIndex((candidate) => candidate.uuid === entry.uuid) === index);
 
     // 1. Registro do Avanço Temporal
     const summaryParts = [`Avanço de ${ticks} tick(s)`];
     if (completedProjectsInDom.length) {
       summaryParts.push(`${completedProjectsInDom.length} projeto(s) concluído(s)`);
+    }
+    if (commissionedStructuresInDom.length) {
+      summaryParts.push(`${commissionedStructuresInDom.length} estrutura(s) comissionada(s)`);
     }
     domainData.history.push({
       localId: `hist_adv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
@@ -189,7 +254,21 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
         title: `Projeto Concluído: ${p.name || "Obra"}`,
         category: "project",
         summary: `A obra '${p.name || "Obra"}' foi concluída com 100% de progresso!`,
-        details: `O projeto atingiu a meta de trabalho necessária e suas reservas de recursos foram liberadas para uso comum.`,
+        details: `O projeto atingiu a meta de trabalho necessária e seus custos finais foram liquidados.`,
+        significance: "major",
+        visibility: "all"
+      });
+    }
+
+    for (const structure of commissionedStructuresInDom) {
+      domainData.history.push({
+        localId: `hist_structure_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        timestamp: Date.now(),
+        tick: ticks,
+        title: `Estrutura Comissionada: ${structure.document.name}`,
+        category: "structure",
+        summary: `${structure.document.name} entrou em operação após a conclusão do projeto vinculado.`,
+        details: `O ativo físico foi transferido do estado planned para operational.`,
         significance: "major",
         visibility: "all"
       });
@@ -229,6 +308,20 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
       });
     }
 
+    for (const structure of commissionedStructuresInDom) {
+      domainData.notifications.unshift({
+        localId: `notif_structure_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        title: `Estrutura Operacional: ${structure.document.name}`,
+        message: `${structure.document.name} foi comissionada e agora participa da infraestrutura da base.`,
+        category: "structure",
+        severity: "success",
+        targetTab: "structures",
+        timestamp: Date.now(),
+        dismissed: false,
+        readByUserIds: []
+      });
+    }
+
     for (const r of domReport.resources) {
       if (!r.allowNegative && r.projectedStock < 0) {
         domainData.notifications.unshift({
@@ -245,10 +338,15 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
       }
     }
 
-    await updateRecord({
+    batchUpdates.push({
       uuid: domReport.uuid,
       recordType: RECORD_TYPES.DOMAIN,
       data: domainData
+    });
+    rollbackUpdates.push({
+      uuid: domReport.uuid,
+      recordType: RECORD_TYPES.DOMAIN,
+      data: domainDataBefore
     });
     updatedDomains.push(domReport.uuid);
   }
@@ -259,9 +357,11 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
     if (!doc) continue;
 
     const decoded = decodeRecord(doc);
+    const projDataBefore = foundry.utils.deepClone(decoded.data);
     const projData = foundry.utils.deepClone(decoded.data);
 
     projData.status = projReport.projectedStatus;
+    projData.blockedReason = projReport.projectedBlockedReason ?? "";
     projData.work.completed = projReport.projectedCompleted;
     projData.work.carry = projReport.projectedCarry;
 
@@ -280,25 +380,55 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
       });
     }
 
-    await updateRecord({
+    batchUpdates.push({
       uuid: projReport.uuid,
       recordType: RECORD_TYPES.PROJECT,
       data: projData
     });
+    rollbackUpdates.push({
+      uuid: projReport.uuid,
+      recordType: RECORD_TYPES.PROJECT,
+      data: projDataBefore
+    });
     updatedProjects.push(projReport.uuid);
   }
 
-  // 4. Sincronizar com Simple Timekeeping e Foundry Core World Time (apenas se não veio do próprio hook)
+  // 4. Comissionar Structures vinculadas a Projects concluídos no mesmo batch.
+  for (const structure of commissioningStructures) {
+    const dataBefore = foundry.utils.deepClone(structure.data);
+    const data = foundry.utils.deepClone(structure.data);
+    data.status = "operational";
+    data.activeProject = null;
+    batchUpdates.push({ uuid: structure.uuid, recordType: RECORD_TYPES.STRUCTURE, data });
+    rollbackUpdates.push({ uuid: structure.uuid, recordType: RECORD_TYPES.STRUCTURE, data: dataBefore });
+    updatedStructures.push(structure.uuid);
+  }
+
+  // 5. Persistir Domains + Projects + Structures em um único batch. Se o provider falhar
+  // depois de aplicar apenas parte da operação, tentamos compensar o conjunto.
+  try {
+    await updateRecordsBatch(batchUpdates);
+  } catch (error) {
+    try {
+      await updateRecordsBatch(rollbackUpdates);
+    } catch (rollbackError) {
+      console.error(`[${MODULE_ID}] Rollback do avanço temporal falhou:`, rollbackError);
+    }
+    throw error;
+  }
+
+  // 6. Sincronizar com Simple Timekeeping e Foundry Core World Time (apenas se não veio do próprio hook)
   const timeResult = fromWorldTimeHook
     ? { advanced: false, deltaSeconds: 0 }
     : await syncWorldTimeAdvance({ deltaTicks: ticks });
 
-  // 5. Notificar Hooks do Foundry
+  // 7. Notificar Hooks do Foundry
   Hooks.callAll(`${MODULE_ID}.advanceRun`, {
     deltaTicks: ticks,
     report,
     updatedDomains,
     updatedProjects,
+    updatedStructures,
     timekeeping: timeResult,
     fromWorldTimeHook
   });
@@ -309,6 +439,7 @@ export async function executeAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = fa
     report,
     updatedDomains,
     updatedProjects,
+    updatedStructures,
     timekeeping: timeResult
   };
 }

@@ -1,4 +1,5 @@
 import { ModuleError, ERROR_CODES } from "../../core/errors.js";
+import { normalizeManagementConfig } from "../../core/management-contracts.js";
 
 export function normalizeControllerIds(controllerIds) {
   return Array.from(new Set((controllerIds ?? []).filter(Boolean)));
@@ -42,6 +43,8 @@ export function normalizeDomainDraft({
   controllers = [],
   locatedInUuid = null,
   administrativeParentUuid = null,
+  managementPreset = null,
+  capabilities = null,
   population = null,
   economy = null,
   existingData = null
@@ -51,6 +54,11 @@ export function normalizeDomainDraft({
     : {};
   const sourcePopulation = population ?? base.population;
   const sourceEconomy = economy ?? base.economy;
+  const sourceManagement = {
+    ...(base.management ?? {}),
+    ...(managementPreset != null ? { preset: managementPreset } : {}),
+    ...(capabilities != null ? { capabilities } : {})
+  };
   const cleanDescription = String(description ?? "").trim();
   const cleanCategory = String(category ?? "").trim();
 
@@ -71,6 +79,7 @@ export function normalizeDomainDraft({
   return {
     ...base,
     description: cleanDescription,
+    management: normalizeManagementConfig(sourceManagement, { defaultPreset: "base" }),
     identity: {
       ...(base.identity ?? {}),
       category: cleanCategory,
@@ -92,6 +101,9 @@ export function normalizeDomainDraft({
     },
 
     economy: {
+      ...(sourceEconomy && typeof sourceEconomy === "object"
+        ? structuredClone(sourceEconomy)
+        : {}),
       stocks: Array.isArray(sourceEconomy?.stocks)
         ? structuredClone(sourceEconomy.stocks)
         : [],

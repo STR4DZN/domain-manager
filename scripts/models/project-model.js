@@ -1,8 +1,10 @@
 import {
   ECONOMY_LIMITS,
   PROJECT_COST_MODES,
-  PROJECT_STATUSES
+  PROJECT_STATUSES,
+  RECORD_TYPES
 } from "../core/constants.js";
+import { buildEntityId } from "../core/entity-contracts.js";
 
 const {
   ArrayField,
@@ -33,6 +35,7 @@ function costSchema() {
 export class ProjectModel extends foundry.abstract.DataModel {
   static defineSchema() {
     return {
+      entityId: new StringField({required:true, nullable:false, blank:false, initial:() => buildEntityId(RECORD_TYPES.PROJECT)}),
       domainUuid: new StringField({required:true, nullable:false, blank:false}),
       originRequestUuid: nullableUuidField(),
       name: new StringField({required:false, nullable:false, blank:true, initial:""}),

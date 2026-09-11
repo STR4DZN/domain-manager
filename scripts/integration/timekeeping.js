@@ -1,4 +1,5 @@
 import { getSecondsPerTickSetting, getSyncTimekeepingSetting } from "../core/settings.js";
+import { isPrimaryActiveGM } from "../authority/primary-gm.js";
 
 export const SIMPLE_TIMEKEEPING_ID = "simple-timekeeping";
 
@@ -72,8 +73,9 @@ export async function syncWorldTimeAdvance({ deltaTicks = 1 } = {}) {
  */
 export function registerTimekeepingHooks() {
   Hooks.on("updateWorldTime", async (worldTime, delta) => {
-    // Apenas o GM ativo deve executar mutações no mundo
-    if (!globalThis.game?.user?.isGM) return;
+    // Somente uma autoridade GM pode converter o mesmo updateWorldTime em ticks.
+    // `isGM` sozinho é insuficiente quando há mais de um Mestre conectado.
+    if (!isPrimaryActiveGM()) return;
     if (!getSyncTimekeepingSetting()) return;
     if (isDomainManagerAdvancingTime || isAdvancingFromHook) return;
 

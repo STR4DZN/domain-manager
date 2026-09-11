@@ -62,3 +62,34 @@
   box-shadow: 0 0 8px var(--dm-cyan-glow);
   transition: width var(--dm-transition-norm);
 }
+
+/* ==========================================================================
+   OPERATIONAL SHIPYARDS & ASSEMBLY LINES (Q4 ENGINEERING)
+   ========================================================================== */
+
+.dm-shipyard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: linear-gradient(90deg, rgba(255, 159, 28, 0.15) 0%, transparent 100%);
+  border-left: 3px solid var(--dm-orange-fire, #ff9f1c);
+  margin-bottom: 8px;
+}
+
+.dm-assembly-line-badge {
+  font-family: var(--dm-font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--dm-amber-alert, #ffb020);
+  background: rgba(255, 176, 32, 0.12);
+  border: 1px solid rgba(255, 176, 32, 0.35);
+  padding: 2px 6px;
+}
+
+.dm-engineering-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}

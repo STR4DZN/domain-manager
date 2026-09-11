@@ -1,6 +1,5 @@
 import {
   ECONOMY_LIMITS,
-  FLOW_CATEGORIES,
   FLOW_DIRECTIONS
 } from "../../core/constants.js";
 import {
@@ -36,7 +35,9 @@ export function normalizeResourceDefinition({
   name,
   unit = "",
   precision = 0,
-  allowNegative = false
+  allowNegative = false,
+  category = "general",
+  tags = []
 }) {
   const cleanName =
     String(name ?? "").trim();
@@ -45,6 +46,12 @@ export function normalizeResourceDefinition({
   const cleanId =
     String(id ?? "").trim()
     || slugifyResourceId(cleanName);
+  const cleanCategory = String(category ?? "general").trim() || "general";
+  const cleanTags = Array.from(new Set(
+    (Array.isArray(tags) ? tags : String(tags ?? "").split(","))
+      .map((tag) => String(tag).trim())
+      .filter(Boolean)
+  ));
 
   if (!cleanName) {
     throw new ModuleError(
@@ -80,7 +87,9 @@ export function normalizeResourceDefinition({
     unit: cleanUnit,
     precision: Number(precision),
     allowNegative:
-      Boolean(allowNegative)
+      Boolean(allowNegative),
+    category: cleanCategory,
+    tags: cleanTags
   };
 }
 
@@ -228,6 +237,7 @@ export function normalizeFlow({
   direction,
   amount,
   periodTicks,
+  carry = 0,
   category = "manual",
   source = "",
   active = true
@@ -290,6 +300,18 @@ export function normalizeFlow({
     );
   }
 
+
+  if (
+    !Number.isInteger(carry)
+    || carry < 0
+    || carry >= periodTicks
+  ) {
+    throw new ModuleError(
+      ERROR_CODES.VALIDATION,
+      "carry do fluxo precisa ser um inteiro entre 0 e periodTicks - 1."
+    );
+  }
+
   return {
     localId:
       String(localId ?? "").trim()
@@ -300,6 +322,7 @@ export function normalizeFlow({
     direction,
     amount,
     periodTicks,
+    carry,
     category: cleanCategory,
     source:
       String(source ?? "").trim(),

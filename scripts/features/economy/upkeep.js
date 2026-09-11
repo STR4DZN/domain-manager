@@ -39,25 +39,35 @@ export function findMatchingResourceId(typeAliases, availableResourceIds = []) {
  * @returns {Object} Detalhes do sustento e fluxos sintéticos gerados
  */
 export function calculateDomainUpkeep({ domainData = {}, catalog = { resources: [] } } = {}) {
-  const groups = domainData.population?.groups ?? domainData.people?.groups ?? [];
-  const totalPop = groups.reduce((acc, g) => acc + (Number(g.count || g.population) || 0), 0);
+  const population = domainData.population ?? domainData.people ?? {};
+  const groups = population.groups ?? [];
+  const includedGroupPop = groups
+    .filter((g) => g.includedInTotal !== false)
+    .reduce((acc, g) => acc + (Number(g.count ?? g.population) || 0), 0);
+  const configuredTotal = Number(population.total);
+  const totalPop = Number.isFinite(configuredTotal) && configuredTotal >= 0
+    ? configuredTotal
+    : includedGroupPop;
   const guards = Number(domainData.security?.guardCount || 0);
 
-  const domainStocks = domainData.economy?.stocks || [];
+  const catalogResources = Array.isArray(catalog)
+    ? catalog
+    : (catalog?.resources ?? []);
+  const domainStocks = domainData.economy?.stocks ?? domainData.stocks ?? [];
   const knownResourceIds = new Set([
-    ...(catalog.resources || []).map((r) => r.id),
+    ...catalogResources.map((r) => r.id),
     ...domainStocks.map((s) => s.resourceId)
   ]);
 
   const foodResId = findMatchingResourceId(SUSTENANCE_RESOURCE_ALIASES.FOOD, knownResourceIds) || "food";
   const waterResId = findMatchingResourceId(SUSTENANCE_RESOURCE_ALIASES.WATER, knownResourceIds) || "water";
-  const creditsResId = (catalog.resources || []).find((r) => r.precision === 2)?.id || "credits";
+  const creditsResId = catalogResources.find((r) => r.precision === 2)?.id || "credits";
 
-  const foodDef = (catalog.resources || []).find((r) => r.id === foodResId) || { precision: 0 };
-  const waterDef = (catalog.resources || []).find((r) => r.id === waterResId) || { precision: 0 };
-  const creditsDef = (catalog.resources || []).find((r) => r.id === creditsResId) || { precision: 2 };
+  const foodDef = catalogResources.find((r) => r.id === foodResId) || { precision: 0 };
+  const waterDef = catalogResources.find((r) => r.id === waterResId) || { precision: 0 };
+  const creditsDef = catalogResources.find((r) => r.id === creditsResId) || { precision: 2 };
 
-  const settings = domainData.economy?.sustenanceSettings || {};
+  const settings = domainData.economy?.sustenanceSettings ?? domainData.sustenanceSettings ?? {};
   if (settings.enabled === false) {
     return {
       totalPop,

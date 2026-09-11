@@ -1,8 +1,10 @@
 import {
   REQUEST_HANDLINGS,
   REQUEST_STATUSES,
-  REQUEST_TYPES
+  REQUEST_TYPES,
+  RECORD_TYPES
 } from "../core/constants.js";
+import { buildEntityId } from "../core/entity-contracts.js";
 
 const {
   ArrayField,
@@ -50,6 +52,11 @@ export class RequestModel
 
   static defineSchema() {
     return {
+      entityId: new StringField({
+        required: true, nullable: false, blank: false,
+        initial: () => buildEntityId(RECORD_TYPES.REQUEST)
+      }),
+
       operationId: new StringField({
         required: true,
         nullable: false,

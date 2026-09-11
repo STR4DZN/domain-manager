@@ -17,9 +17,18 @@
 
 .dm-dialog-card {
   background: var(--dm-bg-panel);
-  border: 1px solid var(--dm-border-bright);
-  border-radius: var(--dm-radius-md);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(29, 163, 176, 0.25);
+  border: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
+  clip-path: polygon(
+    0 var(--dm-chamfer-md, 10px),
+    var(--dm-chamfer-md, 10px) 0,
+    calc(100% - var(--dm-chamfer-md, 10px)) 0,
+    100% var(--dm-chamfer-md, 10px),
+    100% calc(100% - var(--dm-chamfer-md, 10px)),
+    calc(100% - var(--dm-chamfer-md, 10px)) 100%,
+    var(--dm-chamfer-md, 10px) 100%,
+    0 calc(100% - var(--dm-chamfer-md, 10px))
+  );
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 240, 255, 0.2);
   display: flex;
   flex-direction: column;
   width: 100%;

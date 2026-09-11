@@ -148,7 +148,9 @@ export async function createDomainAction({
   tags = [],
   controllerIds = [],
   locatedInUuid = null,
-  administrativeParentUuid = null
+  administrativeParentUuid = null,
+  managementPreset = "base",
+  capabilities = null
 }) {
   assertGM();
 
@@ -165,9 +167,7 @@ export async function createDomainAction({
 
   await validateHierarchy({
     locatedInUuid,
-    administrativeParentUuid,
-    population: null,
-    economy: null
+    administrativeParentUuid
   });
 
   const data = normalizeDomainDraft({
@@ -178,7 +178,9 @@ export async function createDomainAction({
     tags,
     controllers: controllerIds,
     locatedInUuid,
-    administrativeParentUuid
+    administrativeParentUuid,
+    managementPreset,
+    capabilities
   });
 
   return createRecord({
@@ -200,7 +202,9 @@ export async function updateDomainAction({
   tags,
   controllerIds,
   locatedInUuid,
-  administrativeParentUuid
+  administrativeParentUuid,
+  managementPreset = null,
+  capabilities = null
 }) {
   assertGM();
 
@@ -252,6 +256,8 @@ export async function updateDomainAction({
     controllers: controllerIds,
     locatedInUuid,
     administrativeParentUuid,
+    managementPreset,
+    capabilities,
     population: record.data.population,
     economy: record.data.economy,
     existingData: record.data

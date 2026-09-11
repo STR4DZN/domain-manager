@@ -1,23 +1,26 @@
 /* ==========================================================================
-   DOMAIN MANAGER - DESIGN TOKENS: PALETA TÁTICA SCI-FI
-   Extraída e harmonizada dos consoles teste-hud (Data Topology + Satview + Oficina)
+   DOMAIN MANAGER - DESIGN TOKENS: PALETA C4ISR AEROESPACIAL MIL-SPEC
+   SpaceX Starship / NASA Mission Control / Aegis C2 Monolithic Display
    ========================================================================== */
 
 :root {
-  /* 1. Fundos Táticos Void & Painéis */
-  --dm-bg-void: #02060b;
-  --dm-bg-deep: #030812;
-  --dm-bg-slate: #031118;
-  --dm-bg-panel: #041822;
-  --dm-bg-panel-elevated: #072633;
-  --dm-bg-surface: #0a1f2c;
-  --dm-bg-surface-hover: #0f2c3d;
-  --dm-bg-card: rgba(4, 24, 34, 0.88);
+  /* 1. Chassis & Void Profundo (Deep Military Black) */
+  --dm-c4isr-black: #020508;              /* Preto militar ultra-profundo de chassi físico */
+  --dm-bg-void: #02060b;                  /* Void de alto contraste (preservado para compatibilidade) */
+  --dm-bg-deep: #030812;                  /* Fundo de quadrante secundário */
+  --dm-bg-slate: #031118;                 /* Tela tática principal de telemetria */
+  --dm-bg-panel: #041822;                 /* Superfície base de instrumento */
+  --dm-bg-panel-elevated: #072633;        /* Moldura interna elevada de leitura */
+  --dm-bg-surface: #0a1f2c;               /* Superfície ativa com retroiluminação */
+  --dm-bg-surface-hover: #0f2c3d;         /* Destaque de vetor sob mira */
+  --dm-bg-card: rgba(4, 24, 34, 0.92);    /* Backing de instrumento com opacidade militar */
 
-  /* 2. Bordas e Grades Técnicas */
-  --dm-border-dark: #072b38;
-  --dm-border-tech: #0d4a5c;
-  --dm-border-bright: #1da3b0;
+  /* 2. Molduras de Titânio & Réguas de Hardware (Titanium Bezels) */
+  --dm-titanium-bezel: #0d222b;           /* Bisel usinado primário de separação de quadrante */
+  --dm-titanium-bezel-bright: #1a3d4d;    /* Borda chanfrada de titânio acetinado iluminado */
+  --dm-border-dark: #072b38;              /* Grade estrutural de ancoragem */
+  --dm-border-tech: #0d4a5c;              /* Réguas e marcas micrométricas (teste v9) */
+  --dm-border-bright: #1da3b0;            /* Borda de status energizado */
   --dm-border-subtle: rgba(13, 74, 92, 0.45);
   --dm-border-medium: rgba(29, 163, 176, 0.55);
 
@@ -29,12 +32,13 @@
   --dm-cyan-glow-intense: 0 0 16px rgba(63, 244, 213, 0.65);
   --dm-cyan-faint: rgba(63, 244, 213, 0.08);
 
-  /* 4. Acentos Secundários: Âmbar Ouro & Laranja Fogo (Finanças, Obras, Alertas) */
-  --dm-amber-gold: #ffd15c;
-  --dm-amber-bright: #ffb830;
-  --dm-orange-fire: #ff9f1c;
-  --dm-amber-glow: rgba(255, 209, 92, 0.45);
-  --dm-amber-faint: rgba(255, 159, 28, 0.10);
+  /* 4. Alerta Operacional Âmbar & Telemetria Secundária (Operational Amber Alert) */
+  --dm-amber-alert: #ffb020;             /* Âmbar de Alerta Operacional C4ISR (Atenção / Mudança de Rota) */
+  --dm-amber-bright: #ffb830;            /* Âmbar de alta visibilidade de fluxo */
+  --dm-amber-gold: #ffd15c;              /* Ouro Tático / Telemetria Fiscal (teste v9) */
+  --dm-orange-fire: #ff9f1c;             /* Alerta térmico / estaleiro ativo */
+  --dm-amber-glow: rgba(255, 176, 32, 0.45);
+  --dm-amber-faint: rgba(255, 176, 32, 0.10);
 
   /* 5. Estados Operacionais & Alertas */
   --dm-green-track: #00ff88;

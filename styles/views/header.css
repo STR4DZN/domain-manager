@@ -78,3 +78,46 @@
   align-items: center;
   gap: 8px;
 }
+
+/* ==========================================================================
+   AEROSPACE COCKPIT CHASSIS STATUS & LINK INDICATORS
+   ========================================================================== */
+
+.dm-bus-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--dm-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--dm-green-track, #00ff88);
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--dm-radius-xs);
+}
+
+.dm-link-status-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dm-link-status-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dm-green-track, #00ff88);
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.8);
+}
+
+.dm-tactical-coords-pill {
+  font-family: var(--dm-font-numeric);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--dm-cyan-neon, #3ff4d5);
+  background: rgba(4, 24, 34, 0.85);
+  border: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
+  padding: 2px 8px;
+  border-radius: var(--dm-radius-xs);
+}

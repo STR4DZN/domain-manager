@@ -1,65 +1,100 @@
-import assert from "node:assert/strict";
 import test from "node:test";
+import assert from "node:assert/strict";
 
 import { normalizeDomainDraft } from "../scripts/features/domains/rules.js";
 
-test("editar identidade preserva todas as demais seções do domínio", () => {
+test("editar dados básicos do Domain preserva sustenanceSettings e campos econômicos desconhecidos", () => {
   const existingData = {
-    visuals: {
-      bannerImg: "banner.webp",
-      crestImg: "crest.webp",
-      themeColorHex: "#123456"
-    },
-    description: "Anterior",
-    identity: {
-      category: "Base",
-      nature: "physical",
-      state: "active",
-      tags: ["antiga"]
-    },
-    hierarchy: {
-      locatedInUuid: null,
-      administrativeParentUuid: null
-    },
-    population: {
-      total: 20,
-      countMode: "direct",
-      groups: [{ localId: "g1" }],
-      notables: [{ localId: "n1" }]
-    },
+    description: "Antes",
+    identity: { category: "Base", nature: "physical", state: "active", tags: [] },
+    hierarchy: { locatedInUuid: null, administrativeParentUuid: null },
+    population: { total: 10, countMode: "direct", groups: [], notables: [] },
     economy: {
-      stocks: [{ resourceId: "ouro", amount: 50 }],
-      flows: []
+      sustenanceSettings: { enabled: true, foodPer100: 2, waterPer100: 3, guardUpkeep: 4 },
+      stocks: [{ resourceId: "food", amount: 10 }],
+      flows: [],
+      futureField: { keep: true }
     },
-    conditions: [{ localId: "c1", name: "Chuva" }],
-    security: { defenseRating: 4, guardCount: 2, fortifications: [] },
-    relations: [{ localId: "r1" }],
-    agreements: [{ localId: "a1" }],
-    intel: [{ localId: "i1" }],
-    history: [{ localId: "h1" }],
-    governance: { controllers: ["old-user"] }
+    governance: { controllers: ["u1"] },
+    conditions: []
   };
 
-  const result = normalizeDomainDraft({
-    description: "Atualizada",
-    category: "Fortaleza",
-    nature: "organization",
+  const normalized = normalizeDomainDraft({
+    description: "Depois",
+    category: "Colônia",
+    nature: "physical",
     state: "active",
-    tags: ["nova"],
-    controllers: ["new-user"],
+    tags: ["teste"],
+    controllers: ["u1"],
+    locatedInUuid: null,
+    administrativeParentUuid: null,
     existingData
   });
 
-  assert.equal(result.description, "Atualizada");
-  assert.equal(result.identity.category, "Fortaleza");
-  assert.deepEqual(result.governance.controllers, ["new-user"]);
-  assert.deepEqual(result.visuals, existingData.visuals);
-  assert.deepEqual(result.conditions, existingData.conditions);
-  assert.deepEqual(result.security, existingData.security);
-  assert.deepEqual(result.relations, existingData.relations);
-  assert.deepEqual(result.agreements, existingData.agreements);
-  assert.deepEqual(result.intel, existingData.intel);
-  assert.deepEqual(result.history, existingData.history);
-  assert.notEqual(result, existingData);
-  assert.notEqual(result.conditions, existingData.conditions);
+  assert.deepEqual(normalized.economy.sustenanceSettings, existingData.economy.sustenanceSettings);
+  assert.deepEqual(normalized.economy.futureField, { keep: true });
+  assert.deepEqual(normalized.economy.stocks, existingData.economy.stocks);
+});
+
+test("Domain novo recebe preset base por padrão", () => {
+  const normalized = normalizeDomainDraft({
+    description: "Base",
+    category: "Base",
+    nature: "physical",
+    state: "active"
+  });
+
+  assert.equal(normalized.management.preset, "base");
+  assert.equal(normalized.management.capabilities.economy, true);
+  assert.equal(normalized.management.capabilities.diplomacy, true);
+});
+
+test("editar Domain preserva management existente quando a UI antiga não o envia", () => {
+  const existingData = {
+    description: "Antes",
+    identity: { category: "Posto", nature: "physical", state: "active", tags: [] },
+    hierarchy: { locatedInUuid: null, administrativeParentUuid: null },
+    management: {
+      preset: "outpost",
+      capabilities: {
+        economy: true,
+        population: false,
+        people: true,
+        structures: true,
+        projects: true,
+        squads: true,
+        missions: true,
+        diplomacy: true,
+        territory: false,
+        intel: true,
+        security: true
+      }
+    },
+    population: { total: 0, countMode: "direct", groups: [], notables: [] },
+    economy: { stocks: [], flows: [] },
+    governance: { controllers: [] }
+  };
+
+  const normalized = normalizeDomainDraft({
+    description: "Depois",
+    category: "Posto",
+    nature: "physical",
+    state: "active",
+    existingData
+  });
+
+  assert.deepEqual(normalized.management, existingData.management);
+});
+
+test("capabilities explícitas podem sobrescrever um preset no Domain", () => {
+  const normalized = normalizeDomainDraft({
+    category: "Operação",
+    managementPreset: "squad",
+    capabilities: { population: true, structures: true }
+  });
+
+  assert.equal(normalized.management.preset, "squad");
+  assert.equal(normalized.management.capabilities.population, true);
+  assert.equal(normalized.management.capabilities.structures, true);
+  assert.equal(normalized.management.capabilities.diplomacy, false);
 });

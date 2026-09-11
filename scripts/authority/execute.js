@@ -1,5 +1,7 @@
 import { ModuleError, ERROR_CODES } from "../core/errors.js";
 import { getAuthoritySocket } from "./socket.js";
+import { dispatchAuthoritativeCommand } from "../commands/execute.js";
+import { isPrimaryActiveGM } from "./primary-gm.js";
 
 export async function pingAuthority() {
   const socket = getAuthoritySocket();
@@ -40,7 +42,7 @@ export async function createRequestAuthoritatively(
       || foundry.utils.randomID()
   };
 
-  if (game.user.isGM) {
+  if (isPrimaryActiveGM()) {
     const {
       performCreateRequest
     } = await import(
@@ -77,4 +79,37 @@ export async function createRequestAuthoritatively(
       { cause: error }
     );
   }
+}
+
+
+export async function executeCommandAuthoritatively({
+  commandType,
+  payload = {},
+  operationId = null
+} = {}) {
+  const socket = getAuthoritySocket();
+  const envelope = {
+    commandType,
+    payload,
+    operationId: operationId || foundry.utils.randomID()
+  };
+
+  if (isPrimaryActiveGM()) {
+    return dispatchAuthoritativeCommand(envelope, { callerUserId: game.user.id });
+  }
+
+  if (!socket) {
+    throw new ModuleError(
+      ERROR_CODES.AUTHORITY_UNAVAILABLE,
+      "A autoridade do módulo ainda não está pronta."
+    );
+  }
+  if (!game.users.activeGM) {
+    throw new ModuleError(
+      ERROR_CODES.AUTHORITY_UNAVAILABLE,
+      "Nenhum Mestre ativo está disponível para executar o comando."
+    );
+  }
+
+  return socket.executeAsGM("command.execute", envelope);
 }

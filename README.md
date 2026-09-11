@@ -2,65 +2,79 @@
 
 [![Foundry VTT](https://img.shields.io/badge/Foundry%20VTT-v13-blue.svg)](https://foundryvtt.com)
 [![Compatible](https://img.shields.io/badge/Verified-13.351-green.svg)](https://foundryvtt.com)
-[![License](https://img.shields.io/badge/License-MIT-orange.svg)](#)
 
-**Domain Manager** é um módulo de alta performance para o **Foundry Virtual Tabletop (v13)** projetado para gerenciamento territorial, econômico, político e estratégico em qualquer escala — desde pequenos feudos e reinos medievais até impérios estelares e galáxias com dezenas de bases interligadas.
+**Domain Manager** é um framework estratégico e operacional para Foundry VTT v13. Ele conecta Domains, economia, projetos, squads, pessoas, estruturas, missões, diplomacia, território e inteligência dentro de um estado persistente e multiplayer.
 
----
+## Strategic Operations System
 
-## Principais Recursos
+A partir do `dev.131`, a interface antiga foi removida. A UI agora é um aplicativo novo, baseado em quatro zonas funcionais:
 
-- **Arquitetura Cockpit em 3 Níveis (ApplicationV2):**
-  - **Navigation Rail:** Dock minimalista na extrema esquerda com rotas rápidas e indicador de foco.
-  - **Explorer Sidebar:** Árvore hierárquica navegável (*Macro ➔ Micro*) com busca instantânea, alternador Pastas/Tags, guias visuais e contadores numéricos de filhos.
-  - **Workspace Central:** Cockpit unificado com cartões de métricas vitais, histórico recente e abas para Economia, Projetos, Notáveis, Diplomacia e Informações Secretas.
-- **Precisão Matemática Exata (Sem Drift Flutuante):**
-  - Contabilidade de unidades menores (*minorUnits*) e aritmética de frações racionais exatas (*RationalFraction*) com acumulador de resíduo (*carry*).
-  - Distribuição proporcional de inteiros pelo método Hare-Niemeyer (maiores restos).
-- **Motor de Simulação & Avanço Temporal:**
-  - Simulação determinística em memória contra *snapshot* imutável.
-  - Detecção preventiva de inadimplência em acordos (*breach*) e alertas de escassez (*shortfall*).
-  - Sincronização de tempo bidirecional com o relógio do Foundry VTT e o módulo `simple-timekeeping`.
-- **Arquitetura Multiplayer Segura (socketlib):**
-  - Mutex em fila transacional FIFO no host do Mestre para prevenir concorrência desordenada.
-  - Submissão de ordens de jogadores com garantia de idempotência (`operationId`).
+- **Command Rail** — navegação global compacta.
+- **Entity Deck** — seleção e busca de Domains.
+- **Workspace** — módulos contextuais controlados por capabilities.
+- **System Footer** — autoridade, sincronização e diagnóstico.
 
----
+A linguagem visual foi construída a partir de 26 referências FUI analisadas individualmente e segue o princípio **App first, FUI second**: estética futurista sem sacrificar hierarquia, leitura ou interação. Consulte `docs/VISUAL_REFERENCE_AUDIT.md` e `docs/DESIGN_LANGUAGE.md`.
+
+## Vertical slices operacionais
+
+### Squad MVP — dev.132
+
+- GM cria Squads dentro de Domains com capability `squads`.
+- Controllers recebem ownership `OBSERVER` e operam a unidade pelo Command Kernel.
+- Moral, condição, status e briefing operacional podem ser atualizados pelo jogador controlador.
+- GM administra capacidade, efetivo e reatribuição de controllers.
+- Suprimentos usam a transferência Domain/Squad já transacional.
+
+### Mission MVP — dev.133
+
+- GM registra operações com audiência, briefing e objetivos.
+- Jogadores da audiência preparam Squads que controlam, comprometendo efetivo e suprimentos.
+- Preparação reserva o compromisso; consumo ocorre apenas no lançamento.
+- Launch é idempotente e coloca as unidades em campo.
+- After Action Resolution aplica baixas, moral, condição e resultados de objetivos de volta aos Squads.
+- Mission Control novo apresenta força, recursos, objetivos e estado operacional sem reutilizar a UI legada.
+
+Consulte `docs/SQUAD_MVP.md` e `docs/MISSION_MVP.md`.
+
+### Structures & Base Core — dev.134
+
+- GM pode registrar ativos físicos existentes ou iniciar construções financiadas.
+- Construção cria um `Project` real e uma `Structure planned` vinculada.
+- Project concluído comissiona automaticamente a Structure em batch com Domain/Project.
+- Structures `operational` consomem manutenção e produzem recursos por tick.
+- Structures `damaged` mantêm o custo de manutenção e produzem proporcionalmente à condição.
+- Infrastructure Control apresenta condição, capacidade, tier, vetores econômicos, construção e controle operacional.
+
+Consulte `docs/STRUCTURES_BASE_CORE.md`.
+
+## Kernel
+
+- Aritmética exata com minor units e carry persistente.
+- Simulation kernel determinístico.
+- Autoridade única no GM primário.
+- Command/transaction layer com idempotência e event bus.
+- Transferências Domain/Squad com atualização em batch e compensação.
+- Schema versionado e migrations sequenciais.
+- Capabilities e management presets para reduzir ou ampliar complexidade por entidade.
 
 ## Requisitos
 
-- **Foundry VTT:** Versão mínima `13.341` (Verificado até `13.351`).
-- **Módulos Obrigatórios:** `socketlib` (>= 1.1.3).
-- **Módulos Recomendados:** `simple-timekeeping`.
+- Foundry VTT `>= 13.341` (verificado em `13.351`).
+- `socketlib >= 1.1.3`.
 
----
+## Instalação manual
 
-## Instalação
+1. Baixe `domain-manager-v0.1.0-dev.134.zip`.
+2. Extraia em `Data/modules/domain-manager`.
+3. Ative Domain Manager e socketlib no mundo.
 
-### Instalação via Manifesto
-No gerenciador de módulos do Foundry VTT, clique em **Instalar Módulo** e cole a seguinte URL no campo de manifesto:
-
-```text
-https://raw.githubusercontent.com/STR4DZN/domain-manager/main/module.json
-```
-
-### Instalação Manual
-1. Baixe o arquivo `domain-manager-v0.1.0-dev.128.zip` da [última release](https://github.com/STR4DZN/domain-manager/releases).
-2. Extraia o conteúdo na pasta `Data/modules/domain-manager` do seu Foundry VTT.
-3. Ative o módulo e sua dependência (`socketlib`) nas configurações do seu mundo.
-
----
-
-## Testes Automatizados
-
-Para rodar a suíte de testes unitários nativa do Node.js:
+## Testes
 
 ```bash
 npm test
 ```
 
----
-
 ## Autor
 
-Desenvolvido por **Fusion** ([@STR4DZN](https://github.com/STR4DZN)).
+Fusion / STR4DZN

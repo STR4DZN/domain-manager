@@ -1,4 +1,5 @@
 import { ModuleError, ERROR_CODES } from "../core/errors.js";
+import { assertPrimaryActiveGM } from "./primary-gm.js";
 
 /**
  * Fila transacional e Mutex para serialização de operações concorrentes no GM (Bloco 18).
@@ -20,12 +21,9 @@ export class TransactionQueue {
    * @returns {Promise<T>}
    */
   async enqueue(resourceKey, operation, { callerUserId = null } = {}) {
-    if (!game.user.isGM) {
-      throw new ModuleError(
-        ERROR_CODES.PERMISSION,
-        "Transações atômicas de autoridade devem ser executadas no host do GM ativo."
-      );
-    }
+    // Toda mutação serializada passa pela mesma autoridade. Isso impede dois
+    // clientes GM de manterem filas locais independentes para o mesmo mundo.
+    assertPrimaryActiveGM();
 
     return new Promise((resolve, reject) => {
       this.#queue.push({

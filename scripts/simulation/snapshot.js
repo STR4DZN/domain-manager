@@ -6,7 +6,7 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-export function buildSimulationSnapshot({ domains = [], projects = [], catalog = [] } = {}) {
+export function buildSimulationSnapshot({ domains = [], projects = [], structures = [], catalog = [] } = {}) {
   const rawResources = Array.isArray(catalog) ? catalog : (catalog?.resources ?? []);
   const normalizedCatalog = rawResources.map((res) => ({
     id: String(res.id ?? "").trim(),
@@ -17,8 +17,27 @@ export function buildSimulationSnapshot({ domains = [], projects = [], catalog =
   }));
 
   const normalizedDomains = (domains ?? []).map((dom) => ({
+    entityId: dom.data?.entityId ?? dom.entityId ?? null,
     uuid: dom.uuid ?? dom.document?.uuid ?? "",
     name: dom.name ?? dom.document?.name ?? "Domínio",
+    population: {
+      total: Number(dom.data?.population?.total ?? dom.population?.total ?? 0),
+      countMode: dom.data?.population?.countMode ?? dom.population?.countMode ?? "direct",
+      groups: (dom.data?.population?.groups ?? dom.population?.groups ?? []).map((g) => ({
+        localId: g.localId,
+        count: Number(g.count ?? 0),
+        includedInTotal: g.includedInTotal !== false
+      }))
+    },
+    security: {
+      guardCount: Number(dom.data?.security?.guardCount ?? dom.security?.guardCount ?? 0)
+    },
+    sustenanceSettings: clone(
+      dom.data?.economy?.sustenanceSettings
+      ?? dom.economy?.sustenanceSettings
+      ?? dom.sustenanceSettings
+      ?? null
+    ),
     stocks: (dom.data?.economy?.stocks ?? dom.stocks ?? []).map((s) => ({
       resourceId: s.resourceId,
       amount: Number(s.amount ?? 0)
@@ -30,6 +49,7 @@ export function buildSimulationSnapshot({ domains = [], projects = [], catalog =
       direction: f.direction ?? "inflow",
       amount: Number(f.amount ?? 0),
       periodTicks: Number(f.periodTicks ?? 1),
+      carry: Number(f.carry ?? 0),
       active: f.active !== false,
       category: f.category ?? "production"
     })),
@@ -79,6 +99,7 @@ export function buildSimulationSnapshot({ domains = [], projects = [], catalog =
   }));
 
   const normalizedProjects = (projects ?? []).map((proj) => ({
+    entityId: proj.data?.entityId ?? proj.entityId ?? null,
     uuid: proj.uuid ?? proj.document?.uuid ?? "",
     name: proj.name ?? proj.document?.name ?? "Project",
     domainUuid: proj.data?.domainUuid ?? proj.data?.primaryDomainUuid ?? proj.domainUuid ?? "",
@@ -100,10 +121,31 @@ export function buildSimulationSnapshot({ domains = [], projects = [], catalog =
     }))
   }));
 
+  const normalizedStructures = (structures ?? []).map((structure) => ({
+    entityId: structure.data?.entityId ?? structure.entityId ?? null,
+    uuid: structure.uuid ?? structure.document?.uuid ?? "",
+    name: structure.name ?? structure.document?.name ?? "Structure",
+    domain: clone(structure.data?.domain ?? structure.domain ?? null),
+    activeProject: clone(structure.data?.activeProject ?? structure.activeProject ?? null),
+    status: structure.data?.status ?? structure.status ?? "planned",
+    condition: Number(structure.data?.condition ?? structure.condition ?? 100),
+    tier: Number(structure.data?.tier ?? structure.tier ?? 1),
+    capacity: Number(structure.data?.capacity ?? structure.capacity ?? 0),
+    maintenance: (structure.data?.maintenance ?? structure.maintenance ?? []).map((entry) => ({
+      resourceId: entry.resourceId,
+      amount: Number(entry.amount ?? 0)
+    })),
+    production: (structure.data?.production ?? structure.production ?? []).map((entry) => ({
+      resourceId: entry.resourceId,
+      amount: Number(entry.amount ?? 0)
+    }))
+  }));
+
   return {
     timestamp: Date.now(),
     catalog: normalizedCatalog,
     domains: clone(normalizedDomains),
-    projects: clone(normalizedProjects)
+    projects: clone(normalizedProjects),
+    structures: clone(normalizedStructures)
   };
 }

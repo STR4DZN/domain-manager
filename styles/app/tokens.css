@@ -1,0 +1,31 @@
+:root {
+  --dm-void: #06090d;
+  --dm-surface-0: #0a0f14;
+  --dm-surface-1: #10171d;
+  --dm-surface-2: #151f26;
+  --dm-surface-3: #1b262e;
+  --dm-line: rgba(160, 188, 198, 0.18);
+  --dm-line-strong: rgba(160, 188, 198, 0.34);
+  --dm-text: #e8f0ef;
+  --dm-text-soft: #bac8ca;
+  --dm-muted: #83949a;
+  --dm-dim: #52636a;
+  --dm-amber: #f0a52b;
+  --dm-amber-soft: #bb7a20;
+  --dm-amber-faint: rgba(240, 165, 43, 0.10);
+  --dm-teal: #48d7b0;
+  --dm-teal-faint: rgba(72, 215, 176, 0.10);
+  --dm-cyan: #67b9d4;
+  --dm-blue: #668cff;
+  --dm-red: #ef5c55;
+  --dm-red-faint: rgba(239, 92, 85, 0.10);
+  --dm-warning: #e6c35c;
+  --dm-radius: 2px;
+  --dm-rail: 76px;
+  --dm-deck: 286px;
+  --dm-top: 58px;
+  --dm-footer: 28px;
+  --dm-font: Inter, "Segoe UI", Arial, sans-serif;
+  --dm-font-condensed: "Arial Narrow", "Roboto Condensed", Inter, sans-serif;
+  --dm-font-mono: "IBM Plex Mono", "Roboto Mono", Consolas, monospace;
+}

@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    DOMAIN MANAGER - VIEWS: PESSOAL & NOTÁVEIS
    ========================================================================== */
 
@@ -34,8 +34,8 @@
 .dm-notable-portrait {
   width: 54px;
   height: 54px;
-  border-radius: var(--dm-radius-sm);
-  border: 1px solid var(--dm-border-tech);
+  clip-path: polygon(0 6px, 6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px));
+  border: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
   background: var(--dm-bg-void, #02070e);
   overflow: hidden;
   display: flex;
@@ -95,4 +95,21 @@
   font-family: var(--dm-font-mono);
   font-size: 0.75rem;
   color: var(--dm-text-sec);
+}
+
+/* ==========================================================================
+   MILITARY PERSONNEL DOSSIER & CLEARANCE (Q3 NOTABLES)
+   ========================================================================== */
+
+.dm-clearance-pill {
+  font-family: var(--dm-font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: var(--dm-radius-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }

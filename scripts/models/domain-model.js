@@ -1,7 +1,11 @@
 import {
+  CAPABILITY_KEYS,
   DOMAIN_NATURES,
-  DOMAIN_STATES
+  DOMAIN_STATES,
+  MANAGEMENT_PRESETS,
+  RECORD_TYPES
 } from "../core/constants.js";
+import { buildEntityId } from "../core/entity-contracts.js";
 
 const {
   ArrayField,
@@ -17,6 +21,26 @@ function nullableUuidField() {
     nullable: true,
     blank: false,
     initial: null
+  });
+}
+
+function managementSchema() {
+  const capabilityFields = Object.fromEntries(
+    CAPABILITY_KEYS.map((key) => [
+      key,
+      new BooleanField({ required: true, nullable: false, initial: true })
+    ])
+  );
+
+  return new SchemaField({
+    preset: new StringField({
+      required: true,
+      nullable: false,
+      blank: false,
+      choices: MANAGEMENT_PRESETS,
+      initial: "base"
+    }),
+    capabilities: new SchemaField(capabilityFields)
   });
 }
 
@@ -79,6 +103,14 @@ function flowSchema() {
       integer: true,
       min: 1,
       initial: 1
+    }),
+
+    carry: new NumberField({
+      required: true,
+      nullable: false,
+      integer: true,
+      min: 0,
+      initial: 0
     }),
 
     category: new StringField({
@@ -338,7 +370,21 @@ function historySchema() {
       blank: false,
       choices: ["all", "gm_only"],
       initial: "all"
-    })
+    }),
+    eventType: new StringField({ required: true, nullable: false, blank: true, initial: "" }),
+    operationId: new StringField({ required: true, nullable: true, blank: false, initial: null }),
+    actorUserId: new StringField({ required: true, nullable: true, blank: false, initial: null }),
+    entityIds: new ArrayField(
+      new StringField({ required: true, nullable: false, blank: false }),
+      { required: true, nullable: false, initial: [] }
+    ),
+    metadata: new ArrayField(
+      new SchemaField({
+        key: new StringField({ required: true, nullable: false, blank: false }),
+        value: new StringField({ required: true, nullable: false, blank: true, initial: "" })
+      }),
+      { required: true, nullable: false, initial: [] }
+    )
   });
 }
 
@@ -462,6 +508,13 @@ function notificationSchema() {
 export class DomainModel extends foundry.abstract.DataModel {
   static defineSchema() {
     return {
+      entityId: new StringField({
+        required: true, nullable: false, blank: false,
+        initial: () => buildEntityId(RECORD_TYPES.DOMAIN)
+      }),
+
+      management: managementSchema(),
+
       visuals: visualsSchema(),
 
       description: new StringField({
@@ -659,6 +712,14 @@ export class DomainModel extends foundry.abstract.DataModel {
       throw new Error(
         "Domain.economy.flows contém localId duplicado."
       );
+    }
+
+    for (const flow of flows) {
+      if (flow.carry >= flow.periodTicks) {
+        throw new Error(
+          "Domain.economy.flows carry precisa ser menor que periodTicks."
+        );
+      }
     }
 
     const groups = data?.population?.groups ?? [];

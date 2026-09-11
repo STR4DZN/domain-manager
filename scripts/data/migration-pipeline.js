@@ -1,7 +1,10 @@
-import { MODULE_ID, RECORD_TYPES } from "../core/constants.js";
-import { decodeRecord, isModuleRecord } from "../models/record-codec.js";
+import { MODULE_ID, RECORD_TYPES, SCHEMA_VERSION } from "../core/constants.js";
+import { isModuleRecord, normalizeRecordData } from "../models/record-codec.js";
+import { buildEntityId } from "../core/entity-contracts.js";
+import { normalizeManagementConfig } from "../core/management-contracts.js";
+import { isPrimaryActiveGM } from "../authority/primary-gm.js";
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = SCHEMA_VERSION;
 
 /**
  * Pipeline de Migração Automática e Incremental de Esquema (Bloco 21).
@@ -16,8 +19,8 @@ export class MigrationPipeline {
    * @returns {Promise<{ migratedCount: number, errors: Array, success: boolean }>}
    */
   async runMigration({ dryRun = false } = {}) {
-    if (!game.user.isGM) {
-      return { migratedCount: 0, errors: [], success: true };
+    if (!isPrimaryActiveGM()) {
+      return { migratedCount: 0, errors: [], success: true, skipped: true };
     }
 
     const journalEntries = Array.from(game.journal ?? []).filter(isModuleRecord);
@@ -41,6 +44,13 @@ export class MigrationPipeline {
         const currentVersion = flagData.schemaVersion || 0;
         if (currentVersion < CURRENT_SCHEMA_VERSION) {
           const migratedFlags = this.migrateDocumentFlags(flagData, currentVersion);
+          // Valida e normaliza antes de tocar no JournalEntry. Se uma migração
+          // gerar dados incompatíveis com o DataModel atual, o pipeline aborta
+          // e o rollback restaura o snapshot original.
+          migratedFlags.data = normalizeRecordData(
+            migratedFlags.recordType,
+            migratedFlags.data
+          );
           migratedCount++;
 
           if (!dryRun) {
@@ -90,6 +100,26 @@ export class MigrationPipeline {
       result = this.#migrateToV1(result);
     }
 
+    if (fromVersion < 2) {
+      result = this.#migrateToV2(result);
+    }
+
+    if (fromVersion < 3) {
+      result = this.#migrateToV3(result);
+    }
+
+    if (fromVersion < 4) {
+      result = this.#migrateToV4(result);
+    }
+
+    if (fromVersion < 5) {
+      result = this.#migrateToV5(result);
+    }
+
+    if (fromVersion < 6) {
+      result = this.#migrateToV6(result);
+    }
+
     result.schemaVersion = CURRENT_SCHEMA_VERSION;
     return result;
   }
@@ -106,15 +136,25 @@ export class MigrationPipeline {
       };
 
       // Garante integridade de arrays
-      data.identity = data.identity || { name: "Domínio", nature: "settlement", state: "active", tags: [] };
+      data.description = String(data.description ?? "");
+      data.identity = data.identity || { category: "Base", nature: "physical", state: "active", tags: [] };
+      // Builds antigos usavam `settlement`, valor que não existe mais no enum atual.
+      if (data.identity.nature === "settlement") data.identity.nature = "physical";
+      data.identity.category = String(data.identity.category ?? data.identity.name ?? "Base").trim() || "Base";
+      delete data.identity.name;
       data.hierarchy = data.hierarchy || { locatedInUuid: null, administrativeParentUuid: null };
       data.population = data.population || { total: 0, countMode: "direct", groups: [], notables: [] };
       data.economy = data.economy || { stocks: [], flows: [] };
+      data.economy.stocks = Array.isArray(data.economy.stocks) ? data.economy.stocks : [];
+      data.economy.flows = Array.isArray(data.economy.flows) ? data.economy.flows : [];
       data.governance = data.governance || { controllers: [] };
       data.conditions = data.conditions || [];
+      data.security = data.security || { defenseRating: 0, guardCount: 0, fortifications: [] };
       data.relations = data.relations || [];
+      data.agreements = data.agreements || [];
       data.history = data.history || [];
       data.intel = data.intel || [];
+      data.notifications = data.notifications || [];
     }
 
     return {
@@ -122,6 +162,99 @@ export class MigrationPipeline {
       data
     };
   }
+
+  #migrateToV2(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.DOMAIN) {
+      data.identity = data.identity || {};
+      if (data.identity.nature === "settlement") data.identity.nature = "physical";
+
+      data.economy = data.economy || { stocks: [], flows: [] };
+      data.economy.stocks = Array.isArray(data.economy.stocks) ? data.economy.stocks : [];
+      data.economy.flows = (Array.isArray(data.economy.flows) ? data.economy.flows : [])
+        .map((flow) => ({ ...flow, carry: Number(flow?.carry ?? 0) }));
+
+      // Builds intermediários chegaram a persistir "crisis", enquanto o modelo
+      // oficial aceita minor/moderate/severe.
+      data.conditions = (Array.isArray(data.conditions) ? data.conditions : [])
+        .map((condition) => condition?.severity === "crisis"
+          ? { ...condition, severity: "severe" }
+          : condition);
+    }
+
+    return {
+      ...flagData,
+      data
+    };
+  }
+  #migrateToV3(flagData) {
+    const data = flagData.data || {};
+    const recordType = flagData.recordType;
+
+    if (!data.entityId) {
+      data.entityId = buildEntityId(recordType);
+    }
+
+    if (recordType === RECORD_TYPES.DOMAIN) {
+      data.management = normalizeManagementConfig(data.management, {
+        defaultPreset: "base"
+      });
+    }
+
+    return {
+      ...flagData,
+      data
+    };
+  }
+
+  #migrateToV4(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.DOMAIN) {
+      data.history = (Array.isArray(data.history) ? data.history : []).map((event) => ({
+        ...event,
+        eventType: String(event?.eventType ?? ""),
+        operationId: event?.operationId ?? null,
+        actorUserId: event?.actorUserId ?? null,
+        entityIds: Array.isArray(event?.entityIds) ? event.entityIds : [],
+        metadata: Array.isArray(event?.metadata) ? event.metadata : []
+      }));
+    }
+
+    return {
+      ...flagData,
+      data
+    };
+  }
+
+  #migrateToV5(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.MISSION) {
+      data.assignments = Array.isArray(data.assignments) ? data.assignments : [];
+      data.startedAtWorldTime = Number.isFinite(data.startedAtWorldTime) ? data.startedAtWorldTime : null;
+      data.resolvedAtWorldTime = Number.isFinite(data.resolvedAtWorldTime) ? data.resolvedAtWorldTime : null;
+    }
+
+    return {
+      ...flagData,
+      data
+    };
+  }
+
+  #migrateToV6(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.STRUCTURE) {
+      if (!("activeProject" in data)) data.activeProject = null;
+    }
+
+    flagData.data = data;
+    flagData.schemaVersion = 6;
+    return flagData;
+  }
+
 }
 
 export const migrationPipeline = new MigrationPipeline();

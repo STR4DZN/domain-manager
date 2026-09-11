@@ -4,8 +4,9 @@
 
 .dm-card {
   background: var(--dm-bg-card);
-  border: 1px solid var(--dm-border-tech);
-  border-radius: var(--dm-radius-md);
+  border: 1px solid var(--dm-titanium-bezel, #0d222b);
+  box-shadow: inset 0 0 0 1px rgba(26, 61, 77, 0.2);
+  border-radius: var(--dm-radius-sm);
   padding: 12px;
   position: relative;
   box-sizing: border-box;
@@ -22,9 +23,9 @@
 }
 
 .dm-metric-card {
-  background: linear-gradient(135deg, rgba(4, 25, 36, 0.95) 0%, rgba(2, 6, 11, 0.95) 100%);
-  border: 1px solid var(--dm-border-dark);
-  border-top: 2px solid var(--dm-border-bright);
+  background: linear-gradient(135deg, rgba(3, 17, 24, 0.95) 0%, rgba(2, 5, 8, 0.98) 100%);
+  border: 1px solid var(--dm-titanium-bezel, #0d222b);
+  border-top: 2px solid var(--dm-cyan-bright, #00f0ff);
   border-radius: var(--dm-radius-sm);
   padding: 10px 12px;
   display: flex;
@@ -36,8 +37,8 @@
 }
 
 .dm-metric-card:hover {
-  border-color: var(--dm-border-bright);
-  box-shadow: 0 0 12px rgba(29, 163, 176, 0.25);
+  border-color: var(--dm-cyan-bright, #00f0ff);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
 }
 
 .dm-metric-card--econ {
@@ -167,4 +168,151 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ==========================================================================
+   C4ISR MFD CHASSIS & BEZEL QUADRANTS
+   ========================================================================== */
+
+.dm-mfd-quadrant {
+  position: relative;
+  background: var(--dm-c4isr-black, #020508);
+  border: 1px solid var(--dm-titanium-bezel, #0d222b);
+  box-shadow: inset 0 0 0 1px rgba(26, 61, 77, 0.25), inset 0 0 20px rgba(0, 0, 0, 0.85);
+  padding: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-mfd-quadrant::before,
+.dm-mfd-quadrant::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.dm-mfd-quadrant::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--dm-cyan-bright, #00f0ff);
+  border-left: 2px solid var(--dm-cyan-bright, #00f0ff);
+}
+
+.dm-mfd-quadrant::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--dm-cyan-bright, #00f0ff);
+  border-right: 2px solid var(--dm-cyan-bright, #00f0ff);
+}
+
+.dm-mfd-bezel-header {
+  height: 28px;
+  background: linear-gradient(90deg, var(--dm-titanium-bezel, #0d222b) 0%, rgba(13, 34, 43, 0.4) 100%);
+  border-bottom: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--dm-font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--dm-cyan-neon, #3ff4d5);
+  margin: -12px -12px 10px -12px;
+}
+
+/* Cantoneiras Técnicas de Registro (.dm-hud-bracket e .dm-mfd-bracket) */
+.dm-hud-bracket,
+.dm-mfd-bracket {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  z-index: 6;
+  border-color: var(--dm-cyan-bright, #00f0ff);
+  border-style: solid;
+}
+
+.dm-hud-bracket--tl, .dm-mfd-bracket--tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.dm-hud-bracket--tr, .dm-mfd-bracket--tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.dm-hud-bracket--bl, .dm-mfd-bracket--bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.dm-hud-bracket--br, .dm-mfd-bracket--br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* Réguas Micrométricas de Hardware */
+.dm-mfd-ruler-h {
+  height: 6px;
+  width: 100%;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      var(--dm-titanium-bezel-bright, #1a3d4d) 0px,
+      var(--dm-titanium-bezel-bright, #1a3d4d) 1px,
+      transparent 1px,
+      transparent var(--dm-ruler-tick-minor, 4px)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--dm-cyan-bright, #00f0ff) 0px,
+      var(--dm-cyan-bright, #00f0ff) 1px,
+      transparent 1px,
+      transparent var(--dm-ruler-tick-major, 20px)
+    );
+  background-size: 100% 3px, 100% 6px;
+  background-position: bottom left, bottom left;
+  background-repeat: no-repeat;
+  border-bottom: 1px solid var(--dm-titanium-bezel, #0d222b);
+}
+
+.dm-mfd-ruler-v {
+  width: 6px;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      var(--dm-titanium-bezel-bright, #1a3d4d) 0px,
+      var(--dm-titanium-bezel-bright, #1a3d4d) 1px,
+      transparent 1px,
+      transparent var(--dm-ruler-tick-minor, 4px)
+    ),
+    repeating-linear-gradient(
+      180deg,
+      var(--dm-cyan-bright, #00f0ff) 0px,
+      var(--dm-cyan-bright, #00f0ff) 1px,
+      transparent 1px,
+      transparent var(--dm-ruler-tick-major, 20px)
+    );
+  background-size: 3px 100%, 6px 100%;
+  background-position: top right, top right;
+  background-repeat: no-repeat;
+  border-right: 1px solid var(--dm-titanium-bezel, #0d222b);
+}
+
+/* Chanfros MFD Utilitários */
+.dm-mfd-chamfer-4 {
+  clip-path: polygon(
+    0 var(--dm-chamfer-md, 10px),
+    var(--dm-chamfer-md, 10px) 0,
+    calc(100% - var(--dm-chamfer-md, 10px)) 0,
+    100% var(--dm-chamfer-md, 10px),
+    100% calc(100% - var(--dm-chamfer-md, 10px)),
+    calc(100% - var(--dm-chamfer-md, 10px)) 100%,
+    var(--dm-chamfer-md, 10px) 100%,
+    0 calc(100% - var(--dm-chamfer-md, 10px))
+  );
+}
+
+.dm-mfd-chamfer-diag {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--dm-chamfer-lg, 14px)) 0,
+    100% var(--dm-chamfer-lg, 14px),
+    100% 100%,
+    var(--dm-chamfer-lg, 14px) 100%,
+    0 calc(100% - var(--dm-chamfer-lg, 14px))
+  );
 }

@@ -198,6 +198,9 @@ export async function updateMissionAction({
     briefing,
     audienceUserIds: audience,
     objectives: record.data.objectives,
+    assignments: record.data.assignments,
+    startedAtWorldTime: record.data.startedAtWorldTime,
+    resolvedAtWorldTime: record.data.resolvedAtWorldTime,
     outcomeSummary
   });
 

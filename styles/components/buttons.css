@@ -13,8 +13,17 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-radius: var(--dm-radius-sm);
-  border: 1px solid var(--dm-border-tech);
+  clip-path: polygon(
+    0 5px,
+    5px 0,
+    calc(100% - 5px) 0,
+    100% 5px,
+    100% calc(100% - 5px),
+    calc(100% - 5px) 100%,
+    5px 100%,
+    0 calc(100% - 5px)
+  );
+  border: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
   background: rgba(13, 74, 92, 0.25);
   color: var(--dm-text-white);
   cursor: pointer;
@@ -24,10 +33,10 @@
 }
 
 .dm-btn:hover {
-  background: rgba(63, 244, 213, 0.15);
-  border-color: var(--dm-cyan-neon);
-  color: var(--dm-cyan-bright);
-  box-shadow: 0 0 10px rgba(63, 244, 213, 0.3);
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--dm-cyan-bright, #00f0ff);
+  color: var(--dm-cyan-bright, #00f0ff);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
 }
 
 .dm-btn:active {
@@ -97,8 +106,8 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  border-radius: var(--dm-radius-sm);
-  border: 1px solid var(--dm-border-tech);
+  clip-path: polygon(0 4px, 4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px));
+  border: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
   background: rgba(4, 24, 34, 0.6);
   color: var(--dm-text-sec);
   cursor: pointer;
@@ -106,9 +115,10 @@
 }
 
 .dm-icon-btn:hover {
-  border-color: var(--dm-cyan-neon);
-  color: var(--dm-cyan-bright);
-  background: rgba(63, 244, 213, 0.12);
+  border-color: var(--dm-cyan-bright, #00f0ff);
+  color: var(--dm-cyan-bright, #00f0ff);
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
 }
 
 .dm-btn-dossier {
@@ -117,9 +127,9 @@
   gap: 6px;
   padding: 4px 8px;
   background: rgba(13, 74, 92, 0.35);
-  border: 1px solid var(--dm-border-bright);
+  border: 1px solid var(--dm-titanium-bezel-bright, #1a3d4d);
   color: var(--dm-cyan-neon);
-  border-radius: var(--dm-radius-sm);
+  clip-path: polygon(0 3px, 3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px));
   font-family: var(--dm-font-mono);
   font-size: 0.75rem;
   cursor: pointer;
@@ -129,5 +139,6 @@
 .dm-btn-dossier:hover {
   background: var(--dm-cyan-deep);
   color: #02060b;
+  border-color: var(--dm-cyan-bright);
   box-shadow: 0 0 10px var(--dm-cyan-glow);
 }

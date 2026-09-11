@@ -56,12 +56,18 @@ export async function upsertResourceDefinitionAction({
   name,
   unit = "",
   precision = 0,
-  allowNegative = false
+  allowNegative = false,
+  category = null,
+  tags = null
 }) {
   assertGM();
 
   const catalog =
     getResourceCatalogSetting();
+
+  const existing = originalId
+    ? (catalog.resources ?? []).find((entry) => entry.id === originalId)
+    : null;
 
   const next =
     upsertResourceInCatalog(
@@ -71,7 +77,9 @@ export async function upsertResourceDefinitionAction({
         name,
         unit,
         precision,
-        allowNegative
+        allowNegative,
+        category: category ?? existing?.category ?? "general",
+        tags: tags ?? existing?.tags ?? []
       },
       { originalId }
     );
@@ -253,6 +261,15 @@ export async function upsertDomainFlowAction({
     );
   }
 
+
+  const existingFlow = localId
+    ? (record.data.economy?.flows ?? []).find((entry) => entry.localId === localId)
+    : null;
+  const normalizedPeriodTicks = Number(periodTicks);
+  const carry = existingFlow && existingFlow.periodTicks === normalizedPeriodTicks
+    ? Number(existingFlow.carry ?? 0)
+    : 0;
+
   const flow =
     normalizeFlow(
       {
@@ -261,8 +278,8 @@ export async function upsertDomainFlowAction({
         resourceId,
         direction,
         amount,
-        periodTicks:
-          Number(periodTicks),
+        periodTicks: normalizedPeriodTicks,
+        carry,
         category,
         source,
         active

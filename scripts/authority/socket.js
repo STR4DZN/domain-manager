@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../core/constants.js";
 import { performCreateRequest } from "../features/requests/actions.js";
+import { dispatchAuthoritativeCommand } from "../commands/execute.js";
 
 let moduleSocket = null;
 
@@ -36,6 +37,14 @@ async function remoteCreateRequest(payload) {
   return result;
 }
 
+async function remoteExecuteCommand(envelope) {
+  const userId = callerUserId(this);
+  if (!userId) {
+    throw new Error("socketlib não informou o usuário de origem.");
+  }
+  return dispatchAuthoritativeCommand(envelope, { callerUserId: userId });
+}
+
 export function registerAuthoritySocket() {
   if (moduleSocket) return moduleSocket;
 
@@ -65,6 +74,10 @@ export function registerAuthoritySocket() {
   moduleSocket.register(
     "request.create",
     remoteCreateRequest
+  );
+  moduleSocket.register(
+    "command.execute",
+    remoteExecuteCommand
   );
 
   console.info(`[${MODULE_ID}] socketlib registrado.`);

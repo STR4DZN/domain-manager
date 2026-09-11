@@ -1,4 +1,4 @@
-﻿
+
 /* ==========================================================================
    TRANSI├ç├âO HUD T├üTICA AAA: PADR├âO LANCER / COMP/CON (UNIFICADO & DIEG├ëTICO)
    ========================================================================== */
@@ -8,32 +8,26 @@
 .dm-hud-transition-overlay--fullscreen {
   position: absolute !important;
   inset: 0 !important;
-  z-index: 99999 !important;
+  z-index: -1 !important;
   width: 100% !important;
   height: 100% !important;
-  background: #04060a !important;
-  background-image: 
-    radial-gradient(ellipse at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
-    radial-gradient(circle at center, transparent 50%, rgba(239, 68, 68, 0.04) 100%) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  padding: 1.25rem 1.75rem !important;
-  overflow: hidden !important;
+  display: none !important;
   pointer-events: none !important;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  cursor: default !important;
+  overflow: hidden !important;
   box-sizing: border-box !important;
 }
 
 .dm-hud-transition-overlay.is-active,
 .dm-hud-transition-overlay--fullscreen.is-active {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: all !important;
-  cursor: wait !important;
-  animation: dmHudTransitionFadeClean 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  cursor: default !important;
+  animation: none !important;
 }
 
 @keyframes dmHudTransitionFadeClean {
@@ -725,10 +719,11 @@
    REFINAMENTO COMPLETO: BLOQUEIO DE CLIQUES & ALINHAMENTO MILITAR DE M├ôDULOS
    ========================================================================== */
 
-/* 1. Bloquear Cliques durante o Loading / Anima├º├úo */
+/* 1. Modo Não-Bloqueante: Zero latência e cliques livres no HUD */
 .dm-hud-transition-overlay--fullscreen.is-active {
-  pointer-events: all !important; /* BLOQUEIO TOTAL: Impede qualquer clique no HUD durante a transi├º├úo */
-  cursor: wait !important;
+  display: none !important;
+  pointer-events: none !important;
+  cursor: default !important;
 }
 
 /* 2. Switcher de 2 Op├º├Áes (M├│dulos / Territ├│rios) */
@@ -838,33 +833,29 @@
 .dm-boot-welcome-overlay {
   position: absolute !important;
   inset: 0 !important;
-  background: #04060a !important;
-  background-image: 
-    radial-gradient(ellipse at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
-    radial-gradient(circle at center, transparent 50%, rgba(239, 68, 68, 0.04) 100%) !important;
-  z-index: 999999 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
+  z-index: -1 !important;
+  display: none !important;
   pointer-events: none !important;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  cursor: default !important;
   overflow: hidden !important;
-  transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
 }
 
 .dm-boot-welcome-overlay.is-active {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: all !important;
-  cursor: wait !important;
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  cursor: default !important;
+  animation: none !important;
 }
 
 .dm-boot-welcome-overlay.is-finished {
+  display: none !important;
+  pointer-events: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
-  pointer-events: none !important;
   z-index: -1 !important;
 }
 

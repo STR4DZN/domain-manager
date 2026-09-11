@@ -1,10 +1,7 @@
 import { RECORD_TYPES } from "../core/constants.js";
 import { recordIndex } from "../data/record-index.js";
 import { decodeRecord } from "../models/record-codec.js";
-import {
-  DomainManagerShellApp,
-  SHELL_SECTIONS
-} from "./shell-app.js";
+import { DomainManagerShellApp, SHELL_SECTIONS } from "./shell-app.js";
 
 export { DomainManagerShellApp as DomainManagerApp };
 
@@ -16,29 +13,19 @@ function isApplicationOpen(app) {
 }
 
 function getOrCreateApplication() {
-  if (!application || !isApplicationOpen(application)) {
-    application = new DomainManagerShellApp();
-  }
-
+  if (!application || !isApplicationOpen(application)) application = new DomainManagerShellApp();
   return application;
 }
 
 async function renderRoute({ section = null, domainUuid = undefined } = {}) {
-  const isAlreadyOpen = isApplicationOpen(application);
   const app = getOrCreateApplication();
-  if (!isAlreadyOpen) {
-    app.shouldPlayBootWelcome = true;
-  }
   app.setRoute({ section, domainUuid });
-
   try {
     return await app.render({ force: true, focus: true });
   } catch (error) {
-    console.error("Domain Manager | Falha ao abrir o shell:", error);
+    console.error("Domain Manager | Falha ao abrir o app:", error);
     application = null;
-    globalThis.ui?.notifications?.error?.(
-      `Falha ao abrir Domain Manager: ${error.message}`
-    );
+    globalThis.ui?.notifications?.error?.(`Falha ao abrir Domain Manager: ${error.message}`);
     return null;
   }
 }
@@ -48,14 +35,11 @@ export function getDomainManagerApp() {
 }
 
 export function openDomainManager() {
-  return renderRoute();
+  return renderRoute({ section: SHELL_SECTIONS.DASHBOARD });
 }
 
 export function openDomain(uuid) {
-  return renderRoute({
-    section: SHELL_SECTIONS.DOMAINS,
-    domainUuid: uuid ?? null
-  });
+  return renderRoute({ section: "overview", domainUuid: uuid ?? null });
 }
 
 export function openDashboard() {
@@ -63,50 +47,33 @@ export function openDashboard() {
 }
 
 export function openMyDomain() {
-  const domains = recordIndex
-    .list(RECORD_TYPES.DOMAIN)
-    .map(decodeRecord);
-
-  const controlledDomain = domains.find((domain) =>
-    domain.data?.governance?.controllers?.includes(game.user.id)
-  );
-
-  const visibleFallback = domains.find((domain) =>
-    game.user.isGM
-    || domain.document.testUserPermission(
-      game.user,
-      CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
-    )
-  );
-
-  return renderRoute({
-    section: SHELL_SECTIONS.DOMAINS,
-    domainUuid: controlledDomain?.uuid ?? visibleFallback?.uuid ?? null
-  });
+  const domains = recordIndex.list(RECORD_TYPES.DOMAIN).map(decodeRecord).filter(Boolean);
+  const controlled = domains.find((domain) => domain.data?.governance?.controllers?.includes(game.user.id));
+  const fallback = domains.find((domain) => game.user.isGM || domain.document.testUserPermission(
+    game.user,
+    CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
+  ));
+  return renderRoute({ section: "overview", domainUuid: controlled?.uuid ?? fallback?.uuid ?? null });
 }
 
 export function openAdvanceRun() {
-  return renderRoute({ section: SHELL_SECTIONS.ADVANCE });
+  return renderRoute({ section: SHELL_SECTIONS.SYSTEM });
 }
 
 export function openSimulationPreview() {
-  return renderRoute({ section: SHELL_SECTIONS.SIMULATION });
+  return renderRoute({ section: SHELL_SECTIONS.SYSTEM });
 }
 
 export function rollDomainEvent(uuid = null) {
-  return renderRoute({
-    section: SHELL_SECTIONS.EVENTS,
-    domainUuid: uuid
-  });
+  return renderRoute({ section: SHELL_SECTIONS.OPERATIONS, domainUuid: uuid });
 }
 
 export function openHelp() {
-  return renderRoute({ section: SHELL_SECTIONS.HELP });
+  return renderRoute({ section: SHELL_SECTIONS.SYSTEM });
 }
 
 export function invalidateDomainManager() {
   if (!isApplicationOpen(application) || invalidationScheduled) return;
-
   invalidationScheduled = true;
   queueMicrotask(() => {
     invalidationScheduled = false;

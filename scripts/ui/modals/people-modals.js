@@ -325,7 +325,7 @@ export class PeopleModals {
 
   /* --- Dossiê Tático & Bio-Monitor --- */
   static openNotableDossier(app, event, target) {
-    app._shouldAnimateNextRender = true;
+    app._shouldAnimateNextRender = false;
     const localId = getActionAttr(target, "local-id");
     if (!localId) return;
     tacticalAudio.playTargetLock();
@@ -335,7 +335,7 @@ export class PeopleModals {
   }
 
   static closeNotableDossier(app) {
-    app._shouldAnimateNextRender = true;
+    app._shouldAnimateNextRender = false;
     tacticalAudio.playRelayClick();
     app.activeNotableDossierLocalId = null;
     app.selectedDossierSkillId = null;

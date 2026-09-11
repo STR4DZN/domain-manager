@@ -8,12 +8,21 @@ import { DomainModel } from "./domain-model.js";
 import { RequestModel } from "./request-model.js";
 import { ProjectModel } from "./project-model.js";
 import { MissionModel } from "./mission-model.js";
+import { SquadModel } from "./squad-model.js";
+import { PersonModel } from "./person-model.js";
+import { StructureModel } from "./structure-model.js";
+import { AgreementModel } from "./agreement-model.js";
+import { normalizeEntityId } from "../core/entity-contracts.js";
 
 const MODEL_BY_TYPE = Object.freeze({
   [RECORD_TYPES.DOMAIN]: DomainModel,
   [RECORD_TYPES.REQUEST]: RequestModel,
   [RECORD_TYPES.PROJECT]: ProjectModel,
-  [RECORD_TYPES.MISSION]: MissionModel
+  [RECORD_TYPES.MISSION]: MissionModel,
+  [RECORD_TYPES.SQUAD]: SquadModel,
+  [RECORD_TYPES.PERSON]: PersonModel,
+  [RECORD_TYPES.STRUCTURE]: StructureModel,
+  [RECORD_TYPES.AGREEMENT]: AgreementModel
 });
 
 function modelFor(recordType) {
@@ -31,7 +40,9 @@ export function normalizeRecordData(recordType, data) {
   const Model = modelFor(recordType);
   const model = new Model(foundry.utils.deepClone(data ?? {}));
   model.validate({ strict: true });
-  return model.toObject(true);
+  const normalized = model.toObject(true);
+  normalized.entityId = normalizeEntityId(normalized.entityId, { recordType });
+  return normalized;
 }
 
 export function getRecordMeta(document) {
@@ -58,7 +69,7 @@ export function decodeRecord(document) {
   if (meta.schemaVersion !== SCHEMA_VERSION) {
     throw new ModuleError(
       ERROR_CODES.VALIDATION,
-      `Schema ${meta.schemaVersion} não suportado no T0. Esperado: ${SCHEMA_VERSION}.`
+      `Schema ${meta.schemaVersion} não suportado. Esperado: ${SCHEMA_VERSION}. Execute as migrações do módulo antes de carregar o registro.`
     );
   }
 
