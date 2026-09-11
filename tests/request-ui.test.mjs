@@ -9,24 +9,24 @@ const viewsCss = fs.readFileSync(new URL("../styles/app/views.css", import.meta.
 
 test("Requests é ferramenta do workspace Command com queue, dossier e dois consoles", () => {
   for (const token of [
-    'id: "requests", label: "Requests"',
+    'id: "requests", label: "Solicitações"',
     'preferred: ["overview", "requests", "history"]'
   ]) assert.equal(nav.includes(token), true, `navegação ausente: ${token}`);
   for (const token of [
-    "COMMAND // REQUEST CHANNEL",
-    "Request Queue",
-    "REQUEST DOSSIER",
+    "GESTÃO // SOLICITAÇÕES",
+    "dm-request-board",
+    "DETALHES DA SOLICITAÇÃO",
     'id="dm-request-create-form"',
     'id="dm-request-review-form"',
     'data-action="selectRequest"',
     'data-action="openRequestCreate"',
     'data-action="openRequestReview"',
     'data-action="createMissionFromRequest"',
-    "CREATE MISSION",
+    "CRIAR MISSÃO",
     'data-action="withdrawRequest"',
-    "WITHDRAW REQUEST",
+    "RETIRAR SOLICITAÇÃO",
     'data-action="fulfillRequest"',
-    "MARK FULFILLED"
+    "MARCAR COMO CUMPRIDA"
   ]) assert.equal(template.includes(token), true, `Request UI ausente: ${token}`);
   assert.equal(viewsCss.includes(".dm-request-board"), true);
   assert.equal(viewsCss.includes(".dm-request-inspector__facts"), true);
@@ -55,8 +55,8 @@ test("Request UI usa somente Command Kernel para create/review", () => {
 });
 
 test("UI não promete fulfillment automático", () => {
-  assert.equal(template.includes("não há fulfillment automático nesta etapa"), true);
-  assert.equal(template.includes("não cria Mission, Project ou Agreement automaticamente"), true);
+  assert.equal(template.includes("não há conclusão automática nesta etapa"), true);
+  assert.equal(template.includes("não cria missão, projeto ou acordo automaticamente"), true);
 });
 
 
@@ -75,7 +75,7 @@ test("lifecycle UI só oferece withdraw ao solicitante e fulfill quando há evid
   assert.equal(shell.includes('linkedMission?.data.status === "resolved"'), true);
   assert.equal(template.includes('data-action="withdrawRequest"'), true);
   assert.equal(template.includes('data-action="fulfillRequest"'), true);
-  assert.equal(template.includes("MISSION STATE"), true);
+  assert.equal(template.includes("ESTADO DA MISSÃO"), true);
 });
 
 

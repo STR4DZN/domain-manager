@@ -23,12 +23,12 @@ test("Civil Control expõe summary, cohorts e workforce matrix como ferramentas 
     "dm-cohort-table",
     "dm-cohort-row",
     "dm-workforce-board",
-    "WORKFORCE MATRIX",
-    "Structure Staffing",
+    "ALOCAÇÃO DE TRABALHO",
+    "Distribuição por Estrutura",
     "workforceCoverageDisplay"
   ]) assert.ok(template.includes(marker), `Civil Control sem ${marker}`);
 
-  for (const label of ["POPULATION", "MORALE", "WORKFORCE", "ASSIGNED", "AVAILABLE"]) {
+  for (const label of ["POPULAÇÃO", "MORAL", "FORÇA DE TRABALHO", "ATRIBUÍDOS", "DISPONÍVEL"]) {
     assert.ok(template.includes(`<small>${label}</small>`), `summary sem ${label}`);
   }
 });
@@ -73,7 +73,7 @@ test("Civil Control possui linguagem visual app-style e responsiva sem ressuscit
 
 test("Personnel continua master-detail e editor expõe estado sistêmico real", () => {
   for (const marker of [
-    "dm-personnel-table", "dm-personnel-row", "NEW PERSON", "selectPerson", "MORALE", "CONDITION", "PERSON / V8"
+    "dm-people-layout", "dm-person-list-row", "NOVA PESSOA", "selectPerson", "Moral", "Condição"
   ]) assert.ok(template.includes(marker), `Personnel sem ${marker}`);
   assert.match(template, /name="squadEntityId"/);
   assert.match(template, /name="actorUuid"/);

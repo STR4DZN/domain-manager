@@ -8,6 +8,7 @@ import { buildStrategicDomainLedger } from "../features/economy/strategic.js";
 import { buildDomainProjectReservations } from "../features/projects/selectors.js";
 import { calculateDomainRisks } from "../features/risks/rules.js";
 import { createDomainAction } from "../features/domains/actions.js";
+import { updateDomainMediaFields } from "../features/domains/media.js";
 import {
   createSquadAction,
   patchSquadAction,
@@ -95,6 +96,14 @@ function stateLabel(value) {
   const labels = {
     active: "Ativo",
     inactive: "Inativo",
+    away: "Ausente",
+    injured: "Ferido",
+    unavailable: "Indisponível",
+    missing: "Desaparecido",
+    dead: "Morto",
+    retired: "Aposentado",
+    disbanded: "Dissolvido",
+    unknown: "Desconhecido",
     lost: "Perdido",
     destroyed: "Destruído",
     archived: "Arquivado",
@@ -125,6 +134,48 @@ function stateLabel(value) {
     vassal: "Vassalo"
   };
   return labels[value] ?? titleCase(value || "indefinido");
+}
+
+const DOMAIN_NATURE_LABELS = Object.freeze({
+  physical: "Físico",
+  organization: "Organização",
+  hybrid: "Híbrido",
+  abstract: "Abstrato"
+});
+
+const MANAGEMENT_PRESET_LABELS = Object.freeze({
+  squad: "Unidade",
+  outpost: "Posto avançado",
+  base: "Base",
+  "strategic-organization": "Organização estratégica",
+  custom: "Personalizado"
+});
+
+const CAPABILITY_LABELS = Object.freeze({
+  economy: "Recursos",
+  population: "População",
+  structures: "Infraestrutura",
+  projects: "Projetos",
+  squads: "Forças",
+  missions: "Missões",
+  security: "Defesa",
+  people: "Pessoas",
+  intel: "Inteligência",
+  diplomacy: "Relações",
+  territory: "Território",
+  logistics: "Logística"
+});
+
+function domainNatureLabel(value) {
+  return DOMAIN_NATURE_LABELS[value] ?? titleCase(value || "indefinido");
+}
+
+function managementPresetLabel(value) {
+  return MANAGEMENT_PRESET_LABELS[value] ?? titleCase(value || "personalizado");
+}
+
+function capabilityLabel(value) {
+  return CAPABILITY_LABELS[value] ?? titleCase(value);
 }
 
 function referenceMatchesDomain(reference, domain) {
@@ -203,9 +254,9 @@ const REQUEST_STATUS_LABELS = Object.freeze({
 const REQUEST_HANDLING_LABELS = Object.freeze({
   none: "Sem encaminhamento",
   immediate: "Ação imediata",
-  project: "Project",
-  mission: "Mission",
-  agreement: "Agreement"
+  project: "Projeto",
+  mission: "Missão",
+  agreement: "Acordo"
 });
 function requestTone(status) {
   if (["approved", "fulfilled"].includes(status)) return "nominal";
@@ -230,7 +281,7 @@ function buildResourceRows(domain, catalog, structures = []) {
     ...record.data,
     uuid: record.uuid,
     entityId: record.data?.entityId,
-    name: record.document?.name ?? "Structure"
+    name: record.document?.name ?? "Estrutura"
   }));
   const ledger = buildStrategicDomainLedger({
     domain: domain.data,
@@ -251,12 +302,12 @@ function buildResourceRows(domain, catalog, structures = []) {
     const precision = Number(definition.precision ?? 0);
     const policy = entry.policy ?? { criticalFloor: 0, reserveTarget: 0, storageCapacity: 0 };
     const policyState = entry.overReserved || entry.pressure
-      ? "SHORTFALL"
+      ? "INSUFICIENTE"
       : entry.critical
-        ? "CRITICAL"
+        ? "CRÍTICO"
         : entry.belowReserve
-          ? "BELOW RESERVE"
-          : "NOMINAL";
+          ? "ABAIXO DA RESERVA"
+          : "NORMAL";
     return {
       ...entry,
       name: definition.name ?? entry.resourceId,
@@ -331,6 +382,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   selectedDomainUuid = null;
   searchQuery = "";
   isCreateDomainOpen = false;
+  isDomainMediaOpen = false;
   isCreateSquadOpen = false;
   editingSquadUuid = null;
   supplySquadUuid = null;
@@ -393,6 +445,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openCreateDomain: DomainManagerShellApp.onOpenCreateDomain,
       cancelCreateDomain: DomainManagerShellApp.onCancelCreateDomain,
       submitCreateDomain: DomainManagerShellApp.onSubmitCreateDomain,
+      openDomainMedia: DomainManagerShellApp.onOpenDomainMedia,
+      closeDomainMedia: DomainManagerShellApp.onCloseDomainMedia,
+      browseImageField: DomainManagerShellApp.onBrowseImageField,
+      submitDomainMedia: DomainManagerShellApp.onSubmitDomainMedia,
       openCreateSquad: DomainManagerShellApp.onOpenCreateSquad,
       cancelCreateSquad: DomainManagerShellApp.onCancelCreateSquad,
       submitCreateSquad: DomainManagerShellApp.onSubmitCreateSquad,
@@ -608,13 +664,31 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ...buildDomainCard(selectedDomain, { selectedUuid: selectedDomain.uuid }),
       stateLabel: stateLabel(selectedDomain.data.identity?.state),
       stateTone: statusTone(selectedDomain.data.identity?.state),
-      natureLabel: titleCase(selectedDomain.data.identity?.nature),
-      presetLabel: titleCase(selectedDomain.data.management?.preset),
+      natureLabel: domainNatureLabel(selectedDomain.data.identity?.nature),
+      presetLabel: managementPresetLabel(selectedDomain.data.management?.preset),
       entityIdShort: selectedDomain.data.entityId?.slice(-10)?.toUpperCase() ?? "—",
+      visuals: {
+        bannerImg: "",
+        crestImg: "",
+        image: "",
+        imageFit: "cover",
+        imagePosition: "center",
+        imageHeight: 260,
+        imagePosX: 50,
+        imagePosY: 50,
+        imageZoom: 100,
+        themeColorHex: "",
+        ...(selectedDomain.data.visuals ?? {})
+      },
       capabilities: Object.entries(selectedDomain.data.management?.capabilities ?? {})
         .filter(([, enabled]) => enabled)
-        .map(([key]) => titleCase(key))
+        .map(([key]) => capabilityLabel(key))
     } : null;
+    const domainImageFitOptions = ["cover", "contain"].map((value) => ({
+      value,
+      label: value === "contain" ? "Conter" : "Preencher",
+      selected: (selectedDomain?.data?.visuals?.imageFit ?? "cover") === value
+    }));
 
     const canManageProjects = canManageDomainProjects(selectedDomain);
     if (this.selectedProjectUuid && !related.projects.some((record) => record.uuid === this.selectedProjectUuid)) {
@@ -713,7 +787,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }));
     const projectCostModeOptions = ["reserved", "progressive"].map((value) => ({
       value,
-      label: value === "reserved" ? "Reserved" : "Progressive",
+      label: value === "reserved" ? "Reservado" : "Progressivo",
       selected: (editingProjectCost?.mode ?? "reserved") === value
     }));
 
@@ -839,7 +913,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }),
         equipmentKinds: record.data.equipment?.length ?? 0,
         compositionGroups: record.data.composition?.length ?? 0,
-        currentMissionName: currentMissionDocument?.name ?? "STANDBY"
+        currentMissionName: currentMissionDocument?.name ?? "SEM MISSÃO"
       };
     });
 
@@ -1147,7 +1221,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }));
     const populationCountModeOptions = ["direct", "inclusive"].map((value) => ({
       value,
-      label: value === "direct" ? "Direct" : "Inclusive",
+      label: value === "direct" ? "Direta" : "Inclusiva",
       selected: population.countMode === value
     }));
 
@@ -1233,7 +1307,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const value = Number(entry.value ?? 0);
       return {
         ...entry,
-        domainName: domain?.document?.name ?? "Unknown node",
+        domainName: domain?.document?.name ?? "Domínio desconhecido",
         domainEntityId: domain?.data?.entityId ?? entry.domain?.entityId ?? "—",
         value,
         valueDisplay: `${value}%`,
@@ -1310,7 +1384,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const agreements = related.agreements.map((record) => {
       const parties = (record.data.parties ?? []).map((party) => {
         const domain = resolveDomainByReference(party, domains);
-        return { reference: party, name: domain?.document?.name ?? party.entityId ?? party.uuid ?? "Unknown party", entityId: domain?.data?.entityId ?? party.entityId ?? "—" };
+        return { reference: party, name: domain?.document?.name ?? party.entityId ?? party.uuid ?? "Contraparte desconhecida", entityId: domain?.data?.entityId ?? party.entityId ?? "—" };
       });
       const transfers = (record.data.transfers ?? []).map((transfer) => {
         const definition = catalog?.resources?.find((resource) => resource.id === transfer.resourceId);
@@ -1368,11 +1442,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         categoryLabel: INTEL_CATEGORY_LABELS[entry.category] ?? stateLabel(entry.category),
         credibilityLabel: INTEL_CREDIBILITY_LABELS[entry.credibility] ?? stateLabel(entry.credibility),
         visibilityLabel: INTEL_VISIBILITY_LABELS[entry.visibility] ?? stateLabel(entry.visibility),
-        targetName: target?.document?.name ?? (entry.targetDomain ? "Unknown target" : "General / no target"),
+        targetName: target?.document?.name ?? (entry.targetDomain ? "Alvo desconhecido" : "Geral / sem alvo"),
         targetEntityId: target?.data?.entityId ?? entry.targetDomain?.entityId ?? "—",
         tone: credibilityTone,
-        sourceLabel: entry.source || "UNATTRIBUTED",
-        tagLabel: (entry.tags ?? []).join(" · ") || "NO TAGS"
+        sourceLabel: entry.source || "SEM FONTE",
+        tagLabel: (entry.tags ?? []).join(" · ") || "SEM MARCADORES"
       };
     });
     const selectedIntel = intel.find((entry) => entry.selected) ?? null;
@@ -1436,11 +1510,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       domains: domainCards,
       domainCount: domains.length,
       selectedDomain: domainInfo,
+      domainImageFitOptions,
       domainData: selectedDomain?.data ?? null,
       hasSelectedDomain: Boolean(selectedDomain),
       searchQuery: this.searchQuery,
       inspectorOpen: this.isInspectorOpen,
       isCreateDomainOpen: this.isCreateDomainOpen,
+      isDomainMediaOpen: this.isDomainMediaOpen,
       isCreateSquadOpen: this.isCreateSquadOpen,
       isCreateMissionOpen: this.isCreateMissionOpen,
       preparingMission,
@@ -1564,9 +1640,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       system: {
         authority: isAuthorityReady() ? "ONLINE" : "OFFLINE",
         authorityTone: isAuthorityReady() ? "nominal" : "critical",
-        primary: isPrimaryActiveGM() ? "PRIMARY" : game.user.isGM ? "SECONDARY" : "CLIENT",
+        primary: isPrimaryActiveGM() ? "PRINCIPAL" : game.user.isGM ? "SECUNDÁRIO" : "JOGADOR",
         activeGM: game.users.activeGM?.name ?? "Nenhum",
-        timeProvider: timekeeping.providerName ?? timekeeping.provider ?? "Foundry World Time",
+        timeProvider: timekeeping.providerName ?? timekeeping.provider ?? "Tempo do Mundo do Foundry",
         timeConnected: timekeeping.available ?? timekeeping.connected ?? false
       }
     };
@@ -1645,11 +1721,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
       this.selectedRequestUuid = result.uuid ?? null;
       this.isRequestCreateOpen = false;
-      ui.notifications.info("Request enviada ao Command Queue.");
+      ui.notifications.info("Solicitação enviada para análise.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao criar Request", error);
-      ui.notifications.error(error.message ?? "Falha ao criar Request.");
+      ui.notifications.error(error.message ?? "Falha ao criar solicitação.");
     } finally {
       this.isRequestBusy = false;
     }
@@ -1694,11 +1770,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.reviewingRequestUuid = null;
-      ui.notifications.info("Decisão da Request sincronizada.");
+      ui.notifications.info("Decisão da solicitação atualizada.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao revisar Request", error);
-      ui.notifications.error(error.message ?? "Falha ao revisar Request.");
+      ui.notifications.error(error.message ?? "Falha ao revisar solicitação.");
     } finally {
       this.isRequestBusy = false;
     }
@@ -1721,11 +1797,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           expectedModifiedTime: request.document?._stats?.modifiedTime ?? null
         }
       });
-      ui.notifications.info(result.reused ? "Mission já vinculada à Request." : "Mission criada a partir da Request.");
+      ui.notifications.info(result.reused ? "Missão já vinculada à solicitação." : "Missão criada a partir da solicitação.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao materializar Request como Mission", error);
-      ui.notifications.error(error.message ?? "Falha ao criar Mission a partir da Request.");
+      ui.notifications.error(error.message ?? "Falha ao criar missão a partir da solicitação.");
     } finally {
       this.isRequestBusy = false;
     }
@@ -1749,11 +1825,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           expectedModifiedTime: request.document?._stats?.modifiedTime ?? null
         }
       });
-      ui.notifications.info("Request retirada pelo solicitante.");
+      ui.notifications.info("Solicitação retirada pelo solicitante.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao retirar Request", error);
-      ui.notifications.error(error.message ?? "Falha ao retirar Request.");
+      ui.notifications.error(error.message ?? "Falha ao retirar solicitação.");
     } finally {
       this.isRequestBusy = false;
     }
@@ -1776,11 +1852,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           expectedModifiedTime: request.document?._stats?.modifiedTime ?? null
         }
       });
-      ui.notifications.info("Request marcada como cumprida.");
+      ui.notifications.info("Solicitação marcada como cumprida.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao concluir lifecycle da Request", error);
-      ui.notifications.error(error.message ?? "Falha ao marcar Request como cumprida.");
+      ui.notifications.error(error.message ?? "Falha ao marcar solicitação como cumprida.");
     } finally {
       this.isRequestBusy = false;
     }
@@ -1839,7 +1915,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       if (!isCreate) {
         const projectDocument = recordIndex.get(RECORD_TYPES.PROJECT, this.editingProjectUuid);
         const project = projectDocument ? decodeRecord(projectDocument) : null;
-        if (!project || project.data.domainUuid !== domain.uuid) throw new Error("Project não pertence ao Domain selecionado.");
+        if (!project || project.data.domainUuid !== domain.uuid) throw new Error("O projeto não pertence ao domínio selecionado.");
         payload.project = entityReference(project);
       } else {
         delete payload.blockedReason;
@@ -1851,11 +1927,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
       this.selectedProjectUuid = result.uuid ?? this.selectedProjectUuid;
       this.editingProjectUuid = null;
-      ui.notifications.info(isCreate ? "Project registrado no pipeline." : "Project sincronizado.");
+      ui.notifications.info(isCreate ? "Projeto registrado." : "Projeto atualizado.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar Project", error);
-      ui.notifications.error(error.message ?? "Falha ao salvar Project.");
+      ui.notifications.error(error.message ?? "Falha ao salvar projeto.");
     } finally {
       this.isProjectBusy = false;
     }
@@ -1915,11 +1991,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.editingProjectCostId = null;
-      ui.notifications.info("Plano de custos do Project sincronizado.");
+      ui.notifications.info("Plano de custos do projeto atualizado.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar custo de Project", error);
-      ui.notifications.error(error.message ?? "Falha ao salvar custo de Project.");
+      ui.notifications.error(error.message ?? "Falha ao salvar custo do projeto.");
     } finally {
       this.isProjectBusy = false;
     }
@@ -1940,11 +2016,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: { domain: entityReference(domain), project: entityReference(project), localId }
       });
       if (this.editingProjectCostId === localId) this.editingProjectCostId = null;
-      ui.notifications.info("Custo removido do Project.");
+      ui.notifications.info("Custo removido do projeto.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao remover custo de Project", error);
-      ui.notifications.error(error.message ?? "Falha ao remover custo de Project.");
+      ui.notifications.error(error.message ?? "Falha ao remover custo do projeto.");
     } finally {
       this.isProjectBusy = false;
     }
@@ -1987,11 +2063,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.isSecurityEditorOpen = false;
-      ui.notifications.info(`Defense Grid de ${domain.document.name} sincronizado.`);
+      ui.notifications.info(`Defesa de ${domain.document.name} atualizada.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao configurar Defense", error);
-      ui.notifications.error(error.message ?? "Falha ao configurar Defense.");
+      ui.notifications.error(error.message ?? "Falha ao configurar defesa.");
     } finally {
       this.isSecurityBusy = false;
     }
@@ -2096,11 +2172,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.isPopulationConfigOpen = false;
-      ui.notifications.info(`Population policy de ${domain.document.name} sincronizada.`);
+      ui.notifications.info(`Política de população de ${domain.document.name} atualizada.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao configurar Population", error);
-      ui.notifications.error(error.message ?? "Falha ao configurar Population.");
+      ui.notifications.error(error.message ?? "Falha ao configurar população.");
     } finally {
       this.isPopulationBusy = false;
     }
@@ -2144,11 +2220,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.editingPopulationGroupId = null;
-      ui.notifications.info("Cohort sincronizado com Civil Control.");
+      ui.notifications.info("Grupo populacional atualizado.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar cohort", error);
-      ui.notifications.error(error.message ?? "Falha ao salvar cohort.");
+      ui.notifications.error(error.message ?? "Falha ao salvar grupo populacional.");
     } finally {
       this.isPopulationBusy = false;
     }
@@ -2168,11 +2244,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: { domain: entityReference(domain), localId }
       });
       this.editingPopulationGroupId = null;
-      ui.notifications.info("Cohort removido do Civil Control.");
+      ui.notifications.info("Grupo populacional removido.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao remover cohort", error);
-      ui.notifications.error(error.message ?? "Falha ao remover cohort.");
+      ui.notifications.error(error.message ?? "Falha ao remover grupo populacional.");
     } finally {
       this.isPopulationBusy = false;
     }
@@ -2212,11 +2288,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: { domain: entityReference(domain), allocations }
       });
       this.isWorkforceOpen = false;
-      ui.notifications.info("Workforce matrix sincronizada.");
+      ui.notifications.info("Distribuição da força de trabalho sincronizada.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao alocar workforce", error);
-      ui.notifications.error(error.message ?? "Falha ao alocar workforce.");
+      ui.notifications.error(error.message ?? "Falha ao distribuir força de trabalho.");
     } finally {
       this.isPopulationBusy = false;
     }
@@ -2281,11 +2357,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       }
       this.isPersonEditorOpen = false;
       this.editingPersonUuid = null;
-      ui.notifications.info("Personnel dossier sincronizado.");
+      ui.notifications.info("Cadastro da pessoa atualizado.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar Person", error);
-      ui.notifications.error(error.message ?? "Falha ao salvar Person.");
+      ui.notifications.error(error.message ?? "Falha ao salvar pessoa.");
     } finally {
       this.isPeopleBusy = false;
     }
@@ -2301,6 +2377,91 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static onClearSearch() {
     this.searchQuery = "";
     this.render({ force: true });
+  }
+
+  static onOpenDomainMedia() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    this.isDomainMediaOpen = true;
+    this.render({ force: true });
+  }
+
+  static onCloseDomainMedia() {
+    this.isDomainMediaOpen = false;
+    this.render({ force: true });
+  }
+
+  static async onBrowseImageField(event, target) {
+    const fieldName = String(target?.dataset?.field ?? "").trim();
+    if (!fieldName) return;
+    const input = this.element?.querySelector?.(`[name="${fieldName}"]`);
+    if (!input) return;
+    const Picker = globalThis.foundry?.applications?.apps?.FilePicker ?? globalThis.FilePicker;
+    if (!Picker) {
+      ui.notifications.warn("O seletor de arquivos do Foundry não está disponível.");
+      return;
+    }
+    const callback = (path) => {
+      const nextPath = String(path ?? "");
+      input.value = nextPath;
+      const EventCtor = input.ownerDocument?.defaultView?.Event ?? globalThis.Event;
+      if (EventCtor) input.dispatchEvent?.(new EventCtor("input", { bubbles: true }));
+      let preview = this.element?.querySelector?.(`[data-preview-for="${fieldName}"]`);
+      const container = this.element?.querySelector?.(`[data-preview-container-for="${fieldName}"]`);
+      if (!preview && container && nextPath) {
+        preview = input.ownerDocument.createElement("img");
+        preview.dataset.previewFor = fieldName;
+        preview.alt = "Pré-visualização";
+        container.replaceChildren(preview);
+      }
+      if (preview) {
+        preview.src = nextPath;
+        preview.hidden = !nextPath;
+      }
+    };
+    try {
+      const picker = new Picker({ type: "image", current: input.value || "", callback });
+      let result;
+      try {
+        result = picker.render?.({ force: true });
+      } catch {
+        result = picker.render?.(true);
+      }
+      if (result && typeof result.then === "function") await result;
+    } catch (error) {
+      console.error("Domain Manager | Falha ao abrir FilePicker", error);
+      ui.notifications.error("Não foi possível abrir o seletor de imagens.");
+    }
+  }
+
+  static async onSubmitDomainMedia() {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector?.("#dm-domain-media-form");
+    if (!form) return;
+    const data = new FormData(form);
+    const fields = [
+      ["visuals.bannerImg", "bannerImg"],
+      ["visuals.crestImg", "crestImg"],
+      ["visuals.image", "image"],
+      ["visuals.imageFit", "imageFit"],
+      ["visuals.imagePosition", "imagePosition"],
+      ["visuals.imageHeight", "imageHeight"],
+      ["visuals.imagePosX", "imagePosX"],
+      ["visuals.imagePosY", "imagePosY"],
+      ["visuals.imageZoom", "imageZoom"],
+      ["visuals.themeColorHex", "themeColorHex"]
+    ];
+    try {
+      const updates = fields
+        .filter(([, formName]) => data.has(formName))
+        .map(([fieldPath, formName]) => [fieldPath, data.get(formName)]);
+      await updateDomainMediaFields({ domainUuid: this.selectedDomainUuid, fields: updates });
+      this.isDomainMediaOpen = false;
+      ui.notifications.info("Aparência do domínio atualizada.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao atualizar aparência do domínio", error);
+      ui.notifications.error(error.message ?? "Falha ao atualizar aparência do domínio.");
+    }
   }
 
   static onOpenCreateDomain() {
@@ -2380,11 +2541,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
       this.isCreateSquadOpen = false;
       this.editingSquadUuid = result?.uuid ?? null;
-      ui.notifications.info(`Squad ${result?.name ?? data.get("name")} criado e indexado.`);
+      ui.notifications.info(`Unidade ${result?.name ?? data.get("name")} criada.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao criar Squad", error);
-      ui.notifications.error(error.message ?? "Falha ao criar Squad.");
+      ui.notifications.error(error.message ?? "Falha ao criar unidade.");
     } finally {
       this.isSquadBusy = false;
     }
@@ -2398,7 +2559,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const record = decodeRecord(document);
     const controllers = record.data.governance?.controllers ?? [];
     if (!game.user.isGM && !controllers.includes(game.user.id)) {
-      ui.notifications.warn("Você não controla este Squad.");
+      ui.notifications.warn("Você não controla esta unidade.");
       return;
     }
     this.editingSquadUuid = uuid;
@@ -2444,12 +2605,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           }
         });
       }
-      ui.notifications.info(`Squad ${squad.document.name} sincronizado.`);
+      ui.notifications.info(`Unidade ${squad.document.name} atualizada.`);
       this.editingSquadUuid = null;
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao atualizar Squad", error);
-      ui.notifications.error(error.message ?? "Falha ao atualizar Squad.");
+      ui.notifications.error(error.message ?? "Falha ao atualizar unidade.");
     } finally {
       this.isSquadBusy = false;
     }
@@ -2463,7 +2624,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const record = decodeRecord(document);
     const controllers = record.data.governance?.controllers ?? [];
     if (!game.user.isGM && !controllers.includes(game.user.id)) {
-      ui.notifications.warn("Você não controla este Squad.");
+      ui.notifications.warn("Você não controla esta unidade.");
       return;
     }
     this.supplySquadUuid = uuid;
@@ -2546,7 +2707,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const data = new FormData(form);
     const name = String(data.get("name") ?? "").trim();
     if (!name) {
-      ui.notifications.warn("Informe uma designação para a Mission.");
+      ui.notifications.warn("Informe um nome para a missão.");
       return;
     }
     const objectives = String(data.get("objectives") ?? "")
@@ -2568,11 +2729,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.isCreateMissionOpen = false;
-      ui.notifications.info(`Mission ${name} registrada no Mission Control.`);
+      ui.notifications.info(`Missão ${name} registrada.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao criar Mission", error);
-      ui.notifications.error(error.message ?? "Falha ao criar Mission.");
+      ui.notifications.error(error.message ?? "Falha ao criar missão.");
     } finally {
       this.isMissionBusy = false;
     }
@@ -2589,7 +2750,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const squad = decodeRecord(squadDocument);
     const controllers = squad.data.governance?.controllers ?? [];
     if (!game.user.isGM && (!mission.data.audienceUserIds?.includes(game.user.id) || !controllers.includes(game.user.id))) {
-      ui.notifications.warn("Você não possui autorização para preparar esta unidade nesta Mission.");
+      ui.notifications.warn("Você não possui autorização para preparar esta unidade nesta missão.");
       return;
     }
     this.preparingMissionUuid = missionUuid;
@@ -2690,7 +2851,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao lançar Mission", error);
-      ui.notifications.error(error.message ?? "Falha ao lançar Mission.");
+      ui.notifications.error(error.message ?? "Falha ao iniciar missão.");
     } finally {
       this.isMissionBusy = false;
     }
@@ -2703,7 +2864,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!missionDocument) return;
     const mission = decodeRecord(missionDocument);
     if (mission.data.status !== "active") {
-      ui.notifications.warn("Somente Mission ativa pode ser resolvida.");
+      ui.notifications.warn("Somente uma missão ativa pode ser resolvida.");
       return;
     }
     this.resolvingMissionUuid = missionUuid;
@@ -2756,7 +2917,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao resolver Mission", error);
-      ui.notifications.error(error.message ?? "Falha ao resolver Mission.");
+      ui.notifications.error(error.message ?? "Falha ao resolver missão.");
     } finally {
       this.isMissionBusy = false;
     }
@@ -2787,7 +2948,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const catalog = getResourceCatalogSetting();
     const name = String(data.get("name") ?? "").trim();
     if (!name) {
-      ui.notifications.warn("Informe uma designação para a Structure.");
+      ui.notifications.warn("Informe um nome para a estrutura.");
       return;
     }
 
@@ -2846,7 +3007,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
             }
           }
         });
-        ui.notifications.info(`Construção de ${name} iniciada como Project.`);
+        ui.notifications.info(`Construção de ${name} iniciada como projeto.`);
       } else {
         await executeCommandAuthoritatively({
           commandType: COMMAND_TYPES.STRUCTURE_CREATE,
@@ -2856,13 +3017,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
             condition: Number(data.get("condition") ?? 100)
           }
         });
-        ui.notifications.info(`Structure ${name} registrada.`);
+        ui.notifications.info(`Estrutura ${name} registrada.`);
       }
       this.isCreateStructureOpen = false;
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao criar Structure", error);
-      ui.notifications.error(error.message ?? "Falha ao criar Structure.");
+      ui.notifications.error(error.message ?? "Falha ao criar estrutura.");
     } finally {
       this.isStructureBusy = false;
     }
@@ -2924,12 +3085,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           }
         });
       }
-      ui.notifications.info(`${structure.document.name} sincronizada com Infrastructure Control.`);
+      ui.notifications.info(`${structure.document.name} sincronizada com a gestão de infraestrutura.`);
       this.editingStructureUuid = null;
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao atualizar Structure", error);
-      ui.notifications.error(error.message ?? "Falha ao atualizar Structure.");
+      ui.notifications.error(error.message ?? "Falha ao atualizar estrutura.");
     } finally {
       this.isStructureBusy = false;
     }
@@ -2982,11 +3143,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.isTerritoryEditorOpen = false;
-      ui.notifications.info(`Territory state de ${domain.document.name} sincronizado.`);
+      ui.notifications.info(`Território de ${domain.document.name} atualizado.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao configurar Territory", error);
-      ui.notifications.error(error.message ?? "Falha ao configurar Territory.");
+      ui.notifications.error(error.message ?? "Falha ao configurar território.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3014,7 +3175,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const targetUuid = String(data.get("targetUuid") ?? "");
     const targetDocument = targetUuid ? recordIndex.get(RECORD_TYPES.DOMAIN, targetUuid) : null;
     if (!targetDocument) {
-      ui.notifications.warn("Selecione um Domain alvo para a relação.");
+      ui.notifications.warn("Selecione um domínio alvo para a relação.");
       return;
     }
     this.isStrategicIntelBusy = true;
@@ -3033,7 +3194,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.editingRelationId = null;
-      ui.notifications.info("Diplomatic link sincronizado.");
+      ui.notifications.info("Relação diplomática sincronizada.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar relação", error);
@@ -3055,7 +3216,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: { domain: entityReference(decodeRecord(domainDocument)), localId }
       });
       this.editingRelationId = null;
-      ui.notifications.info("Diplomatic link removido.");
+      ui.notifications.info("Relação diplomática removida.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao remover relação", error);
@@ -3087,7 +3248,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const counterpartyUuid = String(data.get("counterpartyUuid") ?? "");
     const counterpartyDocument = counterpartyUuid ? recordIndex.get(RECORD_TYPES.DOMAIN, counterpartyUuid) : null;
     if (!counterpartyDocument) {
-      ui.notifications.warn("Selecione a contraparte do Agreement.");
+      ui.notifications.warn("Selecione a contraparte do acordo.");
       return;
     }
     const counterparty = decodeRecord(counterpartyDocument);
@@ -3097,14 +3258,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (resourceId && amountRaw) {
       const resource = getResourceCatalogSetting().resources?.find((entry) => entry.id === resourceId);
       if (!resource) {
-        ui.notifications.warn("Recurso do Agreement não existe no catálogo.");
+        ui.notifications.warn("O recurso do acordo não existe no catálogo.");
         return;
       }
       let amount;
       try {
         amount = parseMinorUnits(amountRaw, resource.precision ?? 0);
       } catch (error) {
-        ui.notifications.warn(error.message ?? "Quantidade do Agreement inválida.");
+        ui.notifications.warn(error.message ?? "Quantidade do acordo inválida.");
         return;
       }
       if (amount > 0) {
@@ -3140,11 +3301,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         }
       });
       this.isAgreementCreateOpen = false;
-      ui.notifications.info("Agreement registrado no Relations Matrix.");
+      ui.notifications.info("Acordo registrado.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao criar Agreement", error);
-      ui.notifications.error(error.message ?? "Falha ao criar Agreement.");
+      ui.notifications.error(error.message ?? "Falha ao criar acordo.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3162,11 +3323,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.AGREEMENT_STATUS,
         payload: { agreement: entityReference(decodeRecord(document)), status }
       });
-      ui.notifications.info(`Agreement alterado para ${stateLabel(status)}.`);
+      ui.notifications.info(`Acordo alterado para ${stateLabel(status)}.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao alterar Agreement", error);
-      ui.notifications.error(error.message ?? "Falha ao alterar Agreement.");
+      ui.notifications.error(error.message ?? "Falha ao alterar acordo.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3219,11 +3380,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
       this.selectedIntelId = result.intel?.localId ?? this.selectedIntelId;
       this.editingIntelId = null;
-      ui.notifications.info("Intel packet sincronizado.");
+      ui.notifications.info("Informação atualizada.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar Intel", error);
-      ui.notifications.error(error.message ?? "Falha ao salvar Intel.");
+      ui.notifications.error(error.message ?? "Falha ao salvar informação.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3242,11 +3403,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
       if (this.selectedIntelId === localId) this.selectedIntelId = null;
       this.editingIntelId = null;
-      ui.notifications.info("Intel packet removido.");
+      ui.notifications.info("Informação removida.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao remover Intel", error);
-      ui.notifications.error(error.message ?? "Falha ao remover Intel.");
+      ui.notifications.error(error.message ?? "Falha ao remover informação.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3263,11 +3424,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.INTEL_REVEAL,
         payload: { domain: entityReference(decodeRecord(domainDocument)), localId }
       });
-      ui.notifications.info("Intel packet revelado ao canal público.");
+      ui.notifications.info("Informação revelada ao público.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao revelar Intel", error);
-      ui.notifications.error(error.message ?? "Falha ao revelar Intel.");
+      ui.notifications.error(error.message ?? "Falha ao revelar informação.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3279,7 +3440,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isAdvanceBusy = true;
     try {
       const result = await executeAdvanceRun({ deltaTicks: ticks });
-      ui.notifications.info(`Simulação avançada em ${ticks} tick(s).`);
+      ui.notifications.info(`Simulação avançada em ${ticks} ciclo(s).`);
       console.info("Domain Manager | Advance result", result);
       await this.render({ force: true });
     } catch (error) {

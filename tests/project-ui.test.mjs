@@ -20,10 +20,10 @@ test("Projects Advanced usa master-detail selecionável e inspector contextual",
   const block = projectViewBlock();
   assert.match(block, /data-action="selectProject"/);
   assert.match(block, /data-project-uuid="\{\{uuid\}\}"/);
-  assert.match(template, /PROJECT DOSSIER/);
-  assert.match(template, /EXECUTION VECTOR/);
-  assert.match(template, /COST PLAN/);
-  assert.match(template, /LINKED ASSETS/);
+  assert.match(template, /DETALHES DO PROJETO/);
+  assert.match(template, /PROGRESSO/);
+  assert.match(template, /PLANO DE CUSTOS/);
+  assert.match(template, /ESTRUTURAS VINCULADAS/);
   assert.match(views, /\.dm-project-row\.is-selected/);
   assert.match(views, /\.dm-project-inspector__costs/);
 });
@@ -40,7 +40,7 @@ test("Projects Advanced despacha todas as mutações pelo Command Kernel", () =>
 test("UI não expõe conclusão manual de Project", () => {
   const block = projectViewBlock();
   assert.doesNotMatch(block, /completeProject|complete-project|COMPLETE PROJECT|CONCLUIR PROJECT/i);
-  assert.match(template, /SIMULATION OWNS COMPLETION/);
+  assert.match(template, /A SIMULAÇÃO CONTROLA A CONCLUSÃO/);
   assert.doesNotMatch(template, /data-action="[^"]*(?:completeProject|complete-project)[^"]*"/i);
 });
 
@@ -48,7 +48,7 @@ test("plano de custos fica atrás de editor dedicado e guardrail de progresso", 
   assert.match(template, /id="dm-project-cost-form"/);
   assert.match(template, /data-action="openProjectCostEditor"/);
   assert.match(template, /data-action="removeProjectCost"/);
-  assert.match(template, /COST PLAN IMMUTABILITY/);
+  assert.match(template, /O plano de custos pode ser alterado apenas antes do primeiro progresso\./);
   assert.match(shell, /Number\(project\.data\.work\?\.completed \?\? 0\) > 0/);
 });
 

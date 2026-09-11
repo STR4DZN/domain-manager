@@ -10,6 +10,7 @@ const baseCss = fs.readFileSync(path.join(root, "styles/app/base.css"), "utf8");
 const navCss = fs.readFileSync(path.join(root, "styles/app/navigation.css"), "utf8");
 const viewsCss = fs.readFileSync(path.join(root, "styles/app/views.css"), "utf8");
 const usabilityCss = fs.readFileSync(path.join(root, "styles/app/usability.css"), "utf8");
+const recoveryCss = fs.readFileSync(path.join(root, "styles/app/recovery.css"), "utf8");
 
 test("Presentation Reset remove a anatomia antiga de rail + entity deck + tab bar", () => {
   for (const legacy of ["dm-command-rail", "dm-entity-deck", "dm-domain-tabs", "dm-domain-tab"]) {
@@ -72,13 +73,15 @@ test("command consoles usam a mesma linguagem do app e não dialogs genéricos",
 
 
 
-test("Personnel usa diretório master-detail e inspector contextual em vez de card grid", () => {
-  for (const marker of ["dm-personnel-overview", "dm-personnel-table", "dm-personnel-row", "dm-person-inspector__hero", "dm-person-inspector__facts"]) {
-    assert.ok(template.includes(marker), `estrutura Personnel ausente: ${marker}`);
+test("Pessoas usa diretório master-detail explícito em vez de card grid ou inspector obrigatório", () => {
+  for (const marker of ["dm-people-layout", "dm-people-directory", "dm-person-list-row", "dm-person-profile", "dm-person-profile__portrait"]) {
+    assert.ok(template.includes(marker), `estrutura Pessoas ausente: ${marker}`);
   }
-  assert.ok(viewsCss.includes(".dm-personnel-table"));
-  assert.ok(navCss.includes(".dm-person-inspector__hero"));
+  for (const selector of [".dm-people-layout", ".dm-people-directory", ".dm-person-list-row", ".dm-person-profile"]) {
+    assert.ok(recoveryCss.includes(selector), `selector de recuperação ausente: ${selector}`);
+  }
   assert.equal(template.includes("dm-person-card"), false);
+  assert.ok(recoveryCss.includes('.dm-active-view--people .dm-inspector'));
 });
 
 test("shell abre em canvas realista e responde à largura real da janela", () => {

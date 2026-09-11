@@ -9,10 +9,10 @@ const { calculateDomainRisks } = await import("../scripts/features/risks/rules.j
 
 test("Defense Grid expõe estado efetivo, riscos e Command Console", () => {
   for (const token of [
-    "CONFIGURE DEFENSE",
-    "STRATEGIC PRESSURE",
-    "SCARCITY RISK",
-    "UNREST RISK",
+    "CONFIGURAR DEFESA",
+    "RISCOS",
+    "RISCO DE ESCASSEZ",
+    "RISCO DE INSTABILIDADE",
     'id="dm-security-form"',
     'name="defenseRating"',
     'name="guardCount"',

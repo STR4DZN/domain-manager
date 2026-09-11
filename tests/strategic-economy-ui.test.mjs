@@ -19,7 +19,7 @@ test("Strategic Economy UI usa ledger consolidado e não o ledger legado", () =>
 });
 
 test("Strategic Economy expõe matriz operacional de oito canais e policy console", () => {
-  for (const label of ["RESOURCE", "STOCK", "AVAILABLE", "NET/T", "RESERVE", "CAPACITY", "AUTONOMY", "STATE"]) {
+  for (const label of ["RECURSO", "ESTOQUE", "DISPONÍVEL", "SALDO/T", "RESERVA", "CAPACIDADE", "AUTONOMIA", "ESTADO"]) {
     assert.ok(template.includes(`<span>${label}</span>`), `coluna econômica ausente: ${label}`);
   }
   for (const action of ["openEconomyConfig", "closeEconomyConfig", "submitEconomyConfig"]) {

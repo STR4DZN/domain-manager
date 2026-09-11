@@ -29,7 +29,7 @@ test("Diplomacy usa worklist métrica e Agreements independentes", () => {
 });
 
 test("Intel usa worklist/master-detail e não card gallery", () => {
-  for (const marker of ["dm-intel-board", "dm-intel-row", "INTELLIGENCE DOSSIER", "selectedIntel", "dm-intel-inspector__facts"]) {
+  for (const marker of ["dm-intel-board", "dm-intel-row", "DETALHES DA INFORMAÇÃO", "selectedIntel", "dm-intel-inspector__facts"]) {
     assert.ok(template.includes(marker), `Intel master-detail ausente: ${marker}`);
   }
   assert.equal(template.includes("dm-intel-card"), false);

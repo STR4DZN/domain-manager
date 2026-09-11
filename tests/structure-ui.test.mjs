@@ -58,10 +58,10 @@ test("Infrastructure Control possui linguagem visual própria e matriz econômic
 });
 
 test("Infrastructure Control comunica vínculo Project e vetores por tick", () => {
-  assert.match(template, /BASE \/\/ INFRASTRUCTURE CONTROL/);
-  assert.match(template, /LINKED PROJECT/);
-  assert.match(template, /MAINT \/ T/);
-  assert.match(template, /OUTPUT \/ T/);
-  assert.match(template, /PROJECT CONTRACT/);
+  assert.match(template, /BASE \/\/ INFRAESTRUTURA/);
+  assert.match(template, /PROJETO VINCULADO/);
+  assert.match(template, /MANUTENÇÃO \/ T/);
+  assert.match(template, /PRODUÇÃO \/ T/);
+  assert.match(template, /VÍNCULO COM PROJETO/);
   assert.match(template, /activeProject|project\.progressDisplay|project\.statusLabel/);
 });

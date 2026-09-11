@@ -10,7 +10,8 @@ const CSS_FILES = [
   "styles/app/components.css",
   "styles/app/views.css",
   "styles/app/dialogs.css",
-  "styles/app/usability.css"
+  "styles/app/usability.css",
+  "styles/app/recovery.css"
 ];
 
 export function buildCss() {

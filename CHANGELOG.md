@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.0-dev.150 — Reconstrução da Aplicação e Recuperação de Gestão
+
+### Recuperado
+- Página **Pessoas** volta a ser uma área operacional explícita em master-detail, com lista, retrato, cadastro, vínculo de Actor, unidade, estado, moral, condição, notas e marcadores.
+- Gestão de **imagens e aparência do Domínio** volta a ficar acessível por ação própria, com FilePicker para imagem principal, banner e brasão, além de enquadramento, zoom, posição e cor temática.
+- A imagem configurada do Domínio volta a aparecer na própria visão geral, evitando uma configuração invisível.
+- Registros legados de notáveis permanecem visíveis em modo somente leitura, sem migração destrutiva.
+
+### Reorganizado
+- Navegação global, workspaces e páginas foram renomeados e reorganizados em PT-BR: Gestão, Base, Operações, Pessoas e Estratégia.
+- A camada `styles/app/recovery.css` passa a ser a última camada visual: software de gestão primeiro, FUI apenas como identidade secundária.
+- Tipografia, botões, ícones, listas, tabelas, cards, formulários e estados vazios recebem novo piso de legibilidade e hit targets maiores.
+- Em largura compacta, a sidebar deixa de consumir a lateral e passa ao topo; somente os filhos do workspace ativo permanecem expostos.
+- Inspector deixa de ser obrigatório na página Pessoas e continua contextual/drawer nas demais páginas compactas.
+- Tabelas e matrizes densas usam overflow deliberado em vez de esmagar conteúdo.
+- Alturas curtas reduzem chrome, não fonte, e preservam rolagem natural do conteúdo.
+
+### Limpeza visual e idioma
+- Elementos decorativos sem função (retículas, órbitas, anéis, telemetria cenográfica e texturas de HUD) são suprimidos pela camada de recuperação.
+- Rótulos estáticos e mensagens operacionais principais foram consolidados em português, incluindo grupos populacionais, força de trabalho, infraestrutura, relações e ciclos de simulação.
+- Animação ambiental continua desativada; apenas feedback local curto é permitido.
+
+### Integridade
+- Nenhuma regra estratégica, modelo persistente, Simulation, Economy, Missions, Requests, Relations ou migration foi alterada.
+- Schema permanece **v9**.
+- Novo gate de regressão: `tests/ui-recovery-dev150.test.mjs`.
+- Aprovação visual continua dependendo de smoke test no Foundry VTT 13.351 real.
+
 ## 0.1.0-dev.149 — UI Usability / Responsive Rescue
 
 ### Added
