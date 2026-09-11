@@ -9,6 +9,7 @@ const template = fs.readFileSync(path.join(root, "templates/app-shell.hbs"), "ut
 const baseCss = fs.readFileSync(path.join(root, "styles/app/base.css"), "utf8");
 const navCss = fs.readFileSync(path.join(root, "styles/app/navigation.css"), "utf8");
 const viewsCss = fs.readFileSync(path.join(root, "styles/app/views.css"), "utf8");
+const usabilityCss = fs.readFileSync(path.join(root, "styles/app/usability.css"), "utf8");
 
 test("Presentation Reset remove a anatomia antiga de rail + entity deck + tab bar", () => {
   for (const legacy of ["dm-command-rail", "dm-entity-deck", "dm-domain-tabs", "dm-domain-tab"]) {
@@ -80,9 +81,10 @@ test("Personnel usa diretório master-detail e inspector contextual em vez de ca
   assert.equal(template.includes("dm-person-card"), false);
 });
 
-test("shell abre em canvas amplo mas mantém breakpoint compacto", () => {
+test("shell abre em canvas realista e responde à largura real da janela", () => {
   const shell = fs.readFileSync(path.join(root, "scripts/ui/shell-app.js"), "utf8");
-  assert.ok(shell.includes("position: { width: 1480, height: 880 }"));
-  assert.ok(baseCss.includes("min-width:980px"));
-  assert.ok(baseCss.includes("@media(max-width:1100px)"));
+  assert.ok(shell.includes("position: { width: 1280, height: 760 }"));
+  assert.ok(usabilityCss.includes("min-width:320px!important"));
+  assert.ok(usabilityCss.includes("container-type:inline-size"));
+  assert.ok(usabilityCss.includes("@container dm-window (max-width:720px)"));
 });

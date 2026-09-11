@@ -371,11 +371,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   selectedIntelId = null;
   editingIntelId = null;
   isStrategicIntelBusy = false;
+  responsiveObserver = null;
+  isInspectorOpen = false;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
     classes: ["domain-manager-app-window"],
-    position: { width: 1480, height: 880 },
+    position: { width: 1280, height: 760 },
     window: {
       title: MODULE_TITLE,
       icon: "fa-solid fa-satellite-dish",
@@ -387,6 +389,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       selectDomain: DomainManagerShellApp.onSelectDomain,
       applySearch: DomainManagerShellApp.onApplySearch,
       clearSearch: DomainManagerShellApp.onClearSearch,
+      toggleInspector: DomainManagerShellApp.onToggleInspector,
       openCreateDomain: DomainManagerShellApp.onOpenCreateDomain,
       cancelCreateDomain: DomainManagerShellApp.onCancelCreateDomain,
       submitCreateDomain: DomainManagerShellApp.onSubmitCreateDomain,
@@ -490,6 +493,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   _onRender(context, options) {
     super._onRender?.(context, options);
+    this.#syncResponsiveState();
     const search = this.element?.querySelector?.("[data-dm-search]");
     if (search) {
       search.addEventListener("keydown", (event) => {
@@ -501,11 +505,37 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
     }
     this.element?.addEventListener?.("keydown", (event) => {
+      if (event.key === "Escape" && this.isInspectorOpen) {
+        event.preventDefault();
+        this.isInspectorOpen = false;
+        this.render({ force: true });
+        return;
+      }
       if (!(event.metaKey || event.ctrlKey) || String(event.key).toLowerCase() !== "k") return;
       event.preventDefault();
       search?.focus?.();
       search?.select?.();
     });
+  }
+
+
+  #syncResponsiveState() {
+    const root = this.element?.querySelector?.(".dm-os");
+    if (!root) return;
+
+    const apply = () => {
+      const width = Math.round(root.clientWidth || root.getBoundingClientRect?.().width || 0);
+      const height = Math.round(root.clientHeight || root.getBoundingClientRect?.().height || 0);
+      root.dataset.dmWidth = width <= 520 ? "micro" : width <= 720 ? "narrow" : width <= 900 ? "compact" : width <= 1120 ? "medium" : "wide";
+      root.dataset.dmHeight = height <= 540 ? "short" : height <= 680 ? "compact" : "normal";
+    };
+
+    this.responsiveObserver?.disconnect?.();
+    if (typeof globalThis.ResizeObserver === "function") {
+      this.responsiveObserver = new globalThis.ResizeObserver(apply);
+      this.responsiveObserver.observe(root);
+    }
+    apply();
   }
 
   async _prepareContext(options) {
@@ -1409,6 +1439,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       domainData: selectedDomain?.data ?? null,
       hasSelectedDomain: Boolean(selectedDomain),
       searchQuery: this.searchQuery,
+      inspectorOpen: this.isInspectorOpen,
       isCreateDomainOpen: this.isCreateDomainOpen,
       isCreateSquadOpen: this.isCreateSquadOpen,
       isCreateMissionOpen: this.isCreateMissionOpen,
@@ -1541,10 +1572,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     };
   }
 
+  static onToggleInspector() {
+    this.isInspectorOpen = !this.isInspectorOpen;
+    this.render({ force: true });
+  }
+
   static onNavigate(event, target) {
     const view = target?.dataset?.view;
     if (!view) return;
     this.activeView = view;
+    this.isInspectorOpen = false;
     this.render({ force: true });
   }
 

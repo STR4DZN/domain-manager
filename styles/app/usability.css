@@ -1,0 +1,481 @@
+/* DEV.149 // UI USABILITY + RESPONSIVE RESCUE
+   This file intentionally loads last. It replaces the presentation scale of the
+   v4 shell without changing domain data, commands or permissions. */
+
+/* -------------------------------------------------------------------------- */
+/* Window + type scale                                                        */
+/* -------------------------------------------------------------------------- */
+:root{
+  --dm-sidebar-width:232px;
+  --dm-inspector-width:304px;
+  --dm-topbar-height:62px;
+  --dm-statusbar-height:30px;
+  --dm-hit:40px;
+  --dm-text-xs:11px;
+  --dm-text-sm:13px;
+  --dm-text-base:14px;
+  --dm-text-md:15px;
+  --dm-text-lg:18px;
+  --dm-text-xl:28px;
+  --dm-muted:#9da8ac;
+  --dm-dim:#717e83;
+  --dm-line:rgba(211,231,235,.105);
+  --dm-line-strong:rgba(211,231,235,.18);
+}
+
+.domain-manager-app-window{
+  min-width:320px!important;
+  min-height:300px!important;
+  max-width:calc(100vw - 8px)!important;
+  max-height:calc(100vh - 8px)!important;
+}
+.domain-manager-app-window .window-header{
+  min-height:34px;height:34px;padding:0 12px;
+  font-size:12px;line-height:1;
+}
+.domain-manager-app-window .window-content{
+  container-name:dm-window;
+  container-type:inline-size;
+}
+
+.dm-os{
+  font-size:var(--dm-text-base);
+  line-height:1.42;
+  /* No ambient motion. Interaction feedback remains short and local. */
+}
+.dm-os *{animation:none!important;scroll-behavior:auto!important}
+.dm-os button,.dm-os input,.dm-os select,.dm-os textarea{font-size:var(--dm-text-sm)}
+.dm-os button{min-width:0}
+.dm-os :focus-visible{outline:2px solid color-mix(in srgb,var(--dm-accent) 72%,white 8%);outline-offset:2px}
+
+/* -------------------------------------------------------------------------- */
+/* Shell geometry                                                             */
+/* -------------------------------------------------------------------------- */
+.dm-app-main{grid-template-rows:var(--dm-topbar-height) auto minmax(0,1fr) var(--dm-statusbar-height)}
+.dm-app-workarea{grid-template-columns:minmax(0,1fr) var(--dm-inspector-width)}
+.dm-view{padding:24px 26px 32px}
+.dm-view-header{min-height:76px;gap:18px;margin-bottom:20px;align-items:flex-start}
+.dm-view-header h2,.dm-view-header--command h2{margin:5px 0 7px;font-size:var(--dm-text-xl);line-height:1.05;letter-spacing:-.03em}
+.dm-view-header p{max-width:760px;font-size:var(--dm-text-base);line-height:1.5;color:#929ea3}
+.dm-view-header__actions{gap:10px}
+.dm-kicker,.dm-node-id,.dm-view-code,.dm-row-code{font-size:var(--dm-text-xs);line-height:1.2;letter-spacing:.1em}
+.dm-view-code{color:#78858a}
+
+.dm-module-header{min-height:54px;padding:0 16px}
+.dm-module-header>div>span{font-size:14px}
+.dm-module-header small{font-size:var(--dm-text-xs)}
+.dm-module-header strong{font-size:13px;margin-top:4px}
+.dm-module-header em{font-size:var(--dm-text-xs)}
+.dm-live-clock{display:none}
+
+/* -------------------------------------------------------------------------- */
+/* Primary navigation                                                         */
+/* -------------------------------------------------------------------------- */
+.dm-sidebar-brand{height:72px;padding:13px 15px;gap:12px}
+.dm-brand-mark{width:38px;height:38px;padding:8px}
+.dm-sidebar-brand small,.dm-sidebar-brand em{font-size:10px;line-height:1.1}
+.dm-sidebar-brand strong{margin:5px 0 3px;font-size:16px}
+
+.dm-domain-switcher{margin:10px;min-height:64px;padding:9px 10px;grid-template-columns:4px minmax(0,1fr) 18px;gap:10px}
+.dm-domain-switcher__status{height:38px}
+.dm-domain-switcher small,.dm-domain-switcher em{font-size:10px;line-height:1.2}
+.dm-domain-switcher strong{margin:5px 0 4px;font-size:13px}
+.dm-domain-switcher>i{font-size:10px}
+
+.dm-app-nav{padding:8px 9px 14px}
+.dm-nav-section{gap:3px}.dm-nav-section+.dm-nav-section{margin-top:16px}
+.dm-nav-section__label{padding:0 9px 7px;font-size:10px}
+.dm-nav-item{min-height:42px;padding:0 10px;grid-template-columns:20px 1fr auto;gap:9px;font-size:13px}
+.dm-nav-item i{font-size:13px}.dm-nav-item em{font-size:10px}
+.dm-nav-workspace__head{min-height:48px;padding:7px 9px;grid-template-columns:20px 1fr auto;gap:9px}
+.dm-nav-workspace__head>i{font-size:13px}.dm-nav-workspace__head strong{font-size:13px}.dm-nav-workspace__head small,.dm-nav-workspace__head>em{font-size:10px}
+.dm-nav-workspace__children{padding:0 6px 6px 35px}
+.dm-nav-subitem{min-height:36px;padding:0 8px;grid-template-columns:5px 14px 1fr;gap:8px}
+.dm-nav-subitem i{font-size:10px}.dm-nav-subitem strong{font-size:12px}
+.dm-sidebar-system{min-height:58px;padding:9px 12px}.dm-sidebar-system small{font-size:10px}.dm-sidebar-system strong{font-size:11px}
+
+/* -------------------------------------------------------------------------- */
+/* Top bar + domain bar                                                       */
+/* -------------------------------------------------------------------------- */
+.dm-app-topbar{height:var(--dm-topbar-height);padding:0 16px 0 20px;grid-template-columns:minmax(180px,1fr) minmax(260px,460px) auto;gap:14px}
+.dm-app-breadcrumb{gap:8px}.dm-app-breadcrumb span,.dm-app-breadcrumb em{font-size:10px}.dm-app-breadcrumb strong{font-size:12px}.dm-app-breadcrumb i{font-size:9px}
+.dm-command-search{height:40px;grid-template-columns:34px minmax(0,1fr) auto 34px;border-radius:9px}
+.dm-command-search>i{font-size:13px}.dm-command-search input{height:38px!important;font-size:13px!important}.dm-command-search kbd{font-size:10px;padding:4px 7px}.dm-command-search button{height:38px;font-size:13px}
+.dm-top-action,.dm-top-status{height:40px;min-height:40px;padding:0 11px;font-size:12px}.dm-top-status small{font-size:10px}.dm-top-status strong{font-size:11px}
+
+.dm-domain-toolbar{height:auto;min-height:62px;padding:10px 20px;gap:14px}
+.dm-domain-toolbar__identity{gap:10px}.dm-domain-toolbar__identity strong{font-size:15px}
+.dm-domain-toolbar__signals{height:42px}
+.dm-domain-toolbar__signals span{min-width:74px;padding:7px 10px}
+.dm-domain-toolbar__signals small{font-size:10px}.dm-domain-toolbar__signals strong{font-size:12px;margin-top:4px}
+
+/* -------------------------------------------------------------------------- */
+/* Inspector: useful context, not a permanent HUD                            */
+/* -------------------------------------------------------------------------- */
+.dm-inspector-toggle,.dm-inspector-close{display:none}
+.dm-app-workarea{position:relative}
+.dm-inspector__header{min-height:76px;padding:14px 15px}
+.dm-inspector__header strong{margin:6px 0 4px;font-size:15px}.dm-inspector__header small{font-size:10px}
+.dm-inspector__health{padding:12px 14px;display:block}
+.dm-inspector-radar{display:none!important}
+.dm-inspector-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dm-inspector-stats span{padding:9px 10px}.dm-inspector-stats small{font-size:10px}.dm-inspector-stats strong{margin-top:5px;font-size:13px}
+.dm-inspector__section>header{height:40px;padding:0 14px;font-size:10px}.dm-inspector__section>header button{font-size:10px}
+.dm-inspector-alert{min-height:56px;padding:9px 13px}.dm-inspector-alert strong,.dm-inspector-nominal strong{font-size:11px}.dm-inspector-alert small,.dm-inspector-nominal small{font-size:10px;line-height:1.4}
+.dm-inspector-nominal{min-height:56px;padding:10px 14px}
+.dm-inspector-resource-list{padding:0 12px 10px}.dm-inspector-resource-list>div{min-height:42px}.dm-inspector-resource-list strong{font-size:12px}.dm-inspector-resource-list small{font-size:10px}.dm-inspector-resource-list em{font-size:11px}
+.dm-inspector-tags{padding:0 13px 13px;gap:6px}.dm-inspector-tags span{padding:6px 8px;font-size:10px}
+.dm-inspector__footer{min-height:48px;padding:9px 13px}.dm-inspector__footer small{font-size:10px}.dm-inspector__footer strong{font-size:11px}.dm-inspector__footer em{font-size:10px}
+
+/* -------------------------------------------------------------------------- */
+/* Reusable controls + content                                                */
+/* -------------------------------------------------------------------------- */
+.dm-chip{min-height:28px;padding:0 9px;font-size:10px}
+.dm-action-button{min-height:40px;padding:0 14px;font-size:11px;letter-spacing:.02em}
+.dm-action-button--compact{min-height:36px;padding:0 10px;font-size:11px}
+.dm-icon-button{width:38px;height:38px;font-size:12px}
+.dm-text-button{min-height:34px;font-size:10px}
+.dm-meter{height:7px;gap:3px}
+.dm-flow{font-size:10px}
+.dm-empty-signal{min-height:86px;padding:16px;font-size:10px;line-height:1.4}
+.dm-empty{min-height:170px;padding:24px 20px;gap:10px}
+.dm-empty i{font-size:24px}.dm-empty strong{font-size:15px}.dm-empty span{max-width:520px;font-size:12px;line-height:1.5}
+.dm-empty--force,.dm-empty--infrastructure{min-height:180px}
+.dm-signal-module>header,.dm-panel__header{min-height:52px;padding:10px 14px}.dm-signal-module>header strong,.dm-panel__header h3{font-size:13px}.dm-panel__header span{font-size:10px}.dm-signal-module footer{padding:9px 12px;font-size:10px}
+.dm-list-row{min-height:52px;padding:8px 11px;gap:10px}.dm-list-row strong{font-size:12px}.dm-list-row div>span{font-size:10px}
+.dm-data-row{min-height:44px;padding:0 13px}.dm-data-row span{font-size:10px}.dm-data-row strong{font-size:11px}
+.dm-mini-tag{font-size:10px}.dm-binary-strip{font-size:10px}
+
+/* Force control — reference screenshot rescue */
+.dm-force-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.dm-squad-card{min-height:250px;clip-path:none;border-radius:10px}
+.dm-squad-card>header{min-height:52px;padding:9px 13px}.dm-squad-card>header small{font-size:10px}
+.dm-squad-card__body{grid-template-columns:84px minmax(0,1fr);gap:14px;padding:16px 14px}
+.dm-force-glyph{width:84px;height:84px;padding-top:24px;border-radius:9px;overflow:hidden}
+.dm-force-glyph::before,.dm-force-glyph::after{display:none}
+.dm-force-glyph strong{font-size:28px}.dm-force-glyph small{font-size:10px}
+.dm-squad-card__body h3{margin-bottom:7px;font-size:19px}.dm-squad-card__body p{margin-bottom:16px;font-size:12px;line-height:1.5}
+.dm-dual-meter{gap:10px}.dm-dual-meter>div{grid-template-columns:48px minmax(0,1fr) 48px;gap:9px}.dm-dual-meter span,.dm-dual-meter strong{font-size:10px}
+.dm-squad-card__footer{min-height:60px;padding:9px 12px;gap:10px}.dm-squad-card__footer>span small{font-size:10px}.dm-squad-card__footer>span strong{font-size:12px}
+
+/* Decorative command HUD is reduced to an information dashboard. */
+.dm-commandscape{grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);gap:14px;min-height:0}
+.dm-network-field{min-height:430px;border-radius:10px}.dm-network-field::after{opacity:.35}
+.dm-network-canvas{min-height:376px}.dm-network-canvas__rings,.dm-network-axis{display:none}
+.dm-network-core{width:72px;height:72px;box-shadow:none;border-radius:12px;transform:translate(-50%,-50%)}
+.dm-network-core span,.dm-network-core small{transform:none}.dm-network-core span{font-size:20px}.dm-network-core small{font-size:10px}
+.dm-network-nodes{inset:46px 34px;gap:100px 24%}
+.dm-node-signal{height:auto;min-height:76px;padding:12px 14px 11px 18px;clip-path:none;border-radius:9px;box-shadow:none!important}
+.dm-node-signal small,.dm-node-signal em{font-size:10px}.dm-node-signal strong{margin:7px 0 5px;font-size:14px}
+.dm-telemetry-ladder>div{grid-template-columns:90px 38px minmax(0,1fr);min-height:40px}.dm-telemetry-ladder span{font-size:10px}.dm-telemetry-ladder strong{font-size:13px}
+.dm-ops-feed__entry{min-height:52px;padding:8px 11px}.dm-ops-feed__entry strong{font-size:11px}.dm-ops-feed__entry small,.dm-ops-feed__entry em{font-size:10px}
+
+/* Footer telemetry is secondary and compact, but still readable. */
+.dm-app-statusbar{height:var(--dm-statusbar-height);padding:0 12px;font-size:10px;letter-spacing:.03em}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive behavior based on the Foundry WINDOW, not browser viewport.     */
+/* -------------------------------------------------------------------------- */
+@container dm-window (max-width:1360px){
+  .dm-app-workarea{grid-template-columns:minmax(0,1fr);position:relative;overflow:hidden}
+  .dm-inspector-toggle{display:flex}
+  .dm-inspector{
+    display:block!important;position:absolute;z-index:30;right:0;top:0;bottom:0;
+    width:min(360px,88%);transform:translateX(102%);pointer-events:none;
+    border-left:1px solid var(--dm-line-strong);box-shadow:-22px 0 50px rgba(0,0,0,.48)
+  }
+  .dm-os.is-inspector-open .dm-inspector{transform:translateX(0);pointer-events:auto}
+  .dm-inspector-close{
+    display:grid;place-items:center;position:sticky;float:right;top:10px;right:10px;z-index:5;
+    width:36px;height:36px;margin:10px 10px -46px 0;border:1px solid var(--dm-line-strong);
+    border-radius:8px;background:#11171a;color:var(--dm-text-soft);cursor:pointer
+  }
+  .dm-inspector__header{padding-right:54px}
+  .dm-view{padding:22px 22px 28px}
+}
+
+@container dm-window (max-width:1120px){
+  :root{--dm-sidebar-width:208px}
+  .dm-os{grid-template-columns:208px minmax(0,1fr)}
+  .dm-app-topbar{grid-template-columns:minmax(0,1fr) minmax(260px,400px) auto;padding-left:16px}
+  .dm-app-breadcrumb span:first-child,.dm-app-breadcrumb>i:first-of-type{display:none}
+  .dm-top-status{display:none}
+  .dm-domain-toolbar__signals{display:none}
+  .dm-domain-toolbar{min-height:52px}
+  .dm-view-header h2,.dm-view-header--command h2{font-size:26px}
+  .dm-commandscape{grid-template-columns:1fr}
+  .dm-command-stack{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none}
+  .dm-network-field{min-height:360px}.dm-network-canvas{min-height:306px}
+}
+
+@container dm-window (max-width:900px){
+  .dm-os{grid-template-columns:188px minmax(0,1fr)}
+  .dm-sidebar-brand small,.dm-sidebar-brand em,.dm-domain-switcher em,.dm-nav-workspace__head small,.dm-nav-workspace__head>em{display:none}
+  .dm-app-topbar{grid-template-columns:minmax(0,1fr) auto;gap:10px}
+  .dm-app-breadcrumb{display:none}
+  .dm-command-search{max-width:none}
+  .dm-top-action span{display:none}.dm-top-action{width:40px;padding:0;justify-content:center}
+  .dm-domain-toolbar{align-items:flex-start;flex-direction:column;padding:10px 16px}
+  .dm-domain-toolbar__signals{width:100%;height:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .dm-domain-toolbar__signals span{min-width:0;border-left:1px solid var(--dm-line)}
+  .dm-view{padding:20px 18px 26px}
+  .dm-view-header{min-height:0;flex-direction:column;gap:12px;margin-bottom:18px}
+  .dm-view-header__actions{width:100%;justify-content:flex-start}
+  .dm-force-grid{grid-template-columns:1fr}
+  .dm-command-stack{grid-template-columns:1fr}
+  .dm-network-nodes{inset:38px 24px;gap:70px 12%}
+}
+
+@container dm-window (max-width:720px){
+  .dm-os{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .dm-app-sidebar{
+    grid-row:1;display:grid;grid-template-columns:auto minmax(150px,1fr);grid-template-rows:52px auto;
+    border-right:0;border-bottom:1px solid var(--dm-line);background:#090d10;
+  }
+  .dm-sidebar-brand{height:52px;padding:8px 10px;border-bottom:0;border-right:1px solid var(--dm-line)}
+  .dm-brand-mark{width:32px;height:32px;padding:6px}.dm-sidebar-brand>div:last-child{display:none}
+  .dm-domain-switcher{height:52px;min-height:52px;margin:0;border:0;border-radius:0;background:#0d1215;padding:7px 10px}
+  .dm-domain-switcher__status{height:30px}.dm-domain-switcher small{font-size:10px}.dm-domain-switcher strong{font-size:12px;margin:4px 0 0}.dm-domain-switcher em{display:none}
+  .dm-app-nav{grid-column:1/-1;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:7px 8px 8px;scrollbar-width:thin}
+  .dm-nav-section{display:flex;align-items:center;gap:5px;flex:none}.dm-nav-section+.dm-nav-section{margin:0}.dm-nav-section__label{display:none}
+  .dm-nav-item{min-width:max-content;min-height:38px;padding:0 11px;grid-template-columns:16px auto;gap:7px;font-size:11px}.dm-nav-item em{display:none}
+  .dm-nav-workspace{display:flex;align-items:center;overflow:visible;margin:0;flex:none}.dm-nav-workspace__head{display:none}
+  .dm-nav-workspace__children,.dm-nav-workspace.is-active .dm-nav-workspace__children{display:flex;gap:5px;padding:0}
+  .dm-nav-subitem{min-width:max-content;min-height:38px;padding:0 11px;display:flex;gap:7px;font-size:11px}.dm-nav-subitem>span{display:none}.dm-nav-subitem i{font-size:10px}.dm-nav-subitem strong{font-size:11px}
+  .dm-sidebar-system{display:none}
+  .dm-app-main{grid-row:2;min-height:0}
+  .dm-app-topbar{height:auto;min-height:56px;padding:8px 10px;grid-template-columns:minmax(0,1fr) auto}
+  .dm-command-search{height:40px}.dm-command-search kbd{display:none}.dm-command-search{grid-template-columns:34px 1fr 34px}
+  .dm-domain-toolbar{padding:9px 12px}.dm-domain-toolbar__identity .dm-kicker{display:none}
+  .dm-view{padding:18px 14px 24px}.dm-view-header h2,.dm-view-header--command h2{font-size:24px}.dm-view-header p{font-size:13px}
+  .dm-commandscape{display:block}.dm-command-stack{display:grid;margin-top:12px}
+  .dm-network-field{min-height:320px}.dm-network-canvas{min-height:266px}
+  .dm-network-core{display:none}.dm-network-nodes{position:relative;inset:auto;padding:14px;grid-template-columns:1fr;gap:8px;align-content:start}.dm-network-canvas{display:block;height:auto}
+  .dm-node-signal{min-height:68px}
+  .dm-app-statusbar span:nth-child(2){display:none}
+}
+
+@container dm-window (max-width:520px){
+  .dm-app-sidebar{grid-template-columns:52px minmax(0,1fr)}
+  .dm-domain-switcher{grid-template-columns:4px minmax(0,1fr);gap:8px}.dm-domain-switcher>i{display:none}
+  .dm-app-topbar{grid-template-columns:minmax(0,1fr) auto}.dm-app-topbar__actions{display:flex}.dm-app-topbar__actions>.dm-top-action:not(.dm-inspector-toggle),.dm-app-topbar__actions>.dm-top-status{display:none}
+  .dm-domain-toolbar__signals{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dm-domain-toolbar__signals span:nth-child(odd){border-left:0}
+  .dm-view{padding:16px 12px 22px}
+  .dm-view-header h2,.dm-view-header--command h2{font-size:22px}.dm-view-header p{font-size:12px}
+  .dm-view-header__actions{display:grid;grid-template-columns:1fr;width:100%}.dm-view-code{order:2}
+  .dm-action-button{width:100%;min-height:42px}
+  .dm-action-button--compact{width:auto}
+  .dm-squad-card__body{grid-template-columns:1fr}.dm-force-glyph{width:100%;height:64px;padding-top:16px}.dm-squad-card__footer{align-items:flex-start;flex-direction:column}.dm-squad-card__footer>div{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.dm-squad-card__footer .dm-action-button--compact{width:100%}
+  .dm-empty{min-height:145px;padding:20px 14px}
+  .dm-app-statusbar{justify-content:center}.dm-app-statusbar span:first-child,.dm-app-statusbar span:nth-child(2){display:none}
+}
+
+@container dm-window (max-width:380px){
+  .dm-app-sidebar{grid-template-columns:48px minmax(0,1fr);grid-template-rows:48px auto}
+  .dm-sidebar-brand{height:48px;padding:7px}.dm-brand-mark{width:30px;height:30px}
+  .dm-domain-switcher{height:48px;min-height:48px;padding:6px 8px}
+  .dm-domain-switcher small{display:none}.dm-domain-switcher strong{margin:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dm-app-nav{padding:6px;gap:4px}.dm-nav-item,.dm-nav-subitem{min-height:38px;padding-inline:9px;font-size:11px}
+  .dm-app-topbar{min-height:52px;padding:6px 8px;gap:6px}
+  .dm-command-search{min-width:0}.dm-command-search input{font-size:12px!important}
+  .dm-inspector{width:100%}
+  .dm-domain-toolbar{padding:8px 10px}.dm-domain-toolbar__identity{min-width:0;flex-wrap:wrap}.dm-domain-toolbar__identity strong{font-size:14px}
+  .dm-view{padding:14px 10px 20px}.dm-view-header{gap:10px;margin-bottom:14px}
+  .dm-view-header h2,.dm-view-header--command h2{font-size:20px}.dm-view-header p{font-size:12px}
+  .dm-empty{padding:18px 12px}.dm-empty strong{font-size:14px}
+  .dm-app-statusbar{display:none}
+  .dm-app-main{grid-template-rows:var(--dm-topbar-height) auto minmax(0,1fr)}
+}
+
+/* Low-height windows need vertical economy even when they are wide. */
+@media(max-height:700px){
+  .domain-manager-app-window{min-height:360px!important}
+  .dm-sidebar-brand{height:58px}.dm-brand-mark{width:32px;height:32px}.dm-domain-switcher{min-height:54px}.dm-nav-item{min-height:38px}.dm-nav-workspace__head{min-height:42px}.dm-nav-subitem{min-height:32px}.dm-sidebar-system{min-height:46px}
+  .dm-view{padding-top:16px}.dm-view-header{min-height:0;margin-bottom:14px}.dm-view-header h2,.dm-view-header--command h2{font-size:24px}.dm-view-header p{font-size:12px}
+  .dm-empty--force,.dm-empty--infrastructure{min-height:145px}
+  .dm-network-field{min-height:330px}.dm-network-canvas{min-height:276px}
+}
+
+@media(prefers-reduced-motion:reduce){.dm-os *{animation:none!important;transition:none!important}}
+
+/* -------------------------------------------------------------------------- */
+/* View-wide readability and layout normalization                             */
+/* -------------------------------------------------------------------------- */
+.dm-stage small,.dm-stage em,.dm-stage time{font-size:10px;line-height:1.35}
+.dm-stage p{font-size:12px;line-height:1.5}
+.dm-stage h3{font-size:16px;line-height:1.15}
+
+.dm-registry-layout{grid-template-columns:minmax(0,1fr) 280px;gap:14px}
+.dm-registry-index__header,.dm-registry-row{gap:12px}
+.dm-registry-index__header{height:42px;padding:0 13px;font-size:10px}
+.dm-registry-row{min-height:68px;padding:10px 13px}.dm-registry-row strong{font-size:13px}.dm-registry-row small{font-size:10px}.dm-registry-row>span:not(:first-child){font-size:11px}
+.dm-registry-scope{border-radius:10px}.dm-registry-scope__reticle{opacity:.35}.dm-registry-scope>small{font-size:10px}
+
+.dm-overview-grid{gap:14px}
+.dm-domain-core__body{min-height:280px}.dm-core-gauge>small,.dm-core-matrix small,.dm-core-matrix span{font-size:10px}.dm-core-matrix strong{font-size:20px}
+.dm-flow-channel{min-height:52px}.dm-flow-channel span strong{font-size:12px}.dm-flow-channel span small{font-size:10px}
+.dm-alert-signal{min-height:56px}.dm-alert-signal strong{font-size:12px}.dm-alert-signal small{font-size:10px}.dm-nominal-stamp small{font-size:10px}
+.dm-active-ops-strip{grid-template-columns:170px minmax(0,1fr)}.dm-op-chip{min-width:170px;height:54px}.dm-op-chip strong{font-size:11px}.dm-op-chip small{font-size:10px}
+
+.dm-economy-scope{grid-template-columns:minmax(0,1fr) 280px;gap:14px}
+.dm-resource-matrix-live>header{height:42px;font-size:10px}.dm-resource-line{min-height:60px}.dm-resource-line strong{font-size:12px}.dm-resource-line small{font-size:10px}.dm-resource-line>span:not(:first-child){font-size:10px}
+
+.dm-project-board>header,.dm-request-board>header,.dm-intel-board>header,.dm-relation-board>header,.dm-cohort-table>header{height:42px!important;font-size:10px!important}
+.dm-project-row,.dm-request-row,.dm-intel-row,.dm-relation-row,.dm-cohort-row{min-height:66px!important}
+.dm-project-row strong,.dm-request-row__identity strong,.dm-intel-row strong,.dm-relation-row__identity strong,.dm-cohort-row strong{font-size:11px!important}
+.dm-project-row small,.dm-request-row__identity small,.dm-intel-row small,.dm-relation-row__identity small,.dm-cohort-row small{font-size:10px!important}
+
+.dm-intel-overview{min-height:82px}.dm-intel-overview small{font-size:10px}.dm-intel-overview strong{font-size:19px}.dm-intel-overview em{font-size:10px}
+.dm-territory-influence>header,.dm-treaty-channel>header{height:56px}.dm-territory-influence>header strong,.dm-treaty-channel>header strong{font-size:12px}.dm-territory-influence>header em,.dm-treaty-channel>header em{font-size:10px}
+.dm-relation-score{font-size:12px}.dm-relation-metric strong{font-size:10px}
+
+.dm-system-core-grid{gap:14px}.dm-core-readouts small{font-size:10px}.dm-core-readouts strong{font-size:11px}.dm-simulation-console p{font-size:12px}
+.dm-sim-buttons button{min-height:48px;font-size:12px}
+
+.dm-history-stream article{min-height:64px}.dm-history-stream strong{font-size:12px}.dm-history-stream p{font-size:11px}.dm-history-stream time{font-size:10px}
+
+/* Remove redundant force-page primary action when the empty state already owns it. */
+.dm-page--force-control:has(.dm-empty--force) .dm-view-header__actions .dm-action-button{display:none}
+
+/* Boards remain fully usable on narrow windows through deliberate horizontal
+   scrolling rather than microscopic columns. */
+.dm-registry-index,.dm-project-board,.dm-request-board,.dm-intel-board,.dm-relation-board,.dm-cohort-table,.dm-resource-matrix-live--strategic{overscroll-behavior-x:contain}
+
+@container dm-window (max-width:1180px){
+  .dm-registry-layout,.dm-economy-scope,.dm-system-core-grid,.dm-territory-layout,.dm-diplomacy-grid,.dm-civil-control-grid{grid-template-columns:1fr!important}
+  .dm-registry-scope{display:none}
+  .dm-overview-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"core alerts" "flow flow" "ops ops"}
+  .dm-core-diagram{min-height:340px}
+  .dm-intel-overview{grid-template-columns:repeat(4,minmax(0,1fr))}.dm-intel-overview>i{display:none}
+  .dm-project-board,.dm-request-board,.dm-intel-board,.dm-relation-board,.dm-cohort-table{overflow-x:auto}
+  .dm-project-board>header,.dm-project-row{min-width:760px}
+  .dm-request-board>header,.dm-request-row{min-width:760px}
+  .dm-intel-board>header,.dm-intel-row{min-width:820px}
+  .dm-relation-board>header,.dm-relation-row{min-width:760px}
+  .dm-cohort-table>header,.dm-cohort-row{min-width:720px}
+}
+
+@container dm-window (max-width:800px){
+  .dm-overview-grid{grid-template-columns:1fr;grid-template-areas:"core" "alerts" "flow" "ops"}
+  .dm-domain-core__body{grid-template-columns:1fr;gap:14px}.dm-core-gauge{width:112px;height:112px}.dm-core-matrix{width:100%}
+  .dm-active-ops-strip{grid-template-columns:1fr}.dm-active-ops-strip>header{border-right:0;border-bottom:1px solid var(--dm-line);flex-direction:row;align-items:center;justify-content:space-between}
+  .dm-intel-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.dm-intel-overview>span{border-bottom:1px solid var(--dm-line)}
+  .dm-core-diagram{grid-template-columns:1fr;min-height:0}.dm-core-orbit{display:none}.dm-core-readouts{border-left:0;padding:10px 14px}
+  .dm-sim-buttons{grid-template-columns:1fr}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Dialog usability                                                            */
+/* -------------------------------------------------------------------------- */
+.dm-modal-layer{padding:18px;background:rgba(2,5,7,.96);backdrop-filter:none}
+.dm-modal-layer::before{display:none}
+.dm-system-dialog{max-height:calc(100% - 12px);clip-path:none;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.62)}
+.dm-system-dialog::before,.dm-system-dialog::after{display:none}
+.dm-system-dialog__header{min-height:72px;padding:14px 16px}.dm-system-dialog__header h2{font-size:22px;line-height:1.05;text-transform:none;letter-spacing:-.01em}
+.dm-system-dialog__telemetry small{font-size:10px}.dm-system-dialog__telemetry strong{font-size:11px}.dm-system-dialog__telemetry>span{min-height:60px;padding:10px 12px}
+.dm-system-dialog__body{padding:18px;gap:14px 16px;background-image:none}
+.dm-system-dialog__footer{min-height:64px;padding:10px 18px;gap:10px}.dm-system-dialog__footer::before{display:none}
+.dm-field{gap:8px}.dm-field>span{font-size:10px;line-height:1.2}
+.dm-field input,.dm-field select,.dm-field textarea{min-height:42px!important;padding:9px 11px!important;font-size:13px!important;line-height:1.3!important}
+.dm-field textarea{min-height:96px!important}
+.dm-readonly-field{min-height:42px;padding:11px;font-size:11px}
+.dm-controller-grid legend{font-size:10px}.dm-controller-option{min-height:48px;padding:9px 11px;clip-path:none;border-radius:7px}.dm-controller-option strong{font-size:12px}.dm-controller-option small{font-size:10px}
+.dm-supply-ledger__head{min-height:38px;font-size:10px}.dm-supply-ledger__row{min-height:44px}.dm-supply-ledger__row span{font-size:10px}
+.dm-mission-resource-input{min-height:58px}.dm-mission-resource-input strong{font-size:12px}.dm-mission-resource-input small{font-size:10px}.dm-mission-dialog-note{min-height:48px;font-size:11px}
+.dm-resolution-section>header{min-height:40px;font-size:10px}.dm-resolution-unit__title strong{font-size:12px}.dm-resolution-unit__title span{font-size:10px}.dm-resolution-objective strong{font-size:11px}.dm-resolution-objective small{font-size:10px}.dm-resolution-objective select{min-height:40px!important;font-size:12px!important}
+.dm-resource-matrix>header>span,.dm-resource-matrix__head,.dm-economy-policy-matrix__head{font-size:10px}.dm-resource-matrix__row>strong,.dm-economy-policy-matrix__row>span strong{font-size:11px}.dm-resource-matrix__row small,.dm-economy-policy-matrix__row>span small{font-size:10px}
+.dm-resource-matrix__row input,.dm-resource-matrix__row select,.dm-economy-policy-matrix__row input{min-height:40px!important;font-size:11px!important}
+.dm-workforce-matrix>header{min-height:40px;font-size:10px}.dm-workforce-matrix__group strong{font-size:11px}.dm-workforce-matrix__group small{font-size:10px}.dm-workforce-matrix__cells>label{min-height:62px}.dm-workforce-matrix__cells>label span{font-size:10px}.dm-workforce-matrix__cells input{min-height:38px!important;font-size:11px!important}
+.dm-checkline{min-height:46px;font-size:10px}.dm-project-dialog__guardrail strong{font-size:10px}.dm-project-dialog__guardrail small{font-size:10px}
+
+@container dm-window (max-width:760px){
+  .dm-modal-layer{padding:8px}
+  .dm-system-dialog,.dm-system-dialog--wide,.dm-system-dialog--ultrawide,.dm-system-dialog--mission-resolve,.dm-economy-dialog{width:100%!important;max-height:100%}
+  .dm-system-dialog__header{min-height:62px;padding:11px 12px}.dm-system-dialog__header h2{font-size:19px}
+  .dm-system-dialog__telemetry{grid-template-columns:repeat(2,minmax(0,1fr))}.dm-system-dialog__telemetry>span{min-height:52px;padding:8px 10px}
+  .dm-system-dialog__body{grid-template-columns:1fr;padding:12px;gap:12px}.dm-field--wide{grid-column:1}
+  .dm-controller-grid,.dm-mission-resource-form,.dm-dialog-grid,.dm-sustenance-policy>.dm-dialog-grid{grid-template-columns:1fr}
+  .dm-mission-resource-input,.dm-resolution-objective{grid-template-columns:1fr}
+  .dm-resolution-unit{grid-template-columns:1fr}.dm-resolution-unit__title{grid-column:1}
+  .dm-system-dialog__footer{min-height:58px;padding:8px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.dm-system-dialog__footer .dm-action-button{width:100%}
+  .dm-economy-policy-matrix__head,.dm-economy-policy-matrix__row{min-width:720px}
+  .dm-workforce-matrix>header,.dm-workforce-matrix>article{min-width:680px;grid-template-columns:150px 1fr}
+}
+
+@container dm-window (max-width:480px){
+  .dm-system-dialog__telemetry{display:none}
+  .dm-system-dialog__footer{grid-template-columns:1fr}
+  .dm-field input,.dm-field select,.dm-field textarea{font-size:14px!important}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Legibility floor for legacy v4 view fragments                              */
+/* -------------------------------------------------------------------------- */
+.dm-stage :is(.dm-kicker,.dm-row-code,.dm-view-code,.dm-mission-subhead,.dm-defense-layers>header,.dm-logistics-legend,.dm-territory-hierarchy>header,.dm-defense-risk-board>header){font-size:10px!important;line-height:1.25}
+.dm-stage :is(.dm-registry-row,.dm-personnel-row,.dm-intel-row)>span:not(:first-child){font-size:11px!important}
+.dm-stage :is(.dm-op-line,.dm-mission-unit,.dm-mission-ready-unit,.dm-influence-list) strong{font-size:11px!important}
+.dm-stage :is(.dm-infrastructure-card__title,.dm-mission-card__body,.dm-treaty-row) p{font-size:12px!important;line-height:1.48}
+.dm-stage .dm-infrastructure-card__tier span,.dm-stage .dm-infrastructure-card__condition strong,.dm-stage .dm-infrastructure-card__footer>span strong{font-size:10px!important}
+.dm-stage .dm-infrastructure-vectors>section>div,.dm-stage .dm-infrastructure-vectors>section>div strong,.dm-stage .dm-construction-link>div:nth-child(2){font-size:10px!important;line-height:1.35}
+.dm-stage .dm-mission-telemetry strong,.dm-stage .dm-objective-row strong,.dm-stage .dm-mission-ready-unit strong{font-size:11px!important}
+.dm-stage .dm-objective-row>span:last-child,.dm-stage .dm-mission-unit__resources span,.dm-stage .dm-mission-ready-unit>span:last-child{font-size:10px!important}
+.dm-stage .dm-defense-layers strong,.dm-stage .dm-defense-risk span,.dm-stage .dm-defense-console-note strong{font-size:10px!important}
+.dm-stage .dm-personnel-row__identity strong,.dm-stage .dm-project-row__identity strong,.dm-stage .dm-intel-row__identity strong{font-size:11px!important}
+.dm-stage .dm-personnel-row>span,.dm-stage .dm-project-row__progress>strong,.dm-stage .dm-project-row__rate strong{font-size:10px!important}
+.dm-stage .dm-workforce-row strong,.dm-stage .dm-cohort-row strong{font-size:11px!important}
+.dm-stage .dm-intel-inspector__facts strong,.dm-stage .dm-territory-summary>article>span:not(.dm-chip),.dm-stage .dm-influence-list em{font-size:10px!important}
+.dm-stage .dm-territory-hierarchy>section strong,.dm-stage .dm-territory-hierarchy>section span{font-size:10px!important}
+.dm-stage .dm-treaty-row__head strong,.dm-stage .dm-treaty-row__meta strong,.dm-stage .dm-treaty-transfers strong,.dm-stage .dm-treaty-transfers b{font-size:10px!important}
+.dm-stage .dm-mini-action{min-height:34px;padding:0 9px;font-size:10px!important}
+.dm-stage .dm-territory-form-grid label strong{font-size:10px!important}
+.dm-stage .dm-project-inspector__progress-body strong,.dm-stage .dm-project-inspector__costs strong,.dm-stage .dm-project-inspector__links strong{font-size:10px!important}
+.dm-stage .dm-request-inspector__facts strong,.dm-stage .dm-request-inspector__history strong,.dm-stage .dm-request-console-note strong{font-size:10px!important}
+
+/* Inspector-specific content is outside .dm-stage. Keep the same readability. */
+.dm-inspector small{font-size:10px!important;line-height:1.4}
+.dm-inspector p{font-size:11px!important;line-height:1.48}
+.dm-inspector :is(.dm-project-inspector__progress-body,.dm-project-inspector__costs,.dm-project-inspector__links,.dm-request-inspector__facts,.dm-request-inspector__history,.dm-intel-inspector__facts) strong{font-size:10px!important}
+.dm-inspector .dm-person-inspector__hero strong{font-size:12px!important}.dm-inspector .dm-person-inspector__hero span{font-size:10px!important}
+
+@container dm-window (max-width:1120px){
+  .dm-top-action span{display:none}.dm-top-action{width:40px;padding:0;justify-content:center}
+}
+
+/* Actual Foundry window height is observed at runtime. This avoids relying on
+   browser viewport height when the application itself is resized smaller. */
+.dm-os[data-dm-height="compact"]{
+  --dm-topbar-height:58px;
+  --dm-statusbar-height:28px;
+}
+.dm-os[data-dm-height="compact"] .dm-sidebar-brand{height:62px}
+.dm-os[data-dm-height="compact"] .dm-domain-switcher{min-height:56px}
+.dm-os[data-dm-height="compact"] .dm-nav-item{min-height:38px}
+.dm-os[data-dm-height="compact"] .dm-nav-workspace__head{min-height:43px}
+.dm-os[data-dm-height="compact"] .dm-nav-subitem{min-height:32px}
+.dm-os[data-dm-height="compact"] .dm-sidebar-system{min-height:48px}
+.dm-os[data-dm-height="compact"] .dm-view{padding-top:18px}
+.dm-os[data-dm-height="compact"] .dm-view-header{min-height:0;margin-bottom:15px}
+
+.dm-os[data-dm-height="short"]{
+  --dm-topbar-height:54px;
+  --dm-statusbar-height:25px;
+}
+.dm-os[data-dm-height="short"] .dm-app-statusbar{display:none}
+.dm-os[data-dm-height="short"] .dm-app-main{grid-template-rows:var(--dm-topbar-height) auto minmax(0,1fr)}
+.dm-os[data-dm-height="short"] .dm-sidebar-brand{height:54px;padding-block:8px}
+.dm-os[data-dm-height="short"] .dm-brand-mark{width:32px;height:32px;padding:6px}
+.dm-os[data-dm-height="short"] .dm-domain-switcher{min-height:50px;margin-block:6px;padding-block:6px}
+.dm-os[data-dm-height="short"] .dm-domain-switcher__status{height:28px}
+.dm-os[data-dm-height="short"] .dm-nav-section+.dm-nav-section{margin-top:10px}
+.dm-os[data-dm-height="short"] .dm-nav-item{min-height:35px}
+.dm-os[data-dm-height="short"] .dm-nav-workspace__head{min-height:38px;padding-block:4px}
+.dm-os[data-dm-height="short"] .dm-nav-subitem{min-height:30px}
+.dm-os[data-dm-height="short"] .dm-sidebar-system{min-height:42px;padding-block:6px}
+.dm-os[data-dm-height="short"] .dm-domain-toolbar{min-height:54px;padding-block:7px}
+.dm-os[data-dm-height="short"] .dm-view{padding-top:14px;padding-bottom:20px}
+.dm-os[data-dm-height="short"] .dm-view-header{min-height:0;margin-bottom:12px}
+.dm-os[data-dm-height="short"] .dm-view-header h2,.dm-os[data-dm-height="short"] .dm-view-header--command h2{font-size:23px}
+.dm-os[data-dm-height="short"] .dm-view-header p{font-size:12px}
+.dm-os[data-dm-height="short"] .dm-empty--force,.dm-os[data-dm-height="short"] .dm-empty--infrastructure{min-height:132px}
+.dm-os[data-dm-height="short"] .dm-command-search,.dm-os[data-dm-height="short"] .dm-top-action,.dm-os[data-dm-height="short"] .dm-top-status{height:38px;min-height:38px}

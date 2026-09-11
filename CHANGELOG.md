@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.1.0-dev.149 — UI Usability / Responsive Rescue
+
+### Added
+- Camada final `styles/app/usability.css` dedicada a legibilidade, organização e responsividade da ApplicationV2.
+- Container queries da janela real em 1360/1120/900/720/520/380 px.
+- `ResizeObserver` para adaptar densidade também à altura real da janela.
+- Inspector contextual em drawer com ação explícita, fechamento por `Escape` e fallback de largura total.
+- Testes permanentes de responsividade/legibilidade em `tests/ui-responsive-rescue.test.mjs`.
+
+### Changed
+- Canvas padrão passa de `1480×880` para `1280×760`; mínimo efetivo passa de `980×650` para `320×300`.
+- Tipografia, controles, listas, tabelas, cards e dialogs recebem escala de leitura utilizável sem zoom.
+- Sidebar vira rail horizontal em janelas estreitas; datasets densos preferem scroll a microcolunas.
+- Inspector deixa de ocupar coluna permanente em janelas até 1360 px.
+- Chrome e telemetria redundantes são removidos progressivamente conforme largura/altura diminuem.
+- Force Control recebe grid/card/empty state reescalados e ação primária inequívoca.
+- Contraste secundário e divisores foram reforçados.
+
+### Removed
+- Animações ambientais contínuas da shell.
+- Radar decorativo genérico do Inspector.
+- Statusbar em janelas de altura curta e telemetria global redundante em larguras compactas.
+
+### Validation
+- Schema permanece **v9**; nenhuma migration e nenhuma regra de domínio alterada.
+- Suíte completa: **275/275**.
+- Syntax: **165/165 JS/MJS**; JSON: **7/7**.
+- Smoke visual final deve ser feito no Foundry real; render headless local não é usado como evidência.
+
 ## 0.1.0-dev.148 — Relations Authority Consolidation
 
 ### Changed

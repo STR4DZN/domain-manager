@@ -1,4 +1,4 @@
-<div class="dm-os dm-app-v4 dm-workspace--{{activeWorkspace}}">
+<div class="dm-os dm-app-v4 dm-workspace--{{activeWorkspace}} {{#if inspectorOpen}}is-inspector-open{{/if}}">
   <aside class="dm-app-sidebar">
     <header class="dm-sidebar-brand">
       <div class="dm-brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -63,6 +63,7 @@
 
       <div class="dm-app-topbar__actions">
         {{#if isGM}}<button type="button" class="dm-top-action" data-action="openCreateDomain" title="Registrar domínio"><i class="fa-solid fa-plus"></i><span>New node</span></button>{{/if}}
+        <button type="button" class="dm-top-action dm-inspector-toggle" data-action="toggleInspector" title="Abrir painel de contexto" aria-label="Abrir painel de contexto"><i class="fa-solid fa-circle-info"></i><span>Contexto</span></button>
         <button type="button" class="dm-top-status dm-top-status--{{system.authorityTone}}" title="Authority {{system.authority}}"><span class="dm-sysdot {{#if authorityReady}}is-online{{else}}is-offline{{/if}}"></span><span><small>AUTH</small><strong>{{system.authority}}</strong></span></button>
       </div>
     </header>
@@ -473,6 +474,7 @@
       </main>
 
       <aside class="dm-inspector">
+        <button type="button" class="dm-inspector-close" data-action="toggleInspector" title="Fechar painel de contexto" aria-label="Fechar painel de contexto"><i class="fa-solid fa-xmark"></i></button>
         {{#if selectedDomain}}
           {{#if view.people}}
             {{#if selectedPerson}}
