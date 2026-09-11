@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-dev.134.1 — Runtime Boot Hotfix
+
+### Fixed
+- Corrige crash ao abrir o Domain Manager: `editingStructure` era lido antes da inicialização durante `_prepareContext()`.
+- Reordena a derivação dos status de Structure para ocorrer somente após a resolução do registro em edição.
+
+### Hardening
+- Novo smoke test executa `_prepareContext()` no primeiro frame da ApplicationV2.
+- Novo smoke test importa todos os módulos runtime sob um Foundry mínimo.
+- Novo contrato garante que todo `data-action` do Handlebars possui handler registrado e implementado.
+- Novo teste impede ciclos de imports ESM estáticos.
+- Auditoria TDZ externa: 0 usos diretos de `let`/`const`/`class` antes da declaração em 121 arquivos JS/MJS.
+
+
 ## 0.1.0-dev.134 — Structures & Base Core
 
 ### Added

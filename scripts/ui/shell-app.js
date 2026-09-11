@@ -530,10 +530,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       }));
     const squadStatusOptions = ["forming", "ready", "deployed", "recovering", "inactive", "disbanded"]
       .map((value) => ({ value, label: stateLabel(value), selected: editingSquadRecord?.data.status === value }));
-    const structureStatusOptions = ["planned", "operational", "damaged", "disabled", "destroyed", "decommissioned"]
-      .map((value) => ({ value, label: stateLabel(value), selected: editingStructure?.status === value }));
-    const structureOperatorStatusOptions = ["operational", "disabled"]
-      .map((value) => ({ value, label: stateLabel(value), selected: editingStructure?.status === value }));
 
     const preparingMissionRecord = this.preparingMissionUuid
       ? related.missions.find((record) => record.uuid === this.preparingMissionUuid) ?? null
@@ -631,6 +627,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const editingStructure = editingStructureRecord
       ? structures.find((entry) => entry.uuid === editingStructureRecord.uuid) ?? null
       : null;
+    const structureStatusOptions = ["planned", "operational", "damaged", "disabled", "destroyed", "decommissioned"]
+      .map((value) => ({ value, label: stateLabel(value), selected: editingStructure?.status === value }));
+    const structureOperatorStatusOptions = ["operational", "disabled"]
+      .map((value) => ({ value, label: stateLabel(value), selected: editingStructure?.status === value }));
     const editingMaintenance = new Map((editingStructureRecord?.data.maintenance ?? []).map((entry) => [entry.resourceId, entry.amount]));
     const editingProduction = new Map((editingStructureRecord?.data.production ?? []).map((entry) => [entry.resourceId, entry.amount]));
     const structureResourceOptions = (catalog?.resources ?? []).map((resource) => ({

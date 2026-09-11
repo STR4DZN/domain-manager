@@ -23,7 +23,7 @@ globalThis.foundry = {
 
 globalThis.game = {
   user: { id: "USER", isGM: false },
-  users: { activeGM: null, get: () => null },
+  users: { activeGM: null, get: () => null, contents: [] },
   modules: new Map(),
   settings: { get: () => ({ version: 1, resources: [] }) }
 };
@@ -36,4 +36,16 @@ test("nova shell ApplicationV2 importa sem depender da UI legada", () => {
   assert.equal(typeof module.DomainManagerShellApp, "function");
   assert.equal(module.SHELL_SECTIONS.DASHBOARD, "command");
   assert.equal(module.SHELL_SECTIONS.SYSTEM, "system");
+});
+
+
+test("nova shell prepara o contexto inicial sem TDZ ou estado pré-inicializado", async () => {
+  const app = new module.DomainManagerShellApp();
+  const context = await app._prepareContext({});
+
+  assert.equal(context.domainCount, 0);
+  assert.deepEqual(context.structures, []);
+  assert.deepEqual(context.structureStatusOptions.map((entry) => entry.value), [
+    "planned", "operational", "damaged", "disabled", "destroyed", "decommissioned"
+  ]);
 });

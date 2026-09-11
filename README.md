@@ -65,7 +65,7 @@ Consulte `docs/STRUCTURES_BASE_CORE.md`.
 
 ## Instalação manual
 
-1. Baixe `domain-manager-v0.1.0-dev.134.zip`.
+1. Baixe `domain-manager-v0.1.0-dev.134.1.zip`.
 2. Extraia em `Data/modules/domain-manager`.
 3. Ative Domain Manager e socketlib no mundo.
 
