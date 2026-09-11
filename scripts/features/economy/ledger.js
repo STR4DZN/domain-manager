@@ -153,7 +153,8 @@ export function buildResourceLedger({
   resource,
   stockAmount = 0,
   flows = [],
-  reservations = []
+  reservations = [],
+  policy = null
 }) {
   assertSafeMinorAmount(stockAmount);
 
@@ -190,6 +191,10 @@ export function buildResourceLedger({
         ? "negative"
         : "zero";
 
+  const inflowRate = sumFlowRates(resourceFlows.filter((flow) => flow.direction !== "outflow"));
+  const outflowRateSigned = sumFlowRates(resourceFlows.filter((flow) => flow.direction === "outflow"));
+  const outflowRate = { numerator: absBigInt(outflowRateSigned.numerator), denominator: outflowRateSigned.denominator };
+
   let runwayTicksFloor = null;
 
   if (
@@ -212,12 +217,35 @@ export function buildResourceLedger({
     }
   }
 
+  const normalizedPolicy = {
+    criticalFloor: Math.max(0, Number(policy?.criticalFloor ?? 0)),
+    reserveTarget: Math.max(0, Number(policy?.reserveTarget ?? 0)),
+    storageCapacity: Math.max(0, Number(policy?.storageCapacity ?? 0))
+  };
+  const reserveGap = Math.max(0, normalizedPolicy.reserveTarget - Math.max(0, available));
+  const capacityHeadroom = normalizedPolicy.storageCapacity > 0
+    ? Math.max(0, normalizedPolicy.storageCapacity - Math.max(0, stockAmount))
+    : null;
+  const storageUtilizationPercent = normalizedPolicy.storageCapacity > 0
+    ? Math.max(0, Math.floor((Math.max(0, stockAmount) * 100) / normalizedPolicy.storageCapacity))
+    : null;
+  const critical = normalizedPolicy.criticalFloor > 0 && available <= normalizedPolicy.criticalFloor;
+  const belowReserve = normalizedPolicy.reserveTarget > 0 && available < normalizedPolicy.reserveTarget;
+  const overCapacity = normalizedPolicy.storageCapacity > 0 && stockAmount > normalizedPolicy.storageCapacity;
+
   return {
     resourceId: resource.id,
     stock: stockAmount,
     reserved,
     available,
     overReserved: reserved > stockAmount,
+    policy: normalizedPolicy,
+    reserveGap,
+    capacityHeadroom,
+    storageUtilizationPercent,
+    critical,
+    belowReserve,
+    overCapacity,
 
     stockDisplay:
       formatMinorUnits(
@@ -248,6 +276,20 @@ export function buildResourceLedger({
       formatFlowRateDisplay(
         rate.numerator,
         rate.denominator,
+        resource.precision
+      ),
+
+    grossInPerTickDisplay:
+      formatFlowRateDisplay(
+        inflowRate.numerator,
+        inflowRate.denominator,
+        resource.precision
+      ),
+
+    grossOutPerTickDisplay:
+      formatFlowRateDisplay(
+        -outflowRate.numerator,
+        outflowRate.denominator,
         resource.precision
       ),
 
@@ -297,7 +339,8 @@ export function buildResourceLedger({
 export function buildDomainLedger({
   catalog,
   economy,
-  reservations = []
+  reservations = [],
+  flows = null
 }) {
   const stocks = new Map(
     (economy?.stocks ?? [])
@@ -309,6 +352,9 @@ export function buildDomainLedger({
       )
   );
 
+  const policyMap = new Map((economy?.resourcePolicies ?? []).map((policy) => [policy.resourceId, policy]));
+  const effectiveFlows = flows ?? economy?.flows ?? [];
+
   return (catalog?.resources ?? [])
     .map(
       (resource) =>
@@ -316,9 +362,9 @@ export function buildDomainLedger({
           resource,
           stockAmount:
             stocks.get(resource.id) ?? 0,
-          flows:
-            economy?.flows ?? [],
-          reservations
+          flows: effectiveFlows,
+          reservations,
+          policy: policyMap.get(resource.id) ?? null
         })
     );
 }

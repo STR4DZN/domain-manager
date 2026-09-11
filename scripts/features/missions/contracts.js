@@ -27,19 +27,104 @@ export function normalizeMissionCreatePayload(payload = {}) {
     status: "pending",
     optional: Boolean(objective.optional)
   }));
+  const relatedDomains = (payload.relatedDomains ?? []).map((entry) =>
+    normalizeEntityReference(entry, { allowedTypes: [RECORD_TYPES.DOMAIN] })
+  );
+  const uniqueRelated = new Set(relatedDomains.map((entry) => entry.entityId ?? entry.uuid));
+  if (uniqueRelated.size !== relatedDomains.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Domains relacionados duplicados na Mission.");
+  }
   return {
     name,
     primaryDomain: normalizeEntityReference(payload.primaryDomain, { allowedTypes: [RECORD_TYPES.DOMAIN] }),
+    relatedDomains,
     audienceUserIds: uniqueIds(payload.audienceUserIds),
     status,
     briefing: text(payload.briefing),
-    objectives
+    objectives,
+    outcomeSummary: text(payload.outcomeSummary)
   };
 }
 
 export function missionCreateResourceKeys(payload = {}) {
   const normalized = normalizeMissionCreatePayload(payload);
-  return [normalized.primaryDomain.entityId ?? normalized.primaryDomain.uuid].filter(Boolean);
+  return [
+    normalized.primaryDomain.entityId ?? normalized.primaryDomain.uuid,
+    ...(normalized.relatedDomains ?? []).map((entry) => entry.entityId ?? entry.uuid)
+  ].filter(Boolean);
+}
+
+export function normalizeMissionUpdatePayload(payload = {}) {
+  const name = text(payload.name);
+  if (!name) throw new ModuleError(ERROR_CODES.VALIDATION, "Nome da Mission é obrigatório.");
+  const relatedDomains = (payload.relatedDomains ?? []).map((entry) =>
+    normalizeEntityReference(entry, { allowedTypes: [RECORD_TYPES.DOMAIN] })
+  );
+  const uniqueRelated = new Set(relatedDomains.map((entry) => entry.entityId ?? entry.uuid));
+  if (uniqueRelated.size !== relatedDomains.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Domains relacionados duplicados na Mission.");
+  }
+  const expectedStatus = payload.expectedStatus == null ? null : text(payload.expectedStatus);
+  if (expectedStatus && !MISSION_STATUSES.includes(expectedStatus)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `Status de Mission inválido: ${expectedStatus}`);
+  }
+  return {
+    mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
+    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedStatus,
+    name,
+    primaryDomain: normalizeEntityReference(payload.primaryDomain, { allowedTypes: [RECORD_TYPES.DOMAIN] }),
+    relatedDomains,
+    audienceUserIds: uniqueIds(payload.audienceUserIds),
+    briefing: text(payload.briefing),
+    outcomeSummary: text(payload.outcomeSummary)
+  };
+}
+
+export function missionUpdateResourceKeys(payload = {}) {
+  const normalized = normalizeMissionUpdatePayload(payload);
+  return [
+    normalized.mission.entityId ?? normalized.mission.uuid,
+    normalized.primaryDomain.entityId ?? normalized.primaryDomain.uuid,
+    ...normalized.relatedDomains.map((entry) => entry.entityId ?? entry.uuid)
+  ].filter(Boolean);
+}
+
+export function normalizeMissionObjectiveUpsertPayload(payload = {}) {
+  const localId = text(payload.localId) || null;
+  const objective = normalizeObjective({
+    localId: localId || "pending-command-id",
+    title: payload.title,
+    description: payload.description ?? "",
+    status: payload.status ?? "pending",
+    optional: Boolean(payload.optional)
+  });
+  return {
+    mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
+    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    localId,
+    objective
+  };
+}
+
+export function missionObjectiveUpsertResourceKeys(payload = {}) {
+  const normalized = normalizeMissionObjectiveUpsertPayload(payload);
+  return [normalized.mission.entityId ?? normalized.mission.uuid].filter(Boolean);
+}
+
+export function normalizeMissionObjectiveRemovePayload(payload = {}) {
+  const localId = text(payload.localId);
+  if (!localId) throw new ModuleError(ERROR_CODES.VALIDATION, "Objetivo exige localId.");
+  return {
+    mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
+    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    localId
+  };
+}
+
+export function missionObjectiveRemoveResourceKeys(payload = {}) {
+  const normalized = normalizeMissionObjectiveRemovePayload(payload);
+  return [normalized.mission.entityId ?? normalized.mission.uuid].filter(Boolean);
 }
 
 function normalizeCommittedResources(resources = []) {

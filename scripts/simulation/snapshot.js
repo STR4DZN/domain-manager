@@ -6,7 +6,7 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-export function buildSimulationSnapshot({ domains = [], projects = [], structures = [], catalog = [] } = {}) {
+export function buildSimulationSnapshot({ domains = [], projects = [], structures = [], agreements = [], catalog = [], currentTick = 0 } = {}) {
   const rawResources = Array.isArray(catalog) ? catalog : (catalog?.resources ?? []);
   const normalizedCatalog = rawResources.map((res) => ({
     id: String(res.id ?? "").trim(),
@@ -23,11 +23,19 @@ export function buildSimulationSnapshot({ domains = [], projects = [], structure
     population: {
       total: Number(dom.data?.population?.total ?? dom.population?.total ?? 0),
       countMode: dom.data?.population?.countMode ?? dom.population?.countMode ?? "direct",
+      morale: Number(dom.data?.population?.morale ?? dom.population?.morale ?? 60),
       groups: (dom.data?.population?.groups ?? dom.population?.groups ?? []).map((g) => ({
         localId: g.localId,
+        name: g.name ?? "",
         count: Number(g.count ?? 0),
-        includedInTotal: g.includedInTotal !== false
-      }))
+        includedInTotal: g.includedInTotal !== false,
+        status: g.status ?? "active",
+        morale: Number(g.morale ?? 60),
+        workforceEligible: Number(g.workforceEligible ?? 0)
+      })),
+      workforce: {
+        allocations: clone(dom.data?.population?.workforce?.allocations ?? dom.population?.workforce?.allocations ?? [])
+      }
     },
     security: {
       guardCount: Number(dom.data?.security?.guardCount ?? dom.security?.guardCount ?? 0)
@@ -37,6 +45,12 @@ export function buildSimulationSnapshot({ domains = [], projects = [], structure
       ?? dom.economy?.sustenanceSettings
       ?? dom.sustenanceSettings
       ?? null
+    ),
+    resourcePolicies: clone(
+      dom.data?.economy?.resourcePolicies
+      ?? dom.economy?.resourcePolicies
+      ?? dom.resourcePolicies
+      ?? []
     ),
     stocks: (dom.data?.economy?.stocks ?? dom.stocks ?? []).map((s) => ({
       resourceId: s.resourceId,
@@ -121,6 +135,29 @@ export function buildSimulationSnapshot({ domains = [], projects = [], structure
     }))
   }));
 
+
+  const normalizedAgreements = (agreements ?? []).map((agreement) => ({
+    entityId: agreement.data?.entityId ?? agreement.entityId ?? null,
+    uuid: agreement.uuid ?? agreement.document?.uuid ?? "",
+    name: agreement.name ?? agreement.document?.name ?? "Agreement",
+    description: agreement.data?.description ?? agreement.description ?? "",
+    parties: clone(agreement.data?.parties ?? agreement.parties ?? []),
+    type: agreement.data?.type ?? agreement.type ?? "custom",
+    status: agreement.data?.status ?? agreement.status ?? "draft",
+    startTick: agreement.data?.startTick ?? agreement.startTick ?? null,
+    endTick: agreement.data?.endTick ?? agreement.endTick ?? null,
+    transfers: (agreement.data?.transfers ?? agreement.transfers ?? []).map((transfer) => ({
+      localId: transfer.localId,
+      resourceId: transfer.resourceId,
+      fromDomain: clone(transfer.fromDomain),
+      toDomain: clone(transfer.toDomain),
+      amount: Number(transfer.amount ?? 0),
+      periodTicks: Number(transfer.periodTicks ?? 1),
+      carry: Number(transfer.carry ?? 0)
+    })),
+    tags: clone(agreement.data?.tags ?? agreement.tags ?? [])
+  }));
+
   const normalizedStructures = (structures ?? []).map((structure) => ({
     entityId: structure.data?.entityId ?? structure.entityId ?? null,
     uuid: structure.uuid ?? structure.document?.uuid ?? "",
@@ -131,6 +168,8 @@ export function buildSimulationSnapshot({ domains = [], projects = [], structure
     condition: Number(structure.data?.condition ?? structure.condition ?? 100),
     tier: Number(structure.data?.tier ?? structure.tier ?? 1),
     capacity: Number(structure.data?.capacity ?? structure.capacity ?? 0),
+    maintenancePriority: Number(structure.data?.maintenancePriority ?? structure.maintenancePriority ?? 50),
+    workforceRequired: Number(structure.data?.workforceRequired ?? structure.workforceRequired ?? 0),
     maintenance: (structure.data?.maintenance ?? structure.maintenance ?? []).map((entry) => ({
       resourceId: entry.resourceId,
       amount: Number(entry.amount ?? 0)
@@ -143,9 +182,11 @@ export function buildSimulationSnapshot({ domains = [], projects = [], structure
 
   return {
     timestamp: Date.now(),
+    currentTick: Math.max(0, Math.floor(Number(currentTick) || 0)),
     catalog: normalizedCatalog,
     domains: clone(normalizedDomains),
     projects: clone(normalizedProjects),
-    structures: clone(normalizedStructures)
+    structures: clone(normalizedStructures),
+    agreements: clone(normalizedAgreements)
   };
 }

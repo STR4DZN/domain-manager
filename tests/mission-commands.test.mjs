@@ -90,7 +90,7 @@ function makeDocument({ id, name, recordType, data, ownership = {} }) {
     documentName: "JournalEntry",
     name,
     ownership: structuredClone(ownership),
-    flags: { "domain-manager": { recordType, schemaVersion: 6, data: structuredClone(data) } },
+    flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
     async update(changes) {
       for (const [key, value] of Object.entries(changes)) {
@@ -371,4 +371,208 @@ test("Mission rejeita referência UUID/entityId inconsistente", async () => {
       resources: []
     }
   }, { callerUserId: "P1" }), /entidades diferentes/i);
+});
+
+test("mission.update edita metadados sem permitir transição de lifecycle", async () => {
+  const domain = domainDocument();
+  const related = makeDocument({
+    id: "D2",
+    name: "Posto Boreal",
+    recordType: "domain",
+    data: {
+      entityId: "domain:D2",
+      description: "",
+      management: { preset: "base", capabilities: { missions: true, squads: true } },
+      governance: { controllers: [] },
+      identity: { tags: [] },
+      economy: { stocks: [], flows: [] },
+      population: { groups: [], notables: [] },
+      conditions: [], relations: [], agreements: [], intel: [], history: [], notifications: []
+    }
+  });
+  const mission = missionDocument({ status: "available", audience: ["P1"] });
+  resetWorld(domain, related, mission);
+
+  const result = await dispatchAuthoritativeCommand({
+    commandType: "mission.update",
+    operationId: "mission-update-1",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedStatus: "available",
+      name: "Operação Farol Revisada",
+      primaryDomain: ref(domain, "domain", "domain:D1"),
+      relatedDomains: [ref(related, "domain", "domain:D2")],
+      audienceUserIds: ["P1", "P2"],
+      briefing: "Novo briefing",
+      outcomeSummary: "Pré-planejamento"
+    }
+  }, { callerUserId: "GM" });
+
+  assert.equal(result.status, "available");
+  assert.equal(mission.name, "Operação Farol Revisada");
+  assert.deepEqual(mission.getFlag("domain-manager", "data").relatedDomainUuids, [related.uuid]);
+  assert.deepEqual(mission.getFlag("domain-manager", "data").audienceUserIds, ["P1", "P2"]);
+  assert.equal(mission.ownership.P2, 2);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.update",
+    operationId: "mission-update-status-bypass",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedStatus: "resolved",
+      name: mission.name,
+      primaryDomain: ref(domain, "domain", "domain:D1"),
+      relatedDomains: [ref(related, "domain", "domain:D2")],
+      audienceUserIds: ["P1", "P2"],
+      briefing: "Tentativa inválida",
+      outcomeSummary: ""
+    }
+  }, { callerUserId: "GM" }), /lifecycle|status/i);
+
+  assert.equal(mission.getFlag("domain-manager", "data").status, "available");
+});
+
+test("mission.update não muda topologia de Domain enquanto há Squad preparado", async () => {
+  const domain = domainDocument();
+  const related = makeDocument({
+    id: "D2",
+    name: "Posto Boreal",
+    recordType: "domain",
+    data: {
+      entityId: "domain:D2",
+      description: "",
+      management: { preset: "base", capabilities: { missions: true } },
+      governance: { controllers: [] }, identity: { tags: [] }, economy: { stocks: [], flows: [] },
+      population: { groups: [], notables: [] }, conditions: [], relations: [], agreements: [], intel: [], history: [], notifications: []
+    }
+  });
+  const squad = squadDocument();
+  const assignment = {
+    localId: "a1",
+    squad: ref(squad, "squad", "squad:S1"),
+    committedStrength: 5,
+    resources: [],
+    state: "prepared",
+    result: { casualties: 0, moraleDelta: 0, conditionDelta: 0, notes: "" }
+  };
+  const mission = missionDocument({ assignments: [assignment] });
+  resetWorld(domain, related, squad, mission);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.update",
+    operationId: "mission-update-domains-locked",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedStatus: "available",
+      name: mission.name,
+      primaryDomain: ref(domain, "domain", "domain:D1"),
+      relatedDomains: [ref(related, "domain", "domain:D2")],
+      audienceUserIds: ["P1"],
+      briefing: "",
+      outcomeSummary: ""
+    }
+  }, { callerUserId: "GM" }), /libere os Squads/i);
+});
+
+test("objetivos de Mission usam Command Kernel e retry idempotente não duplica", async () => {
+  const domain = domainDocument();
+  const mission = missionDocument();
+  resetWorld(domain, mission);
+
+  const command = {
+    commandType: "mission.objective-upsert",
+    operationId: "mission-objective-add-1",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      title: "Extrair dados",
+      description: "Recuperar o núcleo",
+      status: "pending",
+      optional: true
+    }
+  };
+  const first = await dispatchAuthoritativeCommand(command, { callerUserId: "GM" });
+  const second = await dispatchAuthoritativeCommand(command, { callerUserId: "GM" });
+  assert.equal(first.duplicate, false);
+  assert.equal(second.duplicate, true);
+  const objectives = mission.getFlag("domain-manager", "data").objectives;
+  assert.equal(objectives.length, 2);
+  const added = objectives.find((entry) => entry.title === "Extrair dados");
+  assert.ok(added?.localId);
+
+  await dispatchAuthoritativeCommand({
+    commandType: "mission.objective-remove",
+    operationId: "mission-objective-remove-1",
+    payload: { mission: ref(mission, "mission", "mission:M1"), localId: added.localId }
+  }, { callerUserId: "GM" });
+  assert.equal(mission.getFlag("domain-manager", "data").objectives.length, 1);
+});
+
+test("APIs legadas de Mission delegam ao kernel e bloqueiam origem derivada direta", async () => {
+  const domain = domainDocument();
+  const mission = missionDocument();
+  resetWorld(domain, mission);
+  const actions = await import("../scripts/features/missions/actions.js");
+
+  const created = await actions.createMissionAction({
+    name: "Operação Wrapper",
+    primaryDomainUuid: domain.uuid,
+    audienceUserIds: ["P1"],
+    status: "available",
+    briefing: "Via compatibilidade",
+    operationId: "legacy-mission-create"
+  });
+  assert.equal(created.recordType, "mission");
+  assert.equal(created.document.name, "Operação Wrapper");
+
+  await actions.updateMissionAction({
+    missionUuid: mission.uuid,
+    name: "Operação Farol Compat",
+    primaryDomainUuid: domain.uuid,
+    relatedDomainUuids: [],
+    audienceUserIds: ["P1"],
+    status: "available",
+    briefing: "Atualizado pelo wrapper",
+    outcomeSummary: "",
+    operationId: "legacy-mission-update"
+  });
+  assert.equal(mission.name, "Operação Farol Compat");
+  assert.equal(mission.getFlag("domain-manager", "data").briefing, "Atualizado pelo wrapper");
+
+  await assert.rejects(() => actions.createMissionAction({
+    name: "Bypass de Request",
+    primaryDomainUuid: domain.uuid,
+    originKind: "request",
+    originUuid: "JournalEntry.R1",
+    operationId: "legacy-mission-derived"
+  }), /bridge canônico|derivada/i);
+});
+
+test("mission.update e objective commands são GM-only", async () => {
+  const domain = domainDocument();
+  const mission = missionDocument();
+  resetWorld(domain, mission);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.update",
+    operationId: "mission-update-player-denied",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedStatus: "available",
+      name: mission.name,
+      primaryDomain: ref(domain, "domain", "domain:D1"),
+      relatedDomains: [],
+      audienceUserIds: ["P1"],
+      briefing: "Tentativa",
+      outcomeSummary: ""
+    }
+  }, { callerUserId: "P1" }), /Somente GM/i);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.objective-upsert",
+    operationId: "mission-objective-player-denied",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      title: "Objetivo clandestino"
+    }
+  }, { callerUserId: "P1" }), /Somente GM/i);
 });

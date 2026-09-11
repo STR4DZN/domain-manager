@@ -192,3 +192,63 @@ export function planRequestDecision(
     history: nextHistory
   };
 }
+
+const REQUEST_WITHDRAWABLE_STATUSES = Object.freeze([
+  "submitted",
+  "under-review",
+  "needs-changes"
+]);
+
+export function planRequestWithdrawal(requestData, { withdrawnByUserUuid, summary = "" } = {}) {
+  if (!REQUEST_WITHDRAWABLE_STATUSES.includes(requestData?.status)) {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "A Request só pode ser retirada enquanto ainda está no fluxo de revisão."
+    );
+  }
+  if (requestData?.resultUuid) {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "Request com resultado materializado não pode ser retirada."
+    );
+  }
+  const cleanSummary = String(summary ?? "").trim();
+  const nextHistory = [
+    ...(requestData.history ?? []),
+    {
+      kind: "withdrawn",
+      summary: cleanSummary || "Solicitação retirada pelo solicitante.",
+      userUuid: withdrawnByUserUuid ?? null,
+      tick: null
+    }
+  ];
+  return {
+    ...requestData,
+    status: "withdrawn",
+    history: nextHistory
+  };
+}
+
+export function planRequestFulfillment(requestData, { fulfilledByUserUuid, summary = "" } = {}) {
+  if (requestData?.status !== "approved") {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "Somente Request aprovada pode ser marcada como cumprida."
+    );
+  }
+  const cleanSummary = String(summary ?? "").trim();
+  const nextHistory = [
+    ...(requestData.history ?? []),
+    {
+      kind: "fulfilled",
+      summary: cleanSummary || "Atendimento confirmado pelo GM.",
+      userUuid: fulfilledByUserUuid ?? null,
+      tick: null
+    }
+  ];
+  return {
+    ...requestData,
+    status: "fulfilled",
+    history: nextHistory
+  };
+}

@@ -1,73 +1,14 @@
-import { RECORD_TYPES } from "../../core/constants.js";
-import { recordIndex } from "../../data/record-index.js";
-import { updateRecord } from "../../data/journal-store.js";
-import { decodeRecord } from "../../models/record-codec.js";
-import {
-  addDomainCondition,
-  removeDomainCondition,
-  updateDomainCondition
-} from "./rules.js";
+import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
+import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
+import { getRecord } from "../../data/journal-store.js";
 
-function loadDomain(domainUuid) {
-  if (!game.user.isGM) {
-    throw new Error("Apenas o Mestre pode alterar condições.");
-  }
-
-  const document = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!document) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-  return decodeRecord(document);
+function ref(uuid) { return { recordType: RECORD_TYPES.DOMAIN, uuid, entityId: null }; }
+function operationId(value = null) { return String(value ?? "").trim() || foundry.utils.randomID(); }
+async function run(commandType, domainUuid, payload, requestedOperationId) {
+  await dispatchAuthoritativeCommand({ commandType, operationId: operationId(requestedOperationId), payload: { domain: ref(domainUuid), ...payload } }, { callerUserId: game.user.id });
+  return getRecord(domainUuid);
 }
-
-async function persistConditions(domainUuid, data) {
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
-}
-
-export async function createDomainConditionAction({
-  domainUuid,
-  condition
-}) {
-  const domain = loadDomain(domainUuid);
-  return persistConditions(
-    domainUuid,
-    addDomainCondition(domain.data, condition)
-  );
-}
-
-export async function updateDomainConditionAction({
-  domainUuid,
-  localId,
-  patch
-}) {
-  const domain = loadDomain(domainUuid);
-  return persistConditions(
-    domainUuid,
-    updateDomainCondition(domain.data, localId, patch)
-  );
-}
-
-export async function removeDomainConditionAction({ domainUuid, localId }) {
-  const domain = loadDomain(domainUuid);
-  return persistConditions(
-    domainUuid,
-    removeDomainCondition(domain.data, localId)
-  );
-}
-
-export async function toggleDomainConditionAction({ domainUuid, localId }) {
-  const domain = loadDomain(domainUuid);
-  const condition = domain.data.conditions.find(
-    (item) => item.localId === localId
-  );
-  if (!condition) throw new Error(`Condição '${localId}' não encontrada.`);
-
-  return persistConditions(
-    domainUuid,
-    updateDomainCondition(domain.data, localId, {
-      active: !condition.active
-    })
-  );
-}
+export function createDomainConditionAction({ domainUuid, condition, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_CREATE, domainUuid, { condition }, id); }
+export function updateDomainConditionAction({ domainUuid, localId, patch, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_UPDATE, domainUuid, { localId, patch }, id); }
+export function removeDomainConditionAction({ domainUuid, localId, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_REMOVE, domainUuid, { localId }, id); }
+export function toggleDomainConditionAction({ domainUuid, localId, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_TOGGLE, domainUuid, { localId }, id); }

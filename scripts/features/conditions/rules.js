@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Regras puras para Conditions (Condições e Efeitos Temporários) de Domínios.
  */
 
@@ -46,7 +46,9 @@ export function updateDomainCondition(domainData, localId, patch = {}) {
       ...cond,
       name: patch.name != null ? String(patch.name).trim() : cond.name,
       description: patch.description != null ? String(patch.description).trim() : cond.description,
-      durationTicks: patch.durationTicks != null ? Math.max(1, Math.floor(Number(patch.durationTicks))) : cond.durationTicks,
+      durationTicks: Object.prototype.hasOwnProperty.call(patch, "durationTicks")
+        ? (patch.durationTicks === null ? null : Math.max(1, Math.floor(Number(patch.durationTicks))))
+        : cond.durationTicks,
       severity: patch.severity && ["minor", "moderate", "severe"].includes(patch.severity) ? patch.severity : cond.severity,
       category: patch.category != null ? String(patch.category).trim() : cond.category,
       active: patch.active != null ? Boolean(patch.active) : cond.active

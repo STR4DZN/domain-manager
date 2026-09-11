@@ -39,10 +39,10 @@ test("Mission Control chama exclusivamente os command types autoritativos para m
 });
 
 test("template Handlebars mantém blocos if/each balanceados", () => {
-  const tokens = [...template.matchAll(/{{\s*(#(?:if|each)|\/(?:if|each)|else)\b[^}]*}}/g)].map((match) => match[1]);
+  const tokens = [...template.matchAll(/{{\s*(#(?:if|each|unless)|\/(?:if|each|unless)|else)\b[^}]*}}/g)].map((match) => match[1]);
   const stack = [];
   for (const token of tokens) {
-    if (token === "#if" || token === "#each") stack.push(token.slice(1));
+    if (token === "#if" || token === "#each" || token === "#unless") stack.push(token.slice(1));
     else if (token.startsWith("/")) {
       const closing = token.slice(1);
       assert.equal(stack.pop(), closing, `bloco Handlebars fechado fora de ordem: ${closing}`);
@@ -55,7 +55,8 @@ test("template Handlebars mantém blocos if/each balanceados", () => {
 
 test("Mission Control possui linguagem visual própria para cards, preparação e after-action", () => {
   for (const selector of [
-    ".dm-mission-card--control",
+    ".dm-mission-card",
+    ".dm-target-reticle",
     ".dm-mission-telemetry",
     ".dm-mission-ready-unit",
     ".dm-mission-outcome"
@@ -66,4 +67,14 @@ test("Mission Control possui linguagem visual própria para cards, preparação 
     ".dm-resolution-unit",
     ".dm-resolution-objective"
   ]) assert.ok(dialogsCss.includes(selector), `selector ausente: ${selector}`);
+});
+
+test("Mission legacy actions não mantêm persistência/autoridade paralela", () => {
+  const actions = fs.readFileSync(path.join(root, "scripts/features/missions/actions.js"), "utf8");
+  for (const forbidden of ["createRecord", "updateRecord", "updateRecordsBatch", "transactionQueue"]) {
+    assert.ok(!actions.includes(forbidden), `actions.js ainda contém write path legado: ${forbidden}`);
+  }
+  for (const command of ["MISSION_CREATE", "MISSION_UPDATE", "MISSION_OBJECTIVE_UPSERT", "MISSION_OBJECTIVE_REMOVE"]) {
+    assert.match(actions, new RegExp(`COMMAND_TYPES\\.${command}`), `wrapper não delega ${command}`);
+  }
 });

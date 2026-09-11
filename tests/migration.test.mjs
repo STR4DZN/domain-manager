@@ -174,3 +174,167 @@ test("migração v5 -> v6 preserva referência activeProject já existente", () 
 
   assert.deepEqual(migrated.data.activeProject, activeProject);
 });
+
+test("migração v6 -> v7 adiciona políticas econômicas e prioridade de manutenção", () => {
+  const domain = migrationPipeline.migrateDocumentFlags({
+    recordType: "domain", schemaVersion: 6,
+    data: { entityId: "domain:legacy", economy: { stocks: [], flows: [] } }
+  }, 6);
+  assert.equal(domain.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(domain.data.economy.resourcePolicies, []);
+
+  const structure = migrationPipeline.migrateDocumentFlags({
+    recordType: "structure", schemaVersion: 6,
+    data: { entityId: "structure:legacy", status: "operational", condition: 100 }
+  }, 6);
+  assert.equal(structure.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(structure.data.maintenancePriority, 50);
+});
+
+test("migração v6 -> v7 preserva políticas e prioridade já definidas", () => {
+  const policies = [{ resourceId: "fuel", criticalFloor: 10, reserveTarget: 20, storageCapacity: 100 }];
+  const domain = migrationPipeline.migrateDocumentFlags({
+    recordType: "domain", schemaVersion: 6,
+    data: { entityId: "domain:configured", economy: { stocks: [], flows: [], resourcePolicies: policies } }
+  }, 6);
+  assert.deepEqual(domain.data.economy.resourcePolicies, policies);
+
+  const structure = migrationPipeline.migrateDocumentFlags({
+    recordType: "structure", schemaVersion: 6,
+    data: { entityId: "structure:critical", maintenancePriority: 95 }
+  }, 6);
+  assert.equal(structure.data.maintenancePriority, 95);
+});
+
+test("migração v7 -> v8 adiciona moral, workforce e staffing sem perder dados civis", () => {
+  const domain = migrationPipeline.migrateDocumentFlags({
+    recordType: "domain",
+    schemaVersion: 7,
+    data: {
+      entityId: "domain:civil",
+      population: {
+        total: 120,
+        countMode: "direct",
+        groups: [
+          { localId: "g1", name: "Operários", count: 80, includedInTotal: true, quality: "Estável", status: "active", assignment: "Mineração" },
+          { localId: "g2", name: "Reserva", count: 40, includedInTotal: true, quality: "Insatisfeito", status: "inactive", assignment: "" }
+        ],
+        notables: []
+      }
+    }
+  }, 7);
+
+  assert.equal(domain.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(domain.data.population.morale, 60);
+  assert.equal(domain.data.population.groups[0].morale, 70);
+  assert.equal(domain.data.population.groups[0].workforceEligible, 80);
+  assert.equal(domain.data.population.groups[1].morale, 40);
+  assert.equal(domain.data.population.groups[1].workforceEligible, 40);
+  assert.deepEqual(domain.data.population.workforce.allocations, []);
+  assert.equal(domain.data.population.groups[0].assignment, "Mineração");
+});
+
+test("migração v7 -> v8 preserva workforce/moral explícitos e adiciona workforceRequired a Structure", () => {
+  const allocation = {
+    localId: "wa1",
+    groupLocalId: "g1",
+    target: { recordType: "structure", entityId: "structure:S1" },
+    count: 4,
+    role: "Operadores"
+  };
+  const domain = migrationPipeline.migrateDocumentFlags({
+    recordType: "domain", schemaVersion: 7,
+    data: {
+      entityId: "domain:civil",
+      population: {
+        total: 10,
+        countMode: "direct",
+        morale: 82,
+        groups: [{ localId: "g1", name: "Técnicos", count: 10, morale: 91, workforceEligible: 6 }],
+        workforce: { allocations: [allocation] },
+        notables: []
+      }
+    }
+  }, 7);
+  assert.equal(domain.data.population.morale, 82);
+  assert.equal(domain.data.population.groups[0].morale, 91);
+  assert.equal(domain.data.population.groups[0].workforceEligible, 6);
+  assert.deepEqual(domain.data.population.workforce.allocations, [allocation]);
+
+  const structure = migrationPipeline.migrateDocumentFlags({
+    recordType: "structure", schemaVersion: 7,
+    data: { entityId: "structure:S1", maintenancePriority: 90 }
+  }, 7);
+  assert.equal(structure.data.workforceRequired, 0);
+});
+
+test("migração v7 -> v8 adiciona estado humano mínimo a Person legado", () => {
+  const person = migrationPipeline.migrateDocumentFlags({
+    recordType: "person", schemaVersion: 7,
+    data: { entityId: "person:P1", role: "Medic" }
+  }, 7);
+  assert.equal(person.data.portrait, "");
+  assert.equal(person.data.morale, 60);
+  assert.equal(person.data.condition, 100);
+});
+
+test("migração v8 -> v9 adiciona território e moderniza relações/intel sem apagar legado", () => {
+  const migrated = migrationPipeline.migrateDocumentFlags({
+    recordType: "domain",
+    schemaVersion: 8,
+    data: {
+      entityId: "domain:D1",
+      relations: [{ localId: "r1", targetDomainUuid: "JournalEntry.D2", posture: "friendly", notes: "Legado" }],
+      intel: [{ localId: "i1", title: "Contato", category: "fact", visibility: "gm_only", content: "", credibility: "confirmed", source: "", revealed: false, tags: [] }]
+    }
+  }, 8);
+
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(migrated.data.territory, {
+    controlState: "unknown",
+    controller: null,
+    control: 0,
+    strategicValue: 0,
+    influence: [],
+    notes: ""
+  });
+  assert.deepEqual(migrated.data.relations[0].target, {
+    recordType: "domain",
+    uuid: "JournalEntry.D2",
+    entityId: null
+  });
+  assert.equal(migrated.data.relations[0].targetDomainUuid, "JournalEntry.D2");
+  assert.equal(migrated.data.relations[0].score, 0);
+  assert.equal(migrated.data.relations[0].trust, 50);
+  assert.equal(migrated.data.relations[0].tension, 0);
+  assert.equal(migrated.data.intel[0].targetDomain, null);
+});
+
+test("migração v8 -> v9 preserva estado territorial e referências modernas explícitas", () => {
+  const target = { recordType: "domain", uuid: "JournalEntry.D2", entityId: "domain:D2" };
+  const territory = {
+    controlState: "contested",
+    controller: target,
+    control: 64,
+    strategicValue: 91,
+    influence: [{ localId: "inf1", domain: target, value: 64, notes: "Pressão" }],
+    notes: "Fronteira disputada"
+  };
+  const migrated = migrationPipeline.migrateDocumentFlags({
+    recordType: "domain",
+    schemaVersion: 8,
+    data: {
+      entityId: "domain:D1",
+      territory,
+      relations: [{ localId: "r1", targetDomainUuid: "JournalEntry.D2", target, posture: "rival", score: -45, trust: 12, tension: 88, notes: "" }],
+      intel: [{ localId: "i1", title: "Alvo", category: "secret", visibility: "gm_only", targetDomain: target, content: "x", credibility: "likely", source: "agent", revealed: false, tags: [] }]
+    }
+  }, 8);
+
+  assert.deepEqual(migrated.data.territory, territory);
+  assert.deepEqual(migrated.data.relations[0].target, target);
+  assert.equal(migrated.data.relations[0].score, -45);
+  assert.equal(migrated.data.relations[0].trust, 12);
+  assert.equal(migrated.data.relations[0].tension, 88);
+  assert.deepEqual(migrated.data.intel[0].targetDomain, target);
+});

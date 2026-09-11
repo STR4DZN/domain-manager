@@ -23,62 +23,22 @@ export async function pingAuthority() {
 
   return socket.executeAsGM("authority.ping");
 }
-export async function createRequestAuthoritatively(
-  payload
-) {
-  const socket = getAuthoritySocket();
-
-  if (!socket) {
-    throw new ModuleError(
-      ERROR_CODES.AUTHORITY_UNAVAILABLE,
-      "A autoridade do módulo ainda não está pronta."
-    );
-  }
-
-  const withOperationId = {
-    ...payload,
-    operationId:
-      payload.operationId
-      || foundry.utils.randomID()
-  };
-
-  if (isPrimaryActiveGM()) {
-    const {
-      performCreateRequest
-    } = await import(
-      "../features/requests/actions.js"
-    );
-
-    return performCreateRequest(
-      withOperationId,
-      game.user.id
-    );
-  }
-
-  if (!game.users.activeGM) {
-    throw new ModuleError(
-      ERROR_CODES.AUTHORITY_UNAVAILABLE,
-      "Nenhum Mestre ativo está disponível para receber esta solicitação."
-    );
-  }
-
-  try {
-    return await socket.executeAsGM(
-      "request.create",
-      withOperationId
-    );
-  } catch (error) {
-    console.error(
-      "[domain-manager] request.create falhou no GM remoto:",
-      error
-    );
-
-    throw new ModuleError(
-      ERROR_CODES.SYSTEM,
-      "O Mestre foi encontrado, mas ocorreu um erro ao registrar a solicitação. Verifique o console do GM.",
-      { cause: error }
-    );
-  }
+export async function createRequestAuthoritatively(payload) {
+  return executeCommandAuthoritatively({
+    commandType: "request.create",
+    payload: {
+      domain: payload.domain ?? {
+        recordType: "domain",
+        uuid: payload.primaryDomainUuid ?? null,
+        entityId: payload.primaryDomainEntityId ?? null
+      },
+      type: payload.type,
+      title: payload.title,
+      intent: payload.intent,
+      details: payload.details
+    },
+    operationId: payload.operationId || null
+  });
 }
 
 

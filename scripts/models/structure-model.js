@@ -52,6 +52,8 @@ export class StructureModel extends foundry.abstract.DataModel {
       }),
       condition: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 100 }),
       capacity: new NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 }),
+      maintenancePriority: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 50 }),
+      workforceRequired: new NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 }),
       maintenance: new ArrayField(resourceAmountSchema(), { required: true, nullable: false, initial: [] }),
       production: new ArrayField(resourceAmountSchema(), { required: true, nullable: false, initial: [] }),
       tags: new ArrayField(

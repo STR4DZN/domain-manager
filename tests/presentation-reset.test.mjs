@@ -1,0 +1,88 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const template = fs.readFileSync(path.join(root, "templates/app-shell.hbs"), "utf8");
+const baseCss = fs.readFileSync(path.join(root, "styles/app/base.css"), "utf8");
+const navCss = fs.readFileSync(path.join(root, "styles/app/navigation.css"), "utf8");
+const viewsCss = fs.readFileSync(path.join(root, "styles/app/views.css"), "utf8");
+
+test("Presentation Reset remove a anatomia antiga de rail + entity deck + tab bar", () => {
+  for (const legacy of ["dm-command-rail", "dm-entity-deck", "dm-domain-tabs", "dm-domain-tab"]) {
+    assert.equal(template.includes(legacy), false, `estrutura antiga ainda presente: ${legacy}`);
+  }
+});
+
+test("Presentation Reset v4 usa shell de app com sidebar única, workspace e inspector", () => {
+  for (const marker of ["dm-app-sidebar", "dm-app-topbar", "dm-app-workarea", "dm-stage", "dm-inspector", "dm-app-statusbar"]) {
+    assert.ok(template.includes(marker), `marker novo ausente: ${marker}`);
+  }
+  for (const selector of [".dm-app-sidebar", ".dm-app-topbar", ".dm-inspector", ".dm-app-statusbar"]) {
+    assert.ok(navCss.includes(selector), `selector novo ausente: ${selector}`);
+  }
+  for (const obsolete of ["dm-workspace-dock", "dm-context-console", "dm-subsystem-strip", "dm-command-header"]) {
+    assert.equal(template.includes(obsolete), false, `anatomia intermediária ainda presente: ${obsolete}`);
+  }
+});
+
+test("Command view não é um KPI grid tradicional", () => {
+  assert.ok(template.includes("dm-network-field"));
+  assert.ok(template.includes("dm-network-canvas"));
+  assert.ok(template.includes("dm-command-stack"));
+  assert.equal(template.includes("dm-stat-grid--five"), false);
+  for (const selector of [".dm-network-field", ".dm-network-canvas", ".dm-node-signal", ".dm-telemetry-ladder"]) {
+    assert.ok(viewsCss.includes(selector), `linguagem command ausente: ${selector}`);
+  }
+});
+
+test("novo shell prioriza arquitetura de aplicativo e workspaces assimétricos", () => {
+  assert.ok(baseCss.includes("grid-template-columns:var(--dm-sidebar-width) minmax(0,1fr)"));
+  assert.ok(baseCss.includes("grid-template-columns:minmax(0,1fr) var(--dm-inspector-width)"));
+  assert.ok(viewsCss.includes(".dm-overview-grid"));
+  assert.ok(viewsCss.includes(".dm-economy-scope"));
+  assert.ok(viewsCss.includes(".dm-diplomacy-grid"));
+});
+
+test("Presentation Reset não deixa fósseis da anatomia antiga em template, styles ou shell", () => {
+  const shell = fs.readFileSync(path.join(root, "scripts/ui/shell-app.js"), "utf8");
+  const presentation = `${template}\n${baseCss}\n${navCss}\n${viewsCss}\n${shell}`;
+  for (const legacy of ["dm-command-rail", "dm-entity-deck", "dm-domain-tabs", "dm-domain-tab", "dm-stat-grid--five", "dm-workspace-dock", "dm-context-console", "dm-subsystem-strip", "dm-command-header", "dm-person-card", "dm-person-dossier", "dm-people-workbench", "dm-project-node", "dm-project-pipeline"]) {
+    assert.equal(presentation.includes(legacy), false, `fóssil visual antigo encontrado: ${legacy}`);
+  }
+});
+
+test("Presentation Reset não reintroduz animação decorativa infinita", () => {
+  const componentCss = fs.readFileSync(path.join(root, "styles/app/components.css"), "utf8");
+  const dialogCss = fs.readFileSync(path.join(root, "styles/app/dialogs.css"), "utf8");
+  const allCss = `${baseCss}\n${navCss}\n${viewsCss}\n${componentCss}\n${dialogCss}`;
+  assert.equal(/animation\s*:[^;]*infinite/i.test(allCss), false);
+});
+
+test("command consoles usam a mesma linguagem do app e não dialogs genéricos", () => {
+  const dialogCss = fs.readFileSync(path.join(root, "styles/app/dialogs.css"), "utf8");
+  for (const marker of [".dm-modal-layer", ".dm-system-dialog::before", ".dm-system-dialog__telemetry", ".dm-resource-matrix"]) {
+    assert.ok(dialogCss.includes(marker), `console visual ausente: ${marker}`);
+  }
+  assert.ok(dialogCss.includes("COMMAND CONSOLE"));
+});
+
+
+
+test("Personnel usa diretório master-detail e inspector contextual em vez de card grid", () => {
+  for (const marker of ["dm-personnel-overview", "dm-personnel-table", "dm-personnel-row", "dm-person-inspector__hero", "dm-person-inspector__facts"]) {
+    assert.ok(template.includes(marker), `estrutura Personnel ausente: ${marker}`);
+  }
+  assert.ok(viewsCss.includes(".dm-personnel-table"));
+  assert.ok(navCss.includes(".dm-person-inspector__hero"));
+  assert.equal(template.includes("dm-person-card"), false);
+});
+
+test("shell abre em canvas amplo mas mantém breakpoint compacto", () => {
+  const shell = fs.readFileSync(path.join(root, "scripts/ui/shell-app.js"), "utf8");
+  assert.ok(shell.includes("position: { width: 1480, height: 880 }"));
+  assert.ok(baseCss.includes("min-width:980px"));
+  assert.ok(baseCss.includes("@media(max-width:1100px)"));
+});

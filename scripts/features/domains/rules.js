@@ -107,6 +107,9 @@ export function normalizeDomainDraft({
       stocks: Array.isArray(sourceEconomy?.stocks)
         ? structuredClone(sourceEconomy.stocks)
         : [],
+      resourcePolicies: Array.isArray(sourceEconomy?.resourcePolicies)
+        ? structuredClone(sourceEconomy.resourcePolicies)
+        : [],
       flows: Array.isArray(sourceEconomy?.flows)
         ? structuredClone(sourceEconomy.flows)
         : []

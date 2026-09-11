@@ -53,7 +53,7 @@ function document({ id, name, recordType, data }) {
     name,
     ownership: {},
     flags: {
-      "domain-manager": { recordType, schemaVersion: 6, data: structuredClone(data) }
+      "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) }
     },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; }
   };

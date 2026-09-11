@@ -8,7 +8,7 @@ import {
 } from "../core/entity-contracts.js";
 import { entityReferenceSchema } from "./reference-fields.js";
 
-const { ArrayField, StringField } = foundry.data.fields;
+const { ArrayField, NumberField, StringField } = foundry.data.fields;
 
 function nullableUuidField() {
   return new StringField({ required: true, nullable: true, blank: false, initial: null });
@@ -22,12 +22,15 @@ export class PersonModel extends foundry.abstract.DataModel {
         initial: () => buildEntityId(RECORD_TYPES.PERSON)
       }),
       description: new StringField({ required: true, nullable: false, blank: true, initial: "" }),
+      portrait: new StringField({ required: true, nullable: false, blank: true, initial: "" }),
       actorUuid: nullableUuidField(),
       primaryDomain: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.DOMAIN], nullable: true }),
       squad: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.SQUAD], nullable: true }),
       currentLocation: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.DOMAIN], nullable: true }),
       role: new StringField({ required: true, nullable: false, blank: true, initial: "" }),
       specialization: new StringField({ required: true, nullable: false, blank: true, initial: "" }),
+      morale: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 60 }),
+      condition: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 100 }),
       status: new StringField({
         required: true,
         nullable: false,

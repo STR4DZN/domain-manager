@@ -5,16 +5,31 @@
 
 **Domain Manager** é um framework estratégico e operacional para Foundry VTT v13. Ele conecta Domains, economia, projetos, squads, pessoas, estruturas, missões, diplomacia, território e inteligência dentro de um estado persistente e multiplayer.
 
-## Strategic Operations System
+## DOMAIN//OS — True App Architecture
 
-A partir do `dev.131`, a interface antiga foi removida. A UI agora é um aplicativo novo, baseado em quatro zonas funcionais:
+A partir do `dev.134.3`, a camada de apresentação passa a seguir um contrato de produto reconstruído a partir de **26 referências FUI** e **3 referências de aplicativos modernos**. O kernel/schema permanecem independentes da apresentação.
 
-- **Command Rail** — navegação global compacta.
-- **Entity Deck** — seleção e busca de Domains.
-- **Workspace** — módulos contextuais controlados por capabilities.
-- **System Footer** — autoridade, sincronização e diagnóstico.
+A arquitetura oficial é:
 
-A linguagem visual foi construída a partir de 26 referências FUI analisadas individualmente e segue o princípio **App first, FUI second**: estética futurista sem sacrificar hierarquia, leitura ou interação. Consulte `docs/VISUAL_REFERENCE_AUDIT.md` e `docs/DESIGN_LANGUAGE.md`.
+- **App Sidebar** — única navegação global, Domain switcher compacto e workspaces hierárquicos;
+- **Global Topbar** — breadcrumb, busca e autoridade em uma única camada;
+- **Domain Toolbar** — contexto compacto apenas dentro de ferramentas de Domain;
+- **Workspace** — ferramenta principal, com composição específica por sistema;
+- **Context Inspector** — detalhes do objeto selecionado, nunca uma segunda navegação;
+- **Statusbar** — estado mínimo do kernel/contexto;
+- **Command Consoles** — criação/edição integrada ao mesmo produto.
+
+Foram removidos também os intermediários do reset anterior: **Workspace Dock inferior**, `Context Console` como seletor permanente de Domain e `Subsystem Strip`. Não existem Command Rail, Entity Deck ou Domain tab bar.
+
+Padrões já materializados:
+- Personnel usa directory + dossier contextual (master-detail);
+- Projects usa engineering worklist em vez de galeria de cards;
+- Registry usa índice tabular + telemetria;
+- Infrastructure, Missions, Forces, Defense, Territory, Relations e System mantêm composições próprias;
+- busca global e navegação por workspace permanecem separadas da seleção de Domain;
+- nenhuma animação decorativa infinita.
+
+Consulte `docs/VISUAL_REFERENCE_AUDIT.md`, `docs/DESIGN_LANGUAGE.md` e `DEV1343_TRUE_APP_AUDIT.md`.
 
 ## Vertical slices operacionais
 
@@ -48,6 +63,52 @@ Consulte `docs/SQUAD_MVP.md` e `docs/MISSION_MVP.md`.
 
 Consulte `docs/STRUCTURES_BASE_CORE.md`.
 
+### Strategic Economy — dev.135
+
+- Políticas por recurso definem piso crítico, reserva-alvo e capacidade física.
+- Structures disputam manutenção por prioridade explícita e degradam quando o serviço é insuficiente.
+- Produção respeita condição e atendimento de manutenção.
+- Agreements temporários, storage overflow e Projects são resolvidos dentro da mesma linha temporal.
+- Logistics usa Strategic Ledger real em vez de exibir somente flows persistentes.
+- Policy Console configura economia exclusivamente pelo Command Kernel.
+- `advance(N)` é testado contra N avanços unitários em cenários combinados.
+
+Consulte `docs/STRATEGIC_ECONOMY.md`.
+
+### Population & People — dev.136
+
+- Population passa a possuir moral explícita, cohorts operacionais e workforce elegível/alocado.
+- Workforce é roteada de cohorts para Structures por uma matriz persistente e validada pelo Command Kernel.
+- `Structure.workforceRequired` fecha o ciclo Civil → Infrastructure → Simulation.
+- Substaffing reduz service ratio/produção e pode degradar condition/status de Structures de forma determinística.
+- Person deixa de ser apenas contrato e ganha lifecycle autoritativo `person.create` / `person.update`, morale, condition, portrait e vínculos tipados.
+- Civil Control usa summary + cohort worklist + Workforce Board; Personnel preserva master-detail com dossier no Inspector.
+- Crises de sustento afetam morale explicitamente sem corromper `assignment` ou `quality` dos cohorts.
+
+Consulte `docs/POPULATION_PEOPLE.md` e `DEV136_AUDIT.md`.
+
+### Territory / Diplomacy / Intel — dev.137
+
+- `Domain.territory` representa controle, controlador, valor estratégico, influência e posição hierárquica sem criar uma entidade Territory paralela.
+- Relations continuam edges leves do Domain, agora com referência tipada, postura, score, trust e tension.
+- Agreements novos são registros independentes com partes tipadas, lifecycle, carry periódico e transferências econômicas conservativas Domain→Domain.
+- Intel permanece conhecimento contextual do Domain, mas passa por commands autoritativos, alvo tipado e filtros reais de visibilidade.
+- Territory Control, Relations Matrix e Intelligence Mesh usam ferramentas diferentes dentro do DOMAIN//OS: matriz de influência, worklist diplomática + treaty channel e worklist/master-detail de intelligence.
+- A UI exibe o schema real do runtime; coordenadas cenográficas e a antiga card gallery de Intel foram removidas.
+
+Consulte `docs/TERRITORY_DIPLOMACY_INTEL.md` e `DEV137_AUDIT.md`.
+
+### Projects Advanced — dev.138
+
+- Projects passam de worklist somente-leitura para vertical slice operacional dentro da DOMAIN//OS v4.
+- GM e controllers autorizados podem criar/editar Projects e configurar custos via Command Kernel.
+- `completed` continua exclusivo da Simulation; não existe botão de conclusão manual.
+- Work total e plano de custos congelam quando o progresso começa, evitando reescrita retroativa de execução/economia.
+- Project Dossier mostra work/rate/carry, custos e Structures vinculadas no Context Inspector.
+- Schema permanece v9; Simulation, Economy e Structure commissioning não foram reescritos.
+
+Consulte `docs/PROJECTS_ADVANCED.md` e `DEV138_AUDIT.md`.
+
 ## Kernel
 
 - Aritmética exata com minor units e carry persistente.
@@ -65,7 +126,7 @@ Consulte `docs/STRUCTURES_BASE_CORE.md`.
 
 ## Instalação manual
 
-1. Baixe `domain-manager-v0.1.0-dev.134.1.zip`.
+1. Baixe `domain-manager-v0.1.0-dev.138.zip`.
 2. Extraia em `Data/modules/domain-manager`.
 3. Ative Domain Manager e socketlib no mundo.
 

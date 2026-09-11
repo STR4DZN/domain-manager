@@ -1,4 +1,3 @@
-import { calculateDomainUpkeep } from "../features/economy/upkeep.js";
 /**
  * Bloco 8 — Advance Run: Motor de Execução Temporal com Commit Real no Mundo.
  * Aplica as mutações determinísticas calculadas pelo kernel de simulação.
@@ -8,7 +7,7 @@ import { MODULE_ID, RECORD_TYPES } from "../core/constants.js";
 import { recordIndex } from "../data/record-index.js";
 import { decodeRecord } from "../models/record-codec.js";
 import { updateRecordsBatch } from "../data/journal-store.js";
-import { getResourceCatalogSetting } from "../core/settings.js";
+import { getResourceCatalogSetting, getSecondsPerTickSetting } from "../core/settings.js";
 import { buildSimulationSnapshot } from "./snapshot.js";
 import { simulateAdvance } from "./simulate.js";
 
@@ -40,17 +39,27 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
   const domainDocs = recordIndex.list(RECORD_TYPES.DOMAIN);
   const projectDocs = recordIndex.list(RECORD_TYPES.PROJECT);
   const structureDocs = recordIndex.list(RECORD_TYPES.STRUCTURE);
+  const agreementDocs = recordIndex.list(RECORD_TYPES.AGREEMENT);
   const domains = domainDocs.map(decodeRecord);
   const projects = projectDocs.map(decodeRecord);
   const structures = structureDocs.map(decodeRecord);
+  const agreements = agreementDocs.map(decodeRecord);
   const catalog = getResourceCatalogSetting();
+  const secondsPerTick = getSecondsPerTickSetting();
+  const observedWorldTick = Math.max(0, Math.floor(Number(globalThis.game?.time?.worldTime ?? 0) / secondsPerTick));
+  // Quando o avanço veio do hook, o WorldTime já está no instante final; o
+  // snapshot precisa começar antes dos ticks que estamos prestes a aplicar.
+  const currentTick = fromWorldTimeHook
+    ? Math.max(0, observedWorldTick - ticks)
+    : observedWorldTick;
 
-  const snapshot = buildSimulationSnapshot({ domains, projects, structures, catalog });
+  const snapshot = buildSimulationSnapshot({ domains, projects, structures, agreements, catalog, currentTick });
   const report = simulateAdvance({ snapshot, deltaTicks: ticks });
 
   const updatedDomains = [];
   const updatedProjects = [];
   const updatedStructures = [];
+  const updatedAgreements = [];
   const batchUpdates = [];
   const rollbackUpdates = [];
 
@@ -108,72 +117,74 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
       });
     }
 
-    // Impacto do Sustento da População (Fome e Desabastecimento)
-    const upkeepInfo = calculateDomainUpkeep({ domainData, catalog });
-    const hasFoodShortfall = domReport.resources.some(
-      (r) => r.shortfall && r.resourceId === upkeepInfo.foodResId && upkeepInfo.rawFoodUnits > 0
+    // Impacto civil projetado pelo kernel. assignment/quality permanecem campos
+    // semânticos de organização e nunca mais são usados como acumuladores de crise.
+    if (domReport.population && domainData.population) {
+      domainData.population.morale = Number(domReport.population.projectedMorale ?? domainData.population.morale ?? 60);
+      const moraleByGroup = new Map((domReport.population.groups ?? []).map((group) => [group.localId, group.projectedMorale]));
+      domainData.population.groups = (domainData.population.groups ?? []).map((group) => ({
+        ...group,
+        morale: moraleByGroup.has(group.localId) ? moraleByGroup.get(group.localId) : group.morale
+      }));
+    }
+
+    const shortageAlerts = (report.alerts ?? []).filter((alert) =>
+      alert.domainUuid === domReport.uuid && ["famine", "drought"].includes(alert.type)
     );
-    const hasWaterShortfall = domReport.resources.some(
-      (r) => r.shortfall && r.resourceId === upkeepInfo.waterResId && upkeepInfo.rawWaterUnits > 0
-    );
+    // Comida e água podem falhar no mesmo tick. Consequências civis são aplicadas
+    // uma vez por tick afetado, não uma vez por recurso em falta.
+    const shortageTicks = new Set();
+    for (const alert of shortageAlerts) {
+      const ticksForAlert = Array.isArray(alert.occurrenceTicks) && alert.occurrenceTicks.length
+        ? alert.occurrenceTicks
+        : [Number(alert.lastTick ?? alert.firstTick ?? 0)].filter((tick) => tick > 0);
+      for (const tick of ticksForAlert) shortageTicks.add(Number(tick));
+    }
+    const shortageOccurrences = shortageTicks.size;
+    const lastShortageTick = shortageTicks.size ? Math.max(...shortageTicks) : 0;
+    const hasFoodShortfall = shortageAlerts.some((alert) => alert.type === "famine");
+    const hasWaterShortfall = shortageAlerts.some((alert) => alert.type === "drought");
 
     let famineRefreshedThisRun = false;
 
     if (hasFoodShortfall || hasWaterShortfall) {
-      // Degradar agitação e satisfação da população
-      const groups = domainData.population?.groups ?? domainData.people?.groups ?? [];
-      for (const g of groups) {
-        const currentScore = Number(g.assignment) || 2;
-        g.assignment = String(Math.min(10, currentScore + 2));
-        if (g.quality === "Muito Alta") g.quality = "Estável";
-        else if (g.quality === "Estável") g.quality = "Insatisfeito";
-        else if (g.quality === "Insatisfeito") g.quality = "Rebelde";
-      }
-
-      // Adicionar condição crítica de Escassez & Fome
       if (!Array.isArray(domainData.conditions)) domainData.conditions = [];
+      const remainingAfterLastShortage = Math.max(0, ticks - lastShortageTick);
+      const projectedDuration = Math.max(0, 3 - remainingAfterLastShortage);
       const existingFamine = domainData.conditions.find((c) => c.localId === "cond_famine");
       if (existingFamine) {
-        existingFamine.durationTicks = 3;
-        existingFamine.active = true;
+        existingFamine.durationTicks = projectedDuration;
+        existingFamine.active = projectedDuration > 0;
         existingFamine.severity = "severe";
-        famineRefreshedThisRun = true;
-      } else {
+      } else if (projectedDuration > 0) {
         domainData.conditions.push({
           localId: "cond_famine",
           name: "Escassez & Fome",
           severity: "severe",
-          durationTicks: 3,
+          durationTicks: projectedDuration,
           active: true,
           description: `A base ${decoded.document.name} sofre com desabastecimento de provisões básicas. Agitação elevada e segurança comprometida.`
         });
-        famineRefreshedThisRun = true;
       }
+      famineRefreshedThisRun = true;
 
-      // Registrar Crônica histórica
       if (!Array.isArray(domainData.history)) domainData.history = [];
       domainData.history.push({
         localId: `famine_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         title: "Crise de Desabastecimento",
         category: "crisis",
-        summary: `A população de ${decoded.document.name} sofreu com a falta de recursos vitais neste ciclo.`,
-        details: "Estoques de sustento esgotados causaram inquietação e protestos na colônia.",
+        summary: `A população de ${decoded.document.name} sofreu com falta de recursos vitais em ${shortageOccurrences} tick(s) deste ciclo.`,
+        details: "Estoques de sustento insuficientes reduziram a moral civil e elevaram o risco operacional.",
         timestamp: Date.now()
       });
-    } else {
-      // Se há comida e água em abundância, remover condição de fome se expirada
-      if (Array.isArray(domainData.conditions)) {
-        domainData.conditions = domainData.conditions.filter((c) => c.localId !== "cond_famine" || c.durationTicks > 0);
-      }
     }
 
-    // Decaimento de Condições (Bloco 9)
+    // Condições preexistentes decaem pelo intervalo inteiro; a condição de fome
+    // refrescada já foi posicionada em relação ao último tick crítico.
     if (Array.isArray(domainData.conditions)) {
       domainData.conditions = domainData.conditions
         .map((cond) => {
-          if (famineRefreshedThisRun && cond.localId === "cond_famine") {
-            return cond;
-          }
+          if (famineRefreshedThisRun && cond.localId === "cond_famine") return cond;
           if (typeof cond.durationTicks === "number" && cond.durationTicks > 0) {
             const remaining = Math.max(0, cond.durationTicks - ticks);
             return { ...cond, durationTicks: remaining, active: remaining > 0 };
@@ -183,36 +194,10 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
         .filter((cond) => cond.active !== false || cond.durationTicks === null);
     }
 
-    // Decaimento e Gestão de Acordos Temporários e Quebras (Bloco 10)
-    const domainShortfallResIds = new Set(
-      domReport.resources.filter((r) => !r.allowNegative && r.projectedStock < 0).map((r) => r.resourceId)
-    );
-
-    if (Array.isArray(domainData.agreements)) {
-      domainData.agreements = domainData.agreements.map((agr) => {
-        // Verificar se acordo ativo foi violado por falta de recurso
-        const hasBreach = agr.status === "active" && (agr.transfers ?? []).some(
-          (t) => t.direction === "send" && domainShortfallResIds.has(t.resourceId)
-        );
-
-        if (hasBreach) {
-          return {
-            ...agr,
-            status: "breached"
-          };
-        }
-
-        if (agr.status === "active" && typeof agr.remainingTicks === "number" && agr.remainingTicks > 0) {
-          const remaining = Math.max(0, agr.remainingTicks - ticks);
-          const isTerminated = remaining === 0;
-          return {
-            ...agr,
-            remainingTicks: remaining,
-            status: isTerminated ? "terminated" : agr.status
-          };
-        }
-        return agr;
-      });
+    // Agreements são estado temporal calculado no kernel. Persistir a projeção
+    // final em vez de recalcular duração/breach fora da simulação.
+    if (Array.isArray(domReport.agreements)) {
+      domainData.agreements = foundry.utils.deepClone(domReport.agreements);
     }
 
     // Registro Histórico Automático do Avanço (Bloco 12)
@@ -276,7 +261,7 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
 
     // 3. Registro de Escassez Crítica de Recursos
     for (const r of domReport.resources) {
-      if (!r.allowNegative && r.projectedStock < 0) {
+      if (!r.allowNegative && r.shortfall) {
         domainData.history.push({
           localId: `hist_shortfall_${Date.now().toString(36)}_${r.resourceId}`,
           timestamp: Date.now(),
@@ -323,7 +308,7 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
     }
 
     for (const r of domReport.resources) {
-      if (!r.allowNegative && r.projectedStock < 0) {
+      if (!r.allowNegative && r.shortfall) {
         domainData.notifications.unshift({
           localId: `notif_shortfall_${Date.now().toString(36)}_${r.resourceId}`,
           title: `Escassez Crítica: ${r.resourceName || r.resourceId}!`,
@@ -393,18 +378,61 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
     updatedProjects.push(projReport.uuid);
   }
 
-  // 4. Comissionar Structures vinculadas a Projects concluídos no mesmo batch.
-  for (const structure of commissioningStructures) {
+  // 4. Persistir a projeção final de todas as Structures afetadas. Isso inclui
+  // comissionamento e degradação causada por manutenção insuficiente.
+  const projectedStructureMap = new Map();
+  for (const domainReport of report.domains ?? []) {
+    for (const projected of domainReport.structures ?? []) {
+      projectedStructureMap.set(projected.entityId ?? projected.uuid, projected);
+    }
+  }
+  for (const structure of structures) {
+    const projected = projectedStructureMap.get(structure.data.entityId ?? structure.uuid);
+    if (!projected) continue;
     const dataBefore = foundry.utils.deepClone(structure.data);
     const data = foundry.utils.deepClone(structure.data);
-    data.status = "operational";
-    data.activeProject = null;
+    data.status = projected.projectedStatus ?? data.status;
+    data.condition = Number(projected.projectedCondition ?? data.condition ?? 100);
+    if (projected.projectedActiveProject !== undefined) {
+      data.activeProject = foundry.utils.deepClone(projected.projectedActiveProject);
+    } else if (projected.commissioned) {
+      data.activeProject = null;
+    }
+    const changed = data.status !== dataBefore.status
+      || data.condition !== dataBefore.condition
+      || JSON.stringify(data.activeProject ?? null) !== JSON.stringify(dataBefore.activeProject ?? null);
+    if (!changed) continue;
     batchUpdates.push({ uuid: structure.uuid, recordType: RECORD_TYPES.STRUCTURE, data });
     rollbackUpdates.push({ uuid: structure.uuid, recordType: RECORD_TYPES.STRUCTURE, data: dataBefore });
     updatedStructures.push(structure.uuid);
   }
 
-  // 5. Persistir Domains + Projects + Structures em um único batch. Se o provider falhar
+  // 5. Persistir Agreements independentes a partir da projeção do kernel.
+  // Status temporal e carry pertencem ao mesmo batch econômico para impedir
+  // que uma transferência seja aplicada sem atualizar o tratado (ou vice-versa).
+  for (const agreementReport of report.agreements ?? []) {
+    const doc = agreementReport.uuid
+      ? recordIndex.get(RECORD_TYPES.AGREEMENT, agreementReport.uuid)
+      : recordIndex.getByEntityId(agreementReport.entityId);
+    if (!doc) continue;
+    const decoded = decodeRecord(doc);
+    const dataBefore = foundry.utils.deepClone(decoded.data);
+    const data = foundry.utils.deepClone(decoded.data);
+    data.status = agreementReport.projectedStatus ?? data.status;
+    const transferMap = new Map((agreementReport.transfers ?? []).map((entry) => [entry.localId, entry]));
+    data.transfers = (data.transfers ?? []).map((transfer) => ({
+      ...transfer,
+      carry: transferMap.get(transfer.localId)?.projectedCarry ?? transfer.carry
+    }));
+    const changed = data.status !== dataBefore.status
+      || JSON.stringify(data.transfers ?? []) !== JSON.stringify(dataBefore.transfers ?? []);
+    if (!changed) continue;
+    batchUpdates.push({ uuid: doc.uuid, recordType: RECORD_TYPES.AGREEMENT, data });
+    rollbackUpdates.push({ uuid: doc.uuid, recordType: RECORD_TYPES.AGREEMENT, data: dataBefore });
+    updatedAgreements.push(doc.uuid);
+  }
+
+  // 6. Persistir Domains + Projects + Structures + Agreements em um único batch. Se o provider falhar
   // depois de aplicar apenas parte da operação, tentamos compensar o conjunto.
   try {
     await updateRecordsBatch(batchUpdates);
@@ -417,18 +445,19 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
     throw error;
   }
 
-  // 6. Sincronizar com Simple Timekeeping e Foundry Core World Time (apenas se não veio do próprio hook)
+  // 7. Sincronizar com Simple Timekeeping e Foundry Core World Time (apenas se não veio do próprio hook)
   const timeResult = fromWorldTimeHook
     ? { advanced: false, deltaSeconds: 0 }
     : await syncWorldTimeAdvance({ deltaTicks: ticks });
 
-  // 7. Notificar Hooks do Foundry
+  // 8. Notificar Hooks do Foundry
   Hooks.callAll(`${MODULE_ID}.advanceRun`, {
     deltaTicks: ticks,
     report,
     updatedDomains,
     updatedProjects,
     updatedStructures,
+    updatedAgreements,
     timekeeping: timeResult,
     fromWorldTimeHook
   });
@@ -440,6 +469,7 @@ async function performAdvanceRun({ deltaTicks = 1, fromWorldTimeHook = false } =
     updatedDomains,
     updatedProjects,
     updatedStructures,
+    updatedAgreements,
     timekeeping: timeResult
   };
 }

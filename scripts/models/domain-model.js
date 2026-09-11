@@ -3,9 +3,11 @@ import {
   DOMAIN_NATURES,
   DOMAIN_STATES,
   MANAGEMENT_PRESETS,
-  RECORD_TYPES
+  RECORD_TYPES,
+  TERRITORY_CONTROL_STATES
 } from "../core/constants.js";
 import { buildEntityId } from "../core/entity-contracts.js";
+import { entityReferenceSchema } from "./reference-fields.js";
 
 const {
   ArrayField,
@@ -59,6 +61,16 @@ function stockSchema() {
       integer: true,
       initial: 0
     })
+  });
+}
+
+
+function resourcePolicySchema() {
+  return new SchemaField({
+    resourceId: new StringField({ required: true, nullable: false, blank: false }),
+    reserveTarget: new NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 }),
+    criticalFloor: new NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 }),
+    storageCapacity: new NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 })
   });
 }
 
@@ -144,7 +156,19 @@ function groupSchema() {
     function: new StringField({required:true, nullable:false, blank:true, initial:""}),
     quality: new StringField({required:true, nullable:false, blank:true, initial:""}),
     status: new StringField({required:true, nullable:false, blank:false, choices:["active","inactive","unavailable","disbanded"], initial:"active"}),
-    assignment: new StringField({required:true, nullable:false, blank:true, initial:""})
+    assignment: new StringField({required:true, nullable:false, blank:true, initial:""}),
+    morale: new NumberField({required:true, nullable:false, integer:true, min:0, max:100, initial:60}),
+    workforceEligible: new NumberField({required:true, nullable:false, integer:true, min:0, initial:0})
+  });
+}
+
+function workforceAllocationSchema() {
+  return new SchemaField({
+    localId: new StringField({required:true, nullable:false, blank:false}),
+    groupLocalId: new StringField({required:true, nullable:false, blank:false}),
+    target: entityReferenceSchema({allowedTypes:[RECORD_TYPES.STRUCTURE]}),
+    count: new NumberField({required:true, nullable:false, integer:true, min:1, initial:1}),
+    role: new StringField({required:true, nullable:false, blank:true, initial:""})
   });
 }
 
@@ -262,6 +286,7 @@ function relationSchema() {
   return new SchemaField({
     localId: new StringField({ required: true, nullable: false, blank: false }),
     targetDomainUuid: new StringField({ required: true, nullable: false, blank: false }),
+    target: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.DOMAIN], nullable: true }),
     posture: new StringField({
       required: true,
       nullable: false,
@@ -269,6 +294,31 @@ function relationSchema() {
       choices: ["allied", "friendly", "trade_partner", "neutral", "rival", "hostile", "overlord", "vassal"],
       initial: "neutral"
     }),
+    score: new NumberField({ required: true, nullable: false, integer: true, min: -100, max: 100, initial: 0 }),
+    trust: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 50 }),
+    tension: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 0 }),
+    notes: new StringField({ required: true, nullable: false, blank: true, initial: "" })
+  });
+}
+
+function territoryInfluenceSchema() {
+  return new SchemaField({
+    localId: new StringField({ required: true, nullable: false, blank: false }),
+    domain: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.DOMAIN] }),
+    value: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 0 }),
+    notes: new StringField({ required: true, nullable: false, blank: true, initial: "" })
+  });
+}
+
+function territorySchema() {
+  return new SchemaField({
+    controlState: new StringField({
+      required: true, nullable: false, blank: false, choices: TERRITORY_CONTROL_STATES, initial: "unknown"
+    }),
+    controller: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.DOMAIN], nullable: true }),
+    control: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 0 }),
+    strategicValue: new NumberField({ required: true, nullable: false, integer: true, min: 0, max: 100, initial: 0 }),
+    influence: new ArrayField(territoryInfluenceSchema(), { required: true, nullable: false, initial: [] }),
     notes: new StringField({ required: true, nullable: false, blank: true, initial: "" })
   });
 }
@@ -325,6 +375,7 @@ function intelSchema() {
       choices: ["gm_only", "all_controllers", "public"],
       initial: "all_controllers"
     }),
+    targetDomain: entityReferenceSchema({ allowedTypes: [RECORD_TYPES.DOMAIN], nullable: true }),
     content: new StringField({ required: true, nullable: false, blank: true, initial: "" }),
     credibility: new StringField({
       required: true,
@@ -573,7 +624,11 @@ export class DomainModel extends foundry.abstract.DataModel {
       population: new SchemaField({
         total: new NumberField({required:true, nullable:false, integer:true, min:0, initial:0}),
         countMode: new StringField({required:true, nullable:false, blank:false, choices:["direct","inclusive"], initial:"direct"}),
+        morale: new NumberField({required:true, nullable:false, integer:true, min:0, max:100, initial:60}),
         groups: new ArrayField(groupSchema(), {required:true, nullable:false, initial:[]}),
+        workforce: new SchemaField({
+          allocations: new ArrayField(workforceAllocationSchema(), {required:true, nullable:false, initial:[]})
+        }),
         notables: new ArrayField(notableSchema(), {required:true, nullable:false, initial:[]})
       }),
 
@@ -586,6 +641,15 @@ export class DomainModel extends foundry.abstract.DataModel {
         }, { required: false, nullable: true, initial: null }),
         stocks: new ArrayField(
           stockSchema(),
+          {
+            required: true,
+            nullable: false,
+            initial: []
+          }
+        ),
+
+        resourcePolicies: new ArrayField(
+          resourcePolicySchema(),
           {
             required: true,
             nullable: false,
@@ -613,6 +677,8 @@ export class DomainModel extends foundry.abstract.DataModel {
       ),
 
       security: securitySchema(),
+
+      territory: territorySchema(),
 
       relations: new ArrayField(
         relationSchema(),
@@ -701,6 +767,20 @@ export class DomainModel extends foundry.abstract.DataModel {
       );
     }
 
+    const policies = data?.economy?.resourcePolicies ?? [];
+    const policyResourceIds = policies.map((policy) => policy.resourceId);
+    if (new Set(policyResourceIds).size !== policyResourceIds.length) {
+      throw new Error("Domain.economy.resourcePolicies contém resourceId duplicado.");
+    }
+    for (const policy of policies) {
+      if (policy.criticalFloor > policy.reserveTarget) {
+        throw new Error("Domain.economy.resourcePolicies criticalFloor não pode exceder reserveTarget.");
+      }
+      if (policy.storageCapacity > 0 && policy.reserveTarget > policy.storageCapacity) {
+        throw new Error("Domain.economy.resourcePolicies reserveTarget não pode exceder storageCapacity.");
+      }
+    }
+
     const flows = data?.economy?.flows ?? [];
     const flowIds =
       flows.map((flow) => flow.localId);
@@ -734,10 +814,51 @@ export class DomainModel extends foundry.abstract.DataModel {
       throw new Error("Domain.population.notables contém localId duplicado.");
     }
 
+
+    for (const group of groups) {
+      if (Number(group.workforceEligible ?? 0) > Number(group.count ?? 0)) {
+        throw new Error(`Grupo '${group.name}' possui workforceEligible acima de count.`);
+      }
+    }
+
+    const allocations = data?.population?.workforce?.allocations ?? [];
+    const allocationIds = allocations.map((entry) => entry.localId);
+    if (new Set(allocationIds).size !== allocationIds.length) {
+      throw new Error("Domain.population.workforce.allocations contém localId duplicado.");
+    }
+    const groupById = new Map(groups.map((group) => [group.localId, group]));
+    const allocatedByGroup = new Map();
+    const pairKeys = new Set();
+    for (const allocation of allocations) {
+      const group = groupById.get(allocation.groupLocalId);
+      if (!group) throw new Error(`Workforce allocation referencia grupo inexistente '${allocation.groupLocalId}'.`);
+      const targetKey = allocation.target?.entityId ?? allocation.target?.uuid ?? "";
+      const pairKey = `${allocation.groupLocalId}|${targetKey}`;
+      if (pairKeys.has(pairKey)) throw new Error("Workforce allocation duplicada para o mesmo grupo/Structure.");
+      pairKeys.add(pairKey);
+      allocatedByGroup.set(allocation.groupLocalId, (allocatedByGroup.get(allocation.groupLocalId) ?? 0) + Number(allocation.count ?? 0));
+    }
+    for (const [groupLocalId, allocated] of allocatedByGroup) {
+      const eligible = Number(groupById.get(groupLocalId)?.workforceEligible ?? 0);
+      if (allocated > eligible) throw new Error(`Workforce alocada (${allocated}) excede elegíveis (${eligible}) no grupo '${groupLocalId}'.`);
+    }
+
     const conditions = data?.conditions ?? [];
     const conditionIds = conditions.map((c) => c.localId);
     if (new Set(conditionIds).size !== conditionIds.length) {
       throw new Error("Domain.conditions contém localId duplicado.");
+    }
+
+    const territoryInfluence = data?.territory?.influence ?? [];
+    const territoryInfluenceIds = territoryInfluence.map((entry) => entry.localId);
+    if (new Set(territoryInfluenceIds).size !== territoryInfluenceIds.length) {
+      throw new Error("Domain.territory.influence contém localId duplicado.");
+    }
+    const territoryInfluenceKeys = new Set();
+    for (const entry of territoryInfluence) {
+      const key = entry.domain?.entityId ?? entry.domain?.uuid;
+      if (key && territoryInfluenceKeys.has(key)) throw new Error("Domain.territory.influence contém Domain duplicado.");
+      if (key) territoryInfluenceKeys.add(key);
     }
 
     const relations = data?.relations ?? [];

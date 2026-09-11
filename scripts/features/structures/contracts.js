@@ -74,6 +74,8 @@ function baseBlueprint(payload = {}, { defaultStatus = "operational" } = {}) {
     status: status(payload.status, defaultStatus),
     condition: integer(payload.condition ?? 100, { min: 0, max: 100, label: "Condição" }),
     capacity: integer(payload.capacity ?? 0, { min: 0, max: ECONOMY_LIMITS.MAX_MINOR_AMOUNT, label: "Capacidade" }),
+    maintenancePriority: integer(payload.maintenancePriority ?? 50, { min: 0, max: 100, label: "Prioridade de manutenção" }),
+    workforceRequired: integer(payload.workforceRequired ?? 0, { min: 0, max: ECONOMY_LIMITS.MAX_MINOR_AMOUNT, label: "Workforce necessário" }),
     maintenance: normalizeStructureResourceEntries(payload.maintenance ?? [], { label: "Manutenção" }),
     production: normalizeStructureResourceEntries(payload.production ?? [], { label: "Produção" }),
     tags: tags(payload.tags ?? [])

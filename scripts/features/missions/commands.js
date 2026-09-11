@@ -2,16 +2,20 @@ import { EVENT_TYPES, RECORD_TYPES } from "../../core/constants.js";
 import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 import { hasCapability } from "../../core/management-contracts.js";
 import { getResourceCatalogSetting } from "../../core/settings.js";
-import { createRecord, deleteRecord, updateRecordsBatch } from "../../data/journal-store.js";
+import { createRecord, deleteRecord, updateRecord, updateRecordsBatch } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
 import {
   normalizeMissionCreatePayload,
+  normalizeMissionObjectiveRemovePayload,
+  normalizeMissionObjectiveUpsertPayload,
   normalizeMissionPreparePayload,
   normalizeMissionReferencePayload,
   normalizeMissionReleasePayload,
-  normalizeMissionResolvePayload
+  normalizeMissionResolvePayload,
+  normalizeMissionUpdatePayload
 } from "./contracts.js";
+import { removeObjective, upsertObjective } from "./rules.js";
 
 function resolve(reference, expectedType) {
   const byId = reference.entityId ? recordIndex.getByEntityId(reference.entityId) : null;
@@ -47,6 +51,25 @@ function assertAudience(ids) {
     const candidate = game.users.get(id);
     if (!candidate || candidate.isGM) throw new ModuleError(ERROR_CODES.VALIDATION, `Audiência inválida: ${id}`);
   }
+}
+
+function assertRevision(record, expectedModifiedTime) {
+  if (expectedModifiedTime == null) return;
+  if ((record.document?._stats?.modifiedTime ?? null) !== expectedModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "A Mission mudou enquanto o formulário estava aberto.");
+  }
+}
+
+function resolveMissionDomains(primaryReference, relatedReferences = []) {
+  const primary = resolve(primaryReference, RECORD_TYPES.DOMAIN);
+  const related = relatedReferences.map((reference) => resolve(reference, RECORD_TYPES.DOMAIN));
+  if (related.some((domain) => domain.uuid === primary.uuid)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Domain principal não deve ser repetido como relacionado.");
+  }
+  if (new Set(related.map((domain) => domain.uuid)).size !== related.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Domains relacionados duplicados na Mission.");
+  }
+  return { primary, related };
 }
 
 function missionResult(record) {
@@ -88,7 +111,7 @@ function setSquadStock(data, resourceId, amount) {
 export async function executeMissionCreate({ payload, callerUserId }) {
   assertGM(callerUserId);
   const normalized = normalizeMissionCreatePayload(payload);
-  const domain = resolve(normalized.primaryDomain, RECORD_TYPES.DOMAIN);
+  const { primary: domain, related } = resolveMissionDomains(normalized.primaryDomain, normalized.relatedDomains);
   if (!hasCapability(domain.data, "missions")) {
     throw new ModuleError(ERROR_CODES.VALIDATION, `O Domain '${domain.document.name}' não possui capability missions.`);
   }
@@ -100,7 +123,7 @@ export async function executeMissionCreate({ payload, callerUserId }) {
     controllerIds: normalized.audienceUserIds,
     data: {
       primaryDomainUuid: domain.uuid,
-      relatedDomainUuids: [],
+      relatedDomainUuids: related.map((entry) => entry.uuid),
       origin: { kind: "manual", uuid: null },
       status: normalized.status,
       briefing: normalized.briefing,
@@ -109,15 +132,136 @@ export async function executeMissionCreate({ payload, callerUserId }) {
       assignments: [],
       startedAtWorldTime: null,
       resolvedAtWorldTime: null,
-      outcomeSummary: ""
+      outcomeSummary: normalized.outcomeSummary
     }
   });
 
   return {
     result: missionResult(created),
-    entities: [domain.data.entityId, created.data.entityId],
+    entities: [domain.data.entityId, ...related.map((entry) => entry.data.entityId), created.data.entityId],
     events: [{ type: EVENT_TYPES.MISSION_CREATED, entities: [domain.data.entityId, created.data.entityId], payload: missionResult(created) }],
     rollback: () => deleteRecord(created.uuid)
+  };
+}
+
+export async function executeMissionUpdate({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const normalized = normalizeMissionUpdatePayload(payload);
+  const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
+  if (normalized.expectedStatus && normalized.expectedStatus !== mission.data.status) {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      `Status de Mission não pode ser alterado por mission.update (${mission.data.status} → ${normalized.expectedStatus}). Use o comando de lifecycle correspondente.`
+    );
+  }
+  const { primary, related } = resolveMissionDomains(normalized.primaryDomain, normalized.relatedDomains);
+  if (!hasCapability(primary.data, "missions")) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `O Domain '${primary.document.name}' não possui capability missions.`);
+  }
+  assertAudience(normalized.audienceUserIds);
+
+  const nextDomainUuids = [primary.uuid, ...related.map((entry) => entry.uuid)];
+  const currentDomainUuids = [mission.data.primaryDomainUuid, ...(mission.data.relatedDomainUuids ?? [])];
+  const domainSetChanged = nextDomainUuids.length !== currentDomainUuids.length
+    || nextDomainUuids.some((uuid) => !currentDomainUuids.includes(uuid));
+  if (domainSetChanged && (mission.data.assignments?.length ?? 0) > 0) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Libere os Squads preparados antes de alterar os Domains da Mission.");
+  }
+
+  const before = {
+    name: mission.document.name,
+    data: foundry.utils.deepClone(mission.data),
+    controllers: [...(mission.data.audienceUserIds ?? [])]
+  };
+  const data = foundry.utils.deepClone(mission.data);
+  data.primaryDomainUuid = primary.uuid;
+  data.relatedDomainUuids = related.map((entry) => entry.uuid);
+  data.briefing = normalized.briefing;
+  data.audienceUserIds = normalized.audienceUserIds;
+  data.outcomeSummary = normalized.outcomeSummary;
+
+  const updated = await updateRecord({
+    uuid: mission.uuid,
+    recordType: RECORD_TYPES.MISSION,
+    name: normalized.name,
+    data,
+    controllerIds: normalized.audienceUserIds
+  });
+  return {
+    result: missionResult(updated),
+    entities: [mission.data.entityId, primary.data.entityId, ...related.map((entry) => entry.data.entityId)],
+    events: [{ type: EVENT_TYPES.MISSION_UPDATED, entities: [mission.data.entityId], payload: missionResult(updated) }],
+    rollback: () => updateRecord({
+      uuid: mission.uuid,
+      recordType: RECORD_TYPES.MISSION,
+      name: before.name,
+      data: before.data,
+      controllerIds: before.controllers
+    })
+  };
+}
+
+export async function executeMissionObjectiveUpsert({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const normalized = normalizeMissionObjectiveUpsertPayload(payload);
+  const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
+  const before = foundry.utils.deepClone(mission.data);
+  const data = foundry.utils.deepClone(mission.data);
+  const objective = {
+    ...normalized.objective,
+    localId: normalized.localId || foundry.utils.randomID()
+  };
+  data.objectives = upsertObjective(data.objectives, objective);
+  const updated = await updateRecord({
+    uuid: mission.uuid,
+    recordType: RECORD_TYPES.MISSION,
+    name: mission.document.name,
+    data,
+    controllerIds: mission.data.audienceUserIds
+  });
+  return {
+    result: { ...missionResult(updated), objective },
+    entities: [mission.data.entityId],
+    events: [{ type: EVENT_TYPES.MISSION_OBJECTIVE_UPDATED, entities: [mission.data.entityId], payload: objective }],
+    rollback: () => updateRecord({
+      uuid: mission.uuid,
+      recordType: RECORD_TYPES.MISSION,
+      name: mission.document.name,
+      data: before,
+      controllerIds: mission.data.audienceUserIds
+    })
+  };
+}
+
+export async function executeMissionObjectiveRemove({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const normalized = normalizeMissionObjectiveRemovePayload(payload);
+  const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
+  const existing = (mission.data.objectives ?? []).find((entry) => entry.localId === normalized.localId) ?? null;
+  const before = foundry.utils.deepClone(mission.data);
+  const data = foundry.utils.deepClone(mission.data);
+  data.objectives = removeObjective(data.objectives, normalized.localId);
+  const updated = await updateRecord({
+    uuid: mission.uuid,
+    recordType: RECORD_TYPES.MISSION,
+    name: mission.document.name,
+    data,
+    controllerIds: mission.data.audienceUserIds
+  });
+  return {
+    result: { ...missionResult(updated), localId: normalized.localId, removed: Boolean(existing) },
+    entities: [mission.data.entityId],
+    events: [{ type: EVENT_TYPES.MISSION_OBJECTIVE_REMOVED, entities: [mission.data.entityId], payload: { localId: normalized.localId, removed: Boolean(existing) } }],
+    rollback: () => updateRecord({
+      uuid: mission.uuid,
+      recordType: RECORD_TYPES.MISSION,
+      name: mission.document.name,
+      data: before,
+      controllerIds: mission.data.audienceUserIds
+    })
   };
 }
 

@@ -81,7 +81,7 @@ function makeDocument({ id, name, recordType, data, ownership = {} }) {
     documentName: "JournalEntry",
     name,
     ownership: structuredClone(ownership),
-    flags: { "domain-manager": { recordType, schemaVersion: 6, data: structuredClone(data) } },
+    flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
     async update(changes) {
       for (const [key, value] of Object.entries(changes)) {

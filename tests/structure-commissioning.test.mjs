@@ -74,7 +74,7 @@ function makeDocument({ id, name, recordType, data }) {
     documentName: "JournalEntry",
     name,
     ownership: { default: 0 },
-    flags: { "domain-manager": { recordType, schemaVersion: 6, data: structuredClone(data) } },
+    flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
     testUserPermission(actor) { return actor?.isGM === true; },
     async update(changes) {
@@ -205,4 +205,23 @@ test("Structure permanece planned quando Project ainda não conclui", async () =
   assert.equal(structureData.status, "planned");
   assert.notEqual(structureData.activeProject, null);
   assert.deepEqual(result.updatedStructures, []);
+});
+
+
+test("Structure comissionada no primeiro tick produz nos ticks seguintes do mesmo advance", async () => {
+  const { domain, project, structure } = buildWorld();
+  const result = await executeAdvanceRun({ deltaTicks: 3, fromWorldTimeHook: true });
+
+  const domainData = domain.getFlag("domain-manager", "data");
+  const projectData = project.getFlag("domain-manager", "data");
+  const structureData = structure.getFlag("domain-manager", "data");
+  const metal = domainData.economy.stocks.find((entry) => entry.resourceId === "metal");
+  const structureReport = result.report.domains[0].structures.find((entry) => entry.entityId === "structure:S1");
+
+  assert.equal(projectData.status, "completed");
+  assert.equal(structureData.status, "operational");
+  assert.equal(structureData.activeProject, null);
+  assert.equal(metal.amount, 40, "50 - 20 de custo + 5 nos ticks 2 e 3");
+  assert.equal(structureReport.production.find((entry) => entry.resourceId === "metal").delta, 10);
+  assert.equal(structureReport.commissioned, true);
 });

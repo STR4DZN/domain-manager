@@ -1,5 +1,4 @@
 import { MODULE_ID } from "../core/constants.js";
-import { performCreateRequest } from "../features/requests/actions.js";
 import { dispatchAuthoritativeCommand } from "../commands/execute.js";
 
 let moduleSocket = null;
@@ -18,23 +17,25 @@ function remotePing() {
 
 async function remoteCreateRequest(payload) {
   const userId = callerUserId(this);
+  if (!userId) throw new Error("socketlib não informou o usuário de origem.");
 
-  if (!userId) {
-    throw new Error(
-      "socketlib não informou o usuário de origem."
-    );
-  }
-
-  const result = await performCreateRequest(
-    payload,
-    userId
-  );
-
-  console.info(
-    `[${MODULE_ID}] Request recebida via socket | caller=${userId} | uuid=${result.uuid} | duplicate=${result.duplicate}`
-  );
-
-  return result;
+  // Compatibility endpoint for callers from builds before Request entered the
+  // generic Command Kernel. New UI uses command.execute directly.
+  return dispatchAuthoritativeCommand({
+    commandType: "request.create",
+    operationId: payload.operationId || foundry.utils.randomID(),
+    payload: {
+      domain: payload.domain ?? {
+        recordType: "domain",
+        uuid: payload.primaryDomainUuid ?? null,
+        entityId: payload.primaryDomainEntityId ?? null
+      },
+      type: payload.type,
+      title: payload.title,
+      intent: payload.intent,
+      details: payload.details
+    }
+  }, { callerUserId: userId });
 }
 
 async function remoteExecuteCommand(envelope) {

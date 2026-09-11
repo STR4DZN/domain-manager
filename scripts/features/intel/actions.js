@@ -1,18 +1,31 @@
 /**
- * Ações e Mutações do Bloco 11: Segredos e Conhecimento (Intel).
+ * APIs legadas de Intel.
+ *
+ * Compatibilidade apenas: toda mutação persistente passa pelo Command Kernel.
  */
 
-import { RECORD_TYPES } from "../../core/constants.js";
-import { recordIndex } from "../../data/record-index.js";
-import { decodeRecord } from "../../models/record-codec.js";
-import { updateRecord } from "../../data/journal-store.js";
-import { validateIntelData } from "./rules.js";
+import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
+import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
+import { getRecord } from "../../data/journal-store.js";
 
-function generateLocalId(prefix = "intel") {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+function domainRef(uuid) {
+  return { recordType: RECORD_TYPES.DOMAIN, uuid, entityId: null };
 }
 
-export async function addIntel({
+function operationId(value = null) {
+  return String(value ?? "").trim() || foundry.utils.randomID();
+}
+
+async function run(commandType, domainUuid, payload, requestedOperationId) {
+  await dispatchAuthoritativeCommand({
+    commandType,
+    operationId: operationId(requestedOperationId),
+    payload: { domain: domainRef(domainUuid), ...payload }
+  }, { callerUserId: game.user.id });
+  return getRecord(domainUuid);
+}
+
+export function addIntel({
   domainUuid,
   title,
   category = "fact",
@@ -20,90 +33,44 @@ export async function addIntel({
   content = "",
   credibility = "confirmed",
   source = "",
-  tags = []
+  tags = [],
+  operationId: id = null
 }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode registrar novas informações ou segredos.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  if (!Array.isArray(data.intel)) data.intel = [];
-
-  const intelObj = {
-    localId: generateLocalId("intel"),
-    title: String(title ?? "").trim(),
+  return run(COMMAND_TYPES.INTEL_UPSERT, domainUuid, {
+    title,
     category,
     visibility,
-    content: String(content ?? "").trim(),
+    content,
     credibility,
-    source: String(source ?? "").trim(),
-    revealed: visibility === "public",
-    tags: Array.isArray(tags) ? tags : []
-  };
-
-  validateIntelData(intelObj);
-  data.intel.push(intelObj);
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
+    source,
+    tags
+  }, id);
 }
 
-export async function updateIntel({ domainUuid, localId, changes = {} }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode alterar informações ou segredos.");
+export async function updateIntel({ domainUuid, localId, changes = {}, operationId: id = null }) {
+  const domain = await getRecord(domainUuid);
+  const existing = (domain.data.intel ?? []).find((entry) => entry.localId === localId);
+  if (!existing) throw new Error(`Informação '${localId}' não encontrada.`);
 
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  const list = data.intel ?? [];
-  const idx = list.findIndex((i) => i.localId === localId);
-  if (idx === -1) throw new Error(`Informação '${localId}' não encontrada.`);
-
-  const merged = { ...list[idx], ...changes, localId };
-  validateIntelData(merged);
-  list[idx] = merged;
-  data.intel = list;
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
-}
-
-export async function removeIntel({ domainUuid, localId }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode remover informações ou segredos.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  data.intel = (data.intel ?? []).filter((i) => i.localId !== localId);
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
-}
-
-export async function revealIntel({ domainUuid, localId }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode revelar segredos aos jogadores.");
-
-  return updateIntel({
-    domainUuid,
+  const merged = { ...existing, ...changes, localId };
+  return run(COMMAND_TYPES.INTEL_UPSERT, domainUuid, {
     localId,
-    changes: { visibility: "public", revealed: true }
-  });
+    title: merged.title,
+    category: merged.category,
+    visibility: merged.visibility,
+    targetDomain: merged.targetDomain ?? null,
+    content: merged.content,
+    credibility: merged.credibility,
+    source: merged.source,
+    revealed: merged.revealed,
+    tags: merged.tags
+  }, id);
 }
 
+export function removeIntel({ domainUuid, localId, operationId: id = null }) {
+  return run(COMMAND_TYPES.INTEL_REMOVE, domainUuid, { localId }, id);
+}
+
+export function revealIntel({ domainUuid, localId, operationId: id = null }) {
+  return run(COMMAND_TYPES.INTEL_REVEAL, domainUuid, { localId }, id);
+}

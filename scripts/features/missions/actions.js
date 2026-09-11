@@ -1,111 +1,23 @@
-import {
-  RECORD_TYPES
-} from "../../core/constants.js";
-import {
-  ERROR_CODES,
-  ModuleError
-} from "../../core/errors.js";
-import {
-  createRecord,
-  getRecord,
-  updateRecord
-} from "../../data/journal-store.js";
-import {
-  normalizeMissionDraft,
-  normalizeObjective,
-  removeObjective,
-  upsertObjective
-} from "./rules.js";
+import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
+import { ERROR_CODES, ModuleError } from "../../core/errors.js";
+import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
+import { getRecord } from "../../data/journal-store.js";
 
-function assertGM() {
-  if (!game.user.isGM) {
-    throw new ModuleError(
-      ERROR_CODES.PERMISSION,
-      "Somente GM altera Missions no Bloco 6."
-    );
-  }
+function operationId(value = null) {
+  const clean = String(value ?? "").trim();
+  return clean || foundry.utils.randomID();
 }
 
-function assertRevision(
-  document,
-  expectedModifiedTime
-) {
-  if (expectedModifiedTime == null) return;
-
-  if (
-    (document._stats?.modifiedTime ?? null)
-    !== expectedModifiedTime
-  ) {
-    throw new ModuleError(
-      ERROR_CODES.CONFLICT,
-      "A Mission mudou enquanto o formulário estava aberto."
-    );
-  }
+function reference(recordType, uuid) {
+  return { recordType, uuid, entityId: null };
 }
 
-async function loadDomain(uuid) {
-  const record = await getRecord(uuid);
-  if (record.recordType !== RECORD_TYPES.DOMAIN) {
-    throw new ModuleError(
-      ERROR_CODES.VALIDATION,
-      "Mission precisa apontar para um Domain."
-    );
-  }
-  return record;
-}
-
-function validateAudience(userIds) {
-  const unique = Array.from(
-    new Set(userIds ?? [])
-  );
-
-  for (const id of unique) {
-    const user = game.users.get(id);
-    if (!user || user.isGM) {
-      throw new ModuleError(
-        ERROR_CODES.VALIDATION,
-        `Audiência inválida: ${id}`
-      );
-    }
-  }
-
-  return unique;
-}
-
-async function validateRelatedDomains(
-  primaryDomainUuid,
-  relatedDomainUuids
-) {
-  for (const uuid of relatedDomainUuids ?? []) {
-    if (uuid === primaryDomainUuid) {
-      throw new ModuleError(
-        ERROR_CODES.VALIDATION,
-        "Domain principal não deve ser repetido como relacionado."
-      );
-    }
-    await loadDomain(uuid);
-  }
-}
-
-async function loadMission(
-  missionUuid,
-  expectedModifiedTime
-) {
-  assertGM();
-  const record = await getRecord(missionUuid);
-  if (record.recordType !== RECORD_TYPES.MISSION) {
-    throw new ModuleError(
-      ERROR_CODES.VALIDATION,
-      "O registro não é uma Mission."
-    );
-  }
-  assertRevision(
-    record.document,
-    expectedModifiedTime
-  );
-  return record;
-}
-
+/**
+ * Compatibility wrapper for callers created before Mission moved completely to
+ * the generic Command Kernel. Manual creation remains supported; derived
+ * Missions must use their canonical bridge so provenance/deduplication stays
+ * authoritative.
+ */
 export async function createMissionAction({
   name,
   primaryDomainUuid,
@@ -115,102 +27,69 @@ export async function createMissionAction({
   briefing = "",
   outcomeSummary = "",
   originKind = "manual",
-  originUuid = null
+  originUuid = null,
+  operationId: requestedOperationId = null
 }) {
-  assertGM();
-
-  const cleanName = String(name ?? "").trim();
-  if (!cleanName) {
+  if (originKind !== "manual" || originUuid) {
     throw new ModuleError(
       ERROR_CODES.VALIDATION,
-      "Nome da Mission é obrigatório."
+      "Mission derivada não pode ser criada pela API legada. Use o bridge canônico da entidade de origem."
     );
   }
 
-  await loadDomain(primaryDomainUuid);
-  await validateRelatedDomains(
-    primaryDomainUuid,
-    relatedDomainUuids
-  );
-  const audience = validateAudience(
-    audienceUserIds
-  );
+  const result = await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.MISSION_CREATE,
+    operationId: operationId(requestedOperationId),
+    payload: {
+      name,
+      primaryDomain: reference(RECORD_TYPES.DOMAIN, primaryDomainUuid),
+      relatedDomains: (relatedDomainUuids ?? []).map((uuid) => reference(RECORD_TYPES.DOMAIN, uuid)),
+      audienceUserIds,
+      status,
+      briefing,
+      outcomeSummary,
+      objectives: []
+    }
+  }, { callerUserId: game.user.id });
 
-  const data = normalizeMissionDraft({
-    primaryDomainUuid,
-    relatedDomainUuids,
-    originKind,
-    originUuid,
-    status,
-    briefing,
-    audienceUserIds: audience,
-    objectives: [],
-    outcomeSummary
-  });
-
-  return createRecord({
-    recordType: RECORD_TYPES.MISSION,
-    name: cleanName,
-    data,
-    controllerIds: audience
-  });
+  return getRecord(result.uuid);
 }
 
+/**
+ * Compatibility wrapper for Mission metadata edits. Lifecycle transitions are
+ * intentionally not owned here: `status` is treated as an expected current
+ * status and the canonical launch/resolve commands remain the only transition
+ * path for operational states.
+ */
 export async function updateMissionAction({
   missionUuid,
   expectedModifiedTime,
   name,
   primaryDomainUuid,
-  relatedDomainUuids,
-  audienceUserIds,
+  relatedDomainUuids = [],
+  audienceUserIds = [],
   status,
-  briefing,
-  outcomeSummary
+  briefing = "",
+  outcomeSummary = "",
+  operationId: requestedOperationId = null
 }) {
-  const record = await loadMission(
-    missionUuid,
-    expectedModifiedTime
-  );
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.MISSION_UPDATE,
+    operationId: operationId(requestedOperationId),
+    payload: {
+      mission: reference(RECORD_TYPES.MISSION, missionUuid),
+      expectedModifiedTime,
+      expectedStatus: status,
+      name,
+      primaryDomain: reference(RECORD_TYPES.DOMAIN, primaryDomainUuid),
+      relatedDomains: (relatedDomainUuids ?? []).map((uuid) => reference(RECORD_TYPES.DOMAIN, uuid)),
+      audienceUserIds,
+      briefing,
+      outcomeSummary
+    }
+  }, { callerUserId: game.user.id });
 
-  const cleanName = String(name ?? "").trim();
-  if (!cleanName) {
-    throw new ModuleError(
-      ERROR_CODES.VALIDATION,
-      "Nome da Mission é obrigatório."
-    );
-  }
-
-  await loadDomain(primaryDomainUuid);
-  await validateRelatedDomains(
-    primaryDomainUuid,
-    relatedDomainUuids
-  );
-  const audience = validateAudience(
-    audienceUserIds
-  );
-
-  const data = normalizeMissionDraft({
-    primaryDomainUuid,
-    relatedDomainUuids,
-    originKind: record.data.origin.kind,
-    originUuid: record.data.origin.uuid,
-    status,
-    briefing,
-    audienceUserIds: audience,
-    objectives: record.data.objectives,
-    assignments: record.data.assignments,
-    startedAtWorldTime: record.data.startedAtWorldTime,
-    resolvedAtWorldTime: record.data.resolvedAtWorldTime,
-    outcomeSummary
-  });
-
-  return updateRecord({
-    uuid: record.uuid,
-    recordType: RECORD_TYPES.MISSION,
-    name: cleanName,
-    data,
-    controllerIds: audience
-  });
+  return getRecord(missionUuid);
 }
 
 export async function upsertMissionObjectiveAction({
@@ -220,65 +99,41 @@ export async function upsertMissionObjectiveAction({
   title,
   description = "",
   status = "pending",
-  optional = false
+  optional = false,
+  operationId: requestedOperationId = null
 }) {
-  const record = await loadMission(
-    missionUuid,
-    expectedModifiedTime
-  );
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.MISSION_OBJECTIVE_UPSERT,
+    operationId: operationId(requestedOperationId),
+    payload: {
+      mission: reference(RECORD_TYPES.MISSION, missionUuid),
+      expectedModifiedTime,
+      localId,
+      title,
+      description,
+      status,
+      optional
+    }
+  }, { callerUserId: game.user.id });
 
-  const objective = normalizeObjective({
-    localId:
-      localId
-      || foundry.utils.randomID(),
-    title,
-    description,
-    status,
-    optional
-  });
-
-  const data = {
-    ...record.data,
-    objectives: upsertObjective(
-      record.data.objectives,
-      objective
-    )
-  };
-
-  return updateRecord({
-    uuid: record.uuid,
-    recordType: RECORD_TYPES.MISSION,
-    name: record.document.name,
-    data,
-    controllerIds:
-      record.data.audienceUserIds
-  });
+  return getRecord(missionUuid);
 }
 
 export async function removeMissionObjectiveAction({
   missionUuid,
   expectedModifiedTime,
-  localId
+  localId,
+  operationId: requestedOperationId = null
 }) {
-  const record = await loadMission(
-    missionUuid,
-    expectedModifiedTime
-  );
-
-  const data = {
-    ...record.data,
-    objectives: removeObjective(
-      record.data.objectives,
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.MISSION_OBJECTIVE_REMOVE,
+    operationId: operationId(requestedOperationId),
+    payload: {
+      mission: reference(RECORD_TYPES.MISSION, missionUuid),
+      expectedModifiedTime,
       localId
-    )
-  };
+    }
+  }, { callerUserId: game.user.id });
 
-  return updateRecord({
-    uuid: record.uuid,
-    recordType: RECORD_TYPES.MISSION,
-    name: record.document.name,
-    data,
-    controllerIds:
-      record.data.audienceUserIds
-  });
+  return getRecord(missionUuid);
 }

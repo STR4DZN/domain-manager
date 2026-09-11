@@ -1,7 +1,7 @@
 export const MODULE_ID = "domain-manager";
 export const MODULE_TITLE = "Domínios // Domain Manager";
-export const MODULE_VERSION = "0.1.0-dev.134.1";
-export const SCHEMA_VERSION = 6;
+export const MODULE_VERSION = "0.1.0-dev.148";
+export const SCHEMA_VERSION = 9;
 
 export const RECORD_TYPES = Object.freeze({
   DOMAIN: "domain",
@@ -87,7 +87,6 @@ export const PROJECT_EDITABLE_STATUSES = Object.freeze([
   "active",
   "paused",
   "blocked",
-  "completed",
   "cancelled"
 ]);
 
@@ -151,6 +150,15 @@ export const STRUCTURE_STATUSES = Object.freeze([
   "decommissioned"
 ]);
 
+
+export const TERRITORY_CONTROL_STATES = Object.freeze([
+  "controlled",
+  "contested",
+  "neutral",
+  "unclaimed",
+  "unknown"
+]);
+
 export const AGREEMENT_STATUSES = Object.freeze([
   "draft",
   "active",
@@ -166,6 +174,9 @@ export const COMMAND_TYPES = Object.freeze({
   SQUAD_PATCH: "squad.patch",
   SQUAD_ADMIN_UPDATE: "squad.admin-update",
   MISSION_CREATE: "mission.create",
+  MISSION_UPDATE: "mission.update",
+  MISSION_OBJECTIVE_UPSERT: "mission.objective-upsert",
+  MISSION_OBJECTIVE_REMOVE: "mission.objective-remove",
   MISSION_PREPARE: "mission.prepare",
   MISSION_RELEASE: "mission.release",
   MISSION_LAUNCH: "mission.launch",
@@ -173,7 +184,37 @@ export const COMMAND_TYPES = Object.freeze({
   STRUCTURE_CREATE: "structure.create",
   STRUCTURE_PATCH: "structure.patch",
   STRUCTURE_ADMIN_UPDATE: "structure.admin-update",
-  STRUCTURE_BEGIN_CONSTRUCTION: "structure.begin-construction"
+  STRUCTURE_BEGIN_CONSTRUCTION: "structure.begin-construction",
+  PROJECT_CREATE: "project.create",
+  PROJECT_UPDATE: "project.update",
+  PROJECT_COST_UPSERT: "project.cost-upsert",
+  PROJECT_COST_REMOVE: "project.cost-remove",
+  ECONOMY_CONFIGURE: "economy.configure",
+  POPULATION_CONFIGURE: "population.configure",
+  POPULATION_GROUP_UPSERT: "population.group-upsert",
+  POPULATION_GROUP_REMOVE: "population.group-remove",
+  POPULATION_WORKFORCE_SET: "population.workforce-set",
+  PERSON_CREATE: "person.create",
+  PERSON_UPDATE: "person.update",
+  TERRITORY_CONFIGURE: "territory.configure",
+  RELATION_UPSERT: "relation.upsert",
+  RELATION_REMOVE: "relation.remove",
+  AGREEMENT_CREATE: "agreement.create",
+  AGREEMENT_UPDATE: "agreement.update",
+  AGREEMENT_STATUS: "agreement.status",
+  INTEL_UPSERT: "intel.upsert",
+  INTEL_REMOVE: "intel.remove",
+  INTEL_REVEAL: "intel.reveal",
+  SECURITY_CONFIGURE: "security.configure",
+  CONDITION_CREATE: "condition.create",
+  CONDITION_UPDATE: "condition.update",
+  CONDITION_REMOVE: "condition.remove",
+  CONDITION_TOGGLE: "condition.toggle",
+  REQUEST_CREATE: "request.create",
+  REQUEST_REVIEW: "request.review",
+  REQUEST_CREATE_MISSION: "request.create-mission",
+  REQUEST_WITHDRAW: "request.withdraw",
+  REQUEST_FULFILL: "request.fulfill"
 });
 
 export const EVENT_TYPES = Object.freeze({
@@ -181,6 +222,9 @@ export const EVENT_TYPES = Object.freeze({
   SQUAD_CREATED: "squad.created",
   SQUAD_UPDATED: "squad.updated",
   MISSION_CREATED: "mission.created",
+  MISSION_UPDATED: "mission.updated",
+  MISSION_OBJECTIVE_UPDATED: "mission.objective-updated",
+  MISSION_OBJECTIVE_REMOVED: "mission.objective-removed",
   MISSION_PREPARED: "mission.prepared",
   MISSION_RELEASED: "mission.released",
   MISSION_LAUNCHED: "mission.launched",
@@ -189,6 +233,34 @@ export const EVENT_TYPES = Object.freeze({
   STRUCTURE_UPDATED: "structure.updated",
   STRUCTURE_CONSTRUCTION_STARTED: "structure.construction-started",
   STRUCTURE_COMMISSIONED: "structure.commissioned",
+  PROJECT_CREATED: "project.created",
+  PROJECT_UPDATED: "project.updated",
+  ECONOMY_CONFIGURED: "economy.configured",
+  POPULATION_CONFIGURED: "population.configured",
+  POPULATION_GROUP_UPDATED: "population.group-updated",
+  POPULATION_GROUP_REMOVED: "population.group-removed",
+  POPULATION_WORKFORCE_UPDATED: "population.workforce-updated",
+  PERSON_CREATED: "person.created",
+  PERSON_UPDATED: "person.updated",
+  TERRITORY_CONFIGURED: "territory.configured",
+  RELATION_UPDATED: "relation.updated",
+  RELATION_REMOVED: "relation.removed",
+  AGREEMENT_CREATED: "agreement.created",
+  AGREEMENT_UPDATED: "agreement.updated",
+  AGREEMENT_STATUS_CHANGED: "agreement.status-changed",
+  INTEL_UPDATED: "intel.updated",
+  INTEL_REMOVED: "intel.removed",
+  INTEL_REVEALED: "intel.revealed",
+  SECURITY_CONFIGURED: "security.configured",
+  CONDITION_CREATED: "condition.created",
+  CONDITION_UPDATED: "condition.updated",
+  CONDITION_REMOVED: "condition.removed",
+  CONDITION_TOGGLED: "condition.toggled",
+  REQUEST_CREATED: "request.created",
+  REQUEST_REVIEWED: "request.reviewed",
+  REQUEST_MISSION_CREATED: "request.mission-created",
+  REQUEST_WITHDRAWN: "request.withdrawn",
+  REQUEST_FULFILLED: "request.fulfilled",
   COMMAND_COMPLETED: "command.completed"
 });
 

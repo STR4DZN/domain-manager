@@ -38,7 +38,7 @@ function doc(uuid, recordType, data) {
   const flags = {
     "domain-manager": {
       recordType,
-      schemaVersion: 6,
+      schemaVersion: 9,
       data
     }
   };
@@ -134,4 +134,18 @@ test("RecordIndex rejeita colisão de entityId entre documentos", () => {
     governance: { controllers: [] },
     tags: []
   })), /entityId duplicado/i);
+});
+
+test("RecordIndex.locatedChildren devolve Domains filhos e nunca tenta reinterpretá-los como Person", () => {
+  const index = new RecordIndex();
+  const parent = doc("JournalEntry.D1", "domain", {
+    entityId: "domain:D1", identity: { tags: [] }, governance: { controllers: [] }, hierarchy: { locatedInUuid: null, administrativeParentUuid: null },
+    economy: { stocks: [], flows: [], resourcePolicies: [] }, population: { groups: [], notables: [] }
+  });
+  const child = doc("JournalEntry.D2", "domain", {
+    entityId: "domain:D2", identity: { tags: [] }, governance: { controllers: [] }, hierarchy: { locatedInUuid: parent.uuid, administrativeParentUuid: null },
+    economy: { stocks: [], flows: [], resourcePolicies: [] }, population: { groups: [], notables: [] }
+  });
+  index.upsert(parent); index.upsert(child);
+  assert.deepEqual(index.locatedChildren(parent.uuid).map((entry) => entry.uuid), [child.uuid]);
 });

@@ -120,6 +120,18 @@ export class MigrationPipeline {
       result = this.#migrateToV6(result);
     }
 
+    if (fromVersion < 7) {
+      result = this.#migrateToV7(result);
+    }
+
+    if (fromVersion < 8) {
+      result = this.#migrateToV8(result);
+    }
+
+    if (fromVersion < 9) {
+      result = this.#migrateToV9(result);
+    }
+
     result.schemaVersion = CURRENT_SCHEMA_VERSION;
     return result;
   }
@@ -252,6 +264,107 @@ export class MigrationPipeline {
 
     flagData.data = data;
     flagData.schemaVersion = 6;
+    return flagData;
+  }
+
+  #migrateToV7(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.DOMAIN) {
+      data.economy = data.economy || { stocks: [], flows: [] };
+      data.economy.resourcePolicies = Array.isArray(data.economy.resourcePolicies)
+        ? data.economy.resourcePolicies
+        : [];
+    }
+
+    if (flagData.recordType === RECORD_TYPES.STRUCTURE) {
+      if (!Number.isInteger(data.maintenancePriority)) data.maintenancePriority = 50;
+    }
+
+    flagData.data = data;
+    flagData.schemaVersion = 7;
+    return flagData;
+  }
+
+  #migrateToV8(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.DOMAIN) {
+      data.population = data.population || { total: 0, countMode: "direct", groups: [], notables: [] };
+      data.population.morale = Number.isInteger(data.population.morale)
+        ? Math.max(0, Math.min(100, data.population.morale))
+        : 60;
+      data.population.groups = (Array.isArray(data.population.groups) ? data.population.groups : []).map((group) => {
+        const count = Number.isInteger(group?.count) && group.count >= 0 ? group.count : 0;
+        const quality = String(group?.quality ?? "").trim();
+        const qualityMorale = { "Muito Alta": 90, "Estável": 70, "Insatisfeito": 40, "Rebelde": 15 };
+        const morale = Number.isInteger(group?.morale)
+          ? Math.max(0, Math.min(100, group.morale))
+          : (qualityMorale[quality] ?? data.population.morale);
+        const workforceEligible = Number.isInteger(group?.workforceEligible)
+          ? Math.max(0, Math.min(count, group.workforceEligible))
+          : count;
+        return { ...group, morale, workforceEligible };
+      });
+      data.population.workforce = data.population.workforce && typeof data.population.workforce === "object"
+        ? data.population.workforce
+        : {};
+      data.population.workforce.allocations = Array.isArray(data.population.workforce.allocations)
+        ? data.population.workforce.allocations
+        : [];
+    }
+
+    if (flagData.recordType === RECORD_TYPES.STRUCTURE) {
+      if (!Number.isInteger(data.workforceRequired) || data.workforceRequired < 0) data.workforceRequired = 0;
+    }
+
+    if (flagData.recordType === RECORD_TYPES.PERSON) {
+      data.portrait = String(data.portrait ?? "");
+      data.morale = Number.isInteger(data.morale) ? Math.max(0, Math.min(100, data.morale)) : 60;
+      data.condition = Number.isInteger(data.condition) ? Math.max(0, Math.min(100, data.condition)) : 100;
+    }
+
+    flagData.data = data;
+    flagData.schemaVersion = 8;
+    return flagData;
+  }
+
+  #migrateToV9(flagData) {
+    const data = flagData.data || {};
+
+    if (flagData.recordType === RECORD_TYPES.DOMAIN) {
+      data.territory = data.territory && typeof data.territory === "object"
+        ? data.territory
+        : {};
+      data.territory.controlState = String(data.territory.controlState ?? "unknown");
+      data.territory.controller = data.territory.controller ?? null;
+      data.territory.control = Number.isInteger(data.territory.control)
+        ? Math.max(0, Math.min(100, data.territory.control))
+        : 0;
+      data.territory.strategicValue = Number.isInteger(data.territory.strategicValue)
+        ? Math.max(0, Math.min(100, data.territory.strategicValue))
+        : 0;
+      data.territory.influence = Array.isArray(data.territory.influence) ? data.territory.influence : [];
+      data.territory.notes = String(data.territory.notes ?? "");
+
+      data.relations = (Array.isArray(data.relations) ? data.relations : []).map((relation) => ({
+        ...relation,
+        target: relation?.target ?? (relation?.targetDomainUuid
+          ? { recordType: RECORD_TYPES.DOMAIN, uuid: relation.targetDomainUuid, entityId: null }
+          : null),
+        score: Number.isInteger(relation?.score) ? Math.max(-100, Math.min(100, relation.score)) : 0,
+        trust: Number.isInteger(relation?.trust) ? Math.max(0, Math.min(100, relation.trust)) : 50,
+        tension: Number.isInteger(relation?.tension) ? Math.max(0, Math.min(100, relation.tension)) : 0
+      }));
+
+      data.intel = (Array.isArray(data.intel) ? data.intel : []).map((entry) => ({
+        ...entry,
+        targetDomain: entry?.targetDomain ?? null
+      }));
+    }
+
+    flagData.data = data;
+    flagData.schemaVersion = 9;
     return flagData;
   }
 

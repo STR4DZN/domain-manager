@@ -91,6 +91,8 @@ function structureDataFromBlueprint(domain, blueprint, { activeProject = null } 
     status: blueprint.status,
     condition: blueprint.condition,
     capacity: blueprint.capacity,
+    maintenancePriority: blueprint.maintenancePriority,
+    workforceRequired: blueprint.workforceRequired,
     maintenance: blueprint.maintenance,
     production: blueprint.production,
     tags: blueprint.tags
@@ -108,6 +110,8 @@ function structureResult(record) {
     maxTier: record.data.maxTier,
     condition: record.data.condition,
     capacity: record.data.capacity,
+    maintenancePriority: record.data.maintenancePriority,
+    workforceRequired: record.data.workforceRequired,
     domainEntityId: record.data.domain?.entityId ?? null,
     projectEntityId: record.data.activeProject?.entityId ?? null
   };

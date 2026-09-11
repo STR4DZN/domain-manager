@@ -42,7 +42,7 @@ test("Infrastructure Control usa somente command kernel para mutações de Struc
 
 test("Infrastructure Control possui linguagem visual própria e matriz econômica", () => {
   for (const selector of [
-    ".dm-infra-summary",
+    ".dm-infra-bus",
     ".dm-infrastructure-grid",
     ".dm-infrastructure-card",
     ".dm-infrastructure-vectors",
@@ -58,10 +58,10 @@ test("Infrastructure Control possui linguagem visual própria e matriz econômic
 });
 
 test("Infrastructure Control comunica vínculo Project e vetores por tick", () => {
-  assert.match(template, /INFRASTRUCTURE CONTROL \/\/ PHYSICAL ASSETS/);
+  assert.match(template, /BASE \/\/ INFRASTRUCTURE CONTROL/);
   assert.match(template, /LINKED PROJECT/);
-  assert.match(template, /MAINTENANCE \/ TICK/);
-  assert.match(template, /PRODUCTION \/ TICK/);
+  assert.match(template, /MAINT \/ T/);
+  assert.match(template, /OUTPUT \/ T/);
   assert.match(template, /PROJECT CONTRACT/);
   assert.match(template, /activeProject|project\.progressDisplay|project\.statusLabel/);
 });
