@@ -41,6 +41,7 @@ function requestResult(record) {
     entityId: record.data.entityId,
     status: record.data.status,
     type: record.data.type,
+    customTypeLabel: record.data.customTypeLabel ?? "",
     title: record.data.proposal?.title ?? record.document.name,
     requesterUserUuid: record.data.requesterUserUuid,
     primaryDomainUuid: record.data.primaryDomainUuid,
@@ -61,6 +62,7 @@ export async function executeRequestCreate({ payload, callerUserId, operationId 
   const data = normalizeRequestDraft({
     operationId,
     type: normalized.type,
+    customTypeLabel: normalized.customTypeLabel,
     requesterUserUuid: caller.uuid,
     primaryDomainUuid: domain.uuid,
     intent: normalized.intent,
@@ -101,6 +103,7 @@ export async function executeRequestResubmit({ payload, callerUserId }) {
   const beforeName = request.document.name;
   const nextData = planRequestResubmission(request.data, {
     type: normalized.type,
+    customTypeLabel: normalized.customTypeLabel,
     title: normalized.title,
     intent: normalized.intent,
     details: normalized.details,

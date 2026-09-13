@@ -176,6 +176,23 @@ test("controller cria Request pelo Command Kernel, recebe OBSERVER e retry é id
   assert.equal(doc.getFlag("domain-manager", "data").operationId, "req-create-1");
 });
 
+test("Request personalizada persiste nome de tipo livre sem perder o tipo canônico custom", async () => {
+  const domain = reset();
+  const created = await command("request.create", "req-custom-labeled", {
+    domain: ref(domain, "domain", "domain:D1"),
+    type: "custom",
+    customTypeLabel: "Evacuação Civil",
+    title: "Retirar moradores do setor leste",
+    intent: "Organizar uma evacuação antes da instabilidade estrutural.",
+    details: "Priorizar feridos e equipes médicas."
+  }, "P1");
+
+  assert.equal(created.type, "custom");
+  assert.equal(created.customTypeLabel, "Evacuação Civil");
+  const requestDoc = docs.get(created.uuid);
+  assert.equal(requestDoc.getFlag("domain-manager", "data").customTypeLabel, "Evacuação Civil");
+});
+
 test("request.create rejeita usuário que não controla o Domain", async () => {
   const domain = reset();
   await assert.rejects(() => command("request.create", "req-no-control", {

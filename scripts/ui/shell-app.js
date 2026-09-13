@@ -148,7 +148,7 @@ const MANAGEMENT_PRESET_LABELS = Object.freeze({
   outpost: "Posto avançado",
   base: "Base",
   "strategic-organization": "Organização estratégica",
-  custom: "Personalizado"
+  custom: "Personalizado — escolher áreas"
 });
 
 const CAPABILITY_LABELS = Object.freeze({
@@ -241,8 +241,14 @@ const REQUEST_TYPE_LABELS = Object.freeze({
   mission: "Missão",
   agreement: "Acordo",
   transfer: "Transferência",
-  custom: "Personalizada"
+  custom: "Personalizada — definir tipo"
 });
+
+function requestTypeLabel(type, customTypeLabel = "") {
+  const customLabel = String(customTypeLabel ?? "").trim();
+  if (type === "custom" && customLabel) return customLabel;
+  return REQUEST_TYPE_LABELS[type] ?? titleCase(type);
+}
 const REQUEST_STATUS_LABELS = Object.freeze({
   submitted: "Enviada",
   resubmitted: "Reenviada",
@@ -671,17 +677,43 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const domainPreset = this.element?.querySelector?.("[data-domain-preset]");
     const capabilityInputs = Array.from(this.element?.querySelectorAll?.('[name="capabilities"]') ?? []);
     if (domainPreset && capabilityInputs.length) {
+      const syncCapabilityBadge = (input) => {
+        const badge = input.closest?.(".dm-controller-option")?.querySelector?.("small");
+        if (badge) badge.textContent = input.checked ? "ATIVA" : "DESATIVADA";
+      };
       domainPreset.addEventListener("change", () => {
+        if (domainPreset.value === "custom") {
+          capabilityInputs.forEach(syncCapabilityBadge);
+          return;
+        }
         const defaults = capabilityDefaultsForPreset(domainPreset.value);
-        for (const input of capabilityInputs) input.checked = defaults[input.value] === true;
+        for (const input of capabilityInputs) {
+          input.checked = defaults[input.value] === true;
+          syncCapabilityBadge(input);
+        }
       });
       for (const input of capabilityInputs) {
         input.addEventListener("change", () => {
-          const defaults = capabilityDefaultsForPreset(domainPreset.value);
-          const isPresetDefault = capabilityInputs.every((candidate) => candidate.checked === (defaults[candidate.value] === true));
-          if (!isPresetDefault) domainPreset.value = "custom";
+          syncCapabilityBadge(input);
+          if (domainPreset.value !== "custom") domainPreset.value = "custom";
         });
       }
+    }
+    const requestTypeSelects = Array.from(this.element?.querySelectorAll?.("[data-request-type-select]") ?? []);
+    for (const select of requestTypeSelects) {
+      const form = select.closest?.("form");
+      const customField = form?.querySelector?.("[data-request-custom-type-field]");
+      const customInput = customField?.querySelector?.('input[name="customTypeLabel"]');
+      if (!customField || !customInput) continue;
+      const syncCustomRequestType = () => {
+        const isCustom = select.value === "custom";
+        customField.hidden = !isCustom;
+        customInput.required = isCustom;
+        if (isCustom) customInput.removeAttribute("aria-hidden");
+        else customInput.setAttribute("aria-hidden", "true");
+      };
+      select.addEventListener("change", syncCustomRequestType);
+      syncCustomRequestType();
     }
     const deleteConfirmation = this.element?.querySelector?.("[data-domain-delete-confirmation]");
     const deleteSubmit = this.element?.querySelector?.("[data-domain-delete-submit]");
@@ -791,7 +823,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const activeWorkspace = selectedDomain ? resolveWorkspaceForView(this.activeView) : null;
     const subsystemNav = workspaceNav.find((workspace) => workspace.active)?.children ?? [];
 
-    const domainCards = filteredDomains.map((record) => buildDomainCard(record, { selectedUuid: this.selectedDomainUuid }));
+    const domainCards = filteredDomains.map((record) => ({
+      ...buildDomainCard(record, { selectedUuid: this.selectedDomainUuid }),
+      stateLabel: stateLabel(record.data.identity?.state),
+      presetLabel: managementPresetLabel(record.data.management?.preset)
+    }));
     const globalNav = buildGlobalNavigation({ isGM: game.user.isGM, activeView: this.activeView });
 
     const allMissions = listVisibleRecords(RECORD_TYPES.MISSION).map(recordSummary);
@@ -1043,7 +1079,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         ...recordSummary(record),
         selected: record.uuid === this.selectedRequestUuid,
         type: record.data.type,
-        typeLabel: REQUEST_TYPE_LABELS[record.data.type] ?? titleCase(record.data.type),
+        customTypeLabel: record.data.customTypeLabel ?? "",
+        typeLabel: requestTypeLabel(record.data.type, record.data.customTypeLabel),
         status,
         statusLabel: REQUEST_STATUS_LABELS[status] ?? stateLabel(status),
         tone: requestTone(status),
@@ -2003,13 +2040,20 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const domain = document ? decodeRecord(document) : null;
     if (!form || !canSubmitDomainRequest(domain)) return;
     const data = new FormData(form);
+    const requestType = String(data.get("type") ?? "custom");
+    const customTypeLabel = String(data.get("customTypeLabel") ?? "").trim();
+    if (requestType === "custom" && !customTypeLabel) {
+      ui.notifications.warn("Informe o nome do tipo personalizado da solicitação.");
+      return;
+    }
     this.isRequestBusy = true;
     try {
       const result = await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.REQUEST_CREATE,
         payload: {
           domain: entityReference(domain),
-          type: String(data.get("type") ?? "custom"),
+          type: requestType,
+          customTypeLabel,
           title: String(data.get("title") ?? ""),
           intent: String(data.get("intent") ?? ""),
           details: String(data.get("details") ?? "")
@@ -2103,6 +2147,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!form || !document || !canViewDocument(document)) return;
     const request = decodeRecord(document);
     const data = new FormData(form);
+    const requestType = String(data.get("type") ?? "custom");
+    const customTypeLabel = String(data.get("customTypeLabel") ?? "").trim();
+    if (requestType === "custom" && !customTypeLabel) {
+      ui.notifications.warn("Informe o nome do tipo personalizado da solicitação.");
+      return;
+    }
     this.isRequestBusy = true;
     try {
       await executeCommandAuthoritatively({
@@ -2110,7 +2160,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: {
           request: entityReference(request),
           expectedModifiedTime: data.get("expectedModifiedTime"),
-          type: String(data.get("type") ?? "custom"),
+          type: requestType,
+          customTypeLabel,
           title: String(data.get("title") ?? ""),
           intent: String(data.get("intent") ?? ""),
           details: String(data.get("details") ?? "")

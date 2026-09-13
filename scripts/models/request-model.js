@@ -70,6 +70,13 @@ export class RequestModel
         choices: REQUEST_TYPES
       }),
 
+      customTypeLabel: new StringField({
+        required: true,
+        nullable: false,
+        blank: true,
+        initial: ""
+      }),
+
       status: new StringField({
         required: true,
         nullable: false,

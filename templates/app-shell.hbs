@@ -101,7 +101,7 @@
                   {{#each domains}}
                     <button type="button" class="dm-command-domain-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
                       <span class="dm-command-domain-row__identity"><i class="dm-status-pip dm-status-pip--{{stateTone}}"></i><span><strong>{{name}}</strong><small>{{entityId}}</small></span></span>
-                      <span>{{category}}</span><strong>{{population}}</strong><em class="dm-chip dm-chip--{{stateTone}}">{{state}}</em>
+                      <span>{{category}}</span><strong>{{population}}</strong><em class="dm-chip dm-chip--{{stateTone}}">{{stateLabel}}</em>
                     </button>
                   {{else}}
                     <div class="dm-empty"><i class="fa-solid fa-sitemap"></i><strong>Nenhum domínio cadastrado</strong><span>Crie o primeiro domínio para iniciar a gestão do mundo.</span>{{#if ../isGM}}<button type="button" class="dm-action-button" data-action="openCreateDomain">CRIAR PRIMEIRO DOMÍNIO</button>{{/if}}</div>
@@ -142,7 +142,7 @@
                 <div class="dm-registry-index__header"><span>DOMÍNIO</span><span>CATEGORIA</span><span>PERFIL</span><span>POP</span><span>ESTADO</span></div>
                 {{#each domains}}
                   <button type="button" class="dm-registry-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
-                    <span><i></i><strong>{{name}}</strong><small>{{entityId}}</small></span><span>{{category}}</span><span>{{preset}}</span><span>{{population}}</span><span class="dm-chip dm-chip--{{stateTone}}">{{state}}</span>
+                    <span><i></i><strong>{{name}}</strong><small>{{entityId}}</small></span><span>{{category}}</span><span>{{presetLabel}}</span><span>{{population}}</span><span class="dm-chip dm-chip--{{stateTone}}">{{stateLabel}}</span>
                   </button>
                 {{else}}<div class="dm-empty-signal">NENHUM DOMÍNIO CADASTRADO</div>{{/each}}
               </section>
@@ -624,7 +624,8 @@
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">SOLICITAÇÃO // NOVO PEDIDO</span><h2>Nova Solicitação</h2></div><button type="button" class="dm-icon-button" data-action="closeRequestCreate"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>AUTORIDADE</small><strong>FILA DO GM</strong></span><span><small>VISIBILIDADE</small><strong>SOLICITANTE + GM</strong></span><span><small>ESQUEMA</small><strong>SOLICITAÇÃO / V{{schemaVersion}}</strong></span></div>
         <div class="dm-system-dialog__body">
-          <label class="dm-field"><span>Tipo</span><select name="type">{{#each requestTypeOptions}}<option value="{{value}}">{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Tipo</span><select name="type" data-request-type-select>{{#each requestTypeOptions}}<option value="{{value}}">{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field" data-request-custom-type-field hidden><span>Nome do tipo personalizado</span><input name="customTypeLabel" maxlength="80" placeholder="Ex.: Pesquisa, evacuação, permissão especial" aria-hidden="true" /></label>
           <label class="dm-field"><span>Título</span><input name="title" maxlength="160" required placeholder="Solicitar reconhecimento externo" /></label>
           <label class="dm-field dm-field--wide"><span>Intenção</span><textarea name="intent" rows="4" maxlength="1200" required placeholder="O que precisa ser alcançado e por quê"></textarea></label>
           <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="7" maxlength="6000" placeholder="Contexto adicional, restrições ou prioridade"></textarea></label>
@@ -659,7 +660,8 @@
         <div class="dm-system-dialog__telemetry"><span><small>SOLICITANTE</small><strong>{{revisingRequest.requesterName}}</strong></span><span><small>ESTADO ATUAL</small><strong>{{revisingRequest.statusLabel}}</strong></span><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>PRÓXIMO ESTADO</small><strong>ENVIADA</strong></span></div>
         <div class="dm-system-dialog__body">
           <input type="hidden" name="expectedModifiedTime" value="{{revisingRequest.modifiedTime}}" />
-          <label class="dm-field"><span>Tipo</span><select name="type">{{#each requestRevisionTypeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Tipo</span><select name="type" data-request-type-select>{{#each requestRevisionTypeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field" data-request-custom-type-field {{#unless revisingRequest.customTypeLabel}}hidden{{/unless}}><span>Nome do tipo personalizado</span><input name="customTypeLabel" maxlength="80" value="{{revisingRequest.customTypeLabel}}" placeholder="Ex.: Pesquisa, evacuação, permissão especial" /></label>
           <label class="dm-field"><span>Título</span><input name="title" maxlength="160" required value="{{revisingRequest.name}}" /></label>
           <label class="dm-field dm-field--wide"><span>Intenção</span><textarea name="intent" rows="4" maxlength="1200" required>{{revisingRequest.intent}}</textarea></label>
           <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="7" maxlength="6000">{{revisingRequest.details}}</textarea></label>
@@ -884,6 +886,11 @@
           <label class="dm-field"><span>Natureza</span><select name="nature">{{#each domainEditor.natureOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Estado</span><select name="state">{{#each domainEditor.stateOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Perfil de gerenciamento</span><select name="preset" data-domain-preset>{{#each domainEditor.presetOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <fieldset class="dm-controller-grid dm-capability-grid dm-field--wide dm-capability-config">
+            <legend>Personalização das áreas</legend>
+            <div class="dm-capability-config__note"><i class="fa-solid fa-sliders"></i><span><strong>ESCOLHA O QUE ESTE DOMÍNIO GERENCIA</strong><small>Perfis prontos preenchem as áreas automaticamente. Marcar ou desmarcar qualquer área transforma o perfil em Personalizado.</small></span></div>
+            {{#each domainEditor.capabilityOptions}}<label class="dm-controller-option"><input type="checkbox" name="capabilities" value="{{value}}" {{#if checked}}checked{{/if}} /><i class="fa-solid fa-puzzle-piece"></i><strong>{{label}}</strong><small>{{#if checked}}ATIVA{{else}}DESATIVADA{{/if}}</small></label>{{/each}}
+          </fieldset>
           <label class="dm-field"><span>Marcadores</span><input name="tags" value="{{domainEditor.tagsValue}}" placeholder="orbital, comércio, fronteira" /></label>
           <label class="dm-field"><span>Localizado em</span><select name="locatedInUuid"><option value="">Nenhum domínio</option>{{#each domainEditor.locatedInOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Administração superior</span><select name="administrativeParentUuid"><option value="">Nenhum domínio</option>{{#each domainEditor.administrativeParentOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
@@ -891,10 +898,6 @@
           <fieldset class="dm-controller-grid dm-field--wide">
             <legend>Controladores</legend>
             {{#each domainEditor.controllerOptions}}<label class="dm-controller-option"><input type="checkbox" name="controllerIds" value="{{id}}" {{#if selected}}checked{{/if}} /><span class="dm-sysdot {{#if active}}is-online{{/if}}"></span><strong>{{name}}</strong><small>{{#if active}}ATIVO{{else}}INATIVO{{/if}}</small></label>{{else}}<div class="dm-muted">Nenhum jogador disponível.</div>{{/each}}
-          </fieldset>
-          <fieldset class="dm-controller-grid dm-capability-grid dm-field--wide">
-            <legend>Áreas habilitadas</legend>
-            {{#each domainEditor.capabilityOptions}}<label class="dm-controller-option"><input type="checkbox" name="capabilities" value="{{value}}" {{#if checked}}checked{{/if}} /><i class="fa-solid fa-puzzle-piece"></i><strong>{{label}}</strong><small>{{#if checked}}ATIVA{{else}}DESATIVADA{{/if}}</small></label>{{/each}}
           </fieldset>
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelCreateDomain" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button" data-action="submitCreateDomain" {{#if isDomainBusy}}disabled{{/if}}><i class="fa-solid fa-floppy-disk"></i> {{#if domainEditor.isEdit}}SALVAR DOMÍNIO{{else}}CRIAR DOMÍNIO{{/if}}</button></footer>

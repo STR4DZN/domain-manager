@@ -11,6 +11,7 @@ import {
 export function normalizeRequestDraft({
   operationId,
   type,
+  customTypeLabel = "",
   requesterUserUuid,
   primaryDomainUuid,
   intent,
@@ -21,6 +22,8 @@ export function normalizeRequestDraft({
     String(operationId ?? "").trim();
   const cleanIntent =
     String(intent ?? "").trim();
+  const cleanCustomTypeLabel =
+    String(customTypeLabel ?? "").trim();
   const cleanTitle =
     String(title ?? "").trim();
   const cleanDetails =
@@ -75,6 +78,13 @@ export function normalizeRequestDraft({
     );
   }
 
+  if (cleanCustomTypeLabel.length > 80) {
+    throw new ModuleError(
+      ERROR_CODES.VALIDATION,
+      "O nome do tipo personalizado não pode exceder 80 caracteres."
+    );
+  }
+
   if (cleanIntent.length > 1200) {
     throw new ModuleError(
       ERROR_CODES.VALIDATION,
@@ -92,6 +102,7 @@ export function normalizeRequestDraft({
   return {
     operationId: cleanOperationId,
     type,
+    customTypeLabel: type === "custom" ? cleanCustomTypeLabel : "",
     status: "submitted",
     requesterUserUuid,
     primaryDomainUuid,
@@ -195,7 +206,7 @@ export function planRequestDecision(
 
 export function planRequestResubmission(
   requestData,
-  { type, title, intent, details = "", resubmittedByUserUuid }
+  { type, customTypeLabel = "", title, intent, details = "", resubmittedByUserUuid }
 ) {
   if (requestData?.status !== "needs-changes") {
     throw new ModuleError(
@@ -213,6 +224,7 @@ export function planRequestResubmission(
   const revised = normalizeRequestDraft({
     operationId: requestData.operationId,
     type,
+    customTypeLabel,
     requesterUserUuid: requestData.requesterUserUuid,
     primaryDomainUuid: requestData.primaryDomainUuid,
     title,
@@ -223,6 +235,7 @@ export function planRequestResubmission(
   return {
     ...requestData,
     type: revised.type,
+    customTypeLabel: revised.customTypeLabel,
     status: "submitted",
     intent: revised.intent,
     proposal: revised.proposal,

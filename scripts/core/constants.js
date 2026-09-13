@@ -1,6 +1,6 @@
 export const MODULE_ID = "domain-manager";
 export const MODULE_TITLE = "Domínios // Domain Manager";
-export const MODULE_VERSION = "0.1.0-dev.150";
+export const MODULE_VERSION = "0.1.0-dev.152";
 export const SCHEMA_VERSION = 9;
 
 export const RECORD_TYPES = Object.freeze({

@@ -22,6 +22,7 @@ export async function performCreateRequest(payload = {}, callerUserId) {
         entityId: payload.primaryDomainEntityId ?? null
       },
       type: payload.type,
+      customTypeLabel: payload.customTypeLabel,
       title: payload.title,
       intent: payload.intent,
       details: payload.details
@@ -71,6 +72,7 @@ export async function resubmitRequestAction({
   requestUuid,
   expectedModifiedTime,
   type,
+  customTypeLabel = "",
   title,
   intent,
   details = "",
@@ -83,6 +85,7 @@ export async function resubmitRequestAction({
       request: { recordType: RECORD_TYPES.REQUEST, uuid: requestUuid, entityId: null },
       expectedModifiedTime,
       type,
+      customTypeLabel,
       title,
       intent,
       details

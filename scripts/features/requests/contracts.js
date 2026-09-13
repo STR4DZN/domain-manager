@@ -20,6 +20,7 @@ function expectedRevision(value) {
 
 function editableRequestFields(payload = {}) {
   const type = clean(payload.type);
+  const customTypeLabel = clean(payload.customTypeLabel);
   const intent = clean(payload.intent);
   const title = clean(payload.title);
   const details = clean(payload.details);
@@ -30,10 +31,17 @@ function editableRequestFields(payload = {}) {
   if (!title) throw new ModuleError(ERROR_CODES.VALIDATION, "O título da solicitação é obrigatório.");
   if (!intent) throw new ModuleError(ERROR_CODES.VALIDATION, "Explique o que deseja conseguir com a solicitação.");
   if (title.length > 160) throw new ModuleError(ERROR_CODES.VALIDATION, "O título não pode exceder 160 caracteres.");
+  if (customTypeLabel.length > 80) throw new ModuleError(ERROR_CODES.VALIDATION, "O nome do tipo personalizado não pode exceder 80 caracteres.");
   if (intent.length > 1200) throw new ModuleError(ERROR_CODES.VALIDATION, "A intenção não pode exceder 1200 caracteres.");
   if (details.length > 6000) throw new ModuleError(ERROR_CODES.VALIDATION, "Os detalhes não podem exceder 6000 caracteres.");
 
-  return { type, title, intent, details };
+  return {
+    type,
+    customTypeLabel: type === "custom" ? customTypeLabel : "",
+    title,
+    intent,
+    details
+  };
 }
 
 function normalizeReference(value, expectedType, label) {

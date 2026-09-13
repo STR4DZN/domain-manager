@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-dev.152 — personalização funcional
+
+- O perfil **Personalizado** de Domínio deixa de ser uma opção ambígua: as áreas gerenciadas ficam imediatamente abaixo do perfil e qualquer alteração converte o perfil para personalizado.
+- Selecionar **Personalizado** não apaga mais a seleção atual de áreas; ele preserva o perfil de partida para edição manual.
+- A Solicitação **Personalizada** ganha um campo real de **nome do tipo personalizado**.
+- O nome personalizado da Solicitação passa a ser persistido e exibido na lista, no inspetor, na revisão e no reenvio.
+- Solicitações antigas do tipo `custom` continuam compatíveis; quando editadas pela UI, o nome personalizado passa a ser solicitado.
+- Schema global permanece **v9**; o novo campo de Request é retrocompatível e possui valor vazio padrão para registros antigos.
+
+## 0.1.0-dev.151 — correções visuais fotografadas
+
+- Corrige compressão global de botões que quebrava seletor de domínio, registro e lista de pessoas.
+- Corrige diálogos transparentes e vazamento visual do conteúdo ao fundo.
+- Corrige o resumo de Inteligência em larguras intermediárias.
+- Corrige layout do painel Sistema após a simplificação do diagrama decorativo.
+- Corrige estado vazio de Alertas e Fortificações.
+- Restaura o indicador central de Defesa e melhora o resumo legado de Recursos.
+- Exibe rótulos de perfil/estado de domínio em português no Registro.
+
 ## 0.1.0-dev.150 — Reconstrução da Aplicação e Recuperação de Gestão
 
 ### Recuperado
