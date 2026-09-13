@@ -53,10 +53,10 @@ function assertAudience(ids) {
   }
 }
 
-function assertRevision(record, expectedModifiedTime) {
+function assertRevision(record, expectedModifiedTime, label = "A Mission") {
   if (expectedModifiedTime == null) return;
   if ((record.document?._stats?.modifiedTime ?? null) !== expectedModifiedTime) {
-    throw new ModuleError(ERROR_CODES.CONFLICT, "A Mission mudou enquanto o formulário estava aberto.");
+    throw new ModuleError(ERROR_CODES.CONFLICT, `${label} mudou enquanto o formulário estava aberto.`);
   }
 }
 
@@ -149,6 +149,9 @@ export async function executeMissionUpdate({ payload, callerUserId }) {
   const normalized = normalizeMissionUpdatePayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
   assertRevision(mission, normalized.expectedModifiedTime);
+  if (!["planned", "available"].includes(mission.data.status)) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Somente Missions planejadas ou disponíveis podem ter o planejamento editado.");
+  }
   if (normalized.expectedStatus && normalized.expectedStatus !== mission.data.status) {
     throw new ModuleError(
       ERROR_CODES.CONFLICT,
@@ -180,6 +183,17 @@ export async function executeMissionUpdate({ payload, callerUserId }) {
   data.briefing = normalized.briefing;
   data.audienceUserIds = normalized.audienceUserIds;
   data.outcomeSummary = normalized.outcomeSummary;
+  if (normalized.objectives) {
+    const objectiveIds = new Set();
+    data.objectives = normalized.objectives.map((objective) => {
+      const localId = objective.localId.startsWith("new-objective-") ? foundry.utils.randomID() : objective.localId;
+      if (objectiveIds.has(localId)) {
+        throw new ModuleError(ERROR_CODES.VALIDATION, `Objetivo duplicado: ${localId}`);
+      }
+      objectiveIds.add(localId);
+      return { ...objective, localId };
+    });
+  }
 
   const updated = await updateRecord({
     uuid: mission.uuid,
@@ -207,6 +221,9 @@ export async function executeMissionObjectiveUpsert({ payload, callerUserId }) {
   const normalized = normalizeMissionObjectiveUpsertPayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
   assertRevision(mission, normalized.expectedModifiedTime);
+  if (!["planned", "available"].includes(mission.data.status)) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Objetivos só podem ser editados antes do lançamento da Mission.");
+  }
   const before = foundry.utils.deepClone(mission.data);
   const data = foundry.utils.deepClone(mission.data);
   const objective = {
@@ -240,6 +257,9 @@ export async function executeMissionObjectiveRemove({ payload, callerUserId }) {
   const normalized = normalizeMissionObjectiveRemovePayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
   assertRevision(mission, normalized.expectedModifiedTime);
+  if (!["planned", "available"].includes(mission.data.status)) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Objetivos só podem ser removidos antes do lançamento da Mission.");
+  }
   const existing = (mission.data.objectives ?? []).find((entry) => entry.localId === normalized.localId) ?? null;
   const before = foundry.utils.deepClone(mission.data);
   const data = foundry.utils.deepClone(mission.data);
@@ -269,6 +289,8 @@ export async function executeMissionPrepare({ payload, callerUserId }) {
   const normalized = normalizeMissionPreparePayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
   const squad = resolve(normalized.squad, RECORD_TYPES.SQUAD);
+  assertRevision(mission, normalized.expectedMissionModifiedTime);
+  assertRevision(squad, normalized.expectedSquadModifiedTime, "O Squad");
   const caller = user(callerUserId);
   if (mission.data.status !== "available") throw new ModuleError(ERROR_CODES.CONFLICT, "Mission precisa estar disponível para preparação.");
   if (!caller.isGM) {
@@ -322,6 +344,8 @@ export async function executeMissionRelease({ payload, callerUserId }) {
   const normalized = normalizeMissionReleasePayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
   const squad = resolve(normalized.squad, RECORD_TYPES.SQUAD);
+  assertRevision(mission, normalized.expectedMissionModifiedTime);
+  assertRevision(squad, normalized.expectedSquadModifiedTime, "O Squad");
   const caller = user(callerUserId);
   if (!["planned", "available"].includes(mission.data.status)) throw new ModuleError(ERROR_CODES.CONFLICT, "Squad só pode ser liberado antes do lançamento da Mission.");
   if (!caller.isGM && !controllers(squad).includes(caller.id)) throw new ModuleError(ERROR_CODES.PERMISSION, "Você não controla este Squad.");
@@ -349,12 +373,51 @@ export async function executeMissionRelease({ payload, callerUserId }) {
   };
 }
 
+export async function executeMissionPublish({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const normalized = normalizeMissionReferencePayload(payload);
+  const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
+  if (mission.data.status !== "planned") {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Somente uma Mission planejada pode ser publicada.");
+  }
+
+  const before = foundry.utils.deepClone(mission.data);
+  const data = foundry.utils.deepClone(mission.data);
+  data.status = "available";
+  const updated = await updateRecord({
+    uuid: mission.uuid,
+    recordType: RECORD_TYPES.MISSION,
+    name: mission.document.name,
+    data,
+    controllerIds: mission.data.audienceUserIds
+  });
+  return {
+    result: missionResult(updated),
+    entities: [mission.data.entityId],
+    events: [{ type: EVENT_TYPES.MISSION_PUBLISHED, entities: [mission.data.entityId], payload: missionResult(updated) }],
+    rollback: () => updateRecord({
+      uuid: mission.uuid,
+      recordType: RECORD_TYPES.MISSION,
+      name: mission.document.name,
+      data: before,
+      controllerIds: mission.data.audienceUserIds
+    })
+  };
+}
+
 export async function executeMissionLaunch({ payload, callerUserId }) {
   assertGM(callerUserId);
   const normalized = normalizeMissionReferencePayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
   if (mission.data.status !== "available") throw new ModuleError(ERROR_CODES.CONFLICT, "Somente Mission disponível pode ser lançada.");
   if (!(mission.data.assignments?.length)) throw new ModuleError(ERROR_CODES.CONFLICT, "Mission precisa de pelo menos um Squad preparado.");
+  const suppliedSquads = normalized.squads.map((reference) => resolve(reference, RECORD_TYPES.SQUAD));
+  if (suppliedSquads.length !== mission.data.assignments.length
+    || mission.data.assignments.some((assignment) => !suppliedSquads.some((squad) => sameRef(assignment.squad, squad)))) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "A lista de Squads mudou antes do lançamento. Reabra a confirmação.");
+  }
 
   const catalog = new Set((getResourceCatalogSetting().resources ?? []).map((resource) => resource.id));
   const beforeMission = foundry.utils.deepClone(mission.data);
@@ -395,7 +458,19 @@ export async function executeMissionResolve({ payload, callerUserId }) {
   assertGM(callerUserId);
   const normalized = normalizeMissionResolvePayload(payload);
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
   if (mission.data.status !== "active") throw new ModuleError(ERROR_CODES.CONFLICT, "Somente Mission ativa pode ser resolvida.");
+
+  const assignedSquads = (mission.data.assignments ?? []).map((assignment) => resolve(assignment.squad, RECORD_TYPES.SQUAD));
+  if (normalized.results.length !== assignedSquads.length
+    || normalized.results.some((result) => !assignedSquads.some((squad) => sameRef(result.squad, squad)))) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Os Squads da Mission mudaram. Reabra o relatório final.");
+  }
+  const missionObjectiveIds = (mission.data.objectives ?? []).map((objective) => objective.localId);
+  if (normalized.objectiveResults.length !== missionObjectiveIds.length
+    || normalized.objectiveResults.some((result) => !missionObjectiveIds.includes(result.localId))) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Os objetivos da Mission mudaram. Reabra o relatório final.");
+  }
 
   const resultBySquad = new Map(normalized.results.map((entry) => [entry.squad.entityId ?? entry.squad.uuid, entry]));
   const beforeMission = foundry.utils.deepClone(mission.data);

@@ -24,6 +24,7 @@
       </section>
 
       {{#if selectedDomain}}
+        <label class="dm-nav-workspace-picker"><span>Área</span><select data-workspace-select aria-label="Selecionar área de trabalho">{{#each workspaceNav}}<option value="{{view}}" {{#if active}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
         <section class="dm-nav-section dm-nav-section--workspaces">
           <span class="dm-nav-section__label">ÁREAS</span>
           {{#each workspaceNav}}
@@ -56,7 +57,7 @@
 
       <form class="dm-command-search" onsubmit="return false">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input data-dm-search type="search" value="{{searchQuery}}" placeholder="Pesquisar domínios, pessoas, projetos..." aria-label="Pesquisar" />
+        <input data-dm-search type="search" value="{{searchQuery}}" placeholder="Pesquisar domínios por nome, categoria ou tag..." aria-label="Pesquisar domínios" />
         <kbd>⌘ K</kbd>
         {{#if searchQuery}}<button type="button" data-action="clearSearch" title="Limpar"><i class="fa-solid fa-xmark"></i></button>{{else}}<button type="button" data-action="applySearch" title="Pesquisar"><i class="fa-solid fa-arrow-right"></i></button>{{/if}}
       </form>
@@ -92,52 +93,41 @@
               <div class="dm-live-clock"><span>ESTADO DA REDE</span><strong>{{system.authority}}</strong><small>{{domainCount}} DOMÍNIOS INDEXADOS</small></div>
             </header>
 
-            <div class="dm-commandscape">
-              <section class="dm-network-field">
-                <header class="dm-module-header"><div><span>01</span><div><small>MAPA DE DOMÍNIOS</small><strong>Rede de Domínios</strong></div></div><em>{{domainCount}} REGISTROS</em></header>
-                <div class="dm-network-canvas">
-                  <div class="dm-network-canvas__rings" aria-hidden="true"><i></i><i></i><i></i></div>
-                  <div class="dm-network-core" aria-hidden="true"><span>{{globalCounts.domains}}</span><small>DOM</small></div>
-                  <div class="dm-network-nodes">
-                    {{#each domains}}
-                      <button type="button" class="dm-node-signal {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
-                        <span class="dm-node-signal__tick"></span>
-                        <small>{{category}} // {{state}}</small>
-                        <strong>{{name}}</strong>
-                        <em>{{population}} POP</em>
-                      </button>
-                    {{else}}
-                      <div class="dm-empty-signal">NENHUM DOMÍNIO CADASTRADO</div>
-                    {{/each}}
-                  </div>
-                  <div class="dm-network-axis dm-network-axis--h"></div><div class="dm-network-axis dm-network-axis--v"></div>
+            <div class="dm-command-grid">
+              <section class="dm-command-domains">
+                <header class="dm-module-header"><div><span>01</span><div><small>DOMÍNIOS CADASTRADOS</small><strong>Rede sob gestão</strong></div></div><em>{{domainCount}} REGISTROS</em></header>
+                <div class="dm-command-domain-head"><span>Domínio</span><span>Categoria</span><span>População</span><span>Estado</span></div>
+                <div class="dm-command-domain-list">
+                  {{#each domains}}
+                    <button type="button" class="dm-command-domain-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
+                      <span class="dm-command-domain-row__identity"><i class="dm-status-pip dm-status-pip--{{stateTone}}"></i><span><strong>{{name}}</strong><small>{{entityId}}</small></span></span>
+                      <span>{{category}}</span><strong>{{population}}</strong><em class="dm-chip dm-chip--{{stateTone}}">{{state}}</em>
+                    </button>
+                  {{else}}
+                    <div class="dm-empty"><i class="fa-solid fa-sitemap"></i><strong>Nenhum domínio cadastrado</strong><span>Crie o primeiro domínio para iniciar a gestão do mundo.</span>{{#if ../isGM}}<button type="button" class="dm-action-button" data-action="openCreateDomain">CRIAR PRIMEIRO DOMÍNIO</button>{{/if}}</div>
+                  {{/each}}
                 </div>
               </section>
 
-              <aside class="dm-command-stack">
-                <section class="dm-signal-module dm-signal-module--amber">
-                  <header><span class="dm-kicker">RESUMO DA REDE</span><strong>INDICADORES</strong></header>
-                  <div class="dm-telemetry-ladder">
-                    <div><span>PROJETOS</span><strong>{{globalCounts.projects}}</strong><i style="--level:64%"></i></div>
-                    <div><span>MISSÕES</span><strong>{{globalCounts.missions}}</strong><i style="--level:41%"></i></div>
-                    <div><span>FORÇAS</span><strong>{{globalCounts.squads}}</strong><i style="--level:52%"></i></div>
-                    <div><span>ATIVOS</span><strong>{{globalCounts.structures}}</strong><i style="--level:73%"></i></div>
-                  </div>
+              <aside class="dm-command-summary">
+                <section class="dm-command-stats" aria-label="Resumo da rede">
+                  <article><small>DOMÍNIOS</small><strong>{{globalCounts.domains}}</strong></article>
+                  <article><small>PROJETOS</small><strong>{{globalCounts.projects}}</strong></article>
+                  <article><small>MISSÕES</small><strong>{{globalCounts.missions}}</strong></article>
+                  <article><small>FORÇAS</small><strong>{{globalCounts.squads}}</strong></article>
+                  <article><small>ESTRUTURAS</small><strong>{{globalCounts.structures}}</strong></article>
                 </section>
-                <section class="dm-signal-module dm-signal-module--teal">
-                  <header><span class="dm-kicker">OPERAÇÕES</span><strong>ATIVIDADE ATUAL</strong></header>
+                <section class="dm-command-activity">
+                  <header><div><span class="dm-kicker">OPERAÇÕES</span><strong>Atividade atual</strong></div><em>{{globalCounts.missions}}</em></header>
                   <div class="dm-ops-feed">
                     {{#each allMissions}}
-                      <div class="dm-ops-feed__entry"><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{name}}</strong><small>{{statusLabel}}</small></div><em>{{entityId}}</em></div>
-                    {{else}}
-                      <div class="dm-empty-signal">NENHUMA OPERAÇÃO ATIVA</div>
-                    {{/each}}
+                      <div class="dm-ops-feed__entry"><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{name}}</strong><small>{{statusLabel}}</small></div><em title="{{entityId}}">{{entityId}}</em></div>
+                    {{else}}<div class="dm-empty-signal">NENHUMA OPERAÇÃO ATIVA</div>{{/each}}
                   </div>
                 </section>
-                <section class="dm-signal-module dm-signal-module--system">
-                  <header><span class="dm-kicker">SESSÃO</span><strong>{{system.activeGM}}</strong></header>
-                  <div class="dm-scope-line"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                  <footer><span>{{system.timeProvider}}</span><em>{{system.primary}}</em></footer>
+                <section class="dm-command-session">
+                  <header><span class="dm-kicker">SESSÃO</span><strong>{{system.authority}}</strong></header>
+                  <dl><div><dt>GM ativo</dt><dd>{{system.activeGM}}</dd></div><div><dt>Função</dt><dd>{{system.primary}}</dd></div><div><dt>Tempo</dt><dd>{{system.timeProvider}}</dd></div></dl>
                 </section>
               </aside>
             </div>
@@ -146,7 +136,7 @@
 
         {{#if view.domains}}
           <section class="dm-view dm-view--registry">
-            <header class="dm-view-header"><div><span class="dm-kicker">REGISTRO // DOMÍNIOS CADASTRADOS</span><h2>Domínios</h2><p>Cadastre, localize e selecione os domínios gerenciados pelo módulo.</p></div>{{#if isGM}}<button class="dm-action-button" type="button" data-action="openCreateDomain"><i class="fa-solid fa-plus"></i> NOVO DOMÍNIO</button>{{/if}}</header>
+            <header class="dm-view-header"><div><span class="dm-kicker">REGISTRO // DOMÍNIOS CADASTRADOS</span><h2>Domínios</h2><p>Cadastre, localize, edite e selecione os domínios gerenciados pelo módulo.</p></div>{{#if isGM}}<div class="dm-view-header__actions">{{#if selectedDomain}}<button class="dm-action-button dm-action-button--secondary" type="button" data-action="openEditDomain" data-uuid="{{selectedDomain.uuid}}"><i class="fa-solid fa-pen"></i> EDITAR</button><button class="dm-action-button dm-action-button--critical" type="button" data-action="openDeleteDomain" data-uuid="{{selectedDomain.uuid}}"><i class="fa-solid fa-trash"></i> EXCLUIR</button>{{/if}}<button class="dm-action-button" type="button" data-action="openCreateDomain"><i class="fa-solid fa-plus"></i> NOVO DOMÍNIO</button></div>{{/if}}</header>
             <div class="dm-registry-layout">
               <section class="dm-registry-index">
                 <div class="dm-registry-index__header"><span>DOMÍNIO</span><span>CATEGORIA</span><span>PERFIL</span><span>POP</span><span>ESTADO</span></div>
@@ -156,11 +146,6 @@
                   </button>
                 {{else}}<div class="dm-empty-signal">NENHUM DOMÍNIO CADASTRADO</div>{{/each}}
               </section>
-              <aside class="dm-registry-scope">
-                <div class="dm-registry-scope__reticle"><span></span><i></i></div>
-                <span class="dm-kicker">RESUMO</span><strong>{{domainCount}}</strong><small>DOMÍNIOS CADASTRADOS</small>
-                <div class="dm-binary-strip"></div>
-              </aside>
             </div>
           </section>
         {{/if}}
@@ -221,8 +206,8 @@
                 <div class="dm-flow-board__rows">{{#each resources}}<div class="dm-flow-channel"><span><strong>{{name}}</strong><small>{{availableDisplay}} DISPONÍVEL</small></span><i></i><em class="dm-flow dm-flow--{{tone}}">{{netPerTickDisplay}} /T</em></div>{{else}}<div class="dm-empty-signal">NENHUM RECURSO CADASTRADO</div>{{/each}}</div>
               </section>
               <section class="dm-alert-console">
-                <header class="dm-module-header"><div><span>03</span><div><small>CONDIÇÕES</small><strong>Alertas</strong></div></div><em>{{conditions.length}}</em></header>
-                <div class="dm-alert-console__feed">{{#each conditions}}<div class="dm-alert-signal dm-alert-signal--{{tone}}"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>{{label}}</strong><small>{{description}}</small></span></div>{{else}}<div class="dm-nominal-stamp"><i class="fa-solid fa-check"></i><span>NORMAL</span><small>NENHUMA CONDIÇÃO ATIVA</small></div>{{/each}}</div>
+                <header class="dm-module-header"><div><span>03</span><div><small>CONDIÇÕES</small><strong>Alertas</strong></div></div><em>{{activeConditions.length}}</em></header>
+                <div class="dm-alert-console__feed">{{#each activeConditions}}<div class="dm-alert-signal dm-alert-signal--{{tone}}"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>{{label}}</strong><small>{{description}}</small></span></div>{{else}}<div class="dm-nominal-stamp"><i class="fa-solid fa-check"></i><span>NORMAL</span><small>NENHUMA CONDIÇÃO ATIVA</small></div>{{/each}}</div>
               </section>
               <section class="dm-active-ops-strip">
                 <header><span class="dm-kicker">OPERAÇÕES ATIVAS</span><strong>{{missions.length}}</strong></header>
@@ -247,6 +232,30 @@
           </section>
         {{/if}}
 
+        {{#if view.conditions}}
+          <section class="dm-view dm-view--conditions dm-page--forensic">
+            <header class="dm-view-header"><div><span class="dm-kicker">GESTÃO // CONDIÇÕES</span><h2>Condições</h2><p>Efeitos temporários, alertas persistentes e fatores que afetam este domínio.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{conditionStats.active}} ATIVA(S)</span>{{#if canManageConditions}}<button type="button" class="dm-action-button" data-action="openConditionEditor" data-condition-id="__new__"><i class="fa-solid fa-plus"></i> NOVA CONDIÇÃO</button>{{/if}}</div></header>
+            <section class="dm-condition-summary">
+              <span><small>TOTAL</small><strong>{{conditionStats.total}}</strong><em>registros</em></span>
+              <span><small>ATIVAS</small><strong>{{conditionStats.active}}</strong><em>afetando o domínio</em></span>
+              <span><small>GRAVES</small><strong>{{conditionStats.severe}}</strong><em>alertas prioritários</em></span>
+              <span><small>COM PRAZO</small><strong>{{conditionStats.finite}}</strong><em>duração definida</em></span>
+              <span><small>INDEFINIDAS</small><strong>{{conditionStats.indefinite}}</strong><em>sem expiração</em></span>
+            </section>
+            <section class="dm-condition-board">
+              <header><span>CONDIÇÃO</span><span>GRAVIDADE</span><span>CATEGORIA</span><span>DURAÇÃO</span><span>ESTADO</span><span>AÇÕES</span></header>
+              {{#each conditions}}
+                <article class="dm-condition-row {{#unless active}}is-inactive{{/unless}}">
+                  <span class="dm-condition-row__identity"><i class="dm-status-pip dm-status-pip--{{tone}}"></i><span><strong>{{name}}</strong><small>{{#if description}}{{description}}{{else}}Sem descrição adicional{{/if}}</small></span></span>
+                  <span><em class="dm-chip dm-chip--{{tone}}">{{severityLabel}}</em></span>
+                  <span>{{categoryLabel}}</span><span>{{durationLabel}}</span><span><strong>{{stateLabel}}</strong></span>
+                  <span class="dm-condition-row__actions">{{#if ../canManageConditions}}<button type="button" class="dm-icon-button" data-action="toggleCondition" data-condition-id="{{localId}}" title="{{#if active}}Desativar{{else}}Ativar{{/if}} condição"><i class="fa-solid {{#if active}}fa-toggle-on{{else}}fa-toggle-off{{/if}}"></i></button><button type="button" class="dm-icon-button" data-action="openConditionEditor" data-condition-id="{{localId}}" title="Editar condição"><i class="fa-solid fa-pen"></i></button><button type="button" class="dm-icon-button dm-icon-button--danger" data-action="removeCondition" data-condition-id="{{localId}}" title="Remover condição"><i class="fa-solid fa-trash"></i></button>{{else}}<span>SOMENTE LEITURA</span>{{/if}}</span>
+                </article>
+              {{else}}<div class="dm-empty"><i class="fa-solid fa-shield-check"></i><strong>NENHUMA CONDIÇÃO CADASTRADA</strong><span>O domínio não possui efeitos ou alertas registrados.</span>{{#if canManageConditions}}<button type="button" class="dm-action-button" data-action="openConditionEditor" data-condition-id="__new__">CRIAR PRIMEIRA CONDIÇÃO</button>{{/if}}</div>{{/each}}
+            </section>
+          </section>
+        {{/if}}
+
         {{#if view.economy}}
           <section class="dm-view dm-view--economy">
             <header class="dm-view-header"><div><span class="dm-kicker">BASE // RECURSOS</span><h2>Recursos</h2><p>Estoque, reservas, produção, consumo e capacidade do domínio.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{telemetry.activeFlows}} FLUXO(S)</span>{{#if canConfigureEconomy}}<button type="button" class="dm-action-button" data-action="openEconomyConfig"><i class="fa-solid fa-sliders"></i> CONFIGURAR</button>{{/if}}</div></header>
@@ -266,7 +275,6 @@
                   </div>
                 {{else}}<div class="dm-empty-signal">CATÁLOGO DE RECURSOS VAZIO</div>{{/each}}
               </section>
-              <aside class="dm-logistics-schematic"><span class="dm-kicker">RESUMO DE RECURSOS</span><div class="dm-logistics-core"><strong>{{telemetry.resourceKinds}}</strong><small>TIPOS</small></div><div class="dm-logistics-paths"><i></i><i></i><i></i><i></i></div><div class="dm-logistics-legend"><span><i class="is-in"></i>ENTRADA</span><span><i class="is-out"></i>SAÍDA</span><span><i class="is-reserve"></i>RESERVA</span></div><footer><span>{{structures.length}} ESTRUTURA(S)</span><em>{{selectedDomain.name}}</em></footer></aside>
             </div>
           </section>
         {{/if}}
@@ -398,13 +406,13 @@
 
         {{#if view.squads}}
           <section class="dm-view dm-view--force-control dm-page--force-control"><header class="dm-view-header"><div><span class="dm-kicker">OPERAÇÕES // FORÇAS</span><h2>Forças</h2><p>Unidades, efetivo, moral, prontidão e suprimentos.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{squads.length}} UNIDADE(S)</span>{{#if canCreateSquad}}<button type="button" class="dm-action-button" data-action="openCreateSquad"><i class="fa-solid fa-plus"></i> NOVA UNIDADE</button>{{/if}}</div></header>
-            <div class="dm-force-grid">{{#each squads}}<article class="dm-squad-card {{#if controlledByMe}}is-controlled{{/if}}"><header><div><span class="dm-kicker">UNIDADE // {{entityIdShort}}</span><small>{{controllerLabel}}</small></div><span class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</span></header><div class="dm-squad-card__body"><div class="dm-force-glyph"><strong>{{strength}}</strong><small>/{{capacity}}</small><i></i></div><div><h3>{{name}}</h3><p>{{#if description}}{{description}}{{else}}Sem resumo operacional.{{/if}}</p><div class="dm-dual-meter"><div><span>MORAL</span><div class="dm-meter">{{#each moraleSegments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div><strong>{{moraleDisplay}}</strong></div><div><span>COND.</span><div class="dm-meter">{{#each conditionSegments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div><strong>{{conditionDisplay}}</strong></div></div></div></div><footer class="dm-squad-card__footer"><span><small>MISSÃO</small><strong>{{currentMissionName}}</strong></span><div>{{#if canUseSupply}}<button type="button" class="dm-action-button dm-action-button--secondary dm-action-button--compact" data-action="openSquadSupply" data-uuid="{{uuid}}">SUPRIMENTOS</button>{{/if}}{{#if canOperate}}<button type="button" class="dm-action-button dm-action-button--secondary dm-action-button--compact" data-action="openSquadControl" data-uuid="{{uuid}}">CONTROLE</button>{{/if}}</div></footer></article>{{else}}<div class="dm-empty dm-empty--force"><i class="fa-solid fa-person-military-rifle"></i><strong>NENHUMA FORÇA</strong><span>Crie uma unidade para começar a gerenciar suas forças.</span>{{#if canCreateSquad}}<button type="button" class="dm-action-button" data-action="openCreateSquad">CRIAR PRIMEIRA UNIDADE</button>{{/if}}</div>{{/each}}</div>
+            <div class="dm-force-grid">{{#each squads}}<article class="dm-squad-card {{#if controlledByMe}}is-controlled{{/if}}"><header><div><span class="dm-kicker">UNIDADE // {{entityIdShort}}</span><small>{{controllerLabel}}</small></div><span class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</span></header><div class="dm-squad-card__body"><div class="dm-force-glyph"><strong>{{strength}}</strong><small>/{{capacity}}</small></div><div><h3>{{name}}</h3><p>{{#if description}}{{description}}{{else}}Sem resumo operacional.{{/if}}</p><div class="dm-dual-meter"><div><span>MORAL</span><div class="dm-meter">{{#each moraleSegments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div><strong>{{moraleDisplay}}</strong></div><div><span>COND.</span><div class="dm-meter">{{#each conditionSegments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div><strong>{{conditionDisplay}}</strong></div></div></div></div><footer class="dm-squad-card__footer"><span><small>MISSÃO</small><strong>{{currentMissionName}}</strong></span><div>{{#if canUseSupply}}<button type="button" class="dm-action-button dm-action-button--secondary dm-action-button--compact" data-action="openSquadSupply" data-uuid="{{uuid}}">SUPRIMENTOS</button>{{/if}}{{#if canOperate}}<button type="button" class="dm-action-button dm-action-button--secondary dm-action-button--compact" data-action="openSquadControl" data-uuid="{{uuid}}">CONTROLE</button>{{/if}}</div></footer></article>{{else}}<div class="dm-empty dm-empty--force"><i class="fa-solid fa-person-military-rifle"></i><strong>NENHUMA FORÇA</strong><span>Crie uma unidade para começar a gerenciar suas forças.</span>{{#if canCreateSquad}}<button type="button" class="dm-action-button" data-action="openCreateSquad">CRIAR PRIMEIRA UNIDADE</button>{{/if}}</div>{{/each}}</div>
           </section>
         {{/if}}
 
         {{#if view.missions}}
           <section class="dm-view dm-view--missions dm-page--forensic dm-mission-control"><header class="dm-view-header"><div><span class="dm-kicker">OPERAÇÕES // MISSÕES</span><h2>Missões</h2><p>Crie, prepare, inicie e resolva missões.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{missions.length}} MISSÃO(ÕES)</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission"><i class="fa-solid fa-plus"></i> NOVA MISSÃO</button>{{/if}}</div></header>
-            <div class="dm-mission-list">{{#each missions}}<article class="dm-mission-card dm-mission-card--{{status}}"><div class="dm-mission-card__target"><span class="dm-target-reticle"><i></i></span><small>{{statusLabel}}</small></div><div class="dm-mission-card__body"><header><span class="dm-kicker">MISSÃO // {{entityIdShort}}</span><span class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</span></header><h3>{{name}}</h3><p>{{description}}</p><div class="dm-mission-telemetry"><span><small>VISIBILIDADE</small><strong>{{audienceLabel}}</strong></span><span><small>OBJETIVOS</small><strong>{{completedObjectives}} / {{objectiveCount}}</strong></span><span><small>FALHOU</small><strong>{{failedObjectives}}</strong></span><span><small>UNIDADES</small><strong>{{assignmentCount}}</strong></span></div><div class="dm-objective-grid">{{#each objectives}}<div class="dm-objective-row is-{{status}}"><span class="dm-objective-row__status"></span><div><strong>{{title}}</strong>{{#if description}}<small>{{description}}</small>{{/if}}</div><span>{{status}}</span></div>{{else}}<div class="dm-muted">SEM OBJETIVOS</div>{{/each}}</div>{{#if assignments.length}}<div class="dm-mission-units"><div class="dm-mission-subhead"><span>UNIDADES DESIGNADAS</span><strong>{{assignmentCount}}</strong></div>{{#each assignments}}<div class="dm-mission-unit"><div class="dm-mission-unit__id"><span class="dm-status-pip dm-status-pip--{{../tone}}"></span><div><strong>{{squadName}}</strong><small>{{stateLabel}} · {{committedStrength}} efetivo</small></div></div><div class="dm-mission-unit__resources">{{#each resources}}<span>{{name}} <strong>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}}</strong></span>{{else}}<span>SEM SUPRIMENTOS DESIGNADOS</span>{{/each}}</div>{{#if canRelease}}<button type="button" class="dm-icon-button" title="Liberar unidade" data-action="releaseMissionAssignment" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{squadUuid}}"><i class="fa-solid fa-link-slash"></i></button>{{/if}}</div>{{/each}}</div>{{/if}}{{#if isAvailable}}<div class="dm-mission-ready-units"><div class="dm-mission-subhead"><span>FORÇAS DISPONÍVEIS</span><strong>{{eligibleSquads.length}}</strong></div><div class="dm-mission-ready-grid">{{#each eligibleSquads}}<button type="button" class="dm-mission-ready-unit {{#if isPrepared}}is-prepared{{/if}}" data-action="openMissionPrepare" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{uuid}}"><span><strong>{{name}}</strong><small>{{strength}} / {{capacity}} · {{statusLabel}}</small></span><span>{{prepareLabel}}</span></button>{{else}}<div class="dm-muted">NENHUMA FORÇA DISPONÍVEL</div>{{/each}}</div></div>{{/if}}{{#if outcomeSummary}}<div class="dm-mission-outcome"><span>RELATÓRIO FINAL</span><p>{{outcomeSummary}}</p></div>{{/if}}<footer class="dm-mission-card__actions">{{#if canLaunch}}<button type="button" class="dm-action-button" data-action="launchMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-play"></i> INICIAR MISSÃO</button>{{/if}}{{#if canResolve}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="openMissionResolve" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-flag-checkered"></i> RESOLVER MISSÃO</button>{{/if}}</footer></div></article>{{else}}<div class="dm-empty dm-empty--force"><i class="fa-solid fa-location-crosshairs"></i><strong>NENHUMA MISSÃO CADASTRADA</strong><span>As missões aparecerão aqui quando forem cadastradas.</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission">CRIAR PRIMEIRA MISSÃO</button>{{/if}}</div>{{/each}}</div>
+            <div class="dm-mission-list">{{#each missions}}<article class="dm-mission-card dm-mission-card--{{status}}"><div class="dm-mission-card__summary"><i class="fa-solid fa-clipboard-check"></i><strong>{{completedObjectives}} / {{objectiveCount}}</strong><small>OBJETIVOS</small></div><div class="dm-mission-card__body"><header><span class="dm-kicker">MISSÃO // {{entityIdShort}}</span><span class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</span></header><h3>{{name}}</h3><p>{{description}}</p><div class="dm-mission-telemetry"><span><small>VISIBILIDADE</small><strong>{{audienceLabel}}</strong></span><span><small>OBJETIVOS</small><strong>{{completedObjectives}} / {{objectiveCount}}</strong></span><span><small>FALHOU</small><strong>{{failedObjectives}}</strong></span><span><small>UNIDADES</small><strong>{{assignmentCount}}</strong></span></div><div class="dm-objective-grid">{{#each objectives}}<div class="dm-objective-row is-{{status}}"><span class="dm-objective-row__status"></span><div><strong>{{title}}</strong>{{#if description}}<small>{{description}}</small>{{/if}}</div><span>{{status}}</span></div>{{else}}<div class="dm-muted">SEM OBJETIVOS</div>{{/each}}</div>{{#if assignments.length}}<div class="dm-mission-units"><div class="dm-mission-subhead"><span>UNIDADES DESIGNADAS</span><strong>{{assignmentCount}}</strong></div>{{#each assignments}}<div class="dm-mission-unit"><div class="dm-mission-unit__id"><span class="dm-status-pip dm-status-pip--{{../tone}}"></span><div><strong>{{squadName}}</strong><small>{{stateLabel}} · {{committedStrength}} efetivo</small></div></div><div class="dm-mission-unit__resources">{{#each resources}}<span>{{name}} <strong>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}}</strong></span>{{else}}<span>SEM SUPRIMENTOS DESIGNADOS</span>{{/each}}</div>{{#if canRelease}}<button type="button" class="dm-icon-button" title="Liberar unidade" data-action="releaseMissionAssignment" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{squadUuid}}"><i class="fa-solid fa-link-slash"></i></button>{{/if}}</div>{{/each}}</div>{{/if}}{{#if isAvailable}}<div class="dm-mission-ready-units"><div class="dm-mission-subhead"><span>FORÇAS DISPONÍVEIS</span><strong>{{eligibleSquads.length}}</strong></div><div class="dm-mission-ready-grid">{{#each eligibleSquads}}<button type="button" class="dm-mission-ready-unit {{#if isPrepared}}is-prepared{{/if}}" data-action="openMissionPrepare" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{uuid}}"><span><strong>{{name}}</strong><small>{{strength}} / {{capacity}} · {{statusLabel}}</small></span><span>{{prepareLabel}}</span></button>{{else}}<div class="dm-muted">NENHUMA FORÇA DISPONÍVEL</div>{{/each}}</div></div>{{/if}}{{#if outcomeSummary}}<div class="dm-mission-outcome"><span>RELATÓRIO FINAL</span><p>{{outcomeSummary}}</p></div>{{/if}}<footer class="dm-mission-card__actions">{{#if canEdit}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openEditMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-pen"></i> EDITAR</button>{{/if}}{{#if canPublish}}<button type="button" class="dm-action-button" data-action="publishMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-bullhorn"></i> DISPONIBILIZAR</button>{{/if}}{{#if canLaunch}}<button type="button" class="dm-action-button" data-action="launchMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-play"></i> INICIAR MISSÃO</button>{{/if}}{{#if canResolve}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="openMissionResolve" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-flag-checkered"></i> RESOLVER MISSÃO</button>{{/if}}</footer></div></article>{{else}}<div class="dm-empty dm-empty--force"><i class="fa-solid fa-clipboard-list"></i><strong>NENHUMA MISSÃO CADASTRADA</strong><span>As missões aparecerão aqui quando forem cadastradas.</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission">CRIAR PRIMEIRA MISSÃO</button>{{/if}}</div>{{/each}}</div>
           </section>
         {{/if}}
 
@@ -499,7 +507,7 @@
               </section>
               <section class="dm-treaty-channel">
                 <header><div><span class="dm-kicker">ACORDOS</span><strong>Acordos Independentes</strong></div><em>{{agreements.length}}</em></header>
-                {{#each agreements}}<article class="dm-treaty-row"><div class="dm-treaty-row__head"><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{name}}</strong><small>{{typeLabel}} · {{entityIdShort}}</small></div><em class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</em></div><p>{{#if description}}{{description}}{{else}}{{partyLabel}}{{/if}}</p><div class="dm-treaty-row__meta"><span><small>PARTES</small><strong>{{partyLabel}}</strong></span><span><small>PRAZO</small><strong>{{timingLabel}}</strong></span><span><small>TRANSFERÊNCIAS</small><strong>{{transferCount}}</strong></span></div>{{#if transfers.length}}<div class="dm-treaty-transfers">{{#each transfers}}<span><strong>{{resourceName}}</strong><em>{{fromName}} → {{toName}}</em><b>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}} / {{periodTicks}}t</b></span>{{/each}}</div>{{/if}}{{#if ../canManageDiplomacy}}<footer><button type="button" class="dm-mini-action" data-action="setAgreementStatus" data-agreement-uuid="{{uuid}}" data-status="active">ATIVOS</button><button type="button" class="dm-mini-action" data-action="setAgreementStatus" data-agreement-uuid="{{uuid}}" data-status="suspended">SUSPENDER</button><button type="button" class="dm-mini-action dm-mini-action--danger" data-action="setAgreementStatus" data-agreement-uuid="{{uuid}}" data-status="terminated">ENCERRAR</button></footer>{{/if}}</article>{{else}}<div class="dm-empty-signal">NENHUM ACORDO INDEPENDENTE</div>{{/each}}
+                {{#each agreements}}<article class="dm-treaty-row"><div class="dm-treaty-row__head"><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{name}}</strong><small>{{typeLabel}} · {{entityIdShort}}</small></div><em class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</em></div><p>{{#if description}}{{description}}{{else}}{{partyLabel}}{{/if}}</p><div class="dm-treaty-row__meta"><span><small>PARTES</small><strong>{{partyLabel}}</strong></span><span><small>PRAZO</small><strong>{{timingLabel}}</strong></span><span><small>TRANSFERÊNCIAS</small><strong>{{transferCount}}</strong></span></div>{{#if transfers.length}}<div class="dm-treaty-transfers">{{#each transfers}}<span><strong>{{resourceName}}</strong><em>{{fromName}} → {{toName}}</em><b>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}} / {{periodTicks}}t</b></span>{{/each}}</div>{{/if}}{{#if ../canManageDiplomacy}}{{#unless isTerminated}}<footer><button type="button" class="dm-mini-action" data-action="setAgreementStatus" data-agreement-uuid="{{uuid}}" data-status="active">ATIVAR</button><button type="button" class="dm-mini-action" data-action="setAgreementStatus" data-agreement-uuid="{{uuid}}" data-status="suspended">SUSPENDER</button><button type="button" class="dm-mini-action dm-mini-action--danger" data-action="setAgreementStatus" data-agreement-uuid="{{uuid}}" data-status="terminated">ENCERRAR</button></footer>{{/unless}}{{/if}}</article>{{else}}<div class="dm-empty-signal">NENHUM ACORDO INDEPENDENTE</div>{{/each}}
               </section>
             </div>
           </section>
@@ -526,7 +534,6 @@
                 <div><small>FUNÇÃO</small><strong>{{selectedPerson.role}}</strong><span>{{#if selectedPerson.specialization}}{{selectedPerson.specialization}}{{else}}Sem especialização{{/if}}</span></div>
               </section>
               <section class="dm-inspector__section dm-person-inspector__facts"><header><span>RESUMO</span><strong>{{#if selectedPerson.legacy}}LEGADO{{else}}VALIDADO{{/if}}</strong></header><div><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>ESTADO</small><strong>{{selectedPerson.statusLabel}}</strong></span><span><small>MORAL</small><strong>{{selectedPerson.morale}}%</strong></span><span><small>CONDIÇÃO</small><strong>{{selectedPerson.condition}}%</strong></span><span><small>CATEGORIA</small><strong>{{#if selectedPerson.legacy}}NOTÁVEL LEGADO{{else}}PESSOA{{/if}}</strong></span><span><small>REFERÊNCIA</small><strong>{{selectedPerson.entityId}}</strong></span></div></section>
-              <section class="dm-inspector__section"><header><span>IDENTIFICAÇÃO</span><strong>ATIVO</strong></header><div class="dm-person-inspector__wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></section>
             {{else}}
               <header class="dm-inspector__header"><div><span class="dm-kicker">DETALHES DA PESSOA</span><strong>Nenhuma seleção</strong><small>Selecione uma pessoa</small></div></header>
             {{/if}}
@@ -534,10 +541,10 @@
             {{#if selectedRequest}}
               <header class="dm-inspector__header dm-inspector__header--request"><div><span class="dm-kicker">DETALHES DA SOLICITAÇÃO</span><strong>{{selectedRequest.name}}</strong><small>{{selectedRequest.entityId}}</small></div><span class="dm-chip dm-chip--{{selectedRequest.tone}}">{{selectedRequest.statusLabel}}</span></header>
               <section class="dm-inspector__section dm-request-inspector__facts"><header><span>RESUMO</span><strong>{{selectedRequest.typeLabel}}</strong></header><div><span><small>SOLICITANTE</small><strong>{{selectedRequest.requesterName}}</strong></span><span><small>ENCAMINHAMENTO</small><strong>{{selectedRequest.handlingLabel}}</strong></span><span><small>RESULTADO</small><strong>{{#if selectedRequest.resultUuid}}{{selectedRequest.resultUuid}}{{else}}PENDENTE{{/if}}</strong></span><span><small>ESTADO</small><strong>{{selectedRequest.statusLabel}}</strong></span>{{#if selectedRequest.resultStatus}}<span><small>ESTADO DA MISSÃO</small><strong>{{selectedRequest.resultStatusLabel}}</strong></span>{{/if}}</div></section>
-              <section class="dm-inspector__section dm-request-inspector__intent"><header><span>OBJETIVO</span><strong>TRAVADO</strong></header><p>{{selectedRequest.intent}}</p>{{#if selectedRequest.details}}<small>{{selectedRequest.details}}</small>{{/if}}</section>
+              <section class="dm-inspector__section dm-request-inspector__intent"><header><span>OBJETIVO</span><strong>{{#if selectedRequest.canRevise}}AJUSTÁVEL{{else}}REGISTRADO{{/if}}</strong></header><p>{{selectedRequest.intent}}</p>{{#if selectedRequest.details}}<small>{{selectedRequest.details}}</small>{{/if}}</section>
               {{#if selectedRequest.decisionSummary}}<section class="dm-inspector__section dm-request-inspector__decision"><header><span>DECISÃO DO GM</span><strong>{{selectedRequest.handlingLabel}}</strong></header><p>{{selectedRequest.decisionSummary}}</p></section>{{/if}}
               <section class="dm-inspector__section dm-request-inspector__history"><header><span>HISTÓRICO</span><strong>{{selectedRequest.history.length}}</strong></header><div>{{#each selectedRequest.history}}<span><i></i><strong>{{kindLabel}}</strong><small>{{summary}} · {{userName}}</small></span>{{/each}}</div></section>
-              {{#if selectedRequest.canWithdraw}}<section class="dm-inspector__section dm-request-inspector__actions"><header><span>CONTROLE DO SOLICITANTE</span><strong>DISPONÍVEL</strong></header><button type="button" class="dm-action-button dm-action-button--critical" data-action="withdrawRequest" data-request-uuid="{{selectedRequest.uuid}}"><i class="fa-solid fa-ban"></i> RETIRAR SOLICITAÇÃO</button></section>{{/if}}
+              {{#if selectedRequest.canWithdraw}}<section class="dm-inspector__section dm-request-inspector__actions"><header><span>CONTROLE DO SOLICITANTE</span><strong>DISPONÍVEL</strong></header>{{#if selectedRequest.canRevise}}<button type="button" class="dm-action-button" data-action="openRequestRevision" data-request-uuid="{{selectedRequest.uuid}}"><i class="fa-solid fa-pen-to-square"></i> CORRIGIR E REENVIAR</button>{{/if}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="withdrawRequest" data-request-uuid="{{selectedRequest.uuid}}"><i class="fa-solid fa-ban"></i> RETIRAR SOLICITAÇÃO</button></section>{{/if}}
               {{#if isGM}}<section class="dm-inspector__section dm-request-inspector__actions"><header><span>CONTROLE DO GM</span><strong>AUTORIZADO</strong></header>{{#if selectedRequest.canReview}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openRequestReview" data-request-uuid="{{selectedRequest.uuid}}"><i class="fa-solid fa-stamp"></i> REVISAR SOLICITAÇÃO</button>{{/if}}{{#if selectedRequest.canMaterializeMission}}<button type="button" class="dm-action-button" data-action="createMissionFromRequest" data-request-uuid="{{selectedRequest.uuid}}"><i class="fa-solid fa-location-crosshairs"></i> CRIAR MISSÃO</button>{{/if}}{{#if selectedRequest.canFulfill}}<button type="button" class="dm-action-button" data-action="fulfillRequest" data-request-uuid="{{selectedRequest.uuid}}"><i class="fa-solid fa-circle-check"></i> MARCAR COMO CUMPRIDA</button>{{/if}}{{#if selectedRequest.resultUuid}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="navigate" data-view="missions"><i class="fa-solid fa-arrow-up-right-from-square"></i> ABRIR MISSÕES</button>{{/if}}</section>{{/if}}
             {{else}}<header class="dm-inspector__header"><div><span class="dm-kicker">DETALHES DA SOLICITAÇÃO</span><strong>Nenhuma seleção</strong><small>Selecione uma solicitação visível</small></div></header>{{/if}}
           {{else}}{{#if view.projects}}
@@ -563,7 +570,6 @@
             </header>
 
             <section class="dm-inspector__health">
-              <div class="dm-inspector-radar" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
               <div class="dm-inspector-stats">
                 <span><small>RECURSOS</small><strong>{{telemetry.resourceKinds}}</strong></span>
                 <span><small>PROJETOS</small><strong>{{telemetry.activeProjects}}</strong></span>
@@ -573,9 +579,9 @@
             </section>
 
             <section class="dm-inspector__section">
-              <header><span>CONDIÇÕES</span><strong>{{conditions.length}}</strong></header>
+              <header><span>CONDIÇÕES ATIVAS</span><strong>{{activeConditions.length}}</strong></header>
               <div class="dm-inspector-alerts">
-                {{#each conditions}}
+                {{#each activeConditions}}
                   <article class="dm-inspector-alert dm-inspector-alert--{{tone}}"><i></i><span><strong>{{label}}</strong><small>{{description}}</small></span></article>
                 {{else}}
                   <div class="dm-inspector-nominal"><span class="dm-sysdot is-online"></span><span><strong>Domínio normal</strong><small>Nenhuma condição ativa</small></span></div>
@@ -622,7 +628,7 @@
           <label class="dm-field"><span>Título</span><input name="title" maxlength="160" required placeholder="Solicitar reconhecimento externo" /></label>
           <label class="dm-field dm-field--wide"><span>Intenção</span><textarea name="intent" rows="4" maxlength="1200" required placeholder="O que precisa ser alcançado e por quê"></textarea></label>
           <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="7" maxlength="6000" placeholder="Contexto adicional, restrições ou prioridade"></textarea></label>
-          <div class="dm-request-console-note dm-field--wide"><strong>CONTEÚDO FIXO APÓS ENVIO</strong><p>Depois do envio, o conteúdo da solicitação não é editado por esta interface. O GM registra a decisão separadamente; não há conclusão automática nesta etapa.</p></div>
+          <div class="dm-request-console-note dm-field--wide"><strong>FLUXO DE REVISÃO CLARO</strong><p>Enquanto estiver em análise, o conteúdo fica registrado. Se o GM solicitar ajustes, o próprio solicitante poderá corrigir e reenviar; não há conclusão automática nesta etapa.</p></div>
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeRequestCreate">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitRequestCreate"><i class="fa-solid fa-paper-plane"></i> ENVIAR SOLICITAÇÃO</button></footer>
       </form>
@@ -635,6 +641,7 @@
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">REVISÃO // AUTORIDADE DO GM</span><h2>{{reviewingRequest.name}}</h2></div><button type="button" class="dm-icon-button" data-action="closeRequestReview"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__telemetry"><span><small>SOLICITANTE</small><strong>{{reviewingRequest.requesterName}}</strong></span><span><small>TIPO</small><strong>{{reviewingRequest.typeLabel}}</strong></span><span><small>ESTADO</small><strong>{{reviewingRequest.statusLabel}}</strong></span><span><small>ENCAMINHAMENTO</small><strong>{{reviewingRequest.handlingLabel}}</strong></span></div>
         <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{reviewingRequest.modifiedTime}}" />
           <label class="dm-field"><span>Estado</span><select name="status">{{#each requestReviewStatusOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Encaminhamento</span><select name="handling">{{#each requestHandlingOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field dm-field--wide"><span>Decisão / retorno</span><textarea name="summary" rows="7" maxlength="4000">{{reviewingRequest.decisionSummary}}</textarea></label>
@@ -645,12 +652,61 @@
     </div>
   {{/if}}
 
+  {{#if isRequestRevisionOpen}}
+    <div class="dm-modal-layer">
+      <form id="dm-request-revision-form" class="dm-system-dialog dm-system-dialog--wide dm-request-dialog dm-request-dialog--revision" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">SOLICITAÇÃO // CORREÇÃO</span><h2>Corrigir e reenviar</h2><p>Atualize o pedido conforme o retorno do Mestre.</p></div><button type="button" class="dm-icon-button" data-action="closeRequestRevision"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__telemetry"><span><small>SOLICITANTE</small><strong>{{revisingRequest.requesterName}}</strong></span><span><small>ESTADO ATUAL</small><strong>{{revisingRequest.statusLabel}}</strong></span><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>PRÓXIMO ESTADO</small><strong>ENVIADA</strong></span></div>
+        <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{revisingRequest.modifiedTime}}" />
+          <label class="dm-field"><span>Tipo</span><select name="type">{{#each requestRevisionTypeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Título</span><input name="title" maxlength="160" required value="{{revisingRequest.name}}" /></label>
+          <label class="dm-field dm-field--wide"><span>Intenção</span><textarea name="intent" rows="4" maxlength="1200" required>{{revisingRequest.intent}}</textarea></label>
+          <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="7" maxlength="6000">{{revisingRequest.details}}</textarea></label>
+          <div class="dm-request-console-note dm-field--wide"><strong>RETORNO DO MESTRE</strong><p>{{#if revisingRequest.decisionSummary}}{{revisingRequest.decisionSummary}}{{else}}Revise o conteúdo solicitado antes de reenviar.{{/if}}</p></div>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeRequestRevision">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitRequestRevision"><i class="fa-solid fa-paper-plane"></i> REENVIAR SOLICITAÇÃO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if isConditionEditorOpen}}
+    <div class="dm-modal-layer">
+      <form id="dm-condition-form" class="dm-system-dialog dm-system-dialog--wide dm-condition-dialog" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">CONDIÇÕES // {{#if editingCondition}}EDIÇÃO{{else}}NOVO REGISTRO{{/if}}</span><h2>{{#if editingCondition}}Editar condição{{else}}Nova condição{{/if}}</h2><p>Registre um efeito real que afete o domínio.</p></div><button type="button" class="dm-icon-button" data-action="closeConditionEditor"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>MODO</small><strong>{{#if editingCondition}}EDIÇÃO{{else}}CRIAÇÃO{{/if}}</strong></span><span><small>ATIVAS</small><strong>{{conditionStats.active}}</strong></span><span><small>GRAVES</small><strong>{{conditionStats.severe}}</strong></span></div>
+        <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
+          <label class="dm-field"><span>Nome</span><input name="name" maxlength="160" required value="{{editingCondition.name}}" placeholder="Tempestade de radiação" /></label>
+          <label class="dm-field"><span>Gravidade</span><select name="severity">{{#each conditionSeverityOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Categoria</span><select name="category">{{#each conditionCategoryOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Duração em ticks</span><input type="number" name="durationTicks" min="1" value="{{editingCondition.durationTicks}}" placeholder="Vazio = indefinida" /></label>
+          <label class="dm-checkline dm-field--wide"><input type="checkbox" name="active" {{#if editingCondition}}{{#if editingCondition.active}}checked{{/if}}{{else}}checked{{/if}} /><span>Condição ativa e visível nos alertas do domínio</span></label>
+          <label class="dm-field dm-field--wide"><span>Descrição</span><textarea name="description" rows="5" maxlength="2000" placeholder="Efeito, origem e impacto operacional...">{{editingCondition.description}}</textarea></label>
+          <div class="dm-condition-dialog__note dm-field--wide"><i class="fa-solid fa-shield-halved"></i><span><strong>EDIÇÃO PROTEGIDA</strong><small>Se outro operador alterar o domínio enquanto este formulário estiver aberto, o salvamento será recusado para evitar perda de dados.</small></span></div>
+        </div>
+        <footer class="dm-system-dialog__footer">{{#if editingCondition}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="removeCondition" data-condition-id="{{editingCondition.localId}}"><i class="fa-solid fa-trash"></i> REMOVER</button>{{else}}<span></span>{{/if}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeConditionEditor">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitConditionEditor">SALVAR CONDIÇÃO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if pendingConditionRemoval}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm dm-condition-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-condition-remove-title">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">CONDIÇÕES // REMOÇÃO</span><h2 id="dm-condition-remove-title">Remover condição?</h2><p>Confirme a exclusão permanente deste registro.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemoveCondition"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body"><section class="dm-confirmation-summary"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>{{pendingConditionRemoval.name}}</strong><p>{{#if pendingConditionRemoval.description}}{{pendingConditionRemoval.description}}{{else}}Esta condição não possui descrição adicional.{{/if}}</p><p><b>A remoção não pode ser desfeita.</b> Se o domínio tiver mudado desde a abertura, a operação será recusada.</p></div></section></div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemoveCondition">CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemoveCondition"><i class="fa-solid fa-trash"></i> REMOVER CONDIÇÃO</button></footer>
+      </section>
+    </div>
+  {{/if}}
+
   {{#if projectEditorOpen}}
     <div class="dm-modal-layer">
       <form id="dm-project-form" class="dm-system-dialog dm-system-dialog--wide dm-project-dialog" autocomplete="off">
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">PROJETO // EDIÇÃO AUTORIZADA</span><h2>{{#if editingProject}}Editar Projeto{{else}}Novo Projeto{{/if}}</h2></div><button type="button" class="dm-icon-button" data-action="closeProjectEditor"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>MODO</small><strong>{{#if editingProject}}EDIÇÃO{{else}}CRIAÇÃO{{/if}}</strong></span><span><small>PROGRESSO</small><strong>{{#if editingProject}}{{editingProject.progressDisplay}}{{else}}0%{{/if}}</strong></span><span><small>ESQUEMA</small><strong>PROJETO / V{{schemaVersion}}</strong></span></div>
         <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{editingProject.expectedModifiedTime}}" />
           <label class="dm-field"><span>Designação</span><input name="name" required value="{{editingProject.name}}" placeholder="Expansão da doca" /></label>
           <label class="dm-field"><span>Estado</span><select name="status">{{#each projectStatusOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Trabalho total</span><input name="workRequired" type="number" min="1" value="{{#if editingProject}}{{editingProject.required}}{{else}}100{{/if}}" {{#if editingProject.completed}}readonly title="Trabalho total congela após o primeiro progresso"{{/if}} required /></label>
@@ -671,6 +727,7 @@
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">PROJETO // CUSTOS</span><h2>{{#if editingProjectCost}}Editar Custo{{else}}Adicionar Custo{{/if}}</h2></div><button type="button" class="dm-icon-button" data-action="closeProjectCostEditor"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__telemetry"><span><small>PROJETO</small><strong>{{selectedProject.name}}</strong></span><span><small>ESTADO</small><strong>{{selectedProject.statusLabel}}</strong></span><span><small>PROGRESSO</small><strong>{{selectedProject.progressDisplay}}</strong></span><span><small>FLUXOS</small><strong>{{selectedProject.costCount}}</strong></span></div>
         <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{selectedProject.expectedModifiedTime}}" />
           <label class="dm-field"><span>Recurso</span><select name="resourceId" required><option value="">Selecione o recurso</option>{{#each projectResourceOptions}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}{{#if unit}} · {{unit}}{{/if}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Modo</span><select name="mode">{{#each projectCostModeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field dm-field--wide"><span>Quantidade</span><input name="amount" inputmode="decimal" required value="{{editingProjectCost.amountDisplay}}" placeholder="0" /></label>
@@ -678,6 +735,16 @@
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeProjectCostEditor">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitProjectCostEditor">SALVAR CUSTO</button></footer>
       </form>
+    </div>
+  {{/if}}
+
+  {{#if pendingProjectCostRemoval}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-project-cost-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-project-cost-remove-title">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">PROJETO // REMOÇÃO DE CUSTO</span><h2 id="dm-project-cost-remove-title">Remover {{pendingProjectCostRemoval.resourceName}}?</h2><p>Esta ação altera o plano de custos do projeto antes do primeiro progresso.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemoveProjectCost" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body"><section class="dm-project-cost-remove-summary"><span><small>RECURSO</small><strong>{{pendingProjectCostRemoval.resourceName}}</strong></span><span><small>MODO</small><strong>{{pendingProjectCostRemoval.modeLabel}}</strong></span><span><small>TOTAL</small><strong>{{pendingProjectCostRemoval.amountDisplay}} {{pendingProjectCostRemoval.unit}}</strong></span></section><div class="dm-project-dialog__guardrail"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>CONFIRMAÇÃO NECESSÁRIA</strong><small>Se o projeto tiver sido alterado desde a abertura desta confirmação, a remoção será recusada e os dados serão preservados.</small></span></div></div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemoveProjectCost">CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemoveProjectCost"><i class="fa-solid fa-trash"></i> REMOVER CUSTO</button></footer>
+      </section>
     </div>
   {{/if}}
 
@@ -704,6 +771,7 @@
       <form id="dm-relation-form" class="dm-system-dialog dm-system-dialog--wide dm-system-dialog--intel" autocomplete="off">
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">RELAÇÕES // EDIÇÃO</span><h2>{{#if editingRelation}}Editar Relação{{else}}Nova Relação{{/if}}</h2></div><button type="button" class="dm-icon-button" data-action="closeRelationEditor"><i class="fa-solid fa-xmark"></i></button></header>
         <input type="hidden" name="localId" value="{{editingRelation.localId}}" />
+        <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
         <div class="dm-system-dialog__body">
           <label class="dm-field dm-field--wide"><span>Outro Domínio</span><select name="targetUuid" required>{{#each relationTargetOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}} · {{entityId}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Postura</span><select name="posture">{{#each diplomaticPostureOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
@@ -763,6 +831,7 @@
       <form id="dm-intel-form" class="dm-system-dialog dm-system-dialog--wide dm-system-dialog--intel" autocomplete="off">
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">INTELIGÊNCIA // EDIÇÃO</span><h2>{{#if editingIntel}}Editar Informação{{else}}Nova Informação{{/if}}</h2></div><button type="button" class="dm-icon-button" data-action="closeIntelEditor"><i class="fa-solid fa-xmark"></i></button></header>
         <input type="hidden" name="localId" value="{{editingIntel.localId}}" />
+        <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
         <div class="dm-system-dialog__body">
           <label class="dm-field dm-field--wide"><span>Título</span><input name="title" value="{{editingIntel.title}}" required placeholder="Fraqueza do reator" /></label>
           <label class="dm-field"><span>Categoria</span><select name="category">{{#each intelCategoryOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
@@ -772,7 +841,7 @@
           <label class="dm-field dm-field--wide"><span>Fonte</span><input name="source" value="{{editingIntel.source}}" placeholder="Equipe de reconhecimento / sinal interceptado" /></label>
           <label class="dm-field dm-field--wide"><span>Conteúdo</span><textarea name="content" rows="5">{{editingIntel.content}}</textarea></label>
           <label class="dm-field dm-field--wide"><span>Marcadores</span><input name="tags" value="{{#each editingIntel.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}" /></label>
-          <label class="dm-checkline dm-field--wide"><input type="checkbox" name="revealed" {{#if editingIntel.revealed}}checked{{/if}} /><span>Marcar como revelada/pública</span></label>
+          <div class="dm-project-dialog__guardrail dm-field--wide"><i class="fa-solid fa-eye"></i><span><strong>DIVULGAÇÃO CONTROLADA</strong><small>Informações existentes são tornadas públicas somente pela ação Revelar, com uma confirmação separada. Uma divulgação não pode ser desfeita.</small></span></div>
         </div>
         <footer class="dm-system-dialog__footer">{{#if editingIntel}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="removeIntel" data-intel-id="{{editingIntel.localId}}">REMOVER</button>{{/if}}<span></span><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeIntelEditor">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitIntelEditor">SALVAR INFORMAÇÃO</button></footer>
       </form>
@@ -799,23 +868,67 @@
           <label class="dm-field"><span>Posição vertical</span><input name="imagePosY" type="number" min="0" max="100" value="{{selectedDomain.visuals.imagePosY}}" /></label>
           <input type="hidden" name="imagePosition" value="{{selectedDomain.visuals.imagePosition}}" />
         </div>
-        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeDomainMedia">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitDomainMedia"><i class="fa-solid fa-floppy-disk"></i> SALVAR APARÊNCIA</button></footer>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeDomainMedia" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button" data-action="submitDomainMedia" {{#if isDomainBusy}}disabled{{/if}}><i class="fa-solid fa-floppy-disk"></i> SALVAR APARÊNCIA</button></footer>
       </form>
     </div>
   {{/if}}
 
   {{#if isCreateDomainOpen}}
     <div class="dm-modal-layer">
-      <form id="dm-create-domain-form" class="dm-system-dialog" autocomplete="off">
-        <header class="dm-system-dialog__header"><div><span class="dm-kicker">DOMÍNIO // NOVO</span><h2>Novo Domínio</h2></div><button type="button" class="dm-icon-button" data-action="cancelCreateDomain"><i class="fa-solid fa-xmark"></i></button></header>
+      <form id="dm-create-domain-form" class="dm-system-dialog dm-system-dialog--wide dm-domain-editor" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">DOMÍNIO // {{#if domainEditor.isEdit}}EDIÇÃO{{else}}NOVO{{/if}}</span><h2>{{#if domainEditor.isEdit}}Editar Domínio{{else}}Novo Domínio{{/if}}</h2><p>Identidade, governança, hierarquia e módulos disponíveis em um único lugar.</p></div><button type="button" class="dm-icon-button" data-action="cancelCreateDomain" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__body">
-          <label class="dm-field"><span>Nome</span><input name="name" required placeholder="Base Aurelia" /></label>
-          <label class="dm-field"><span>Categoria</span><input name="category" value="Base" /></label>
-          <label class="dm-field"><span>Natureza</span><select name="nature"><option value="physical">Físico</option><option value="organization">Organização</option><option value="hybrid">Híbrido</option><option value="abstract">Abstrato</option></select></label>
-          <label class="dm-field"><span>Perfil de gerenciamento</span><select name="preset"><option value="base">Base</option><option value="outpost">Posto avançado</option><option value="strategic-organization">Organização Estratégica</option><option value="squad">Unidade</option><option value="custom">Personalizado</option></select></label>
-          <label class="dm-field dm-field--wide"><span>Descrição</span><textarea name="description" rows="4" placeholder="Resumo operacional..."></textarea></label>
+          <input type="hidden" name="expectedModifiedTime" value="{{domainEditor.expectedModifiedTime}}" />
+          <label class="dm-field"><span>Nome</span><input name="name" required value="{{domainEditor.name}}" placeholder="Base Aurelia" /></label>
+          <label class="dm-field"><span>Categoria</span><input name="category" value="{{domainEditor.category}}" /></label>
+          <label class="dm-field"><span>Natureza</span><select name="nature">{{#each domainEditor.natureOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Estado</span><select name="state">{{#each domainEditor.stateOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Perfil de gerenciamento</span><select name="preset" data-domain-preset>{{#each domainEditor.presetOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Marcadores</span><input name="tags" value="{{domainEditor.tagsValue}}" placeholder="orbital, comércio, fronteira" /></label>
+          <label class="dm-field"><span>Localizado em</span><select name="locatedInUuid"><option value="">Nenhum domínio</option>{{#each domainEditor.locatedInOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Administração superior</span><select name="administrativeParentUuid"><option value="">Nenhum domínio</option>{{#each domainEditor.administrativeParentOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
+          <label class="dm-field dm-field--wide"><span>Descrição</span><textarea name="description" rows="4" placeholder="Resumo operacional...">{{domainEditor.description}}</textarea></label>
+          <fieldset class="dm-controller-grid dm-field--wide">
+            <legend>Controladores</legend>
+            {{#each domainEditor.controllerOptions}}<label class="dm-controller-option"><input type="checkbox" name="controllerIds" value="{{id}}" {{#if selected}}checked{{/if}} /><span class="dm-sysdot {{#if active}}is-online{{/if}}"></span><strong>{{name}}</strong><small>{{#if active}}ATIVO{{else}}INATIVO{{/if}}</small></label>{{else}}<div class="dm-muted">Nenhum jogador disponível.</div>{{/each}}
+          </fieldset>
+          <fieldset class="dm-controller-grid dm-capability-grid dm-field--wide">
+            <legend>Áreas habilitadas</legend>
+            {{#each domainEditor.capabilityOptions}}<label class="dm-controller-option"><input type="checkbox" name="capabilities" value="{{value}}" {{#if checked}}checked{{/if}} /><i class="fa-solid fa-puzzle-piece"></i><strong>{{label}}</strong><small>{{#if checked}}ATIVA{{else}}DESATIVADA{{/if}}</small></label>{{/each}}
+          </fieldset>
         </div>
-        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelCreateDomain">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitCreateDomain">CRIAR DOMÍNIO</button></footer>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelCreateDomain" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button" data-action="submitCreateDomain" {{#if isDomainBusy}}disabled{{/if}}><i class="fa-solid fa-floppy-disk"></i> {{#if domainEditor.isEdit}}SALVAR DOMÍNIO{{else}}CRIAR DOMÍNIO{{/if}}</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if isDomainDeleteOpen}}
+    <div class="dm-modal-layer">
+      <form id="dm-domain-delete-form" class="dm-system-dialog dm-system-dialog--wide dm-domain-delete-dialog" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">DOMÍNIO // EXCLUSÃO PERMANENTE</span><h2>Excluir {{domainDeleteReport.domain.name}}</h2><p>A exclusão só é liberada quando nenhuma entidade ou configuração aponta para este domínio.</p></div><button type="button" class="dm-icon-button" data-action="cancelDeleteDomain" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <input type="hidden" name="expectedModifiedTime" value="{{domainDeleteReport.domain.expectedModifiedTime}}" />
+          <section class="dm-domain-delete-summary">
+            <span class="dm-domain-delete-summary__icon"><i class="fa-solid fa-trash-can"></i></span>
+            <div><small>REGISTRO SELECIONADO</small><strong>{{domainDeleteReport.domain.name}}</strong><code>{{domainDeleteReport.domain.entityId}}</code></div>
+            <em class="dm-chip dm-chip--{{#if domainDeleteReport.blocked}}critical{{else}}warning{{/if}}">{{domainDeleteReport.total}} VINCULAÇÃO(ÕES)</em>
+          </section>
+          {{#if domainDeleteReport.blocked}}
+            <section class="dm-domain-delete-blocked"><i class="fa-solid fa-shield-halved"></i><div><strong>Exclusão bloqueada para proteger os dados relacionados.</strong><p>Abra as áreas indicadas, reatribua ou encerre cada vínculo e volte a esta confirmação.</p></div></section>
+            <div class="dm-domain-dependency-list">
+              {{#each domainDeleteReport.groups}}
+                <section class="dm-domain-dependency-group">
+                  <header><div><strong>{{label}}</strong><small>Área: {{view}}</small></div><span>{{count}}</span></header>
+                  <div>{{#each items}}<article><span><strong>{{name}}</strong><small>{{entityId}}</small></span><em>{{detail}}</em></article>{{/each}}</div>
+                </section>
+              {{/each}}
+            </div>
+          {{else}}
+            <section class="dm-domain-delete-ready"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Nenhuma dependência foi encontrada.</strong><p>Esta operação remove o JournalEntry e não pode ser desfeita pela interface. Digite o identificador abaixo para habilitar a ação final.</p></div></section>
+            <label class="dm-field dm-field--wide"><span>Confirmação obrigatória</span><input name="confirmation" data-domain-delete-confirmation data-confirmation="{{domainDeleteReport.domain.entityId}}" placeholder="Digite {{domainDeleteReport.domain.entityId}}" spellcheck="false" /></label>
+          {{/if}}
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelDeleteDomain" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button>{{#if domainDeleteReport.blocked}}<button type="button" class="dm-action-button dm-action-button--critical" disabled><i class="fa-solid fa-lock"></i> EXCLUSÃO BLOQUEADA</button>{{else}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="submitDeleteDomain" data-domain-delete-submit disabled><i class="fa-solid fa-trash"></i> EXCLUIR PERMANENTEMENTE</button>{{/if}}</footer>
       </form>
     </div>
   {{/if}}
@@ -825,22 +938,24 @@
     <div class="dm-modal-layer">
       <form id="dm-create-mission-form" class="dm-system-dialog dm-system-dialog--wide" autocomplete="off">
         <header class="dm-system-dialog__header">
-          <div><span class="dm-kicker">MISSÕES // NOVA</span><h2>Nova Missão</h2></div>
+          <div><span class="dm-kicker">MISSÕES // {{#if editingMission}}PLANEJAMENTO{{else}}NOVA{{/if}}</span><h2>{{#if editingMission}}{{editingMission.name}}{{else}}Nova Missão{{/if}}</h2></div>
           <button type="button" class="dm-icon-button" data-action="cancelCreateMission"><i class="fa-solid fa-xmark"></i></button>
         </header>
         <div class="dm-system-dialog__body">
-          <label class="dm-field"><span>Designação</span><input name="name" required placeholder="Operação Farpoint" /></label>
-          <label class="dm-field"><span>Disponibilidade</span><select name="status"><option value="available" selected>Disponível para preparação</option><option value="planned">Planejada</option></select></label>
-          <label class="dm-field dm-field--wide"><span>Resumo operacional</span><textarea name="briefing" rows="4" placeholder="Objetivo estratégico, contexto, restrições..."></textarea></label>
-          <label class="dm-field dm-field--wide"><span>Objetivos · um por linha</span><textarea name="objectives" rows="4" placeholder="Localizar o transmissor&#10;Recuperar inteligência&#10;Extrair sem comprometer a posição"></textarea></label>
+          <input type="hidden" name="expectedModifiedTime" value="{{editingMission.expectedModifiedTime}}" />
+          <label class="dm-field"><span>Designação</span><input name="name" value="{{editingMission.name}}" required placeholder="Operação Farpoint" /></label>
+          {{#if editingMission}}<div class="dm-field"><span>Estado atual</span><div class="dm-readonly-field">{{editingMission.statusLabel}}</div></div>{{else}}<label class="dm-field"><span>Disponibilidade</span><select name="status"><option value="available" selected>Disponível para preparação</option><option value="planned">Planejada</option></select></label>{{/if}}
+          <label class="dm-field dm-field--wide"><span>Resumo operacional</span><textarea name="briefing" rows="4" placeholder="Objetivo estratégico, contexto, restrições...">{{editingMission.briefing}}</textarea></label>
+          <label class="dm-field dm-field--wide"><span>Objetivos · um por linha</span><textarea name="objectives" rows="4" placeholder="Localizar o transmissor&#10;Recuperar inteligência&#10;Extrair sem comprometer a posição">{{editingMission.objectiveLines}}</textarea><small>Ao salvar, linhas removidas deixam de fazer parte do planejamento.</small></label>
+          <label class="dm-field dm-field--wide"><span>Notas de planejamento</span><textarea name="outcomeSummary" rows="2" placeholder="Observações internas antes do lançamento...">{{editingMission.outcomeSummary}}</textarea></label>
           <fieldset class="dm-controller-grid dm-field--wide">
             <legend>Visibilidade</legend>
             {{#each missionAudienceOptions}}
-              <label class="dm-controller-option"><input type="checkbox" name="audienceUserIds" value="{{id}}" /><span class="dm-sysdot {{#if active}}is-online{{/if}}"></span><strong>{{name}}</strong><small>{{#if active}}ATIVOS{{else}}INATIVAS{{/if}}</small></label>
+              <label class="dm-controller-option"><input type="checkbox" name="audienceUserIds" value="{{id}}" {{#if checked}}checked{{/if}} /><span class="dm-sysdot {{#if active}}is-online{{/if}}"></span><strong>{{name}}</strong><small>{{#if active}}ATIVO{{else}}INATIVO{{/if}}</small></label>
             {{else}}<div class="dm-muted">Nenhum jogador disponível para a audiência.</div>{{/each}}
           </fieldset>
         </div>
-        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelCreateMission">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitCreateMission">CRIAR MISSÃO</button></footer>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelCreateMission">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitCreateMission">{{#if editingMission}}SALVAR PLANEJAMENTO{{else}}CRIAR MISSÃO{{/if}}</button></footer>
       </form>
     </div>
   {{/if}}
@@ -848,6 +963,8 @@
   {{#if preparingMission}}
     <div class="dm-modal-layer">
       <form id="dm-mission-prepare-form" class="dm-system-dialog dm-system-dialog--wide" autocomplete="off">
+        <input type="hidden" name="expectedMissionModifiedTime" value="{{preparingMission.expectedModifiedTime}}" />
+        <input type="hidden" name="expectedSquadModifiedTime" value="{{preparingSquad.expectedModifiedTime}}" />
         <header class="dm-system-dialog__header">
           <div><span class="dm-kicker">MISSÃO // PREPARAÇÃO</span><h2>{{preparingMission.name}}</h2></div>
           <button type="button" class="dm-icon-button" data-action="closeMissionPrepare"><i class="fa-solid fa-xmark"></i></button>
@@ -875,6 +992,7 @@
   {{#if resolvingMission}}
     <div class="dm-modal-layer">
       <form id="dm-mission-resolve-form" class="dm-system-dialog dm-system-dialog--mission-resolve" autocomplete="off">
+        <input type="hidden" name="expectedModifiedTime" value="{{resolvingMission.expectedModifiedTime}}" />
         <header class="dm-system-dialog__header">
           <div><span class="dm-kicker">MISSÃO // RELATÓRIO FINAL</span><h2>{{resolvingMission.name}}</h2></div>
           <button type="button" class="dm-icon-button" data-action="closeMissionResolve"><i class="fa-solid fa-xmark"></i></button>
@@ -912,6 +1030,33 @@
     </div>
   {{/if}}
 
+  {{#if pendingMissionRelease}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">MISSÃO // LIBERAR UNIDADE</span><h2>Confirmar liberação</h2></div><button type="button" class="dm-icon-button" data-action="cancelReleaseMissionAssignment"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <div class="dm-confirmation-summary"><i class="fa-solid fa-link-slash"></i><div><strong>{{pendingMissionRelease.squadName}}</strong><p>Será removida de <b>{{pendingMissionRelease.missionName}}</b>. O compromisso de {{pendingMissionRelease.committedStrength}} de efetivo e os suprimentos reservados deixarão de fazer parte da preparação.</p></div></div>
+          <div class="dm-mission-dialog-note"><i class="fa-solid fa-circle-info"></i><span>Nenhum estoque já foi consumido; esta ação desfaz somente a reserva e o vínculo da unidade.</span></div>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelReleaseMissionAssignment">MANTER UNIDADE</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmReleaseMissionAssignment">LIBERAR UNIDADE</button></footer>
+      </section>
+    </div>
+  {{/if}}
+
+  {{#if pendingMissionLaunch}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">MISSÃO // LANÇAMENTO</span><h2>{{pendingMissionLaunch.missionName}}</h2></div><button type="button" class="dm-icon-button" data-action="cancelLaunchMission"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__telemetry"><span><small>UNIDADES</small><strong>{{pendingMissionLaunch.assignmentCount}}</strong></span><span><small>EFETIVO</small><strong>{{pendingMissionLaunch.committedStrength}}</strong></span></div>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <div class="dm-confirmation-summary"><i class="fa-solid fa-box-open"></i><div><strong>Consumo definitivo no lançamento</strong><p>As unidades passarão para o estado em campo e os recursos abaixo serão debitados dos estoques atuais.</p></div></div>
+          <div class="dm-launch-resource-list">{{#each pendingMissionLaunch.resources}}<span><strong>{{name}}</strong><em>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}}</em></span>{{else}}<span><strong>Sem suprimentos comprometidos</strong><em>0</em></span>{{/each}}</div>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelLaunchMission">REVISAR PREPARAÇÃO</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmLaunchMission">CONSUMIR E INICIAR</button></footer>
+      </section>
+    </div>
+  {{/if}}
+
   {{#if isCreateSquadOpen}}
     <div class="dm-modal-layer">
       <form id="dm-create-squad-form" class="dm-system-dialog dm-system-dialog--wide" autocomplete="off">
@@ -944,6 +1089,8 @@
   {{#if supplySquad}}
     <div class="dm-modal-layer">
       <form id="dm-squad-supply-form" class="dm-system-dialog dm-system-dialog--wide" autocomplete="off">
+        <input type="hidden" name="expectedSquadModifiedTime" value="{{supplySquad.expectedModifiedTime}}" />
+        <input type="hidden" name="expectedDomainModifiedTime" value="{{supplyDomainExpectedModifiedTime}}" />
         <header class="dm-system-dialog__header">
           <div><span class="dm-kicker">LOGÍSTICA // SUPRIMENTOS DA UNIDADE</span><h2>{{supplySquad.name}}</h2></div>
           <button type="button" class="dm-icon-button" data-action="closeSquadSupply"><i class="fa-solid fa-xmark"></i></button>
@@ -976,6 +1123,7 @@
   {{#if editingSquad}}
     <div class="dm-modal-layer">
       <form id="dm-squad-control-form" class="dm-system-dialog dm-system-dialog--wide" autocomplete="off">
+        <input type="hidden" name="expectedModifiedTime" value="{{editingSquad.expectedModifiedTime}}" />
         <header class="dm-system-dialog__header">
           <div><span class="dm-kicker">CONTROLE DA UNIDADE // {{editingSquad.entityIdShort}}</span><h2>{{editingSquad.name}}</h2></div>
           <button type="button" class="dm-icon-button" data-action="closeSquadControl"><i class="fa-solid fa-xmark"></i></button>
@@ -1001,7 +1149,7 @@
           {{/if}}
           <label class="dm-field"><span>Moral</span><input name="morale" type="number" min="0" max="100" value="{{editingSquad.morale}}" required /></label>
           <label class="dm-field"><span>Condição</span><input name="condition" type="number" min="0" max="100" value="{{editingSquad.condition}}" required /></label>
-          <label class="dm-field dm-field--wide"><span>Resumo operacional operacional</span><textarea name="description" rows="3">{{editingSquad.description}}</textarea></label>
+          <label class="dm-field dm-field--wide"><span>Resumo operacional</span><textarea name="description" rows="3">{{editingSquad.description}}</textarea></label>
           {{#if isGM}}
             <fieldset class="dm-controller-grid dm-field--wide">
               <legend>Operadores autorizados</legend>
@@ -1060,6 +1208,7 @@
 
   {{#if isPopulationConfigOpen}}
     <div class="dm-modal-layer"><form id="dm-population-config-form" class="dm-system-dialog dm-civil-dialog" autocomplete="off">
+      <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
       <header class="dm-system-dialog__header"><div><span class="dm-kicker">POPULAÇÃO // POLÍTICA DEMOGRÁFICA</span><h2>Política de População</h2></div><button type="button" class="dm-icon-button" data-action="closePopulationConfig"><i class="fa-solid fa-xmark"></i></button></header>
       <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>POPULAÇÃO</small><strong>{{populationSummary.total}}</strong></span><span><small>MORAL</small><strong>{{populationSummary.morale}}%</strong></span><span><small>ESQUEMA</small><strong>POPULAÇÃO / V8</strong></span></div>
       <div class="dm-system-dialog__body"><label class="dm-field"><span>População total</span><input name="total" type="number" min="0" value="{{populationSummary.total}}" required /></label><label class="dm-field"><span>Modo de contagem</span><select name="countMode">{{#each populationCountModeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label><label class="dm-field"><span>Moral civil</span><input name="morale" type="number" min="0" max="100" value="{{populationSummary.morale}}" required /></label></div>
@@ -1069,6 +1218,7 @@
 
   {{#if isPopulationGroupOpen}}
     <div class="dm-modal-layer"><form id="dm-population-group-form" class="dm-system-dialog dm-system-dialog--wide dm-civil-dialog" autocomplete="off">
+      <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
       <header class="dm-system-dialog__header"><div><span class="dm-kicker">CIVIL // GRUPO POPULACIONAL</span><h2>{{#if editingPopulationGroup.name}}{{editingPopulationGroup.name}}{{else}}Novo Grupo{{/if}}</h2></div><button type="button" class="dm-icon-button" data-action="closePopulationGroup"><i class="fa-solid fa-xmark"></i></button></header>
       <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>FORÇA DE TRABALHO</small><strong>{{populationSummary.workforceEligible}}</strong></span><span><small>ATRIBUÍDOS</small><strong>{{populationSummary.workforceAssigned}}</strong></span><span><small>ESQUEMA</small><strong>GRUPO / V8</strong></span></div>
       <div class="dm-system-dialog__body"><input type="hidden" name="localId" value="{{editingPopulationGroup.localId}}" /><label class="dm-field"><span>Nome</span><input name="name" value="{{editingPopulationGroup.name}}" required /></label><label class="dm-field"><span>Quantidade</span><input name="count" type="number" min="0" value="{{editingPopulationGroup.count}}" required /></label><label class="dm-field"><span>Força de trabalho elegível</span><input name="workforceEligible" type="number" min="0" value="{{editingPopulationGroup.workforceEligible}}" required /></label><label class="dm-field"><span>Moral</span><input name="morale" type="number" min="0" max="100" value="{{editingPopulationGroup.morale}}" required /></label><label class="dm-field"><span>Estado</span><select name="status">{{#each populationGroupStatusOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label><label class="dm-field"><span>Função</span><input name="function" value="{{editingPopulationGroup.function}}" placeholder="Industrial / Civil / Médico" /></label><label class="dm-field"><span>Qualidade</span><input name="quality" value="{{editingPopulationGroup.quality}}" placeholder="Estável" /></label><label class="dm-field"><span>Atribuição</span><input name="assignment" value="{{editingPopulationGroup.assignment}}" placeholder="Distrito, turno, função..." /></label><label class="dm-controller-option dm-field--wide"><input type="checkbox" name="includedInTotal" {{#if editingPopulationGroup.includedInTotal}}checked{{/if}} /><span class="dm-sysdot is-online"></span><strong>Incluir na população total</strong><small>CONTABILIZADO</small></label></div>
@@ -1078,6 +1228,7 @@
 
   {{#if isWorkforceOpen}}
     <div class="dm-modal-layer"><form id="dm-workforce-form" class="dm-system-dialog dm-system-dialog--ultrawide dm-workforce-dialog" autocomplete="off">
+      <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
       <header class="dm-system-dialog__header"><div><span class="dm-kicker">CIVIL // ALOCAÇÃO DE TRABALHO</span><h2>Alocação de Trabalho</h2></div><button type="button" class="dm-icon-button" data-action="closeWorkforce"><i class="fa-solid fa-xmark"></i></button></header>
       <div class="dm-system-dialog__telemetry"><span><small>ELEGÍVEIS</small><strong>{{populationSummary.workforceEligible}}</strong></span><span><small>ATRIBUÍDOS</small><strong>{{populationSummary.workforceAssigned}}</strong></span><span><small>DISPONÍVEL</small><strong>{{populationSummary.workforceAvailable}}</strong></span><span><small>ESTRUTURAS</small><strong>{{workforceRows.length}}</strong></span></div>
       <div class="dm-system-dialog__body dm-system-dialog__body--stacked"><section class="dm-workforce-matrix"><header><span>GRUPO</span><span>ALOCAÇÃO EM ESTRUTURAS</span></header>{{#each workforceMatrixGroups}}<article><div class="dm-workforce-matrix__group"><strong>{{name}}</strong><small>{{assigned}} / {{workforceEligible}} alocados · {{available}} livres</small></div><div class="dm-workforce-matrix__cells">{{#each cells}}<label><span>{{structureName}}</span><input data-workforce-allocation data-group-id="{{../localId}}" data-structure-uuid="{{structureUuid}}" data-structure-entity-id="{{structureEntityId}}" type="number" min="0" value="{{count}}" /></label>{{else}}<span class="dm-muted">SEM ESTRUTURAS</span>{{/each}}</div></article>{{else}}<div class="dm-empty-signal">SEM GRUPOS ATIVOS</div>{{/each}}</section></div>
@@ -1088,6 +1239,7 @@
   {{#if isPersonEditorOpen}}
     <div class="dm-modal-layer">
       <form id="dm-person-editor-form" class="dm-system-dialog dm-system-dialog--wide dm-person-dialog" autocomplete="off">
+        <input type="hidden" name="expectedModifiedTime" value="{{editingPerson.expectedModifiedTime}}" />
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">PESSOAS // {{#if editingPerson}}EDITAR{{else}}NOVA{{/if}}</span><h2>{{#if editingPerson}}{{editingPerson.name}}{{else}}Nova Pessoa{{/if}}</h2><p>Identidade, retrato, função e vínculos da pessoa.</p></div><button type="button" class="dm-icon-button" data-action="closePersonEditor" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__body dm-person-dialog__body">
           <section class="dm-person-editor-preview dm-field--wide">
@@ -1131,6 +1283,7 @@
           <label class="dm-field"><span>Nível</span><input name="tier" type="number" min="1" value="1" required /></label>
           <label class="dm-field"><span>Nível máximo</span><input name="maxTier" type="number" min="1" value="3" required /></label>
           <label class="dm-field"><span>Capacidade</span><input name="capacity" type="number" min="0" value="0" required /></label>
+          <label class="dm-field"><span>Prioridade de manutenção</span><input name="maintenancePriority" type="number" min="0" max="100" value="50" required /></label>
           <label class="dm-field"><span>Trabalhadores necessários</span><input name="workforceRequired" type="number" min="0" value="0" required /></label>
           <label class="dm-field"><span>Marcadores</span><input name="tags" placeholder="crítica, energia, reator" /></label>
           <label class="dm-field dm-field--wide"><span>Descrição técnica</span><textarea name="description" rows="3" placeholder="Função do ativo dentro da base..."></textarea></label>
@@ -1185,6 +1338,7 @@
           <span><small>CAPACIDADE</small><strong>{{editingStructure.capacity}}</strong></span>
         </div>
         <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{editingStructure.expectedModifiedTime}}" />
           {{#if isGM}}
             <label class="dm-field"><span>Designação</span><input name="name" value="{{editingStructure.name}}" required /></label>
             <label class="dm-field"><span>Categoria</span><input name="category" value="{{editingStructure.rawCategory}}" required /></label>
@@ -1192,6 +1346,7 @@
             <label class="dm-field"><span>Nível máximo</span><input name="maxTier" type="number" min="1" value="{{editingStructure.maxTier}}" required /></label>
             <label class="dm-field"><span>Condição</span><input name="condition" type="number" min="0" max="100" value="{{editingStructure.condition}}" required /></label>
             <label class="dm-field"><span>Capacidade</span><input name="capacity" type="number" min="0" value="{{editingStructure.capacity}}" required /></label>
+            <label class="dm-field"><span>Prioridade de manutenção</span><input name="maintenancePriority" type="number" min="0" max="100" value="{{editingStructure.maintenancePriority}}" required /></label>
             <label class="dm-field"><span>Trabalhadores necessários</span><input name="workforceRequired" type="number" min="0" value="{{editingStructure.workforceRequired}}" required /></label>
             <label class="dm-field"><span>Estado</span><select name="status">{{#each structureStatusOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
             <label class="dm-field"><span>Marcadores</span><input name="tags" value="{{#each editingStructure.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}" /></label>
@@ -1213,6 +1368,38 @@
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeStructureControl">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitStructureControl">SINCRONIZAR ATIVO</button></footer>
       </form>
     </div>
+  {{/if}}
+
+  {{#if pendingPopulationGroupRemoval}}
+    <div class="dm-modal-layer"><section class="dm-system-dialog dm-project-cost-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-population-remove-title">
+      <header class="dm-system-dialog__header"><div><span class="dm-kicker">POPULAÇÃO // CONFIRMAÇÃO</span><h2 id="dm-population-remove-title">Remover {{pendingPopulationGroupRemoval.name}}?</h2><p>O grupo será retirado do cadastro populacional deste domínio.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemovePopulationGroup" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="dm-system-dialog__body"><section class="dm-project-cost-remove-summary"><span><small>GRUPO</small><strong>{{pendingPopulationGroupRemoval.name}}</strong></span><span><small>POPULAÇÃO</small><strong>{{pendingPopulationGroupRemoval.count}}</strong></span><span><small>ELEGÍVEIS</small><strong>{{pendingPopulationGroupRemoval.workforceEligible}}</strong></span></section><div class="dm-project-dialog__guardrail"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>REMOÇÃO PERMANENTE</strong><small>A operação será recusada se o grupo ou o domínio tiver mudado desde a abertura desta confirmação.</small></span></div></div>
+      <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemovePopulationGroup">CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemovePopulationGroup"><i class="fa-solid fa-trash"></i> REMOVER GRUPO</button></footer>
+    </section></div>
+  {{/if}}
+
+  {{#if pendingRelationRemoval}}
+    <div class="dm-modal-layer"><section class="dm-system-dialog dm-project-cost-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-relation-remove-title">
+      <header class="dm-system-dialog__header"><div><span class="dm-kicker">RELAÇÕES // CONFIRMAÇÃO</span><h2 id="dm-relation-remove-title">Remover relação com {{pendingRelationRemoval.targetName}}?</h2><p>O vínculo diplomático local será removido; acordos independentes permanecem preservados.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemoveRelation" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="dm-system-dialog__body"><section class="dm-project-cost-remove-summary"><span><small>CONTRAPARTE</small><strong>{{pendingRelationRemoval.targetName}}</strong></span><span><small>POSTURA</small><strong>{{pendingRelationRemoval.postureLabel}}</strong></span><span><small>ACORDOS</small><strong>PRESERVADOS</strong></span></section><div class="dm-project-dialog__guardrail"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>CONFIRMAÇÃO NECESSÁRIA</strong><small>A revisão do domínio é validada novamente antes da remoção.</small></span></div></div>
+      <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemoveRelation">CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemoveRelation"><i class="fa-solid fa-unlink"></i> REMOVER RELAÇÃO</button></footer>
+    </section></div>
+  {{/if}}
+
+  {{#if pendingAgreementStatus}}
+    <div class="dm-modal-layer"><section class="dm-system-dialog dm-project-cost-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-agreement-status-title">
+      <header class="dm-system-dialog__header"><div><span class="dm-kicker">ACORDO // ENCERRAMENTO</span><h2 id="dm-agreement-status-title">Encerrar {{pendingAgreementStatus.name}}?</h2><p>O registro será preservado, mas seu ciclo de vida ficará definitivamente encerrado.</p></div><button type="button" class="dm-icon-button" data-action="cancelAgreementStatus" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="dm-system-dialog__body"><section class="dm-project-cost-remove-summary"><span><small>ACORDO</small><strong>{{pendingAgreementStatus.name}}</strong></span><span><small>ESTADO ATUAL</small><strong>{{pendingAgreementStatus.fromLabel}}</strong></span><span><small>NOVO ESTADO</small><strong>{{pendingAgreementStatus.toLabel}}</strong></span></section><div class="dm-project-dialog__guardrail"><i class="fa-solid fa-lock"></i><span><strong>ESTADO TERMINAL</strong><small>Um acordo encerrado não pode ser reativado. Uma renegociação deve gerar um novo acordo.</small></span></div></div>
+      <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelAgreementStatus">CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmAgreementStatus"><i class="fa-solid fa-ban"></i> ENCERRAR ACORDO</button></footer>
+    </section></div>
+  {{/if}}
+
+  {{#if pendingIntelAction}}
+    <div class="dm-modal-layer"><section class="dm-system-dialog dm-project-cost-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-intel-action-title">
+      <header class="dm-system-dialog__header"><div><span class="dm-kicker">INTELIGÊNCIA // CONFIRMAÇÃO</span><h2 id="dm-intel-action-title">{{#if pendingIntelAction.isRemove}}Remover{{else}}Revelar{{/if}} {{pendingIntelAction.title}}?</h2><p>{{#if pendingIntelAction.isRemove}}A informação será excluída do domínio.{{else}}O conteúdo passará a ser público para todos os jogadores.{{/if}}</p></div><button type="button" class="dm-icon-button" data-action="cancelIntelAction" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="dm-system-dialog__body"><section class="dm-project-cost-remove-summary"><span><small>INFORMAÇÃO</small><strong>{{pendingIntelAction.title}}</strong></span><span><small>VISIBILIDADE ATUAL</small><strong>{{pendingIntelAction.visibilityLabel}}</strong></span><span><small>DESTINO</small><strong>{{#if pendingIntelAction.isRemove}}EXCLUÍDA{{else}}PÚBLICA{{/if}}</strong></span></section><div class="dm-project-dialog__guardrail"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>{{#if pendingIntelAction.isRemove}}REMOÇÃO PERMANENTE{{else}}DIVULGAÇÃO IRREVERSÍVEL{{/if}}</strong><small>A revisão do domínio será conferida novamente antes da operação.</small></span></div></div>
+      <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelIntelAction">CANCELAR</button><button type="button" class="dm-action-button {{#if pendingIntelAction.isRemove}}dm-action-button--critical{{/if}}" data-action="confirmIntelAction"><i class="fa-solid {{#if pendingIntelAction.isRemove}}fa-trash{{else}}fa-eye{{/if}}"></i> {{#if pendingIntelAction.isRemove}}REMOVER{{else}}REVELAR AO PÚBLICO{{/if}}</button></footer>
+    </section></div>
   {{/if}}
 
 </div>

@@ -28,7 +28,7 @@ const squadDomain = {
 
 test("Squad não recebe módulos estratégicos desativados", () => {
   const ids = buildDomainNavigation(squadDomain).map((item) => item.id);
-  assert.deepEqual(ids, ["overview", "requests", "history", "economy", "missions", "squads", "people", "intel"]);
+  assert.deepEqual(ids, ["overview", "requests", "conditions", "history", "economy", "missions", "squads", "people", "intel"]);
 });
 
 test("view indisponível cai para overview", () => {
@@ -53,6 +53,7 @@ test("workspaces agrupam views disponíveis sem ressuscitar capabilities desativ
 test("cada view resolve para um workspace sem depender de tabs horizontais", () => {
   assert.equal(resolveWorkspaceForView("overview"), "command");
   assert.equal(resolveWorkspaceForView("requests"), "command");
+  assert.equal(resolveWorkspaceForView("conditions"), "command");
   assert.equal(resolveWorkspaceForView("structures"), "base");
   assert.equal(resolveWorkspaceForView("missions"), "operations");
   assert.equal(resolveWorkspaceForView("people"), "civil");

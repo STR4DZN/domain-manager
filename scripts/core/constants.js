@@ -169,6 +169,10 @@ export const AGREEMENT_STATUSES = Object.freeze([
 ]);
 
 export const COMMAND_TYPES = Object.freeze({
+  DOMAIN_CREATE: "domain.create",
+  DOMAIN_UPDATE: "domain.update",
+  DOMAIN_MEDIA_UPDATE: "domain.media-update",
+  DOMAIN_DELETE: "domain.delete",
   TRANSFER_RESOURCES: "resources.transfer",
   SQUAD_CREATE: "squad.create",
   SQUAD_PATCH: "squad.patch",
@@ -179,6 +183,7 @@ export const COMMAND_TYPES = Object.freeze({
   MISSION_OBJECTIVE_REMOVE: "mission.objective-remove",
   MISSION_PREPARE: "mission.prepare",
   MISSION_RELEASE: "mission.release",
+  MISSION_PUBLISH: "mission.publish",
   MISSION_LAUNCH: "mission.launch",
   MISSION_RESOLVE: "mission.resolve",
   STRUCTURE_CREATE: "structure.create",
@@ -211,6 +216,7 @@ export const COMMAND_TYPES = Object.freeze({
   CONDITION_REMOVE: "condition.remove",
   CONDITION_TOGGLE: "condition.toggle",
   REQUEST_CREATE: "request.create",
+  REQUEST_RESUBMIT: "request.resubmit",
   REQUEST_REVIEW: "request.review",
   REQUEST_CREATE_MISSION: "request.create-mission",
   REQUEST_WITHDRAW: "request.withdraw",
@@ -218,6 +224,10 @@ export const COMMAND_TYPES = Object.freeze({
 });
 
 export const EVENT_TYPES = Object.freeze({
+  DOMAIN_CREATED: "domain.created",
+  DOMAIN_UPDATED: "domain.updated",
+  DOMAIN_MEDIA_UPDATED: "domain.media-updated",
+  DOMAIN_DELETED: "domain.deleted",
   RESOURCES_TRANSFERRED: "resources.transferred",
   SQUAD_CREATED: "squad.created",
   SQUAD_UPDATED: "squad.updated",
@@ -227,6 +237,7 @@ export const EVENT_TYPES = Object.freeze({
   MISSION_OBJECTIVE_REMOVED: "mission.objective-removed",
   MISSION_PREPARED: "mission.prepared",
   MISSION_RELEASED: "mission.released",
+  MISSION_PUBLISHED: "mission.published",
   MISSION_LAUNCHED: "mission.launched",
   MISSION_RESOLVED: "mission.resolved",
   STRUCTURE_CREATED: "structure.created",
@@ -257,6 +268,7 @@ export const EVENT_TYPES = Object.freeze({
   CONDITION_REMOVED: "condition.removed",
   CONDITION_TOGGLED: "condition.toggled",
   REQUEST_CREATED: "request.created",
+  REQUEST_RESUBMITTED: "request.resubmitted",
   REQUEST_REVIEWED: "request.reviewed",
   REQUEST_MISSION_CREATED: "request.mission-created",
   REQUEST_WITHDRAWN: "request.withdrawn",

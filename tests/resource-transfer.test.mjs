@@ -52,6 +52,7 @@ function document({ id, name, recordType, data }) {
     documentName: "JournalEntry",
     name,
     ownership: {},
+    _stats: { modifiedTime: 100 },
     flags: {
       "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) }
     },
@@ -101,6 +102,7 @@ globalThis.JournalEntry = {
       const doc = [...docs.values()].find((entry) => entry.id === change._id);
       if (!doc) throw new Error(`doc missing ${change._id}`);
       for (const [key, value] of Object.entries(change)) applyChange(doc, key, value);
+      doc._stats.modifiedTime += 1;
       updated.push(doc);
       if (failPartialBatchOnce && index === 0) {
         failPartialBatchOnce = false;
@@ -269,4 +271,25 @@ test("command dispatcher torna retry da transferência idempotente de ponta a po
   assert.equal(stock(from), 70);
   assert.equal(stock(to), 40);
   assert.equal(operationLedger.receipts.length, 1);
+});
+
+test("transferência rejeita origem ou destino alterado desde a abertura do formulário", async () => {
+  const from = baseDomain("D1", 100);
+  const to = squad("S1", 10);
+  resetWorld(from, to);
+
+  await assert.rejects(() => executeResourceTransfer({
+    operationId: "op-stale-source",
+    callerUserId: "P1",
+    payload: {
+      from: { recordType: "domain", entityId: "domain:D1" },
+      to: { recordType: "squad", entityId: "squad:S1" },
+      expectedFromModifiedTime: 99,
+      expectedToModifiedTime: 100,
+      resourceId: "ammo",
+      amount: 30
+    }
+  }), /origem dos recursos mudou/i);
+  assert.equal(stock(from), 100);
+  assert.equal(stock(to), 10);
 });

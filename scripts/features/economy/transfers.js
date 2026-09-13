@@ -18,6 +18,15 @@ const RESOURCE_HOLDER_TYPES = Object.freeze([
   RECORD_TYPES.SQUAD
 ]);
 
+function revision(value, label) {
+  if (value == null || value === "") return null;
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized < 0) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `${label} precisa ser um inteiro não-negativo.`);
+  }
+  return normalized;
+}
+
 function resolveHolder(reference) {
   const normalized = normalizeEntityReference(reference, {
     allowedTypes: RESOURCE_HOLDER_TYPES
@@ -150,6 +159,8 @@ export function normalizeResourceTransferPayload(payload = {}) {
   return {
     from: normalizeEntityReference(payload.from, { allowedTypes: RESOURCE_HOLDER_TYPES }),
     to: normalizeEntityReference(payload.to, { allowedTypes: RESOURCE_HOLDER_TYPES }),
+    expectedFromModifiedTime: revision(payload.expectedFromModifiedTime, "expectedFromModifiedTime"),
+    expectedToModifiedTime: revision(payload.expectedToModifiedTime, "expectedToModifiedTime"),
     resourceId,
     amount
   };
@@ -165,6 +176,15 @@ export async function executeResourceTransfer({ payload, operationId, callerUser
   const normalized = normalizeResourceTransferPayload(payload);
   const from = resolveHolder(normalized.from);
   const to = resolveHolder(normalized.to);
+
+  if (normalized.expectedFromModifiedTime != null
+    && (from.document?._stats?.modifiedTime ?? null) !== normalized.expectedFromModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "A origem dos recursos mudou enquanto o formulário estava aberto.");
+  }
+  if (normalized.expectedToModifiedTime != null
+    && (to.document?._stats?.modifiedTime ?? null) !== normalized.expectedToModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "O destino dos recursos mudou enquanto o formulário estava aberto.");
+  }
 
   if (from.uuid === to.uuid || from.data.entityId === to.data.entityId) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "Origem e destino da transferência precisam ser diferentes.");

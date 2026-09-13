@@ -117,6 +117,13 @@ function structureResult(record) {
   };
 }
 
+function assertRevision(structure, expectedModifiedTime) {
+  if (expectedModifiedTime == null) return;
+  if ((structure.document?._stats?.modifiedTime ?? null) !== expectedModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "A Structure mudou enquanto o formulário estava aberto.");
+  }
+}
+
 function allProjectReservations(domainUuid) {
   return recordIndex.list(RECORD_TYPES.PROJECT)
     .map((document) => decodeRecord(document))
@@ -158,6 +165,7 @@ export async function executeStructurePatch({ payload, callerUserId }) {
   const structure = resolveReference(normalized.structure, RECORD_TYPES.STRUCTURE);
   const domain = resolveReference(structure.data.domain, RECORD_TYPES.DOMAIN);
   const caller = assertDomainOperator(domain, callerUserId);
+  assertRevision(structure, normalized.expectedModifiedTime);
 
   if (!caller.isGM && ["planned", "destroyed", "decommissioned"].includes(structure.data.status)) {
     throw new ModuleError(ERROR_CODES.PERMISSION, "Esta Structure exige intervenção administrativa do GM.");
@@ -199,7 +207,18 @@ export async function executeStructureAdminUpdate({ payload, callerUserId }) {
   const structure = resolveReference(normalized.structure, RECORD_TYPES.STRUCTURE);
   const domain = resolveReference(structure.data.domain, RECORD_TYPES.DOMAIN);
   assertDomainOperator(domain, callerUserId);
+  assertRevision(structure, normalized.expectedModifiedTime);
+  if (!Object.hasOwn(payload, "maintenancePriority")) {
+    normalized.maintenancePriority = Number(structure.data.maintenancePriority ?? 50);
+  }
   validateResourceProfiles(normalized);
+
+  if (structure.data.activeProject && normalized.status !== "planned") {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "Structure vinculada a um Project em andamento precisa permanecer planned até o comissionamento pela simulação."
+    );
+  }
 
   const before = foundry.utils.deepClone(structure.data);
   const beforeName = structure.document.name;

@@ -5,8 +5,8 @@ import { createRecord, deleteRecord, updateRecord } from "../../data/journal-sto
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
 import { canControlDomain } from "../domains/rules.js";
-import { normalizeRequestDraft, planRequestDecision, planRequestFulfillment, planRequestWithdrawal } from "./rules.js";
-import { normalizeRequestCreatePayload, normalizeRequestLifecyclePayload, normalizeRequestMissionPayload, normalizeRequestReviewPayload } from "./contracts.js";
+import { normalizeRequestDraft, planRequestDecision, planRequestFulfillment, planRequestResubmission, planRequestWithdrawal } from "./rules.js";
+import { normalizeRequestCreatePayload, normalizeRequestLifecyclePayload, normalizeRequestMissionPayload, normalizeRequestResubmitPayload, normalizeRequestReviewPayload } from "./contracts.js";
 
 function resolveReference(reference, expectedType, label) {
   const byEntityId = reference.entityId ? recordIndex.getByEntityId(reference.entityId) : null;
@@ -87,6 +87,53 @@ export async function executeRequestCreate({ payload, callerUserId, operationId 
   };
 }
 
+export async function executeRequestResubmit({ payload, callerUserId }) {
+  const normalized = normalizeRequestResubmitPayload(payload);
+  const caller = callerFromId(callerUserId);
+  const request = resolveReference(normalized.request, RECORD_TYPES.REQUEST, "Request");
+  assertExpectedModifiedTime(request, normalized.expectedModifiedTime, "A Request mudou enquanto a correção estava aberta.");
+
+  if (request.data.requesterUserUuid !== caller.uuid) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "Somente o próprio solicitante pode corrigir e reenviar esta Request.");
+  }
+
+  const beforeData = foundry.utils.deepClone(request.data);
+  const beforeName = request.document.name;
+  const nextData = planRequestResubmission(request.data, {
+    type: normalized.type,
+    title: normalized.title,
+    intent: normalized.intent,
+    details: normalized.details,
+    resubmittedByUserUuid: caller.uuid
+  });
+  nextData.entityId = request.data.entityId;
+  const requesterUserId = requesterIdFromUuid(request.data.requesterUserUuid);
+  const updated = await updateRecord({
+    uuid: request.uuid,
+    recordType: RECORD_TYPES.REQUEST,
+    name: normalized.title,
+    data: nextData,
+    controllerIds: requesterUserId ? [requesterUserId] : []
+  });
+
+  return {
+    result: requestResult(updated),
+    entities: [updated.data.entityId],
+    events: [{
+      type: EVENT_TYPES.REQUEST_RESUBMITTED,
+      entities: [updated.data.entityId],
+      payload: requestResult(updated)
+    }],
+    rollback: () => updateRecord({
+      uuid: request.uuid,
+      recordType: RECORD_TYPES.REQUEST,
+      name: beforeName,
+      data: beforeData,
+      controllerIds: requesterUserId ? [requesterUserId] : []
+    })
+  };
+}
+
 export async function executeRequestReview({ payload, callerUserId }) {
   const normalized = normalizeRequestReviewPayload(payload);
   const caller = callerFromId(callerUserId);
@@ -95,6 +142,9 @@ export async function executeRequestReview({ payload, callerUserId }) {
   }
 
   const request = resolveReference(normalized.request, RECORD_TYPES.REQUEST, "Request");
+  if (request.data.status === "needs-changes") {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "A Request aguarda correção e reenvio do solicitante.");
+  }
   if (["withdrawn", "fulfilled"].includes(request.data.status)) {
     throw new ModuleError(ERROR_CODES.CONFLICT, "Request encerrada não pode voltar ao fluxo de revisão.");
   }

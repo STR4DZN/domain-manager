@@ -30,13 +30,15 @@ test("Presentation Reset v4 usa shell de app com sidebar única, workspace e ins
   }
 });
 
-test("Command view não é um KPI grid tradicional", () => {
-  assert.ok(template.includes("dm-network-field"));
-  assert.ok(template.includes("dm-network-canvas"));
-  assert.ok(template.includes("dm-command-stack"));
-  assert.equal(template.includes("dm-stat-grid--five"), false);
-  for (const selector of [".dm-network-field", ".dm-network-canvas", ".dm-node-signal", ".dm-telemetry-ladder"]) {
-    assert.ok(viewsCss.includes(selector), `linguagem command ausente: ${selector}`);
+test("Command view usa worklist e contagens reais sem canvas cenográfico", () => {
+  for (const marker of ["dm-command-grid", "dm-command-domains", "dm-command-domain-row", "dm-command-stats", "dm-command-activity"]) {
+    assert.ok(template.includes(marker), `estrutura de comando ausente: ${marker}`);
+  }
+  for (const obsolete of ["dm-network-canvas__rings", "dm-network-axis", "dm-network-core", "--level:", "dm-scope-line"]) {
+    assert.equal(template.includes(obsolete), false, `decoração/falso indicador ainda presente: ${obsolete}`);
+  }
+  for (const selector of [".dm-command-grid", ".dm-command-domain-row", ".dm-command-stats", ".dm-command-activity"]) {
+    assert.ok(viewsCss.includes(selector), `estrutura visual de comando ausente: ${selector}`);
   }
 });
 
@@ -69,6 +71,17 @@ test("command consoles usam a mesma linguagem do app e não dialogs genéricos",
     assert.ok(dialogCss.includes(marker), `console visual ausente: ${marker}`);
   }
   assert.ok(dialogCss.includes("COMMAND CONSOLE"));
+});
+
+test("dialogs sem telemetria mantêm o rodapé de ação dentro da janela", () => {
+  const dialogCss = fs.readFileSync(path.join(root, "styles/app/dialogs.css"), "utf8");
+  assert.ok(dialogCss.includes("grid-template-rows:auto minmax(0,1fr) auto"));
+  assert.ok(dialogCss.includes(".dm-system-dialog:has(>.dm-system-dialog__telemetry){grid-template-rows:auto auto minmax(0,1fr) auto}"));
+});
+
+test("worklist de comando vira cartão compacto sem largura mínima no móvel", () => {
+  assert.ok(viewsCss.includes(".dm-command-domain-head{display:none}"));
+  assert.ok(viewsCss.includes(".dm-command-domain-row{min-width:0;grid-template-columns:minmax(0,1fr) auto"));
 });
 
 

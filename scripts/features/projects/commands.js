@@ -204,6 +204,9 @@ export async function executeProjectUpdate({ payload, callerUserId }) {
   if (normalized.workRequired < completed) {
     throw new ModuleError(ERROR_CODES.CONFLICT, "Trabalho total não pode ficar abaixo do trabalho já realizado.");
   }
+  if (completed > 0 && normalized.status === "planned") {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Project com progresso registrado não pode voltar ao estado planned.");
+  }
   if (normalized.status === "cancelled" && linkedStructures(project).some((structure) => structure.data.status === "planned")) {
     throw new ModuleError(ERROR_CODES.CONFLICT, "Project vinculado a Structure planned não pode ser cancelado sem um fluxo explícito de cancelamento da construção.");
   }

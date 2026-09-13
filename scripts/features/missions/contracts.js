@@ -5,6 +5,14 @@ import { normalizeObjective } from "./rules.js";
 
 function text(value) { return String(value ?? "").trim(); }
 function uniqueIds(values = []) { return [...new Set((values ?? []).map(text).filter(Boolean))]; }
+function revision(value, label = "expectedModifiedTime") {
+  if (value == null || value === "") return null;
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized < 0) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `${label} precisa ser um inteiro não-negativo.`);
+  }
+  return normalized;
+}
 function int(value, { min, max, label }) {
   const n = Math.floor(Number(value));
   if (!Number.isFinite(n) || n < min || n > max) {
@@ -27,6 +35,9 @@ export function normalizeMissionCreatePayload(payload = {}) {
     status: "pending",
     optional: Boolean(objective.optional)
   }));
+  if (new Set(objectives.map((objective) => objective.localId)).size !== objectives.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Objetivos duplicados na Mission.");
+  }
   const relatedDomains = (payload.relatedDomains ?? []).map((entry) =>
     normalizeEntityReference(entry, { allowedTypes: [RECORD_TYPES.DOMAIN] })
   );
@@ -70,14 +81,21 @@ export function normalizeMissionUpdatePayload(payload = {}) {
   }
   return {
     mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
-    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     expectedStatus,
     name,
     primaryDomain: normalizeEntityReference(payload.primaryDomain, { allowedTypes: [RECORD_TYPES.DOMAIN] }),
     relatedDomains,
     audienceUserIds: uniqueIds(payload.audienceUserIds),
     briefing: text(payload.briefing),
-    outcomeSummary: text(payload.outcomeSummary)
+    outcomeSummary: text(payload.outcomeSummary),
+    objectives: payload.objectives == null ? null : (payload.objectives ?? []).map((objective, index) => normalizeObjective({
+      localId: text(objective.localId) || `new-objective-${index + 1}`,
+      title: objective.title,
+      description: objective.description ?? "",
+      status: objective.status ?? "pending",
+      optional: Boolean(objective.optional)
+    }))
   };
 }
 
@@ -101,7 +119,7 @@ export function normalizeMissionObjectiveUpsertPayload(payload = {}) {
   });
   return {
     mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
-    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     localId,
     objective
   };
@@ -117,7 +135,7 @@ export function normalizeMissionObjectiveRemovePayload(payload = {}) {
   if (!localId) throw new ModuleError(ERROR_CODES.VALIDATION, "Objetivo exige localId.");
   return {
     mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
-    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     localId
   };
 }
@@ -145,6 +163,8 @@ export function normalizeMissionPreparePayload(payload = {}) {
   return {
     mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
     squad: normalizeEntityReference(payload.squad, { allowedTypes: [RECORD_TYPES.SQUAD] }),
+    expectedMissionModifiedTime: revision(payload.expectedMissionModifiedTime, "expectedMissionModifiedTime"),
+    expectedSquadModifiedTime: revision(payload.expectedSquadModifiedTime, "expectedSquadModifiedTime"),
     committedStrength: int(payload.committedStrength, { min: 1, max: 100000, label: "Efetivo comprometido" }),
     resources: normalizeCommittedResources(payload.resources)
   };
@@ -159,17 +179,29 @@ export function missionPrepareResourceKeys(payload = {}) {
 }
 
 export function normalizeMissionReferencePayload(payload = {}) {
-  return { mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }) };
+  return {
+    mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
+    squads: (payload.squads ?? []).map((entry) => normalizeEntityReference(entry, { allowedTypes: [RECORD_TYPES.SQUAD] }))
+  };
 }
 
 export function missionReferenceResourceKeys(payload = {}) {
   const normalized = normalizeMissionReferencePayload(payload);
-  return [normalized.mission.entityId ?? normalized.mission.uuid].filter(Boolean);
+  return [
+    normalized.mission.entityId ?? normalized.mission.uuid,
+    ...normalized.squads.map((entry) => entry.entityId ?? entry.uuid)
+  ].filter(Boolean);
 }
 
 export function normalizeMissionReleasePayload(payload = {}) {
   const base = normalizeMissionPreparePayload({ ...payload, committedStrength: payload.committedStrength ?? 1, resources: [] });
-  return { mission: base.mission, squad: base.squad };
+  return {
+    mission: base.mission,
+    squad: base.squad,
+    expectedMissionModifiedTime: base.expectedMissionModifiedTime,
+    expectedSquadModifiedTime: base.expectedSquadModifiedTime
+  };
 }
 
 export function missionReleaseResourceKeys(payload = {}) {
@@ -190,6 +222,10 @@ export function normalizeMissionResolvePayload(payload = {}) {
     conditionDelta: int(result.conditionDelta ?? 0, { min: -100, max: 100, label: "Delta de condição" }),
     notes: text(result.notes)
   }));
+  const resultKeys = results.map((entry) => entry.squad.entityId ?? entry.squad.uuid);
+  if (new Set(resultKeys).size !== resultKeys.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Resultados duplicados para o mesmo Squad.");
+  }
   const objectiveResults = (payload.objectiveResults ?? []).map((result) => {
     const localId = text(result.localId);
     const objectiveStatus = text(result.status);
@@ -198,7 +234,17 @@ export function normalizeMissionResolvePayload(payload = {}) {
     }
     return { localId, status: objectiveStatus };
   });
-  return { mission, status, outcomeSummary: text(payload.outcomeSummary), results, objectiveResults };
+  if (new Set(objectiveResults.map((entry) => entry.localId)).size !== objectiveResults.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Resultados duplicados para o mesmo objetivo.");
+  }
+  return {
+    mission,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
+    status,
+    outcomeSummary: text(payload.outcomeSummary),
+    results,
+    objectiveResults
+  };
 }
 
 export function missionResolveResourceKeys(payload = {}) {

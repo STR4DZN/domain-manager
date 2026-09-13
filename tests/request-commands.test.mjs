@@ -116,8 +116,8 @@ globalThis.JournalEntry = {
 const { recordIndex } = await import("../scripts/data/record-index.js");
 const { dispatchAuthoritativeCommand } = await import("../scripts/commands/execute.js");
 const { listVisibleRequestRecords } = await import("../scripts/features/requests/selectors.js");
-const { performCreateRequest, reviewRequestAction } = await import("../scripts/features/requests/actions.js");
-const { requestLifecycleResourceKeys, requestMissionResourceKeys, requestReviewResourceKeys } = await import("../scripts/features/requests/contracts.js");
+const { performCreateRequest, resubmitRequestAction, reviewRequestAction } = await import("../scripts/features/requests/actions.js");
+const { requestLifecycleResourceKeys, requestMissionResourceKeys, requestResubmitResourceKeys, requestReviewResourceKeys } = await import("../scripts/features/requests/contracts.js");
 
 function makeDomain({ missionsEnabled = true } = {}) {
   return makeDocument({
@@ -146,6 +146,21 @@ async function createOne(domain, operationId = "req-create-1") {
   return command("request.create", operationId, {
     domain: ref(domain, "domain", "domain:D1"), type: "mission", title: "Recon exterior", intent: "Reconhecer o corredor norte.", details: "Evitar contato direto."
   }, "P1");
+}
+
+async function requestNeedsChanges(domain, prefix = "req-revise") {
+  const created = await createOne(domain, `${prefix}-create`);
+  recordIndex.rebuild();
+  const requestDoc = docs.get(created.uuid);
+  await command("request.review", `${prefix}-review`, {
+    request: ref(requestDoc, "request", created.entityId),
+    expectedModifiedTime: requestDoc._stats.modifiedTime,
+    status: "needs-changes",
+    summary: "Detalhe o plano de retirada.",
+    handling: "none"
+  }, "GM");
+  recordIndex.rebuild();
+  return requestDoc;
 }
 
 test("controller cria Request pelo Command Kernel, recebe OBSERVER e retry é idempotente", async () => {
@@ -456,10 +471,99 @@ test("falha de receipt em fulfill restaura Request aprovada", async () => {
   assert.equal(after.history.length, before.history.length);
 });
 
+test("solicitante corrige e reenvia Request após pedido de ajustes", async () => {
+  const domain = reset();
+  const requestDoc = await requestNeedsChanges(domain, "resubmit-ok");
+  const before = structuredClone(requestDoc.getFlag("domain-manager", "data"));
+  const expectedModifiedTime = requestDoc._stats.modifiedTime;
+  const result = await command("request.resubmit", "resubmit-ok-command", {
+    request: ref(requestDoc, "request", before.entityId),
+    expectedModifiedTime,
+    type: "custom",
+    title: "Recon exterior revisado",
+    intent: "Reconhecer o corredor norte com rota de retirada.",
+    details: "Recuar pelo marco oeste em caso de contato."
+  }, "P1");
 
-test("review, mission e lifecycle serializam sobre o mesmo lock da Request", () => {
+  const after = requestDoc.getFlag("domain-manager", "data");
+  assert.equal(result.status, "submitted");
+  assert.equal(requestDoc.name, "Recon exterior revisado");
+  assert.equal(after.entityId, before.entityId);
+  assert.equal(after.operationId, before.operationId);
+  assert.equal(after.requesterUserUuid, before.requesterUserUuid);
+  assert.equal(after.primaryDomainUuid, before.primaryDomainUuid);
+  assert.equal(after.proposal.title, "Recon exterior revisado");
+  assert.equal(after.gmDecision.summary, "");
+  assert.equal(after.gmDecision.handling, "none");
+  assert.equal(after.history.at(-1).kind, "resubmitted");
+  assert.equal(after.history.at(-1).userUuid, "User.P1");
+});
+
+test("resubmit exige solicitante, needs-changes e revisão atual", async () => {
+  let domain = reset();
+  let requestDoc = await requestNeedsChanges(domain, "resubmit-guards");
+  const requestData = requestDoc.getFlag("domain-manager", "data");
+  const payload = {
+    request: ref(requestDoc, "request", requestData.entityId),
+    expectedModifiedTime: requestDoc._stats.modifiedTime,
+    type: requestData.type,
+    title: requestData.proposal.title,
+    intent: requestData.intent,
+    details: requestData.proposal.details
+  };
+  await assert.rejects(() => command("request.resubmit", "resubmit-other", payload, "P2"), /próprio solicitante/i);
+  await assert.rejects(() => command("request.resubmit", "resubmit-stale", {
+    ...payload,
+    expectedModifiedTime: payload.expectedModifiedTime - 1
+  }, "P1"), /mudou enquanto a correção/i);
+
+  domain = reset();
+  const created = await createOne(domain, "resubmit-wrong-state");
+  recordIndex.rebuild();
+  requestDoc = docs.get(created.uuid);
+  const current = requestDoc.getFlag("domain-manager", "data");
+  await assert.rejects(() => command("request.resubmit", "resubmit-before-change", {
+    request: ref(requestDoc, "request", current.entityId),
+    expectedModifiedTime: requestDoc._stats.modifiedTime,
+    type: current.type,
+    title: current.proposal.title,
+    intent: current.intent,
+    details: current.proposal.details
+  }, "P1"), /só pode ser corrigida/i);
+});
+
+test("needs-changes aguarda reenvio e falha de receipt restaura conteúdo anterior", async () => {
+  const domain = reset();
+  const requestDoc = await requestNeedsChanges(domain, "resubmit-rollback");
+  const before = structuredClone(requestDoc.getFlag("domain-manager", "data"));
+  const beforeName = requestDoc.name;
+
+  await assert.rejects(() => command("request.review", "review-without-resubmit", {
+    request: ref(requestDoc, "request", before.entityId),
+    expectedModifiedTime: requestDoc._stats.modifiedTime,
+    status: "approved",
+    summary: "Aprovar sem correção.",
+    handling: "immediate"
+  }, "GM"), /aguarda correção e reenvio/i);
+
+  failNextLedgerWrite = true;
+  await assert.rejects(() => command("request.resubmit", "resubmit-ledger-fail", {
+    request: ref(requestDoc, "request", before.entityId),
+    expectedModifiedTime: requestDoc._stats.modifiedTime,
+    type: "custom",
+    title: "Título que será revertido",
+    intent: "Conteúdo que será revertido.",
+    details: "Também revertido."
+  }, "P1"), /ledger unavailable/);
+  assert.equal(requestDoc.name, beforeName);
+  assert.deepEqual(requestDoc.getFlag("domain-manager", "data"), before);
+});
+
+
+test("review, resubmit, mission e lifecycle serializam sobre o mesmo lock da Request", () => {
   const payload = { request: { recordType: "request", entityId: "request:LOCK" } };
   assert.deepEqual(requestReviewResourceKeys(payload), ["request:request:LOCK"]);
+  assert.deepEqual(requestResubmitResourceKeys(payload), ["request:request:LOCK"]);
   assert.deepEqual(requestMissionResourceKeys(payload), ["request:request:LOCK"]);
   assert.deepEqual(requestLifecycleResourceKeys(payload), ["request:request:LOCK"]);
 });
@@ -490,7 +594,7 @@ test("Request encerrada ou com resultado materializado não pode ser reaberta po
 
 
 test("legacy Request actions delegam ao Command Kernel sem mudar contratos externos", async () => {
-  const domain = reset();
+  let domain = reset();
   const first = await performCreateRequest({
     operationId: "legacy-create-wrapper",
     primaryDomainUuid: domain.uuid,
@@ -524,4 +628,18 @@ test("legacy Request actions delegam ao Command Kernel sem mudar contratos exter
   assert.equal(reviewed.recordType, "request");
   assert.equal(reviewed.data.status, "approved");
   assert.equal(reviewed.data.gmDecision.handling, "immediate");
+
+  domain = reset();
+  const revisable = await requestNeedsChanges(domain, "legacy-resubmit");
+  const revised = await resubmitRequestAction({
+    requestUuid: revisable.uuid,
+    expectedModifiedTime: revisable._stats.modifiedTime,
+    type: "custom",
+    title: "Compat request revisada",
+    intent: "Validar wrapper de reenvio.",
+    details: "",
+    operationId: "legacy-resubmit-wrapper"
+  }, "P1");
+  assert.equal(revised.data.status, "submitted");
+  assert.equal(revised.data.proposal.title, "Compat request revisada");
 });

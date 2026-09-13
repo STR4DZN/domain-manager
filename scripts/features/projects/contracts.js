@@ -11,6 +11,15 @@ function clean(value) {
   return String(value ?? "").trim();
 }
 
+function expectedModifiedTime(value) {
+  if (value == null || value === "") return null;
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser um número válido.");
+  }
+  return normalized;
+}
+
 function integer(value, { min = 0, max = Number.MAX_SAFE_INTEGER, label = "Valor" } = {}) {
   const number = Number(value);
   if (!Number.isSafeInteger(number) || number < min || number > max) {
@@ -105,7 +114,7 @@ export function normalizeProjectUpdatePayload(payload = {}) {
   return {
     domain: domainRef(payload.domain),
     project: projectRef(payload.project),
-    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime),
     name,
     description: clean(payload.description),
     status,
@@ -120,7 +129,7 @@ export function normalizeProjectCostUpsertPayload(payload = {}) {
   return {
     domain: domainRef(payload.domain),
     project: projectRef(payload.project),
-    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime),
     cost: normalizeCost(payload.cost ?? payload, 0, { localIdOptional: true })
   };
 }
@@ -131,7 +140,7 @@ export function normalizeProjectCostRemovePayload(payload = {}) {
   return {
     domain: domainRef(payload.domain),
     project: projectRef(payload.project),
-    expectedModifiedTime: payload.expectedModifiedTime ?? null,
+    expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime),
     localId
   };
 }

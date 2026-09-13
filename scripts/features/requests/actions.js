@@ -66,3 +66,28 @@ export async function reviewRequestAction({
 
   return getRecord(requestUuid);
 }
+
+export async function resubmitRequestAction({
+  requestUuid,
+  expectedModifiedTime,
+  type,
+  title,
+  intent,
+  details = "",
+  operationId = null
+}, callerUserId = game.user.id) {
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.REQUEST_RESUBMIT,
+    operationId: commandOperationId(operationId),
+    payload: {
+      request: { recordType: RECORD_TYPES.REQUEST, uuid: requestUuid, entityId: null },
+      expectedModifiedTime,
+      type,
+      title,
+      intent,
+      details
+    }
+  }, { callerUserId });
+
+  return getRecord(requestUuid);
+}

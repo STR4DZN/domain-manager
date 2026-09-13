@@ -8,7 +8,7 @@ async function run(commandType, domainUuid, payload, requestedOperationId) {
   await dispatchAuthoritativeCommand({ commandType, operationId: operationId(requestedOperationId), payload: { domain: ref(domainUuid), ...payload } }, { callerUserId: game.user.id });
   return getRecord(domainUuid);
 }
-export function createDomainConditionAction({ domainUuid, condition, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_CREATE, domainUuid, { condition }, id); }
-export function updateDomainConditionAction({ domainUuid, localId, patch, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_UPDATE, domainUuid, { localId, patch }, id); }
-export function removeDomainConditionAction({ domainUuid, localId, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_REMOVE, domainUuid, { localId }, id); }
-export function toggleDomainConditionAction({ domainUuid, localId, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_TOGGLE, domainUuid, { localId }, id); }
+export function createDomainConditionAction({ domainUuid, expectedModifiedTime, condition, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_CREATE, domainUuid, { expectedModifiedTime, condition }, id); }
+export function updateDomainConditionAction({ domainUuid, expectedModifiedTime, localId, patch, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_UPDATE, domainUuid, { expectedModifiedTime, localId, patch }, id); }
+export function removeDomainConditionAction({ domainUuid, expectedModifiedTime, localId, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_REMOVE, domainUuid, { expectedModifiedTime, localId }, id); }
+export function toggleDomainConditionAction({ domainUuid, expectedModifiedTime, localId, operationId: id = null }) { return run(COMMAND_TYPES.CONDITION_TOGGLE, domainUuid, { expectedModifiedTime, localId }, id); }

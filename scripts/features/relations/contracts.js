@@ -17,6 +17,12 @@ function nullableInteger(value, { min = 0, label = "Valor" } = {}) {
   if (!Number.isSafeInteger(n) || n < min) throw new ModuleError(ERROR_CODES.VALIDATION, `${label} inválido.`);
   return n;
 }
+function revision(value, label = "expectedModifiedTime") {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  if (!Number.isSafeInteger(n) || n < 0) throw new ModuleError(ERROR_CODES.VALIDATION, `${label} precisa ser inteiro não-negativo.`);
+  return n;
+}
 function domainRef(value) { return normalizeEntityReference(value, { allowedTypes: [RECORD_TYPES.DOMAIN] }); }
 function agreementRef(value) { return normalizeEntityReference(value, { allowedTypes: [RECORD_TYPES.AGREEMENT] }); }
 function referenceKey(ref) { return ref?.entityId ?? ref?.uuid ?? ""; }
@@ -36,6 +42,7 @@ export function normalizeRelationUpsertPayload(payload = {}) {
   }
   return {
     domain,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     localId: clean(payload.localId),
     target,
     posture,
@@ -48,7 +55,7 @@ export function normalizeRelationUpsertPayload(payload = {}) {
 export function normalizeRelationRemovePayload(payload = {}) {
   const localId = clean(payload.localId);
   if (!localId) throw new ModuleError(ERROR_CODES.VALIDATION, "localId da relação é obrigatório.");
-  return { domain: domainRef(payload.domain), localId };
+  return { domain: domainRef(payload.domain), expectedModifiedTime: revision(payload.expectedModifiedTime), localId };
 }
 
 function normalizeTransfer(raw = {}, index = 0) {
@@ -96,11 +103,11 @@ function normalizeAgreementBase(payload = {}) {
   };
 }
 export function normalizeAgreementCreatePayload(payload = {}) { return normalizeAgreementBase(payload); }
-export function normalizeAgreementUpdatePayload(payload = {}) { return { agreement: agreementRef(payload.agreement), ...normalizeAgreementBase(payload) }; }
+export function normalizeAgreementUpdatePayload(payload = {}) { return { agreement: agreementRef(payload.agreement), expectedModifiedTime: revision(payload.expectedModifiedTime), ...normalizeAgreementBase(payload) }; }
 export function normalizeAgreementStatusPayload(payload = {}) {
   const status = clean(payload.status);
   if (!AGREEMENT_STATUSES.includes(status)) throw new ModuleError(ERROR_CODES.VALIDATION, `Status de Agreement inválido: ${status}`);
-  return { agreement: agreementRef(payload.agreement), status };
+  return { agreement: agreementRef(payload.agreement), expectedModifiedTime: revision(payload.expectedModifiedTime), status };
 }
 
 export function relationResourceKeys(payload = {}) {

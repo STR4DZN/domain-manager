@@ -1,4 +1,4 @@
-import { COMMAND_TYPES, MODULE_ID, MODULE_TITLE, RECORD_TYPES, REQUEST_HANDLINGS, REQUEST_REVIEW_STATUSES, REQUEST_TYPES, SCHEMA_VERSION, TERRITORY_CONTROL_STATES } from "../core/constants.js";
+import { CAPABILITY_KEYS, COMMAND_TYPES, DOMAIN_NATURES, DOMAIN_STATES, MANAGEMENT_PRESETS, MODULE_ID, MODULE_TITLE, RECORD_TYPES, REQUEST_HANDLINGS, REQUEST_REVIEW_STATUSES, REQUEST_TYPES, SCHEMA_VERSION, TERRITORY_CONTROL_STATES } from "../core/constants.js";
 import { recordIndex } from "../data/record-index.js";
 import { decodeRecord } from "../models/record-codec.js";
 import { getResourceCatalogSetting } from "../core/settings.js";
@@ -7,8 +7,8 @@ import { executeCommandAuthoritatively } from "../authority/execute.js";
 import { buildStrategicDomainLedger } from "../features/economy/strategic.js";
 import { buildDomainProjectReservations } from "../features/projects/selectors.js";
 import { calculateDomainRisks } from "../features/risks/rules.js";
-import { createDomainAction } from "../features/domains/actions.js";
-import { updateDomainMediaFields } from "../features/domains/media.js";
+import { capabilityDefaultsForPreset } from "../core/management-contracts.js";
+import { buildDomainDependencyReport } from "../features/domains/dependencies.js";
 import {
   createSquadAction,
   patchSquadAction,
@@ -216,6 +216,7 @@ function recordSummary(record) {
     status: record.data?.status ?? record.data?.identity?.state ?? "active",
     statusLabel: stateLabel(record.data?.status ?? record.data?.identity?.state ?? "active"),
     tone: statusTone(record.data?.status ?? record.data?.identity?.state),
+    expectedModifiedTime: record.document?._stats?.modifiedTime ?? null,
     data: record.data
   };
 }
@@ -244,6 +245,7 @@ const REQUEST_TYPE_LABELS = Object.freeze({
 });
 const REQUEST_STATUS_LABELS = Object.freeze({
   submitted: "Enviada",
+  resubmitted: "Reenviada",
   "under-review": "Em revisão",
   "needs-changes": "Requer ajustes",
   approved: "Aprovada",
@@ -258,6 +260,15 @@ const REQUEST_HANDLING_LABELS = Object.freeze({
   mission: "Missão",
   agreement: "Acordo"
 });
+const CONDITION_CATEGORY_LABELS = Object.freeze({
+  environmental: "Ambiental",
+  economic: "Econômica",
+  social: "Social",
+  political: "Política",
+  logistical: "Logística",
+  military: "Militar",
+  other: "Outra"
+});
 function requestTone(status) {
   if (["approved", "fulfilled"].includes(status)) return "nominal";
   if (["rejected", "withdrawn"].includes(status)) return "critical";
@@ -268,7 +279,7 @@ function requestTone(status) {
 function buildViewFlags(view) {
   const keys = [
     "command", "domains", "operations", "system", "overview", "economy",
-    "population", "people", "structures", "projects", "squads", "missions", "requests",
+    "population", "people", "structures", "projects", "squads", "missions", "requests", "conditions",
     "diplomacy", "territory", "intel", "security", "history"
   ];
   return Object.fromEntries(keys.map((key) => [key, key === view]));
@@ -382,14 +393,20 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   selectedDomainUuid = null;
   searchQuery = "";
   isCreateDomainOpen = false;
+  editingDomainUuid = null;
+  isDomainBusy = false;
+  isDomainDeleteOpen = false;
   isDomainMediaOpen = false;
   isCreateSquadOpen = false;
   editingSquadUuid = null;
   supplySquadUuid = null;
   isSquadBusy = false;
   isCreateMissionOpen = false;
+  editingMissionUuid = null;
   preparingMissionUuid = null;
   preparingSquadUuid = null;
+  pendingMissionRelease = null;
+  pendingMissionLaunch = null;
   resolvingMissionUuid = null;
   isMissionBusy = false;
   isCreateStructureOpen = false;
@@ -399,14 +416,20 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   selectedProjectUuid = null;
   editingProjectUuid = null;
   editingProjectCostId = null;
+  pendingProjectCostRemoval = null;
   isProjectBusy = false;
   selectedRequestUuid = null;
   isRequestCreateOpen = false;
   reviewingRequestUuid = null;
+  revisingRequestUuid = null;
   isRequestBusy = false;
+  editingConditionId = null;
+  pendingConditionRemoval = null;
+  isConditionBusy = false;
   selectedPersonUuid = null;
   isPopulationConfigOpen = false;
   editingPopulationGroupId = null;
+  pendingPopulationGroupRemoval = null;
   isWorkforceOpen = false;
   isPopulationBusy = false;
   isPersonEditorOpen = false;
@@ -419,9 +442,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isSecurityBusy = false;
   isTerritoryEditorOpen = false;
   editingRelationId = null;
+  pendingRelationRemoval = null;
   isAgreementCreateOpen = false;
+  pendingAgreementStatus = null;
   selectedIntelId = null;
   editingIntelId = null;
+  pendingIntelAction = null;
   isStrategicIntelBusy = false;
   responsiveObserver = null;
   isInspectorOpen = false;
@@ -443,8 +469,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       clearSearch: DomainManagerShellApp.onClearSearch,
       toggleInspector: DomainManagerShellApp.onToggleInspector,
       openCreateDomain: DomainManagerShellApp.onOpenCreateDomain,
+      openEditDomain: DomainManagerShellApp.onOpenEditDomain,
       cancelCreateDomain: DomainManagerShellApp.onCancelCreateDomain,
       submitCreateDomain: DomainManagerShellApp.onSubmitCreateDomain,
+      openDeleteDomain: DomainManagerShellApp.onOpenDeleteDomain,
+      cancelDeleteDomain: DomainManagerShellApp.onCancelDeleteDomain,
+      submitDeleteDomain: DomainManagerShellApp.onSubmitDeleteDomain,
       openDomainMedia: DomainManagerShellApp.onOpenDomainMedia,
       closeDomainMedia: DomainManagerShellApp.onCloseDomainMedia,
       browseImageField: DomainManagerShellApp.onBrowseImageField,
@@ -459,13 +489,19 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       closeSquadSupply: DomainManagerShellApp.onCloseSquadSupply,
       submitSquadSupply: DomainManagerShellApp.onSubmitSquadSupply,
       openCreateMission: DomainManagerShellApp.onOpenCreateMission,
+      openEditMission: DomainManagerShellApp.onOpenEditMission,
       cancelCreateMission: DomainManagerShellApp.onCancelCreateMission,
       submitCreateMission: DomainManagerShellApp.onSubmitCreateMission,
+      publishMission: DomainManagerShellApp.onPublishMission,
       openMissionPrepare: DomainManagerShellApp.onOpenMissionPrepare,
       closeMissionPrepare: DomainManagerShellApp.onCloseMissionPrepare,
       submitMissionPrepare: DomainManagerShellApp.onSubmitMissionPrepare,
       releaseMissionAssignment: DomainManagerShellApp.onReleaseMissionAssignment,
+      cancelReleaseMissionAssignment: DomainManagerShellApp.onCancelReleaseMissionAssignment,
+      confirmReleaseMissionAssignment: DomainManagerShellApp.onConfirmReleaseMissionAssignment,
       launchMission: DomainManagerShellApp.onLaunchMission,
+      cancelLaunchMission: DomainManagerShellApp.onCancelLaunchMission,
+      confirmLaunchMission: DomainManagerShellApp.onConfirmLaunchMission,
       openMissionResolve: DomainManagerShellApp.onOpenMissionResolve,
       closeMissionResolve: DomainManagerShellApp.onCloseMissionResolve,
       submitMissionResolve: DomainManagerShellApp.onSubmitMissionResolve,
@@ -483,6 +519,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       closeProjectCostEditor: DomainManagerShellApp.onCloseProjectCostEditor,
       submitProjectCostEditor: DomainManagerShellApp.onSubmitProjectCostEditor,
       removeProjectCost: DomainManagerShellApp.onRemoveProjectCost,
+      cancelRemoveProjectCost: DomainManagerShellApp.onCancelRemoveProjectCost,
+      confirmRemoveProjectCost: DomainManagerShellApp.onConfirmRemoveProjectCost,
       selectRequest: DomainManagerShellApp.onSelectRequest,
       openRequestCreate: DomainManagerShellApp.onOpenRequestCreate,
       closeRequestCreate: DomainManagerShellApp.onCloseRequestCreate,
@@ -490,9 +528,19 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openRequestReview: DomainManagerShellApp.onOpenRequestReview,
       closeRequestReview: DomainManagerShellApp.onCloseRequestReview,
       submitRequestReview: DomainManagerShellApp.onSubmitRequestReview,
+      openRequestRevision: DomainManagerShellApp.onOpenRequestRevision,
+      closeRequestRevision: DomainManagerShellApp.onCloseRequestRevision,
+      submitRequestRevision: DomainManagerShellApp.onSubmitRequestRevision,
       createMissionFromRequest: DomainManagerShellApp.onCreateMissionFromRequest,
       withdrawRequest: DomainManagerShellApp.onWithdrawRequest,
       fulfillRequest: DomainManagerShellApp.onFulfillRequest,
+      openConditionEditor: DomainManagerShellApp.onOpenConditionEditor,
+      closeConditionEditor: DomainManagerShellApp.onCloseConditionEditor,
+      submitConditionEditor: DomainManagerShellApp.onSubmitConditionEditor,
+      toggleCondition: DomainManagerShellApp.onToggleCondition,
+      removeCondition: DomainManagerShellApp.onRemoveCondition,
+      cancelRemoveCondition: DomainManagerShellApp.onCancelRemoveCondition,
+      confirmRemoveCondition: DomainManagerShellApp.onConfirmRemoveCondition,
       selectPerson: DomainManagerShellApp.onSelectPerson,
       openPopulationConfig: DomainManagerShellApp.onOpenPopulationConfig,
       closePopulationConfig: DomainManagerShellApp.onClosePopulationConfig,
@@ -501,6 +549,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       closePopulationGroup: DomainManagerShellApp.onClosePopulationGroup,
       submitPopulationGroup: DomainManagerShellApp.onSubmitPopulationGroup,
       removePopulationGroup: DomainManagerShellApp.onRemovePopulationGroup,
+      cancelRemovePopulationGroup: DomainManagerShellApp.onCancelRemovePopulationGroup,
+      confirmRemovePopulationGroup: DomainManagerShellApp.onConfirmRemovePopulationGroup,
       openWorkforce: DomainManagerShellApp.onOpenWorkforce,
       closeWorkforce: DomainManagerShellApp.onCloseWorkforce,
       submitWorkforce: DomainManagerShellApp.onSubmitWorkforce,
@@ -520,16 +570,22 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       closeRelationEditor: DomainManagerShellApp.onCloseRelationEditor,
       submitRelationEditor: DomainManagerShellApp.onSubmitRelationEditor,
       removeRelation: DomainManagerShellApp.onRemoveRelation,
+      cancelRemoveRelation: DomainManagerShellApp.onCancelRemoveRelation,
+      confirmRemoveRelation: DomainManagerShellApp.onConfirmRemoveRelation,
       openAgreementCreate: DomainManagerShellApp.onOpenAgreementCreate,
       closeAgreementCreate: DomainManagerShellApp.onCloseAgreementCreate,
       submitAgreementCreate: DomainManagerShellApp.onSubmitAgreementCreate,
       setAgreementStatus: DomainManagerShellApp.onSetAgreementStatus,
+      cancelAgreementStatus: DomainManagerShellApp.onCancelAgreementStatus,
+      confirmAgreementStatus: DomainManagerShellApp.onConfirmAgreementStatus,
       selectIntel: DomainManagerShellApp.onSelectIntel,
       openIntelEditor: DomainManagerShellApp.onOpenIntelEditor,
       closeIntelEditor: DomainManagerShellApp.onCloseIntelEditor,
       submitIntelEditor: DomainManagerShellApp.onSubmitIntelEditor,
       removeIntel: DomainManagerShellApp.onRemoveIntel,
       revealIntel: DomainManagerShellApp.onRevealIntel,
+      cancelIntelAction: DomainManagerShellApp.onCancelIntelAction,
+      confirmIntelAction: DomainManagerShellApp.onConfirmIntelAction,
       advanceTicks: DomainManagerShellApp.onAdvanceTicks
     }
   };
@@ -543,8 +599,60 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   setRoute({ section = null, domainUuid = undefined } = {}) {
     if (section) this.activeView = section;
-    if (domainUuid !== undefined) this.selectedDomainUuid = domainUuid || null;
+    if (domainUuid !== undefined) {
+      const nextDomainUuid = domainUuid || null;
+      if (nextDomainUuid !== this.selectedDomainUuid) this.resetDomainScopedState();
+      this.selectedDomainUuid = nextDomainUuid;
+    }
     return this;
+  }
+
+  resetDomainScopedState() {
+    this.isCreateDomainOpen = false;
+    this.editingDomainUuid = null;
+    this.isDomainDeleteOpen = false;
+    this.isDomainMediaOpen = false;
+    this.isCreateSquadOpen = false;
+    this.editingSquadUuid = null;
+    this.supplySquadUuid = null;
+    this.isCreateMissionOpen = false;
+    this.editingMissionUuid = null;
+    this.preparingMissionUuid = null;
+    this.preparingSquadUuid = null;
+    this.pendingMissionRelease = null;
+    this.pendingMissionLaunch = null;
+    this.resolvingMissionUuid = null;
+    this.isCreateStructureOpen = false;
+    this.structureCreateMode = "construction";
+    this.editingStructureUuid = null;
+    this.selectedProjectUuid = null;
+    this.editingProjectUuid = null;
+    this.editingProjectCostId = null;
+    this.pendingProjectCostRemoval = null;
+    this.selectedRequestUuid = null;
+    this.isRequestCreateOpen = false;
+    this.reviewingRequestUuid = null;
+    this.revisingRequestUuid = null;
+    this.editingConditionId = null;
+    this.pendingConditionRemoval = null;
+    this.selectedPersonUuid = null;
+    this.isPopulationConfigOpen = false;
+    this.editingPopulationGroupId = null;
+    this.pendingPopulationGroupRemoval = null;
+    this.isWorkforceOpen = false;
+    this.isPersonEditorOpen = false;
+    this.editingPersonUuid = null;
+    this.isEconomyConfigOpen = false;
+    this.isSecurityEditorOpen = false;
+    this.isTerritoryEditorOpen = false;
+    this.editingRelationId = null;
+    this.pendingRelationRemoval = null;
+    this.isAgreementCreateOpen = false;
+    this.pendingAgreementStatus = null;
+    this.selectedIntelId = null;
+    this.editingIntelId = null;
+    this.pendingIntelAction = null;
+    this.isInspectorOpen = false;
   }
 
   _onRender(context, options) {
@@ -560,6 +668,37 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         this.render({ force: true });
       });
     }
+    const domainPreset = this.element?.querySelector?.("[data-domain-preset]");
+    const capabilityInputs = Array.from(this.element?.querySelectorAll?.('[name="capabilities"]') ?? []);
+    if (domainPreset && capabilityInputs.length) {
+      domainPreset.addEventListener("change", () => {
+        const defaults = capabilityDefaultsForPreset(domainPreset.value);
+        for (const input of capabilityInputs) input.checked = defaults[input.value] === true;
+      });
+      for (const input of capabilityInputs) {
+        input.addEventListener("change", () => {
+          const defaults = capabilityDefaultsForPreset(domainPreset.value);
+          const isPresetDefault = capabilityInputs.every((candidate) => candidate.checked === (defaults[candidate.value] === true));
+          if (!isPresetDefault) domainPreset.value = "custom";
+        });
+      }
+    }
+    const deleteConfirmation = this.element?.querySelector?.("[data-domain-delete-confirmation]");
+    const deleteSubmit = this.element?.querySelector?.("[data-domain-delete-submit]");
+    if (deleteConfirmation && deleteSubmit) {
+      const syncDeleteConfirmation = () => {
+        deleteSubmit.disabled = String(deleteConfirmation.value ?? "").trim() !== deleteConfirmation.dataset.confirmation;
+      };
+      deleteConfirmation.addEventListener("input", syncDeleteConfirmation);
+      syncDeleteConfirmation();
+    }
+    const workspaceSelect = this.element?.querySelector?.("[data-workspace-select]");
+    workspaceSelect?.addEventListener?.("change", () => {
+      if (!workspaceSelect.value) return;
+      this.activeView = workspaceSelect.value;
+      this.isInspectorOpen = false;
+      this.render({ force: true });
+    });
     this.element?.addEventListener?.("keydown", (event) => {
       if (event.key === "Escape" && this.isInspectorOpen) {
         event.preventDefault();
@@ -667,6 +806,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       natureLabel: domainNatureLabel(selectedDomain.data.identity?.nature),
       presetLabel: managementPresetLabel(selectedDomain.data.management?.preset),
       entityIdShort: selectedDomain.data.entityId?.slice(-10)?.toUpperCase() ?? "—",
+      expectedModifiedTime: selectedDomain.document?._stats?.modifiedTime ?? null,
       visuals: {
         bannerImg: "",
         crestImg: "",
@@ -684,6 +824,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         .filter(([, enabled]) => enabled)
         .map(([key]) => capabilityLabel(key))
     } : null;
+    if (this.isDomainDeleteOpen && !selectedDomain) this.isDomainDeleteOpen = false;
+    const domainDeleteReport = this.isDomainDeleteOpen && selectedDomain
+      ? buildDomainDependencyReport(selectedDomain)
+      : null;
     const domainImageFitOptions = ["cover", "contain"].map((value) => ({
       value,
       label: value === "contain" ? "Conter" : "Preencher",
@@ -731,7 +875,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           amountDisplay: definition ? formatMinorUnits(amount, precision) : String(amount),
           consumedDisplay: definition ? formatMinorUnits(consumed, precision) : String(consumed),
           remainingDisplay: definition ? formatMinorUnits(Math.max(0, amount - consumed), precision) : String(Math.max(0, amount - consumed)),
-          modeLabel: cost.mode === "progressive" ? "PROGRESSIVE" : "RESERVED"
+          modeLabel: cost.mode === "progressive" ? "PROGRESSIVO" : "RESERVADO"
         };
       });
       return {
@@ -756,6 +900,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         hasPlannedStructureLink: linkedStructures.some((structure) => structure.status === "planned"),
         originRequestUuid: record.data.originRequestUuid ?? null,
         terminal,
+        expectedModifiedTime: record.document?._stats?.modifiedTime ?? null,
         canEdit: canManageProjects && !terminal,
         costPlanMutable: canManageProjects && !terminal && completed === 0
       };
@@ -768,7 +913,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const projectEditorOpen = this.editingProjectUuid !== null;
     const projectStatusValues = this.editingProjectUuid === "__new__"
       ? ["planned", "active"]
-      : ["planned", "active", "paused", "blocked", ...(editingProject?.hasPlannedStructureLink ? [] : ["cancelled"])];
+      : [
+          ...(editingProject?.completed > 0 ? [] : ["planned"]),
+          "active", "paused", "blocked",
+          ...(editingProject?.hasPlannedStructureLink ? [] : ["cancelled"])
+        ];
     const projectStatusOptions = projectStatusValues.map((value) => ({
       value,
       label: stateLabel(value),
@@ -779,6 +928,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       : null;
     if (this.editingProjectCostId && this.editingProjectCostId !== "__new__" && !editingProjectCost) this.editingProjectCostId = null;
     const projectCostEditorOpen = this.editingProjectCostId !== null;
+    const pendingProjectCostRemoval = selectedProject && this.pendingProjectCostRemoval
+      ? selectedProject.costs.find((cost) => cost.localId === this.pendingProjectCostRemoval.localId) ?? null
+      : null;
+    if (this.pendingProjectCostRemoval && !pendingProjectCostRemoval) this.pendingProjectCostRemoval = null;
     const projectResourceOptions = (catalog?.resources ?? []).map((resource) => ({
       id: resource.id,
       name: resource.name ?? resource.id,
@@ -793,6 +946,67 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
 
     const users = listUsers();
+    if (this.editingDomainUuid && !domains.some((domain) => domain.uuid === this.editingDomainUuid)) {
+      this.editingDomainUuid = null;
+      this.isCreateDomainOpen = false;
+    }
+    const editingDomainRecord = this.editingDomainUuid
+      ? domains.find((domain) => domain.uuid === this.editingDomainUuid) ?? null
+      : null;
+    const domainEditorData = editingDomainRecord?.data ?? null;
+    const domainEditorPreset = domainEditorData?.management?.preset ?? "base";
+    const domainEditorCapabilities = domainEditorData?.management?.capabilities
+      ?? capabilityDefaultsForPreset(domainEditorPreset);
+    const domainEditor = this.isCreateDomainOpen ? {
+      isEdit: Boolean(editingDomainRecord),
+      name: editingDomainRecord?.document.name ?? "",
+      description: domainEditorData?.description ?? "",
+      category: domainEditorData?.identity?.category ?? "Base",
+      tagsValue: (domainEditorData?.identity?.tags ?? []).join(", "),
+      expectedModifiedTime: editingDomainRecord?.document?._stats?.modifiedTime ?? "",
+      natureOptions: DOMAIN_NATURES.map((value) => ({
+        value,
+        label: domainNatureLabel(value),
+        selected: (domainEditorData?.identity?.nature ?? "physical") === value
+      })),
+      stateOptions: DOMAIN_STATES.map((value) => ({
+        value,
+        label: stateLabel(value),
+        selected: (domainEditorData?.identity?.state ?? "active") === value
+      })),
+      presetOptions: MANAGEMENT_PRESETS.map((value) => ({
+        value,
+        label: managementPresetLabel(value),
+        selected: domainEditorPreset === value
+      })),
+      capabilityOptions: CAPABILITY_KEYS.map((value) => ({
+        value,
+        label: capabilityLabel(value),
+        checked: domainEditorCapabilities[value] === true
+      })),
+      controllerOptions: users
+        .filter((user) => !user.isGM)
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          active: Boolean(user.active),
+          selected: domainEditorData?.governance?.controllers?.includes(user.id) ?? false
+        })),
+      locatedInOptions: domains
+        .filter((domain) => domain.uuid !== editingDomainRecord?.uuid)
+        .map((domain) => ({
+          uuid: domain.uuid,
+          name: domain.document.name,
+          selected: domainEditorData?.hierarchy?.locatedInUuid === domain.uuid
+        })),
+      administrativeParentOptions: domains
+        .filter((domain) => domain.uuid !== editingDomainRecord?.uuid)
+        .map((domain) => ({
+          uuid: domain.uuid,
+          name: domain.document.name,
+          selected: domainEditorData?.hierarchy?.administrativeParentUuid === domain.uuid
+        }))
+    } : null;
     const canCreateRequest = canSubmitDomainRequest(selectedDomain);
     if (this.selectedRequestUuid && !related.requests.some((record) => record.uuid === this.selectedRequestUuid)) {
       this.selectedRequestUuid = null;
@@ -810,6 +1024,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       const canWithdraw = Boolean(
         game.user.uuid === record.data.requesterUserUuid
         && ["submitted", "under-review", "needs-changes"].includes(status)
+        && !record.data.resultUuid
+      );
+      const canRevise = Boolean(
+        game.user.uuid === record.data.requesterUserUuid
+        && status === "needs-changes"
         && !record.data.resultUuid
       );
       const canFulfill = Boolean(
@@ -839,6 +1058,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         resultStatus: linkedMission?.data.status ?? null,
         resultStatusLabel: linkedMission?.data.status ? stateLabel(linkedMission.data.status) : null,
         canWithdraw,
+        canRevise,
         canFulfill,
         modifiedTime: record.document?._stats?.modifiedTime ?? null,
         history: [...(record.data.history ?? [])].reverse().map((entry) => ({
@@ -846,7 +1066,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           kindLabel: REQUEST_STATUS_LABELS[entry.kind] ?? titleCase(entry.kind),
           userName: users.find((user) => user.uuid === entry.userUuid)?.name ?? (entry.userUuid || "Sistema")
         })),
-        canReview: Boolean(game.user.isGM && REQUEST_REVIEW_STATUSES.includes(status) && !record.data.resultUuid),
+        canReview: Boolean(game.user.isGM && status !== "needs-changes" && REQUEST_REVIEW_STATUSES.includes(status) && !record.data.resultUuid),
         canMaterializeMission: Boolean(
           game.user.isGM
           && status === "approved"
@@ -861,7 +1081,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ? requests.find((entry) => entry.uuid === this.reviewingRequestUuid) ?? null
       : null;
     if (this.reviewingRequestUuid && !reviewingRequest) this.reviewingRequestUuid = null;
+    const revisingRequest = this.revisingRequestUuid
+      ? requests.find((entry) => entry.uuid === this.revisingRequestUuid && entry.canRevise) ?? null
+      : null;
+    if (this.revisingRequestUuid && !revisingRequest) this.revisingRequestUuid = null;
     const requestTypeOptions = REQUEST_TYPES.map((value) => ({ value, label: REQUEST_TYPE_LABELS[value] ?? titleCase(value) }));
+    const requestRevisionTypeOptions = REQUEST_TYPES.map((value) => ({
+      value,
+      label: REQUEST_TYPE_LABELS[value] ?? titleCase(value),
+      selected: revisingRequest?.type === value
+    }));
     const requestReviewStatusOptions = REQUEST_REVIEW_STATUSES.map((value) => ({
       value,
       label: REQUEST_STATUS_LABELS[value] ?? titleCase(value),
@@ -885,6 +1114,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       return {
         ...recordSummary(record),
         description: record.data.description ?? "",
+        expectedModifiedTime: record.document?._stats?.modifiedTime ?? null,
         entityIdShort: record.data.entityId?.slice(-10)?.toUpperCase() ?? "—",
         strength: record.data.strength,
         capacity: record.data.capacity,
@@ -971,6 +1201,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       return {
         ...recordSummary(record),
         briefing: record.data.briefing ?? "",
+        description: record.data.briefing || "Sem resumo operacional.",
+        expectedModifiedTime: record.document?._stats?.modifiedTime ?? null,
         objectives: (record.data.objectives ?? []).map((objective) => ({
           ...objective,
           isPending: objective.status === "pending",
@@ -990,6 +1222,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           : "GM ONLY",
         canLaunch: Boolean(game.user.isGM && record.data.status === "available" && assignments.length),
         canResolve: Boolean(game.user.isGM && record.data.status === "active"),
+        canEdit: Boolean(game.user.isGM && ["planned", "available"].includes(record.data.status)),
+        canPublish: Boolean(game.user.isGM && record.data.status === "planned"),
         isAvailable: record.data.status === "available",
         isActive: record.data.status === "active",
         isTerminal: ["resolved", "failed", "cancelled"].includes(record.data.status),
@@ -998,6 +1232,19 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         outcomeSummary: record.data.outcomeSummary ?? ""
       };
     });
+
+    const editingMissionRecord = this.editingMissionUuid
+      ? related.missions.find((record) => record.uuid === this.editingMissionUuid) ?? null
+      : null;
+    if (this.editingMissionUuid && !editingMissionRecord) {
+      this.editingMissionUuid = null;
+      this.isCreateMissionOpen = false;
+    }
+    const editingMission = editingMissionRecord ? {
+      ...missions.find((entry) => entry.uuid === editingMissionRecord.uuid),
+      objectiveLines: (editingMissionRecord.data.objectives ?? []).map((objective) => objective.title).join("\n"),
+      outcomeSummary: editingMissionRecord.data.outcomeSummary ?? ""
+    } : null;
 
     const editingSquadRecord = this.editingSquadUuid
       ? related.squads.find((record) => record.uuid === this.editingSquadUuid) ?? null
@@ -1063,7 +1310,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const missionAudienceOptions = users.filter((candidate) => !candidate.isGM).map((candidate) => ({
       id: candidate.id,
       name: candidate.name,
-      active: Boolean(candidate.active)
+      active: Boolean(candidate.active),
+      checked: Boolean(editingMissionRecord?.data.audienceUserIds?.includes(candidate.id))
     }));
 
     const resourceDefs = new Map((catalog?.resources ?? []).map((resource) => [resource.id, resource]));
@@ -1100,6 +1348,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         conditionSegments: meterSegments(record.data.condition),
         capacity: record.data.capacity ?? 0,
         workforceRequired: Number(record.data.workforceRequired ?? 0),
+        maintenancePriority: Number(record.data.maintenancePriority ?? 50),
+        expectedModifiedTime: record.document?._stats?.modifiedTime ?? null,
         maintenance: mapProfile(record.data.maintenance),
         production: mapProfile(record.data.production),
         tags: record.data.tags ?? [],
@@ -1405,6 +1655,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         type: record.data.type ?? "custom",
         typeLabel: AGREEMENT_TYPE_LABELS[record.data.type] ?? titleCase(record.data.type ?? "custom"),
         statusLabel: AGREEMENT_STATUS_LABELS[record.data.status] ?? stateLabel(record.data.status),
+        isTerminated: record.data.status === "terminated",
         parties,
         partyLabel: parties.map((party) => party.name).join(" ↔ "),
         transfers,
@@ -1471,8 +1722,32 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const history = [...(selectedDomain?.data?.history ?? [])].reverse();
     const conditions = (selectedDomain?.data?.conditions ?? []).map((condition) => ({
       ...condition,
+      label: condition.name,
+      severityLabel: condition.severity === "severe" ? "Grave" : condition.severity === "moderate" ? "Moderada" : "Leve",
+      categoryLabel: CONDITION_CATEGORY_LABELS[condition.category] ?? titleCase(condition.category || "ambiental"),
+      durationLabel: condition.durationTicks == null ? "Indefinida" : `${condition.durationTicks} tick(s)`,
+      stateLabel: condition.active === false ? "Inativa" : "Ativa",
       tone: condition.severity === "severe" ? "critical" : condition.severity === "moderate" ? "warning" : "neutral"
     }));
+    const activeConditions = conditions.filter((condition) => condition.active !== false);
+    const editingCondition = this.editingConditionId && this.editingConditionId !== "__new__"
+      ? conditions.find((condition) => condition.localId === this.editingConditionId) ?? null
+      : null;
+    if (this.editingConditionId && this.editingConditionId !== "__new__" && !editingCondition) this.editingConditionId = null;
+    const conditionSeverityOptions = [
+      { value: "minor", label: "Leve" },
+      { value: "moderate", label: "Moderada" },
+      { value: "severe", label: "Grave" }
+    ].map((option) => ({ ...option, selected: (editingCondition?.severity ?? "minor") === option.value }));
+    const conditionCategoryOptions = ["environmental", "economic", "social", "political", "logistical", "military", "other"]
+      .map((value) => ({ value, label: CONDITION_CATEGORY_LABELS[value] ?? titleCase(value), selected: (editingCondition?.category ?? "environmental") === value }));
+    const conditionStats = {
+      total: conditions.length,
+      active: activeConditions.length,
+      severe: activeConditions.filter((condition) => condition.severity === "severe").length,
+      finite: activeConditions.filter((condition) => condition.durationTicks != null).length,
+      indefinite: activeConditions.filter((condition) => condition.durationTicks == null).length
+    };
 
     const domainRisks = selectedDomain ? calculateDomainRisks(selectedDomain.data, catalog) : null;
     const defense = selectedDomain ? {
@@ -1516,18 +1791,26 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       searchQuery: this.searchQuery,
       inspectorOpen: this.isInspectorOpen,
       isCreateDomainOpen: this.isCreateDomainOpen,
+      domainEditor,
+      isDomainDeleteOpen: this.isDomainDeleteOpen,
+      domainDeleteReport,
+      isDomainBusy: this.isDomainBusy,
       isDomainMediaOpen: this.isDomainMediaOpen,
       isCreateSquadOpen: this.isCreateSquadOpen,
       isCreateMissionOpen: this.isCreateMissionOpen,
+      editingMission,
       preparingMission,
       preparingSquad,
       existingPreparation,
       missionPrepareResources,
       resolvingMission,
+      pendingMissionRelease: this.pendingMissionRelease,
+      pendingMissionLaunch: this.pendingMissionLaunch,
       missionAudienceOptions,
       canCreateMission: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.missions),
       editingSquad,
       supplySquad,
+      supplyDomainExpectedModifiedTime: selectedDomain?.document?._stats?.modifiedTime ?? null,
       supplyResourceOptions,
       controllerOptions,
       squadStatusOptions,
@@ -1547,6 +1830,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       populationCountModeOptions,
       isPopulationConfigOpen: this.isPopulationConfigOpen,
       isPopulationGroupOpen: this.editingPopulationGroupId !== null,
+      pendingPopulationGroupRemoval: this.pendingPopulationGroupRemoval,
       isWorkforceOpen: this.isWorkforceOpen,
       canManagePopulation,
       editingPerson,
@@ -1581,6 +1865,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       projectStatusOptions,
       projectCostEditorOpen,
       editingProjectCost,
+      pendingProjectCostRemoval,
       projectResourceOptions,
       projectCostModeOptions,
       missions,
@@ -1598,19 +1883,24 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       relationTargetOptions,
       diplomaticPostureOptions,
       isRelationEditorOpen: this.editingRelationId !== null,
+      pendingRelationRemoval: this.pendingRelationRemoval,
       canManageDiplomacy,
       agreements,
       agreementDomainOptions,
       agreementTypeOptions,
       agreementResourceOptions,
       isAgreementCreateOpen: this.isAgreementCreateOpen,
+      pendingAgreementStatus: this.pendingAgreementStatus,
       requests,
       selectedRequest,
       reviewingRequest,
+      revisingRequest,
       canCreateRequest,
       isRequestCreateOpen: this.isRequestCreateOpen,
       isRequestReviewOpen: this.reviewingRequestUuid !== null,
+      isRequestRevisionOpen: this.revisingRequestUuid !== null,
       requestTypeOptions,
+      requestRevisionTypeOptions,
       requestReviewStatusOptions,
       requestHandlingOptions,
       intel,
@@ -1622,9 +1912,18 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       intelVisibilityOptions,
       intelTargetOptions,
       isIntelEditorOpen: this.editingIntelId !== null,
+      pendingIntelAction: this.pendingIntelAction,
       canManageIntel,
       history,
       conditions,
+      activeConditions,
+      conditionStats,
+      editingCondition,
+      conditionSeverityOptions,
+      conditionCategoryOptions,
+      canManageConditions: Boolean(game.user.isGM && selectedDomain),
+      isConditionEditorOpen: this.editingConditionId !== null,
+      pendingConditionRemoval: this.pendingConditionRemoval,
       controllers,
       allMissions,
       allSquads,
@@ -1664,13 +1963,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static onSelectDomain(event, target) {
     const uuid = target?.dataset?.uuid;
     if (!uuid) return;
+    if (uuid !== this.selectedDomainUuid) this.resetDomainScopedState();
     this.selectedDomainUuid = uuid;
-    this.selectedProjectUuid = null;
-    this.editingProjectUuid = null;
-    this.editingProjectCostId = null;
-    this.selectedRequestUuid = null;
-    this.isRequestCreateOpen = false;
-    this.reviewingRequestUuid = null;
     if (GLOBAL_VIEW_IDS.has(this.activeView) && this.activeView !== "domains") this.activeView = "overview";
     this.render({ force: true });
   }
@@ -1682,6 +1976,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!document || !canViewDocument(document)) return;
     this.selectedRequestUuid = uuid;
     this.reviewingRequestUuid = null;
+    this.revisingRequestUuid = null;
     this.render({ force: true });
   }
 
@@ -1692,6 +1987,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!canSubmitDomainRequest(domain)) return;
     this.isRequestCreateOpen = true;
     this.reviewingRequestUuid = null;
+    this.revisingRequestUuid = null;
     this.render({ force: true });
   }
 
@@ -1738,9 +2034,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const document = recordIndex.get(RECORD_TYPES.REQUEST, uuid);
     if (!document || !canViewDocument(document)) return;
     const request = decodeRecord(document);
-    if (!REQUEST_REVIEW_STATUSES.includes(request.data.status)) return;
+    if (!REQUEST_REVIEW_STATUSES.includes(request.data.status) || request.data.status === "needs-changes") return;
     this.selectedRequestUuid = uuid;
     this.reviewingRequestUuid = uuid;
+    this.revisingRequestUuid = null;
     this.isRequestCreateOpen = false;
     this.render({ force: true });
   }
@@ -1763,7 +2060,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.REQUEST_REVIEW,
         payload: {
           request: entityReference(request),
-          expectedModifiedTime: request.document?._stats?.modifiedTime ?? null,
+          expectedModifiedTime: data.get("expectedModifiedTime"),
           status: String(data.get("status") ?? "under-review"),
           summary: String(data.get("summary") ?? ""),
           handling: String(data.get("handling") ?? "none")
@@ -1775,6 +2072,56 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     } catch (error) {
       console.error("Domain Manager | Falha ao revisar Request", error);
       ui.notifications.error(error.message ?? "Falha ao revisar solicitação.");
+    } finally {
+      this.isRequestBusy = false;
+    }
+  }
+
+  static onOpenRequestRevision(event, target) {
+    const uuid = String(target?.dataset?.requestUuid ?? this.selectedRequestUuid ?? "");
+    if (!uuid) return;
+    const document = recordIndex.get(RECORD_TYPES.REQUEST, uuid);
+    if (!document || !canViewDocument(document)) return;
+    const request = decodeRecord(document);
+    if (request.data.requesterUserUuid !== game.user.uuid || request.data.status !== "needs-changes" || request.data.resultUuid) return;
+    this.selectedRequestUuid = uuid;
+    this.revisingRequestUuid = uuid;
+    this.reviewingRequestUuid = null;
+    this.isRequestCreateOpen = false;
+    this.render({ force: true });
+  }
+
+  static onCloseRequestRevision() {
+    this.revisingRequestUuid = null;
+    this.render({ force: true });
+  }
+
+  static async onSubmitRequestRevision() {
+    if (this.isRequestBusy || !this.revisingRequestUuid) return;
+    const form = this.element?.querySelector?.("#dm-request-revision-form");
+    const document = recordIndex.get(RECORD_TYPES.REQUEST, this.revisingRequestUuid);
+    if (!form || !document || !canViewDocument(document)) return;
+    const request = decodeRecord(document);
+    const data = new FormData(form);
+    this.isRequestBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.REQUEST_RESUBMIT,
+        payload: {
+          request: entityReference(request),
+          expectedModifiedTime: data.get("expectedModifiedTime"),
+          type: String(data.get("type") ?? "custom"),
+          title: String(data.get("title") ?? ""),
+          intent: String(data.get("intent") ?? ""),
+          details: String(data.get("details") ?? "")
+        }
+      });
+      this.revisingRequestUuid = null;
+      ui.notifications.info("Solicitação corrigida e reenviada para análise.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao reenviar Request", error);
+      ui.notifications.error(error.message ?? "Falha ao reenviar solicitação.");
     } finally {
       this.isRequestBusy = false;
     }
@@ -1862,11 +2209,130 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  static onOpenConditionEditor(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = String(target?.dataset?.conditionId ?? "__new__");
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    if (!domain) return;
+    if (localId !== "__new__" && !(domain.data.conditions ?? []).some((condition) => condition.localId === localId)) return;
+    this.editingConditionId = localId;
+    this.pendingConditionRemoval = null;
+    this.render({ force: true });
+  }
+
+  static onCloseConditionEditor() {
+    this.editingConditionId = null;
+    this.render({ force: true });
+  }
+
+  static async onSubmitConditionEditor() {
+    if (!game.user.isGM || this.isConditionBusy || !this.selectedDomainUuid || this.editingConditionId === null) return;
+    const form = this.element?.querySelector?.("#dm-condition-form");
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    if (!form || !domain) return;
+    const data = new FormData(form);
+    const editing = this.editingConditionId !== "__new__";
+    const condition = {
+      name: String(data.get("name") ?? ""),
+      description: String(data.get("description") ?? ""),
+      durationTicks: String(data.get("durationTicks") ?? "").trim() || null,
+      severity: String(data.get("severity") ?? "minor"),
+      category: String(data.get("category") ?? "environmental"),
+      active: data.has("active")
+    };
+    this.isConditionBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: editing ? COMMAND_TYPES.CONDITION_UPDATE : COMMAND_TYPES.CONDITION_CREATE,
+        payload: {
+          domain: entityReference(domain),
+          expectedModifiedTime: data.get("expectedModifiedTime"),
+          ...(editing ? { localId: this.editingConditionId, patch: condition } : { condition })
+        }
+      });
+      this.editingConditionId = null;
+      ui.notifications.info(editing ? "Condição atualizada." : "Condição criada.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao salvar Condition", error);
+      ui.notifications.error(error.message ?? "Falha ao salvar condição.");
+    } finally {
+      this.isConditionBusy = false;
+    }
+  }
+
+  static async onToggleCondition(event, target) {
+    if (!game.user.isGM || this.isConditionBusy || !this.selectedDomainUuid) return;
+    const localId = String(target?.dataset?.conditionId ?? "");
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    if (!domain || !(domain.data.conditions ?? []).some((condition) => condition.localId === localId)) return;
+    this.isConditionBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.CONDITION_TOGGLE,
+        payload: { domain: entityReference(domain), expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null, localId }
+      });
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao alternar Condition", error);
+      ui.notifications.error(error.message ?? "Falha ao alterar condição.");
+    } finally {
+      this.isConditionBusy = false;
+    }
+  }
+
+  static onRemoveCondition(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const localId = String(target?.dataset?.conditionId ?? this.editingConditionId ?? "");
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    const condition = domain?.data.conditions?.find((entry) => entry.localId === localId);
+    if (!domain || !condition) return;
+    this.editingConditionId = null;
+    this.pendingConditionRemoval = {
+      ...condition,
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelRemoveCondition() {
+    this.pendingConditionRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemoveCondition() {
+    if (!game.user.isGM || this.isConditionBusy || !this.selectedDomainUuid || !this.pendingConditionRemoval) return;
+    const pending = this.pendingConditionRemoval;
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    if (!domain) return;
+    this.isConditionBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.CONDITION_REMOVE,
+        payload: { domain: entityReference(domain), expectedModifiedTime: pending.expectedModifiedTime, localId: pending.localId }
+      });
+      this.pendingConditionRemoval = null;
+      ui.notifications.info("Condição removida.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao remover Condition", error);
+      ui.notifications.error(error.message ?? "Falha ao remover condição.");
+    } finally {
+      this.isConditionBusy = false;
+    }
+  }
+
   static onSelectProject(event, target) {
     const uuid = String(target?.dataset?.projectUuid ?? "");
     if (!uuid) return;
-    this.selectedProjectUuid = uuid;
-    this.editingProjectCostId = null;
+      this.selectedProjectUuid = uuid;
+      this.editingProjectCostId = null;
+      this.pendingProjectCostRemoval = null;
     this.render({ force: true });
   }
 
@@ -1884,6 +2350,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
     this.editingProjectUuid = uuid;
     this.editingProjectCostId = null;
+    this.pendingProjectCostRemoval = null;
     this.render({ force: true });
   }
 
@@ -1917,6 +2384,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         const project = projectDocument ? decodeRecord(projectDocument) : null;
         if (!project || project.data.domainUuid !== domain.uuid) throw new Error("O projeto não pertence ao domínio selecionado.");
         payload.project = entityReference(project);
+        payload.expectedModifiedTime = Number(data.get("expectedModifiedTime")) || null;
       } else {
         delete payload.blockedReason;
         payload.costs = [];
@@ -1948,6 +2416,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const localId = String(target?.dataset?.costId ?? "__new__");
     if (localId !== "__new__" && !(project.data.costs ?? []).some((cost) => cost.localId === localId)) return;
     this.editingProjectCostId = localId;
+    this.pendingProjectCostRemoval = null;
     this.render({ force: true });
   }
 
@@ -1982,6 +2451,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: {
           domain: entityReference(domain),
           project: entityReference(project),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           cost: {
             localId: this.editingProjectCostId === "__new__" ? null : this.editingProjectCostId,
             resourceId,
@@ -2001,7 +2471,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async onRemoveProjectCost(event, target) {
+  static onRemoveProjectCost(event, target) {
     if (this.isProjectBusy || !this.selectedDomainUuid || !this.selectedProjectUuid) return;
     const localId = String(target?.dataset?.costId ?? "");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
@@ -2009,17 +2479,40 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const domain = domainDocument ? decodeRecord(domainDocument) : null;
     const project = projectDocument ? decodeRecord(projectDocument) : null;
     if (!localId || !canManageDomainProjects(domain) || !project || project.data.domainUuid !== domain.uuid) return;
+    if (!(project.data.costs ?? []).some((cost) => cost.localId === localId)) return;
+    this.pendingProjectCostRemoval = {
+      localId,
+      expectedModifiedTime: project.document?._stats?.modifiedTime ?? null
+    };
+    this.editingProjectCostId = null;
+    this.render({ force: true });
+  }
+
+  static onCancelRemoveProjectCost() {
+    this.pendingProjectCostRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemoveProjectCost() {
+    if (this.isProjectBusy || !this.selectedDomainUuid || !this.selectedProjectUuid || !this.pendingProjectCostRemoval) return;
+    const { localId, expectedModifiedTime } = this.pendingProjectCostRemoval;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const projectDocument = recordIndex.get(RECORD_TYPES.PROJECT, this.selectedProjectUuid);
+    const domain = domainDocument ? decodeRecord(domainDocument) : null;
+    const project = projectDocument ? decodeRecord(projectDocument) : null;
+    if (!canManageDomainProjects(domain) || !project || project.data.domainUuid !== domain.uuid) return;
     this.isProjectBusy = true;
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.PROJECT_COST_REMOVE,
-        payload: { domain: entityReference(domain), project: entityReference(project), localId }
+        payload: { domain: entityReference(domain), project: entityReference(project), expectedModifiedTime, localId }
       });
       if (this.editingProjectCostId === localId) this.editingProjectCostId = null;
+      this.pendingProjectCostRemoval = null;
       ui.notifications.info("Custo removido do projeto.");
       await this.render({ force: true });
     } catch (error) {
-      console.error("Domain Manager | Falha ao remover custo de Project", error);
+      console.error("Domain Manager | Falha ao remover custo de projeto", error);
       ui.notifications.error(error.message ?? "Falha ao remover custo do projeto.");
     } finally {
       this.isProjectBusy = false;
@@ -2166,6 +2659,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.POPULATION_CONFIGURE,
         payload: {
           domain: entityReference(domain),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           total: Number(data.get("total") ?? 0),
           countMode: String(data.get("countMode") ?? "direct"),
           morale: Number(data.get("morale") ?? 60)
@@ -2207,6 +2701,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.POPULATION_GROUP_UPSERT,
         payload: {
           domain: entityReference(domain),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           localId: localId === "__new__" ? "" : localId,
           name: String(data.get("name") ?? ""),
           count: Number(data.get("count") ?? 0),
@@ -2230,10 +2725,40 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async onRemovePopulationGroup(event, target) {
+  static onRemovePopulationGroup(event, target) {
     if (this.isPopulationBusy || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.groupId ?? "");
     if (!localId || localId === "__new__") return;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!domainDocument) return;
+    const domain = decodeRecord(domainDocument);
+    const group = (domain.data.population?.groups ?? []).find((entry) => entry.localId === localId);
+    if (!group) return;
+    const assigned = (domain.data.population?.workforce?.allocations ?? [])
+      .filter((entry) => entry.groupLocalId === localId)
+      .reduce((sum, entry) => sum + Number(entry.count ?? 0), 0);
+    if (assigned > 0) {
+      ui.notifications.warn(`Remova primeiro as alocações de ${assigned} trabalhador(es) deste grupo.`);
+      return;
+    }
+    this.pendingPopulationGroupRemoval = {
+      localId,
+      name: group.name,
+      count: Number(group.count ?? 0),
+      workforceEligible: Number(group.workforceEligible ?? 0),
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelRemovePopulationGroup() {
+    this.pendingPopulationGroupRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemovePopulationGroup() {
+    if (this.isPopulationBusy || !this.selectedDomainUuid || !this.pendingPopulationGroupRemoval) return;
+    const pending = this.pendingPopulationGroupRemoval;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!domainDocument) return;
     const domain = decodeRecord(domainDocument);
@@ -2241,13 +2766,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.POPULATION_GROUP_REMOVE,
-        payload: { domain: entityReference(domain), localId }
+        payload: { domain: entityReference(domain), expectedModifiedTime: pending.expectedModifiedTime, localId: pending.localId }
       });
       this.editingPopulationGroupId = null;
+      this.pendingPopulationGroupRemoval = null;
       ui.notifications.info("Grupo populacional removido.");
       await this.render({ force: true });
     } catch (error) {
-      console.error("Domain Manager | Falha ao remover cohort", error);
+      console.error("Domain Manager | Falha ao remover grupo populacional", error);
       ui.notifications.error(error.message ?? "Falha ao remover grupo populacional.");
     } finally {
       this.isPopulationBusy = false;
@@ -2285,7 +2811,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.POPULATION_WORKFORCE_SET,
-        payload: { domain: entityReference(domain), allocations }
+        payload: {
+          domain: entityReference(domain),
+          expectedModifiedTime: Number(new FormData(form).get("expectedModifiedTime")) || null,
+          allocations
+        }
       });
       this.isWorkforceOpen = false;
       ui.notifications.info("Distribuição da força de trabalho sincronizada.");
@@ -2345,7 +2875,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         const person = decodeRecord(personDocument);
         await executeCommandAuthoritatively({
           commandType: COMMAND_TYPES.PERSON_UPDATE,
-          payload: { person: entityReference(person), ...common }
+          payload: {
+            person: entityReference(person),
+            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+            ...common
+          }
         });
         this.selectedPersonUuid = person.uuid;
       } else {
@@ -2353,7 +2887,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           commandType: COMMAND_TYPES.PERSON_CREATE,
           payload: { domain: entityReference(domain), ...common }
         });
-        this.selectedPersonUuid = result?.result?.uuid ?? this.selectedPersonUuid;
+        this.selectedPersonUuid = result?.uuid ?? this.selectedPersonUuid;
       }
       this.isPersonEditorOpen = false;
       this.editingPersonUuid = null;
@@ -2380,7 +2914,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenDomainMedia() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (this.isDomainBusy || !game.user.isGM || !this.selectedDomainUuid) return;
     this.isDomainMediaOpen = true;
     this.render({ force: true });
   }
@@ -2434,7 +2968,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitDomainMedia() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (this.isDomainBusy || !game.user.isGM || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-domain-media-form");
     if (!form) return;
     const data = new FormData(form);
@@ -2450,33 +2984,53 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ["visuals.imageZoom", "imageZoom"],
       ["visuals.themeColorHex", "themeColorHex"]
     ];
+    this.isDomainBusy = true;
     try {
       const updates = fields
         .filter(([, formName]) => data.has(formName))
         .map(([fieldPath, formName]) => [fieldPath, data.get(formName)]);
-      await updateDomainMediaFields({ domainUuid: this.selectedDomainUuid, fields: updates });
+      const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+      if (!domainDocument) throw new Error("Domínio selecionado não está mais disponível.");
+      const domain = decodeRecord(domainDocument);
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.DOMAIN_MEDIA_UPDATE,
+        payload: { domain: entityReference(domain), fields: updates }
+      });
       this.isDomainMediaOpen = false;
       ui.notifications.info("Aparência do domínio atualizada.");
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao atualizar aparência do domínio", error);
       ui.notifications.error(error.message ?? "Falha ao atualizar aparência do domínio.");
+    } finally {
+      this.isDomainBusy = false;
     }
   }
 
   static onOpenCreateDomain() {
-    if (!game.user.isGM) return;
+    if (this.isDomainBusy || !game.user.isGM) return;
+    this.editingDomainUuid = null;
+    this.isCreateDomainOpen = true;
+    this.render({ force: true });
+  }
+
+  static onOpenEditDomain(event, target) {
+    if (this.isDomainBusy || !game.user.isGM) return;
+    const uuid = String(target?.dataset?.uuid ?? this.selectedDomainUuid ?? "").trim();
+    if (!uuid || !recordIndex.get(RECORD_TYPES.DOMAIN, uuid)) return;
+    this.editingDomainUuid = uuid;
     this.isCreateDomainOpen = true;
     this.render({ force: true });
   }
 
   static onCancelCreateDomain() {
     this.isCreateDomainOpen = false;
+    this.editingDomainUuid = null;
     this.render({ force: true });
   }
 
   static async onSubmitCreateDomain() {
-    if (!game.user.isGM) return;
+    if (this.isDomainBusy || !game.user.isGM) return;
     const form = this.element?.querySelector?.("#dm-create-domain-form");
     if (!form) return;
     const data = new FormData(form);
@@ -2486,23 +3040,103 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       return;
     }
 
+    const checkedCapabilities = new Set(data.getAll("capabilities").map(String));
+    const common = {
+      name,
+      description: String(data.get("description") ?? ""),
+      category: String(data.get("category") ?? "Base"),
+      nature: String(data.get("nature") ?? "physical"),
+      state: String(data.get("state") ?? "active"),
+      tags: String(data.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
+      controllerIds: data.getAll("controllerIds").map(String),
+      locatedInUuid: String(data.get("locatedInUuid") ?? "").trim() || null,
+      administrativeParentUuid: String(data.get("administrativeParentUuid") ?? "").trim() || null,
+      managementPreset: String(data.get("preset") ?? "base"),
+      capabilities: Object.fromEntries(CAPABILITY_KEYS.map((key) => [key, checkedCapabilities.has(key)]))
+    };
+
+    this.isDomainBusy = true;
     try {
-      const created = await createDomainAction({
-        name,
-        description: String(data.get("description") ?? ""),
-        category: String(data.get("category") ?? "Base"),
-        nature: String(data.get("nature") ?? "physical"),
-        managementPreset: String(data.get("preset") ?? "base"),
-        controllerIds: []
+      const editingDocument = this.editingDomainUuid
+        ? recordIndex.get(RECORD_TYPES.DOMAIN, this.editingDomainUuid)
+        : null;
+      const result = await executeCommandAuthoritatively({
+        commandType: editingDocument ? COMMAND_TYPES.DOMAIN_UPDATE : COMMAND_TYPES.DOMAIN_CREATE,
+        payload: editingDocument ? {
+          domain: entityReference(decodeRecord(editingDocument)),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+          ...common
+        } : common
       });
-      this.selectedDomainUuid = created?.uuid ?? created?.document?.uuid ?? null;
-      this.activeView = "overview";
+      if (!editingDocument) {
+        this.resetDomainScopedState();
+        this.selectedDomainUuid = result?.uuid ?? null;
+        this.activeView = "overview";
+      }
       this.isCreateDomainOpen = false;
-      ui.notifications.info(`Domínio ${name} criado.`);
+      this.editingDomainUuid = null;
+      ui.notifications.info(editingDocument ? `Domínio ${name} atualizado.` : `Domínio ${name} criado.`);
       await this.render({ force: true });
     } catch (error) {
-      console.error("Domain Manager | Falha ao criar domínio", error);
-      ui.notifications.error(error.message ?? "Falha ao criar domínio.");
+      console.error("Domain Manager | Falha ao salvar domínio", error);
+      ui.notifications.error(error.message ?? "Falha ao salvar domínio.");
+    } finally {
+      this.isDomainBusy = false;
+    }
+  }
+
+  static onOpenDeleteDomain(event, target) {
+    if (this.isDomainBusy || !game.user.isGM) return;
+    const uuid = String(target?.dataset?.uuid ?? this.selectedDomainUuid ?? "").trim();
+    if (!uuid || !recordIndex.get(RECORD_TYPES.DOMAIN, uuid)) return;
+    if (uuid !== this.selectedDomainUuid) {
+      this.resetDomainScopedState();
+      this.selectedDomainUuid = uuid;
+    }
+    this.isDomainDeleteOpen = true;
+    this.render({ force: true });
+  }
+
+  static onCancelDeleteDomain() {
+    if (this.isDomainBusy) return;
+    this.isDomainDeleteOpen = false;
+    this.render({ force: true });
+  }
+
+  static async onSubmitDeleteDomain() {
+    if (this.isDomainBusy || !game.user.isGM || !this.isDomainDeleteOpen || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector?.("#dm-domain-delete-form");
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!form || !domainDocument) return;
+    const domain = decodeRecord(domainDocument);
+    const data = new FormData(form);
+    const confirmation = String(data.get("confirmation") ?? "").trim();
+    if (confirmation !== domain.data.entityId) {
+      ui.notifications.warn(`Digite ${domain.data.entityId} exatamente para confirmar.`);
+      return;
+    }
+
+    this.isDomainBusy = true;
+    try {
+      const result = await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.DOMAIN_DELETE,
+        payload: {
+          domain: entityReference(domain),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+          confirmation
+        }
+      });
+      this.resetDomainScopedState();
+      const nextDomain = listVisibleRecords(RECORD_TYPES.DOMAIN)[0] ?? null;
+      this.selectedDomainUuid = nextDomain?.uuid ?? null;
+      this.activeView = "domains";
+      ui.notifications.info(`Domínio ${result.name} excluído permanentemente.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao excluir domínio", error);
+      ui.notifications.error(error.message ?? "Falha ao excluir domínio.");
+    } finally {
+      this.isDomainBusy = false;
     }
   }
 
@@ -2585,6 +3219,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       if (game.user.isGM) {
         await updateSquadAdministrationAction({
           squad: entityReference(squad),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           name: data.get("name"),
           description: data.get("description"),
           controllerIds: data.getAll("controllerIds"),
@@ -2597,6 +3232,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       } else {
         await patchSquadAction({
           squad: entityReference(squad),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           patch: {
             description: data.get("description"),
             morale: data.get("morale"),
@@ -2667,11 +3303,20 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const squadRef = entityReference(squad);
     const from = direction === "domain-to-squad" ? domainRef : squadRef;
     const to = direction === "domain-to-squad" ? squadRef : domainRef;
+    const squadRevision = Number(data.get("expectedSquadModifiedTime")) || null;
+    const domainRevision = Number(data.get("expectedDomainModifiedTime")) || null;
     this.isSquadBusy = true;
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.TRANSFER_RESOURCES,
-        payload: { from, to, resourceId, amount }
+        payload: {
+          from,
+          to,
+          resourceId,
+          amount,
+          expectedFromModifiedTime: direction === "domain-to-squad" ? domainRevision : squadRevision,
+          expectedToModifiedTime: direction === "domain-to-squad" ? squadRevision : domainRevision
+        }
       });
       ui.notifications.info(`${resource.name}: transferência sincronizada.`);
       this.supplySquadUuid = null;
@@ -2687,14 +3332,38 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static onOpenCreateMission() {
     if (!game.user.isGM || !this.selectedDomainUuid) return;
     this.isCreateMissionOpen = true;
+    this.editingMissionUuid = null;
     this.preparingMissionUuid = null;
     this.preparingSquadUuid = null;
+    this.pendingMissionRelease = null;
+    this.pendingMissionLaunch = null;
+    this.resolvingMissionUuid = null;
+    this.render({ force: true });
+  }
+
+  static onOpenEditMission(event, target) {
+    if (!game.user.isGM) return;
+    const missionUuid = target?.dataset?.missionUuid;
+    const document = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
+    if (!document) return;
+    const mission = decodeRecord(document);
+    if (!["planned", "available"].includes(mission.data.status)) {
+      ui.notifications.warn("Somente missões planejadas ou disponíveis podem ter o planejamento editado.");
+      return;
+    }
+    this.isCreateMissionOpen = true;
+    this.editingMissionUuid = missionUuid;
+    this.preparingMissionUuid = null;
+    this.preparingSquadUuid = null;
+    this.pendingMissionRelease = null;
+    this.pendingMissionLaunch = null;
     this.resolvingMissionUuid = null;
     this.render({ force: true });
   }
 
   static onCancelCreateMission() {
     this.isCreateMissionOpen = false;
+    this.editingMissionUuid = null;
     this.render({ force: true });
   }
 
@@ -2704,36 +3373,93 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
     const domain = decodeRecord(domainDocument);
+    const missionDocument = this.editingMissionUuid
+      ? recordIndex.get(RECORD_TYPES.MISSION, this.editingMissionUuid)
+      : null;
+    const mission = missionDocument ? decodeRecord(missionDocument) : null;
     const data = new FormData(form);
     const name = String(data.get("name") ?? "").trim();
     if (!name) {
       ui.notifications.warn("Informe um nome para a missão.");
       return;
     }
-    const objectives = String(data.get("objectives") ?? "")
+    const objectiveTitles = String(data.get("objectives") ?? "")
       .split(/\r?\n/)
       .map((title) => title.trim())
-      .filter(Boolean)
-      .map((title) => ({ title }));
+      .filter(Boolean);
+    const objectives = objectiveTitles.map((title, index) => ({
+      ...(mission?.data.objectives?.[index] ?? {}),
+      title,
+      status: mission?.data.objectives?.[index]?.status ?? "pending"
+    }));
     this.isMissionBusy = true;
     try {
-      await executeCommandAuthoritatively({
-        commandType: COMMAND_TYPES.MISSION_CREATE,
-        payload: {
-          name,
-          primaryDomain: entityReference(domain),
-          audienceUserIds: data.getAll("audienceUserIds"),
-          status: String(data.get("status") ?? "available"),
-          briefing: String(data.get("briefing") ?? ""),
-          objectives
-        }
-      });
+      if (mission) {
+        const primaryDocument = recordIndex.get(RECORD_TYPES.DOMAIN, mission.data.primaryDomainUuid);
+        const relatedDocuments = (mission.data.relatedDomainUuids ?? [])
+          .map((uuid) => recordIndex.get(RECORD_TYPES.DOMAIN, uuid))
+          .filter(Boolean);
+        if (!primaryDocument) throw new Error("O domínio principal da missão não está disponível.");
+        await executeCommandAuthoritatively({
+          commandType: COMMAND_TYPES.MISSION_UPDATE,
+          payload: {
+            mission: entityReference(mission),
+            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+            expectedStatus: mission.data.status,
+            name,
+            primaryDomain: entityReference(decodeRecord(primaryDocument)),
+            relatedDomains: relatedDocuments.map((document) => entityReference(decodeRecord(document))),
+            audienceUserIds: data.getAll("audienceUserIds"),
+            briefing: String(data.get("briefing") ?? ""),
+            outcomeSummary: String(data.get("outcomeSummary") ?? ""),
+            objectives
+          }
+        });
+      } else {
+        await executeCommandAuthoritatively({
+          commandType: COMMAND_TYPES.MISSION_CREATE,
+          payload: {
+            name,
+            primaryDomain: entityReference(domain),
+            audienceUserIds: data.getAll("audienceUserIds"),
+            status: String(data.get("status") ?? "available"),
+            briefing: String(data.get("briefing") ?? ""),
+            objectives
+          }
+        });
+      }
       this.isCreateMissionOpen = false;
-      ui.notifications.info(`Missão ${name} registrada.`);
+      this.editingMissionUuid = null;
+      ui.notifications.info(`Missão ${name} ${mission ? "atualizada" : "registrada"}.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao criar Mission", error);
       ui.notifications.error(error.message ?? "Falha ao criar missão.");
+    } finally {
+      this.isMissionBusy = false;
+    }
+  }
+
+  static async onPublishMission(event, target) {
+    if (!game.user.isGM || this.isMissionBusy) return;
+    const missionUuid = target?.dataset?.missionUuid;
+    const document = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
+    if (!document) return;
+    const mission = decodeRecord(document);
+    this.isMissionBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.MISSION_PUBLISH,
+        payload: {
+          mission: entityReference(mission),
+          expectedModifiedTime: mission.document?._stats?.modifiedTime ?? null
+        }
+      });
+      ui.notifications.info(`${mission.document.name} publicada e disponível para preparação.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao publicar Mission", error);
+      ui.notifications.error(error.message ?? "Falha ao publicar missão.");
     } finally {
       this.isMissionBusy = false;
     }
@@ -2756,6 +3482,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.preparingMissionUuid = missionUuid;
     this.preparingSquadUuid = squadUuid;
     this.isCreateMissionOpen = false;
+    this.editingMissionUuid = null;
+    this.pendingMissionRelease = null;
+    this.pendingMissionLaunch = null;
     this.resolvingMissionUuid = null;
     this.render({ force: true });
   }
@@ -2794,6 +3523,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: {
           mission: entityReference(mission),
           squad: entityReference(squad),
+          expectedMissionModifiedTime: Number(data.get("expectedMissionModifiedTime")) || null,
+          expectedSquadModifiedTime: Number(data.get("expectedSquadModifiedTime")) || null,
           committedStrength: Number(data.get("committedStrength")),
           resources
         }
@@ -2810,7 +3541,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async onReleaseMissionAssignment(event, target) {
+  static onReleaseMissionAssignment(event, target) {
     if (this.isMissionBusy) return;
     const missionUuid = target?.dataset?.missionUuid;
     const squadUuid = target?.dataset?.squadUuid;
@@ -2819,12 +3550,45 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!missionDocument || !squadDocument) return;
     const mission = decodeRecord(missionDocument);
     const squad = decodeRecord(squadDocument);
+    const assignment = (mission.data.assignments ?? []).find((entry) => entry.squad?.uuid === squad.uuid || entry.squad?.entityId === squad.data.entityId);
+    if (!assignment) return;
+    this.pendingMissionRelease = {
+      missionUuid,
+      squadUuid,
+      missionName: mission.document.name,
+      squadName: squad.document.name,
+      committedStrength: assignment.committedStrength,
+      expectedMissionModifiedTime: mission.document?._stats?.modifiedTime ?? null,
+      expectedSquadModifiedTime: squad.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelReleaseMissionAssignment() {
+    this.pendingMissionRelease = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmReleaseMissionAssignment() {
+    if (this.isMissionBusy || !this.pendingMissionRelease) return;
+    const pending = this.pendingMissionRelease;
+    const missionDocument = recordIndex.get(RECORD_TYPES.MISSION, pending.missionUuid);
+    const squadDocument = recordIndex.get(RECORD_TYPES.SQUAD, pending.squadUuid);
+    if (!missionDocument || !squadDocument) return;
+    const mission = decodeRecord(missionDocument);
+    const squad = decodeRecord(squadDocument);
     this.isMissionBusy = true;
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.MISSION_RELEASE,
-        payload: { mission: entityReference(mission), squad: entityReference(squad) }
+        payload: {
+          mission: entityReference(mission),
+          squad: entityReference(squad),
+          expectedMissionModifiedTime: pending.expectedMissionModifiedTime,
+          expectedSquadModifiedTime: pending.expectedSquadModifiedTime
+        }
       });
+      this.pendingMissionRelease = null;
       ui.notifications.info(`${squad.document.name} liberado de ${mission.document.name}.`);
       await this.render({ force: true });
     } catch (error) {
@@ -2835,18 +3599,60 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async onLaunchMission(event, target) {
+  static onLaunchMission(event, target) {
     if (!game.user.isGM || this.isMissionBusy) return;
     const missionUuid = target?.dataset?.missionUuid;
     const missionDocument = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
+    if (!missionDocument) return;
+    const mission = decodeRecord(missionDocument);
+    const resources = new Map();
+    for (const assignment of mission.data.assignments ?? []) {
+      for (const entry of assignment.resources ?? []) resources.set(entry.resourceId, (resources.get(entry.resourceId) ?? 0) + entry.amount);
+    }
+    const catalog = getResourceCatalogSetting();
+    this.pendingMissionLaunch = {
+      missionUuid,
+      missionName: mission.document.name,
+      expectedModifiedTime: mission.document?._stats?.modifiedTime ?? null,
+      assignmentCount: mission.data.assignments?.length ?? 0,
+      committedStrength: (mission.data.assignments ?? []).reduce((sum, entry) => sum + Number(entry.committedStrength ?? 0), 0),
+      squads: (mission.data.assignments ?? []).map((entry) => entry.squad),
+      resources: [...resources].map(([resourceId, amount]) => {
+        const definition = catalog.resources?.find((entry) => entry.id === resourceId);
+        return {
+          resourceId,
+          amount,
+          amountDisplay: definition ? formatMinorUnits(amount, definition.precision) : String(amount),
+          name: definition?.name ?? resourceId,
+          unit: definition?.unit ?? ""
+        };
+      })
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelLaunchMission() {
+    this.pendingMissionLaunch = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmLaunchMission() {
+    if (!game.user.isGM || this.isMissionBusy || !this.pendingMissionLaunch) return;
+    const pending = this.pendingMissionLaunch;
+    const missionDocument = recordIndex.get(RECORD_TYPES.MISSION, pending.missionUuid);
     if (!missionDocument) return;
     const mission = decodeRecord(missionDocument);
     this.isMissionBusy = true;
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.MISSION_LAUNCH,
-        payload: { mission: entityReference(mission) }
+        payload: {
+          mission: entityReference(mission),
+          expectedModifiedTime: pending.expectedModifiedTime,
+          squads: pending.squads
+        }
       });
+      this.pendingMissionLaunch = null;
       ui.notifications.info(`${mission.document.name} lançada. Unidades em campo.`);
       await this.render({ force: true });
     } catch (error) {
@@ -2871,6 +3677,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.preparingMissionUuid = null;
     this.preparingSquadUuid = null;
     this.isCreateMissionOpen = false;
+    this.editingMissionUuid = null;
+    this.pendingMissionRelease = null;
+    this.pendingMissionLaunch = null;
     this.render({ force: true });
   }
 
@@ -2906,6 +3715,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.MISSION_RESOLVE,
         payload: {
           mission: entityReference(mission),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           status: String(data.get("status") ?? "resolved"),
           outcomeSummary: String(data.get("outcomeSummary") ?? ""),
           results,
@@ -2984,6 +3794,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       tier: Number(data.get("tier") ?? 1),
       maxTier: Number(data.get("maxTier") ?? 1),
       capacity: Number(data.get("capacity") ?? 0),
+      maintenancePriority: Number(data.get("maintenancePriority") ?? 50),
       workforceRequired: Number(data.get("workforceRequired") ?? 0),
       maintenance,
       production,
@@ -3059,6 +3870,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           commandType: COMMAND_TYPES.STRUCTURE_ADMIN_UPDATE,
           payload: {
             structure: entityReference(structure),
+            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
             name: String(data.get("name") ?? structure.document.name),
             description: String(data.get("description") ?? ""),
             category: String(data.get("category") ?? "general"),
@@ -3067,6 +3879,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
             status: String(data.get("status") ?? structure.data.status),
             condition: Number(data.get("condition") ?? structure.data.condition),
             capacity: Number(data.get("capacity") ?? 0),
+            maintenancePriority: Number(data.get("maintenancePriority") ?? 50),
             workforceRequired: Number(data.get("workforceRequired") ?? 0),
             maintenance,
             production,
@@ -3078,6 +3891,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           commandType: COMMAND_TYPES.STRUCTURE_PATCH,
           payload: {
             structure: entityReference(structure),
+            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
             patch: {
               description: String(data.get("description") ?? ""),
               status: String(data.get("status") ?? structure.data.status)
@@ -3184,6 +3998,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.RELATION_UPSERT,
         payload: {
           domain: entityReference(domain),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           localId: String(data.get("localId") ?? ""),
           target: entityReference(decodeRecord(targetDocument)),
           posture: String(data.get("posture") ?? "neutral"),
@@ -3204,18 +4019,50 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async onRemoveRelation(event, target) {
+  static onRemoveRelation(event, target) {
     if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.relationId ?? "");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!localId || !domainDocument) return;
+    const domain = decodeRecord(domainDocument);
+    const relation = (domain.data.relations ?? []).find((entry) => entry.localId === localId);
+    if (!relation) return;
+    const targetDocument = relation.target?.entityId
+      ? recordIndex.getByEntityId(relation.target.entityId)
+      : relation.target?.uuid || relation.targetDomainUuid
+        ? recordIndex.get(RECORD_TYPES.DOMAIN, relation.target?.uuid ?? relation.targetDomainUuid)
+        : null;
+    this.pendingRelationRemoval = {
+      localId,
+      targetName: targetDocument?.name ?? relation.target?.entityId ?? relation.targetDomainUuid ?? "Contraparte desconhecida",
+      postureLabel: DIPLOMATIC_POSTURE_LABELS[relation.posture] ?? stateLabel(relation.posture),
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelRemoveRelation() {
+    this.pendingRelationRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemoveRelation() {
+    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid || !this.pendingRelationRemoval) return;
+    const pending = this.pendingRelationRemoval;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!domainDocument) return;
     this.isStrategicIntelBusy = true;
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.RELATION_REMOVE,
-        payload: { domain: entityReference(decodeRecord(domainDocument)), localId }
+        payload: {
+          domain: entityReference(decodeRecord(domainDocument)),
+          expectedModifiedTime: pending.expectedModifiedTime,
+          localId: pending.localId
+        }
       });
       this.editingRelationId = null;
+      this.pendingRelationRemoval = null;
       ui.notifications.info("Relação diplomática removida.");
       await this.render({ force: true });
     } catch (error) {
@@ -3317,17 +4164,66 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const status = String(target?.dataset?.status ?? "");
     const document = uuid ? recordIndex.get(RECORD_TYPES.AGREEMENT, uuid) : null;
     if (!document || !status) return;
+    const agreement = decodeRecord(document);
+    if (agreement.data.status === status) return;
+    if (status === "terminated") {
+      this.pendingAgreementStatus = {
+        uuid,
+        name: agreement.document.name,
+        fromLabel: AGREEMENT_STATUS_LABELS[agreement.data.status] ?? stateLabel(agreement.data.status),
+        toLabel: AGREEMENT_STATUS_LABELS[status] ?? stateLabel(status),
+        status,
+        expectedModifiedTime: agreement.document?._stats?.modifiedTime ?? null
+      };
+      this.render({ force: true });
+      return;
+    }
     this.isStrategicIntelBusy = true;
     try {
       await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.AGREEMENT_STATUS,
-        payload: { agreement: entityReference(decodeRecord(document)), status }
+        payload: {
+          agreement: entityReference(agreement),
+          expectedModifiedTime: agreement.document?._stats?.modifiedTime ?? null,
+          status
+        }
       });
       ui.notifications.info(`Acordo alterado para ${stateLabel(status)}.`);
       await this.render({ force: true });
     } catch (error) {
       console.error("Domain Manager | Falha ao alterar Agreement", error);
       ui.notifications.error(error.message ?? "Falha ao alterar acordo.");
+    } finally {
+      this.isStrategicIntelBusy = false;
+    }
+  }
+
+  static onCancelAgreementStatus() {
+    this.pendingAgreementStatus = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmAgreementStatus() {
+    if (!game.user.isGM || this.isStrategicIntelBusy || !this.pendingAgreementStatus) return;
+    const pending = this.pendingAgreementStatus;
+    const document = recordIndex.get(RECORD_TYPES.AGREEMENT, pending.uuid);
+    if (!document) return;
+    this.isStrategicIntelBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.AGREEMENT_STATUS,
+        payload: {
+          agreement: entityReference(decodeRecord(document)),
+          expectedModifiedTime: pending.expectedModifiedTime,
+          status: pending.status
+        }
+      });
+      this.pendingAgreementStatus = null;
+      ui.notifications.info(`Acordo alterado para ${stateLabel(pending.status)}.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao encerrar Agreement", error);
+      ui.notifications.error(error.message ?? "Falha ao encerrar acordo.");
     } finally {
       this.isStrategicIntelBusy = false;
     }
@@ -3366,6 +4262,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.INTEL_UPSERT,
         payload: {
           domain: entityReference(domain),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
           localId: String(data.get("localId") ?? ""),
           title: String(data.get("title") ?? ""),
           category: String(data.get("category") ?? "fact"),
@@ -3374,7 +4271,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           content: String(data.get("content") ?? ""),
           credibility: String(data.get("credibility") ?? "confirmed"),
           source: String(data.get("source") ?? ""),
-          revealed: data.get("revealed") === "on",
+          revealed: String(data.get("visibility") ?? "all_controllers") === "public",
           tags: String(data.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean)
         }
       });
@@ -3390,45 +4287,62 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
-  static async onRemoveIntel(event, target) {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
-    const localId = String(target?.dataset?.intelId ?? "");
-    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
-    if (!localId || !domainDocument) return;
-    this.isStrategicIntelBusy = true;
-    try {
-      await executeCommandAuthoritatively({
-        commandType: COMMAND_TYPES.INTEL_REMOVE,
-        payload: { domain: entityReference(decodeRecord(domainDocument)), localId }
-      });
-      if (this.selectedIntelId === localId) this.selectedIntelId = null;
-      this.editingIntelId = null;
-      ui.notifications.info("Informação removida.");
-      await this.render({ force: true });
-    } catch (error) {
-      console.error("Domain Manager | Falha ao remover Intel", error);
-      ui.notifications.error(error.message ?? "Falha ao remover informação.");
-    } finally {
-      this.isStrategicIntelBusy = false;
-    }
+  static onRemoveIntel(event, target) {
+    this.openIntelConfirmation("remove", target);
   }
 
-  static async onRevealIntel(event, target) {
+  static onRevealIntel(event, target) {
+    this.openIntelConfirmation("reveal", target);
+  }
+
+  static openIntelConfirmation(kind, target) {
     if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.intelId ?? "");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!localId || !domainDocument) return;
+    const domain = decodeRecord(domainDocument);
+    const intel = (domain.data.intel ?? []).find((entry) => entry.localId === localId);
+    if (!intel || (kind === "reveal" && (intel.revealed || intel.visibility === "public"))) return;
+    this.pendingIntelAction = {
+      kind,
+      isRemove: kind === "remove",
+      isReveal: kind === "reveal",
+      localId,
+      title: intel.title,
+      visibilityLabel: INTEL_VISIBILITY_LABELS[intel.visibility] ?? stateLabel(intel.visibility),
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelIntelAction() {
+    this.pendingIntelAction = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmIntelAction() {
+    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid || !this.pendingIntelAction) return;
+    const pending = this.pendingIntelAction;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!domainDocument) return;
     this.isStrategicIntelBusy = true;
     try {
       await executeCommandAuthoritatively({
-        commandType: COMMAND_TYPES.INTEL_REVEAL,
-        payload: { domain: entityReference(decodeRecord(domainDocument)), localId }
+        commandType: pending.isRemove ? COMMAND_TYPES.INTEL_REMOVE : COMMAND_TYPES.INTEL_REVEAL,
+        payload: {
+          domain: entityReference(decodeRecord(domainDocument)),
+          expectedModifiedTime: pending.expectedModifiedTime,
+          localId: pending.localId
+        }
       });
-      ui.notifications.info("Informação revelada ao público.");
+      if (pending.isRemove && this.selectedIntelId === pending.localId) this.selectedIntelId = null;
+      if (pending.isRemove) this.editingIntelId = null;
+      this.pendingIntelAction = null;
+      ui.notifications.info(pending.isRemove ? "Informação removida." : "Informação revelada ao público.");
       await this.render({ force: true });
     } catch (error) {
-      console.error("Domain Manager | Falha ao revelar Intel", error);
-      ui.notifications.error(error.message ?? "Falha ao revelar informação.");
+      console.error("Domain Manager | Falha na ação de Intel", error);
+      ui.notifications.error(error.message ?? "Falha ao alterar informação.");
     } finally {
       this.isStrategicIntelBusy = false;
     }

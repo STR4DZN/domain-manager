@@ -25,6 +25,7 @@ const users = new Map([[gm.id, gm], [player.id, player]]);
 users.activeGM = gm; users.contents = [gm, player];
 let operationLedger = { version: 1, receipts: [] };
 const documents = new Map();
+let modifiedClock = 10;
 
 globalThis.game = {
   user: gm, users, journal: [], folders: new Map(), modules: new Map(),
@@ -47,6 +48,7 @@ function setPath(target, path, value) {
 function makeDomain() {
   const doc = {
     id: "D1", uuid: "JournalEntry.D1", documentName: "JournalEntry", name: "Aurelia", ownership: { default: 0, P1: 2 },
+    _stats: { modifiedTime: modifiedClock++ },
     flags: { "domain-manager": { recordType: "domain", schemaVersion: 9, data: {
       entityId: "domain:D1", description: "", identity: { tags: [] },
       management: { preset: "base", capabilities: {} }, governance: { controllers: ["P1"] },
@@ -62,6 +64,7 @@ function makeDomain() {
         else if (key === "ownership") this.ownership = structuredClone(value);
         else setPath(this, key, value);
       }
+      this._stats.modifiedTime = modifiedClock++;
       return this;
     }
   };
@@ -70,7 +73,7 @@ function makeDomain() {
 
 const { recordIndex } = await import("../scripts/data/record-index.js");
 const { dispatchAuthoritativeCommand } = await import("../scripts/commands/execute.js");
-function reset() { documents.clear(); operationLedger = { version: 1, receipts: [] }; rid = 1; const domain = makeDomain(); recordIndex.rebuild(); game.user = gm; return domain; }
+function reset() { documents.clear(); operationLedger = { version: 1, receipts: [] }; rid = 1; modifiedClock = 10; const domain = makeDomain(); recordIndex.rebuild(); game.user = gm; return domain; }
 function domainRef(domain) { return { recordType: "domain", uuid: domain.uuid, entityId: "domain:D1" }; }
 function command(type, operationId, payload, callerUserId = "GM") { return dispatchAuthoritativeCommand({ commandType: type, operationId, payload }, { callerUserId }); }
 
@@ -110,10 +113,37 @@ test("condition.create é idempotente e não duplica condition em retry", async 
   assert.equal(domain.getFlag("domain-manager", "data").conditions.length, 1);
 });
 
+test("Conditions rejeitam create/update/toggle/remove com revisão obsoleta", async () => {
+  const domain = reset();
+  const firstRevision = domain._stats.modifiedTime;
+  const created = await command("condition.create", "cond-revision-create", {
+    domain: domainRef(domain),
+    expectedModifiedTime: firstRevision,
+    condition: { name: "Ashfall", severity: "moderate" }
+  });
+  const id = created.condition.localId;
+
+  for (const [type, payload] of [
+    ["condition.create", { condition: { name: "Duplicated screen" } }],
+    ["condition.update", { localId: id, patch: { name: "Stale edit" } }],
+    ["condition.toggle", { localId: id }],
+    ["condition.remove", { localId: id }]
+  ]) {
+    await assert.rejects(() => command(type, `stale-${type}`, {
+      domain: domainRef(domain),
+      expectedModifiedTime: firstRevision,
+      ...payload
+    }), /Domain mudou/i);
+  }
+  assert.equal(domain.getFlag("domain-manager", "data").conditions.length, 1);
+  assert.equal(domain.getFlag("domain-manager", "data").conditions[0].name, "Ashfall");
+  assert.equal(domain.getFlag("domain-manager", "data").conditions[0].active, true);
+});
+
 test("legacy Conditions actions são wrappers sem write path próprio", async () => {
   const domain = reset();
   const actions = await import("../scripts/features/conditions/actions.js");
-  await actions.createDomainConditionAction({ domainUuid: domain.uuid, condition: { name: "Wrapper Condition" }, operationId: "cond-wrapper" });
+  await actions.createDomainConditionAction({ domainUuid: domain.uuid, expectedModifiedTime: domain._stats.modifiedTime, condition: { name: "Wrapper Condition" }, operationId: "cond-wrapper" });
   assert.equal(domain.getFlag("domain-manager", "data").conditions.length, 1);
 
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");

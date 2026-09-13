@@ -13,13 +13,19 @@ const dialogsCss = fs.readFileSync(path.join(root, "styles/app/dialogs.css"), "u
 
 const requiredMissionActions = [
   "openCreateMission",
+  "openEditMission",
   "cancelCreateMission",
   "submitCreateMission",
+  "publishMission",
   "openMissionPrepare",
   "closeMissionPrepare",
   "submitMissionPrepare",
   "releaseMissionAssignment",
+  "cancelReleaseMissionAssignment",
+  "confirmReleaseMissionAssignment",
   "launchMission",
+  "cancelLaunchMission",
+  "confirmLaunchMission",
   "openMissionResolve",
   "closeMissionResolve",
   "submitMissionResolve"
@@ -33,7 +39,7 @@ test("Mission Control expõe todos os actions do lifecycle e todos estão regist
 });
 
 test("Mission Control chama exclusivamente os command types autoritativos para mutações operacionais", () => {
-  for (const type of ["MISSION_CREATE", "MISSION_PREPARE", "MISSION_RELEASE", "MISSION_LAUNCH", "MISSION_RESOLVE"]) {
+  for (const type of ["MISSION_CREATE", "MISSION_UPDATE", "MISSION_PUBLISH", "MISSION_PREPARE", "MISSION_RELEASE", "MISSION_LAUNCH", "MISSION_RESOLVE"]) {
     assert.match(shell, new RegExp(`COMMAND_TYPES\\.${type}`));
   }
 });
@@ -56,7 +62,7 @@ test("template Handlebars mantém blocos if/each balanceados", () => {
 test("Mission Control possui linguagem visual própria para cards, preparação e after-action", () => {
   for (const selector of [
     ".dm-mission-card",
-    ".dm-target-reticle",
+    ".dm-mission-card__summary",
     ".dm-mission-telemetry",
     ".dm-mission-ready-unit",
     ".dm-mission-outcome"
@@ -67,6 +73,22 @@ test("Mission Control possui linguagem visual própria para cards, preparação 
     ".dm-resolution-unit",
     ".dm-resolution-objective"
   ]) assert.ok(dialogsCss.includes(selector), `selector ausente: ${selector}`);
+});
+
+test("Mission Control remove mira decorativa e confirma release/launch antes do comando", () => {
+  assert.ok(!template.includes("dm-target-reticle"));
+  assert.match(template, /data-action="confirmReleaseMissionAssignment"/);
+  assert.match(template, /data-action="confirmLaunchMission"/);
+  assert.match(shell, /pendingMissionRelease/);
+  assert.match(shell, /pendingMissionLaunch/);
+});
+
+test("formulários de Mission e Squad enviam revisão otimista", () => {
+  for (const field of ["expectedModifiedTime", "expectedMissionModifiedTime", "expectedSquadModifiedTime", "expectedDomainModifiedTime"]) {
+    assert.match(template, new RegExp(`name=["']${field}["']`), `campo de revisão ausente: ${field}`);
+  }
+  assert.match(shell, /expectedFromModifiedTime/);
+  assert.match(shell, /expectedToModifiedTime/);
 });
 
 test("Mission legacy actions não mantêm persistência/autoridade paralela", () => {

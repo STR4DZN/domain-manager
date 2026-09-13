@@ -52,6 +52,24 @@ test("plano de custos fica atrás de editor dedicado e guardrail de progresso", 
   assert.match(shell, /Number\(project\.data\.work\?\.completed \?\? 0\) > 0/);
 });
 
+test("remoção de custo exige confirmação explícita e preserva a revisão aberta", () => {
+  for (const action of ["removeProjectCost", "cancelRemoveProjectCost", "confirmRemoveProjectCost"]) {
+    assert.match(template, new RegExp(`data-action=["']${action}["']`), `template sem action ${action}`);
+    assert.match(shell, new RegExp(`${action}:\\s*DomainManagerShellApp\\.`), `DEFAULT_OPTIONS sem ${action}`);
+  }
+  assert.match(template, /dm-project-cost-remove-dialog/);
+  assert.match(template, /CONFIRMAÇÃO NECESSÁRIA/);
+  assert.match(shell, /pendingProjectCostRemoval\s*=\s*\{/);
+  assert.match(shell, /expectedModifiedTime,\s*localId/);
+});
+
+test("edição e custos de Project enviam controle de concorrência", () => {
+  assert.ok((template.match(/name="expectedModifiedTime"/g) ?? []).length >= 2);
+  assert.match(shell, /expectedModifiedTime:\s*record\.document\?\._stats\?\.modifiedTime/);
+  assert.match(shell, /payload\.expectedModifiedTime\s*=\s*Number\(data\.get\("expectedModifiedTime"\)\)/);
+  assert.match(shell, /PROJECT_COST_UPSERT[\s\S]{0,500}expectedModifiedTime:/);
+});
+
 test("Projects Advanced dev.138 preserva schema 9", () => {
   const constants = fs.readFileSync(path.join(root, "scripts/core/constants.js"), "utf8");
   assert.match(constants, /SCHEMA_VERSION\s*=\s*9/);

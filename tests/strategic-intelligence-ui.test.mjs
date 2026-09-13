@@ -8,6 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const template = fs.readFileSync(path.join(root, "templates/app-shell.hbs"), "utf8");
 const shell = fs.readFileSync(path.join(root, "scripts/ui/shell-app.js"), "utf8");
 const views = fs.readFileSync(path.join(root, "styles/app/views.css"), "utf8");
+const dialogs = fs.readFileSync(path.join(root, "styles/app/dialogs.css"), "utf8");
 
 const actionsBlock = shell.match(/actions:\s*\{([\s\S]*?)\n\s*\}\n\s*\};/)?.[1] ?? "";
 
@@ -64,6 +65,34 @@ test("Strategic intelligence UI grava apenas pelo Command Kernel", () => {
     assert.ok(shell.includes(command), `command autoritativo ausente: ${command}`);
   }
   assert.equal(/updateRecord\s*\(/.test(shell), false, "UI não pode persistir Journal diretamente");
+});
+
+test("Relations, Agreements e Intel usam revisão e confirmação antes de ações críticas", () => {
+  for (const action of [
+    "cancelRemoveRelation", "confirmRemoveRelation", "cancelAgreementStatus", "confirmAgreementStatus",
+    "cancelIntelAction", "confirmIntelAction"
+  ]) {
+    assert.ok(actionsBlock.includes(action), `action de confirmação não registrada: ${action}`);
+    assert.match(template, new RegExp(`data-action=["']${action}["']`), `template sem action ${action}`);
+  }
+  assert.match(template, /id="dm-relation-form"[\s\S]{0,900}name="expectedModifiedTime"/);
+  assert.match(template, /id="dm-intel-form"[\s\S]{0,900}name="expectedModifiedTime"/);
+  assert.match(shell, /RELATION_REMOVE[\s\S]{0,400}expectedModifiedTime:/);
+  assert.match(shell, /AGREEMENT_STATUS[\s\S]{0,400}expectedModifiedTime:/);
+  assert.match(shell, /INTEL_(?:REMOVE|REVEAL)[\s\S]{0,500}expectedModifiedTime:/);
+  assert.equal(template.includes('name="revealed"'), false, "Intel não pode ser publicada por checkbox no editor");
+});
+
+test("template não mantém miras, radares ou ondas decorativas residuais", () => {
+  for (const marker of ["dm-inspector-radar", "dm-person-inspector__wave", "dm-registry-scope__reticle", "dm-binary-strip", "dm-logistics-paths"]) {
+    assert.equal(template.includes(marker), false, `ornamento residual no DOM: ${marker}`);
+  }
+});
+
+test("confirmações críticas respondem à largura real do módulo sem expandir a grade", () => {
+  assert.match(dialogs, /\.dm-project-cost-remove-dialog\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(dialogs, /\.dm-project-cost-remove-dialog \.dm-system-dialog__body\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(dialogs, /@container dm-window \(max-width:560px\)\{\.dm-project-cost-remove-summary\{grid-template-columns:1fr\}/);
 });
 
 test("schema mostrado na UI vem da constante real do runtime", () => {

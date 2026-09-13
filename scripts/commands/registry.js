@@ -1,4 +1,16 @@
 import { COMMAND_TYPES } from "../core/constants.js";
+import {
+  executeDomainCreate,
+  executeDomainDelete,
+  executeDomainMediaUpdate,
+  executeDomainUpdate
+} from "../features/domains/commands.js";
+import {
+  domainCreateResourceKeys,
+  domainDeleteResourceKeys,
+  domainMediaUpdateResourceKeys,
+  domainUpdateResourceKeys
+} from "../features/domains/contracts.js";
 import { executeEconomyConfigure } from "../features/economy/commands.js";
 import { economyConfigureResourceKeys } from "../features/economy/contracts.js";
 import {
@@ -16,6 +28,7 @@ import {
   executeMissionObjectiveRemove,
   executeMissionObjectiveUpsert,
   executeMissionPrepare,
+  executeMissionPublish,
   executeMissionRelease,
   executeMissionResolve,
   executeMissionUpdate
@@ -98,9 +111,25 @@ import {
   projectUpdateResourceKeys
 } from "../features/projects/contracts.js";
 
-import { executeRequestCreate, executeRequestCreateMission, executeRequestFulfill, executeRequestReview, executeRequestWithdraw } from "../features/requests/commands.js";
-import { requestCreateResourceKeys, requestLifecycleResourceKeys, requestMissionResourceKeys, requestReviewResourceKeys } from "../features/requests/contracts.js";
+import { executeRequestCreate, executeRequestCreateMission, executeRequestFulfill, executeRequestResubmit, executeRequestReview, executeRequestWithdraw } from "../features/requests/commands.js";
+import { requestCreateResourceKeys, requestLifecycleResourceKeys, requestMissionResourceKeys, requestResubmitResourceKeys, requestReviewResourceKeys } from "../features/requests/contracts.js";
 const COMMAND_REGISTRY = Object.freeze({
+  [COMMAND_TYPES.DOMAIN_CREATE]: Object.freeze({
+    resourceKeys: domainCreateResourceKeys,
+    execute: executeDomainCreate
+  }),
+  [COMMAND_TYPES.DOMAIN_UPDATE]: Object.freeze({
+    resourceKeys: domainUpdateResourceKeys,
+    execute: executeDomainUpdate
+  }),
+  [COMMAND_TYPES.DOMAIN_MEDIA_UPDATE]: Object.freeze({
+    resourceKeys: domainMediaUpdateResourceKeys,
+    execute: executeDomainMediaUpdate
+  }),
+  [COMMAND_TYPES.DOMAIN_DELETE]: Object.freeze({
+    resourceKeys: domainDeleteResourceKeys,
+    execute: executeDomainDelete
+  }),
   [COMMAND_TYPES.ECONOMY_CONFIGURE]: Object.freeze({
     resourceKeys: economyConfigureResourceKeys,
     execute: executeEconomyConfigure
@@ -144,6 +173,10 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.MISSION_RELEASE]: Object.freeze({
     resourceKeys: missionReleaseResourceKeys,
     execute: executeMissionRelease
+  }),
+  [COMMAND_TYPES.MISSION_PUBLISH]: Object.freeze({
+    resourceKeys: missionReferenceResourceKeys,
+    execute: executeMissionPublish
   }),
   [COMMAND_TYPES.MISSION_LAUNCH]: Object.freeze({
     resourceKeys: missionReferenceResourceKeys,
@@ -224,6 +257,7 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.CONDITION_REMOVE]: Object.freeze({ resourceKeys: conditionResourceKeys, execute: executeConditionRemove }),
   [COMMAND_TYPES.CONDITION_TOGGLE]: Object.freeze({ resourceKeys: conditionResourceKeys, execute: executeConditionToggle }),
   [COMMAND_TYPES.REQUEST_CREATE]: Object.freeze({ resourceKeys: requestCreateResourceKeys, execute: executeRequestCreate }),
+  [COMMAND_TYPES.REQUEST_RESUBMIT]: Object.freeze({ resourceKeys: requestResubmitResourceKeys, execute: executeRequestResubmit }),
   [COMMAND_TYPES.REQUEST_REVIEW]: Object.freeze({ resourceKeys: requestReviewResourceKeys, execute: executeRequestReview }),
   [COMMAND_TYPES.REQUEST_CREATE_MISSION]: Object.freeze({ resourceKeys: requestMissionResourceKeys, execute: executeRequestCreateMission }),
   [COMMAND_TYPES.REQUEST_WITHDRAW]: Object.freeze({ resourceKeys: requestLifecycleResourceKeys, execute: executeRequestWithdraw }),

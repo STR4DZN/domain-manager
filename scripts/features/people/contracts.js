@@ -23,6 +23,15 @@ function percentage(value, { label = "Percentual", fallback = 60 } = {}) {
   return integer(value ?? fallback, { min: 0, max: 100, label });
 }
 
+function revision(value, label = "expectedModifiedTime") {
+  if (value == null || value === "") return null;
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 0) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `${label} precisa ser um inteiro não-negativo.`);
+  }
+  return number;
+}
+
 function stringList(values, { label = "Lista" } = {}) {
   if (values == null) return [];
   const source = Array.isArray(values) ? values : String(values).split(",");
@@ -51,6 +60,7 @@ export function normalizePopulationConfigurePayload(payload = {}) {
   }
   return {
     domain,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     total,
     countMode,
     morale: percentage(payload.morale, { label: "Moral populacional" })
@@ -73,6 +83,7 @@ export function normalizePopulationGroupPayload(payload = {}) {
   }
   return {
     domain,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     localId: clean(payload.localId),
     name,
     count,
@@ -90,7 +101,7 @@ export function normalizePopulationGroupRemovePayload(payload = {}) {
   const domain = normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] });
   const localId = clean(payload.localId);
   if (!localId) throw new ModuleError(ERROR_CODES.VALIDATION, "localId do grupo é obrigatório.");
-  return { domain, localId };
+  return { domain, expectedModifiedTime: revision(payload.expectedModifiedTime), localId };
 }
 
 export function normalizeWorkforceAllocation(raw = {}) {
@@ -111,7 +122,7 @@ export function normalizePopulationWorkforcePayload(payload = {}) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "allocations precisa ser uma lista.");
   }
   const allocations = payload.allocations.map(normalizeWorkforceAllocation);
-  return { domain, allocations };
+  return { domain, expectedModifiedTime: revision(payload.expectedModifiedTime), allocations };
 }
 
 function normalizePersonBase(payload = {}) {
@@ -148,6 +159,7 @@ export function normalizePersonCreatePayload(payload = {}) {
 export function normalizePersonUpdatePayload(payload = {}) {
   return {
     person: normalizeEntityReference(payload.person, { allowedTypes: [RECORD_TYPES.PERSON] }),
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     ...normalizePersonBase(payload)
   };
 }

@@ -90,6 +90,7 @@ function makeDocument({ id, name, recordType, data, ownership = {} }) {
     documentName: "JournalEntry",
     name,
     ownership: structuredClone(ownership),
+    _stats: { modifiedTime: 100 },
     flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
     async update(changes) {
@@ -98,6 +99,7 @@ function makeDocument({ id, name, recordType, data, ownership = {} }) {
         else if (key === "ownership") this.ownership = structuredClone(value);
         else applyPath(this, key, value);
       }
+      this._stats.modifiedTime += 1;
       return this;
     },
     async delete() {
@@ -268,7 +270,10 @@ test("jogador prepara Squad, lançamento consome recursos uma vez e resolução 
   const launchCommand = {
     commandType: "mission.launch",
     operationId: "mission-launch-1",
-    payload: { mission: ref(mission, "mission", "mission:M1") }
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      squads: [ref(squad, "squad", "squad:S1")]
+    }
   };
   const firstLaunch = await dispatchAuthoritativeCommand(launchCommand, { callerUserId: "GM" });
   const secondLaunch = await dispatchAuthoritativeCommand(launchCommand, { callerUserId: "GM" });
@@ -430,6 +435,77 @@ test("mission.update edita metadados sem permitir transição de lifecycle", asy
   }, { callerUserId: "GM" }), /lifecycle|status/i);
 
   assert.equal(mission.getFlag("domain-manager", "data").status, "available");
+});
+
+test("mission.publish libera planejamento e mission.update substitui objetivos atomicamente", async () => {
+  const domain = domainDocument();
+  const mission = missionDocument({ status: "planned" });
+  resetWorld(domain, mission);
+
+  const updateRevision = mission._stats.modifiedTime;
+  await dispatchAuthoritativeCommand({
+    commandType: "mission.update",
+    operationId: "mission-plan-editor-1",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedModifiedTime: updateRevision,
+      expectedStatus: "planned",
+      name: "Operação Farol II",
+      primaryDomain: ref(domain, "domain", "domain:D1"),
+      relatedDomains: [],
+      audienceUserIds: ["P1"],
+      briefing: "Planejamento revisado",
+      outcomeSummary: "Nota interna",
+      objectives: [{ localId: "o1", title: "Localizar alvo revisado" }, { title: "Extrair equipe" }]
+    }
+  }, { callerUserId: "GM" });
+
+  const afterEdit = mission.getFlag("domain-manager", "data");
+  assert.equal(afterEdit.objectives.length, 2);
+  assert.equal(afterEdit.objectives[0].localId, "o1");
+  assert.ok(afterEdit.objectives[1].localId);
+
+  await dispatchAuthoritativeCommand({
+    commandType: "mission.publish",
+    operationId: "mission-publish-1",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedModifiedTime: mission._stats.modifiedTime
+    }
+  }, { callerUserId: "GM" });
+  assert.equal(mission.getFlag("domain-manager", "data").status, "available");
+});
+
+test("Mission rejeita formulário obsoleto e snapshot incompleto de Squads no lançamento", async () => {
+  const domain = domainDocument();
+  const squad = squadDocument();
+  const assignment = {
+    localId: "a1",
+    squad: ref(squad, "squad", "squad:S1"),
+    committedStrength: 5,
+    resources: [],
+    state: "prepared",
+    result: { casualties: 0, moraleDelta: 0, conditionDelta: 0, notes: "" }
+  };
+  const mission = missionDocument({ assignments: [assignment] });
+  squad.getFlag("domain-manager", "data").currentMission = ref(mission, "mission", "mission:M1");
+  resetWorld(domain, squad, mission);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.launch",
+    operationId: "mission-launch-stale",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedModifiedTime: mission._stats.modifiedTime - 1,
+      squads: [ref(squad, "squad", "squad:S1")]
+    }
+  }, { callerUserId: "GM" }), /mudou enquanto/i);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.launch",
+    operationId: "mission-launch-missing-lock",
+    payload: { mission: ref(mission, "mission", "mission:M1"), squads: [] }
+  }, { callerUserId: "GM" }), /lista de Squads/i);
 });
 
 test("mission.update não muda topologia de Domain enquanto há Squad preparado", async () => {

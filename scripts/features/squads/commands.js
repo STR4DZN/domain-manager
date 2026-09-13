@@ -63,6 +63,13 @@ function squadResult(record) {
   };
 }
 
+function assertRevision(record, expectedModifiedTime) {
+  if (expectedModifiedTime == null) return;
+  if ((record.document?._stats?.modifiedTime ?? null) !== expectedModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "O Squad mudou enquanto o formulário estava aberto.");
+  }
+}
+
 export async function executeSquadCreate({ payload, callerUserId }) {
   assertCallerGM(callerUserId);
   const normalized = normalizeSquadCreatePayload(payload);
@@ -113,6 +120,7 @@ export async function executeSquadCreate({ payload, callerUserId }) {
 export async function executeSquadPatch({ payload, callerUserId }) {
   const normalized = normalizeSquadPatchPayload(payload);
   const squad = resolveReference(normalized.squad, RECORD_TYPES.SQUAD);
+  assertRevision(squad, normalized.expectedModifiedTime);
   const user = caller(callerUserId);
   if (!user.isGM && !controllerIds(squad).includes(user.id)) {
     throw new ModuleError(ERROR_CODES.PERMISSION, "O usuário não controla este Squad.");
@@ -149,6 +157,7 @@ export async function executeSquadAdminUpdate({ payload, callerUserId }) {
   assertCallerGM(callerUserId);
   const normalized = normalizeSquadAdminPayload(payload);
   const squad = resolveReference(normalized.squad, RECORD_TYPES.SQUAD);
+  assertRevision(squad, normalized.expectedModifiedTime);
   assertControllersExist(normalized.controllerIds);
 
   const before = foundry.utils.deepClone(squad.data);

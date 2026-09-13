@@ -1,82 +1,45 @@
-import { RECORD_TYPES } from "../../core/constants.js";
-import {
-  ERROR_CODES,
-  ModuleError
-} from "../../core/errors.js";
-import {
-  getRecord,
-  updateRecord
-} from "../../data/journal-store.js";
-import {
-  normalizeGroup,
-  normalizeNotable,
-  normalizePopulationSummary,
-  removeLocalRecord,
-  upsertLocalRecord
-} from "./rules.js";
+/**
+ * APIs de compatibilidade de People.
+ *
+ * Toda mutação suportada passa pelo Command Kernel. Notables embutidos são
+ * somente leitura: o modelo persistente atual usa Person records independentes.
+ */
 
-function assertGM() {
-  if (!game.user.isGM) {
-    throw new ModuleError(
-      ERROR_CODES.PERMISSION,
-      "Somente GM altera People no Bloco 4."
-    );
-  }
+import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
+import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
+import { getRecord } from "../../data/journal-store.js";
+
+function domainRef(uuid) {
+  return { recordType: RECORD_TYPES.DOMAIN, uuid, entityId: null };
 }
 
-function assertRevision(document, expectedModifiedTime) {
-  if (expectedModifiedTime == null) return;
-
-  const current = document._stats?.modifiedTime ?? null;
-  if (current !== expectedModifiedTime) {
-    throw new ModuleError(
-      ERROR_CODES.CONFLICT,
-      "O Domain mudou enquanto o formulário estava aberto."
-    );
-  }
+function operationId(value = null) {
+  return String(value ?? "").trim() || foundry.utils.randomID();
 }
 
-async function loadDomain(domainUuid, expectedModifiedTime) {
-  assertGM();
-  const record = await getRecord(domainUuid);
-
-  if (record.recordType !== RECORD_TYPES.DOMAIN) {
-    throw new ModuleError(
-      ERROR_CODES.VALIDATION,
-      "O registro não é um Domain."
-    );
-  }
-
-  assertRevision(record.document, expectedModifiedTime);
-  return record;
-}
-
-async function persistPopulation(record, population) {
-  return updateRecord({
-    uuid: record.uuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    name: record.document.name,
-    data: {
-      ...record.data,
-      population
-    },
-    controllerIds: record.data.governance.controllers
-  });
+async function run(commandType, domainUuid, payload, requestedOperationId) {
+  await dispatchAuthoritativeCommand({
+    commandType,
+    operationId: operationId(requestedOperationId),
+    payload: { domain: domainRef(domainUuid), ...payload }
+  }, { callerUserId: game.user.id });
+  return getRecord(domainUuid);
 }
 
 export async function updatePopulationSummaryAction({
   domainUuid,
   expectedModifiedTime,
   total,
-  countMode
+  countMode,
+  operationId: requestedOperationId = null
 }) {
-  const record = await loadDomain(domainUuid, expectedModifiedTime);
-  const summary = normalizePopulationSummary({ total, countMode });
-
-  return persistPopulation(record, {
-    ...record.data.population,
-    ...summary
-  });
+  const domain = await getRecord(domainUuid);
+  return run(COMMAND_TYPES.POPULATION_CONFIGURE, domainUuid, {
+    expectedModifiedTime,
+    total,
+    countMode,
+    morale: domain.data.population?.morale ?? 60
+  }, requestedOperationId);
 }
 
 export async function upsertGroupAction({
@@ -89,123 +52,43 @@ export async function upsertGroupAction({
   function: functionName,
   quality,
   status,
-  assignment
+  assignment,
+  operationId: requestedOperationId = null
 }) {
-  const record = await loadDomain(domainUuid, expectedModifiedTime);
-  const group = normalizeGroup({
-    localId: localId || foundry.utils.randomID(),
+  const domain = await getRecord(domainUuid);
+  const existing = localId
+    ? (domain.data.population?.groups ?? []).find((entry) => entry.localId === localId)
+    : null;
+  return run(COMMAND_TYPES.POPULATION_GROUP_UPSERT, domainUuid, {
+    expectedModifiedTime,
+    localId,
     name,
     count,
     includedInTotal,
     function: functionName,
     quality,
     status,
-    assignment
-  });
-
-  const groups = upsertLocalRecord(
-    record.data.population?.groups,
-    group
-  );
-
-  return persistPopulation(record, {
-    ...record.data.population,
-    groups
-  });
+    assignment,
+    morale: existing?.morale ?? 60,
+    workforceEligible: existing?.workforceEligible ?? count
+  }, requestedOperationId);
 }
 
-export async function removeGroupAction({
+export function removeGroupAction({
   domainUuid,
   expectedModifiedTime,
-  localId
+  localId,
+  operationId: requestedOperationId = null
 }) {
-  const record = await loadDomain(domainUuid, expectedModifiedTime);
-  const groups = removeLocalRecord(
-    record.data.population?.groups,
+  return run(COMMAND_TYPES.POPULATION_GROUP_REMOVE, domainUuid, {
+    expectedModifiedTime,
     localId
-  );
-
-  return persistPopulation(record, {
-    ...record.data.population,
-    groups
-  });
+  }, requestedOperationId);
 }
 
-export async function upsertNotableAction({
-  domainUuid,
-  expectedModifiedTime,
-  localId = null,
-  name,
-  actorUuid = null,
-  portrait = "",
-  function: functionName = "",
-  specialization = "",
-  role = "",
-  description = "",
-  currentLocationUuid = null,
-  status = "active",
-  assignment = ""
-}) {
-  const record = await loadDomain(domainUuid, expectedModifiedTime);
-
-  if (actorUuid) {
-    const actor = await fromUuid(actorUuid);
-    if (!actor || actor.documentName !== "Actor") {
-      throw new ModuleError(
-        ERROR_CODES.VALIDATION,
-        "actorUuid precisa apontar para um Actor existente."
-      );
-    }
-  }
-
-  if (currentLocationUuid) {
-    const location = await getRecord(currentLocationUuid);
-    if (location.recordType !== RECORD_TYPES.DOMAIN) {
-      throw new ModuleError(
-        ERROR_CODES.VALIDATION,
-        "currentLocationUuid precisa apontar para um Domain."
-      );
-    }
-  }
-
-  const notable = normalizeNotable({
-    localId: localId || foundry.utils.randomID(),
-    name,
-    actorUuid,
-    portrait,
-    function: functionName,
-    specialization,
-    role,
-    description,
-    currentLocationUuid,
-    status,
-    assignment
-  });
-
-  const notables = upsertLocalRecord(
-    record.data.population?.notables,
-    notable
-  );
-
-  return persistPopulation(record, {
-    ...record.data.population,
-    notables
-  });
+function embeddedNotableUnsupported() {
+  throw new Error("Notables embutidos legados são somente leitura. Migre o cadastro e use um Person record independente.");
 }
 
-export async function removeNotableAction({
-  domainUuid,
-  expectedModifiedTime,
-  localId
-}) {
-  const record = await loadDomain(domainUuid, expectedModifiedTime);
-  const notables = removeLocalRecord(
-    record.data.population?.notables,
-    localId
-  );
-
-  return persistPopulation(record, {
-    ...record.data.population,
-    notables
-  });
-}
+export async function upsertNotableAction() { return embeddedNotableUnsupported(); }
+export async function removeNotableAction() { return embeddedNotableUnsupported(); }

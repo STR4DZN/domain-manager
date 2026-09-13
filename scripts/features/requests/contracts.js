@@ -10,6 +10,32 @@ function clean(value) {
   return String(value ?? "").trim();
 }
 
+function expectedRevision(value) {
+  const expectedModifiedTime = value == null || value === "" ? null : Number(value);
+  if (expectedModifiedTime !== null && (!Number.isSafeInteger(expectedModifiedTime) || expectedModifiedTime < 0)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser inteiro não-negativo.");
+  }
+  return expectedModifiedTime;
+}
+
+function editableRequestFields(payload = {}) {
+  const type = clean(payload.type);
+  const intent = clean(payload.intent);
+  const title = clean(payload.title);
+  const details = clean(payload.details);
+
+  if (!REQUEST_TYPES.includes(type)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `Tipo de Request inválido: ${type || "(vazio)"}`);
+  }
+  if (!title) throw new ModuleError(ERROR_CODES.VALIDATION, "O título da solicitação é obrigatório.");
+  if (!intent) throw new ModuleError(ERROR_CODES.VALIDATION, "Explique o que deseja conseguir com a solicitação.");
+  if (title.length > 160) throw new ModuleError(ERROR_CODES.VALIDATION, "O título não pode exceder 160 caracteres.");
+  if (intent.length > 1200) throw new ModuleError(ERROR_CODES.VALIDATION, "A intenção não pode exceder 1200 caracteres.");
+  if (details.length > 6000) throw new ModuleError(ERROR_CODES.VALIDATION, "Os detalhes não podem exceder 6000 caracteres.");
+
+  return { type, title, intent, details };
+}
+
 function normalizeReference(value, expectedType, label) {
   const source = value && typeof value === "object" ? value : {};
   const recordType = clean(source.recordType || expectedType);
@@ -25,26 +51,17 @@ function normalizeReference(value, expectedType, label) {
 }
 
 export function normalizeRequestCreatePayload(payload = {}) {
-  const type = clean(payload.type);
-  const intent = clean(payload.intent);
-  const title = clean(payload.title);
-  const details = clean(payload.details);
-
-  if (!REQUEST_TYPES.includes(type)) {
-    throw new ModuleError(ERROR_CODES.VALIDATION, `Tipo de Request inválido: ${type || "(vazio)"}`);
-  }
-  if (!title) throw new ModuleError(ERROR_CODES.VALIDATION, "O título da solicitação é obrigatório.");
-  if (!intent) throw new ModuleError(ERROR_CODES.VALIDATION, "Explique o que deseja conseguir com a solicitação.");
-  if (title.length > 160) throw new ModuleError(ERROR_CODES.VALIDATION, "O título não pode exceder 160 caracteres.");
-  if (intent.length > 1200) throw new ModuleError(ERROR_CODES.VALIDATION, "A intenção não pode exceder 1200 caracteres.");
-  if (details.length > 6000) throw new ModuleError(ERROR_CODES.VALIDATION, "Os detalhes não podem exceder 6000 caracteres.");
-
   return {
     domain: normalizeReference(payload.domain, RECORD_TYPES.DOMAIN, "Domain da Request"),
-    type,
-    title,
-    intent,
-    details
+    ...editableRequestFields(payload)
+  };
+}
+
+export function normalizeRequestResubmitPayload(payload = {}) {
+  return {
+    request: normalizeReference(payload.request, RECORD_TYPES.REQUEST, "Request"),
+    expectedModifiedTime: expectedRevision(payload.expectedModifiedTime),
+    ...editableRequestFields(payload)
   };
 }
 
@@ -52,9 +69,7 @@ export function normalizeRequestReviewPayload(payload = {}) {
   const status = clean(payload.status);
   const handling = clean(payload.handling || "none");
   const summary = clean(payload.summary);
-  const expectedModifiedTime = payload.expectedModifiedTime == null || payload.expectedModifiedTime === ""
-    ? null
-    : Number(payload.expectedModifiedTime);
+  const expectedModifiedTime = expectedRevision(payload.expectedModifiedTime);
 
   if (!REQUEST_REVIEW_STATUSES.includes(status)) {
     throw new ModuleError(ERROR_CODES.VALIDATION, `Status de revisão inválido: ${status || "(vazio)"}`);
@@ -67,9 +82,6 @@ export function normalizeRequestReviewPayload(payload = {}) {
   }
   if (summary.length > 4000) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "A decisão do Mestre não pode exceder 4000 caracteres.");
-  }
-  if (expectedModifiedTime !== null && (!Number.isSafeInteger(expectedModifiedTime) || expectedModifiedTime < 0)) {
-    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser inteiro não-negativo.");
   }
 
   return {
@@ -91,13 +103,13 @@ export function requestReviewResourceKeys(payload = {}) {
   return [`request:${clean(ref.entityId || ref.uuid) || "unknown"}`];
 }
 
+export function requestResubmitResourceKeys(payload = {}) {
+  const ref = payload.request ?? {};
+  return [`request:${clean(ref.entityId || ref.uuid) || "unknown"}`];
+}
+
 export function normalizeRequestMissionPayload(payload = {}) {
-  const expectedModifiedTime = payload.expectedModifiedTime == null || payload.expectedModifiedTime === ""
-    ? null
-    : Number(payload.expectedModifiedTime);
-  if (expectedModifiedTime !== null && (!Number.isSafeInteger(expectedModifiedTime) || expectedModifiedTime < 0)) {
-    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser inteiro não-negativo.");
-  }
+  const expectedModifiedTime = expectedRevision(payload.expectedModifiedTime);
   return {
     request: normalizeReference(payload.request, RECORD_TYPES.REQUEST, "Request"),
     expectedModifiedTime
@@ -110,13 +122,8 @@ export function requestMissionResourceKeys(payload = {}) {
 }
 
 export function normalizeRequestLifecyclePayload(payload = {}) {
-  const expectedModifiedTime = payload.expectedModifiedTime == null || payload.expectedModifiedTime === ""
-    ? null
-    : Number(payload.expectedModifiedTime);
+  const expectedModifiedTime = expectedRevision(payload.expectedModifiedTime);
   const summary = clean(payload.summary);
-  if (expectedModifiedTime !== null && (!Number.isSafeInteger(expectedModifiedTime) || expectedModifiedTime < 0)) {
-    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser inteiro não-negativo.");
-  }
   if (summary.length > 4000) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "O resumo de encerramento não pode exceder 4000 caracteres.");
   }

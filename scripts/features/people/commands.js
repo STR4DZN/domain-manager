@@ -49,6 +49,13 @@ function assertDomainCapability(domain, callerUserId, capability) {
   return actor;
 }
 
+function assertRevision(record, expectedModifiedTime, label) {
+  if (expectedModifiedTime == null) return;
+  if ((record.document?._stats?.modifiedTime ?? null) !== expectedModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, `${label} mudou enquanto estava aberto. Recarregue os dados antes de salvar novamente.`);
+  }
+}
+
 function ref(record) {
   return { recordType: record.recordType, uuid: record.uuid, entityId: record.data.entityId };
 }
@@ -113,6 +120,7 @@ export async function executePopulationConfigure({ payload, callerUserId }) {
   const normalized = normalizePopulationConfigurePayload(payload);
   const domain = resolveReference(normalized.domain, RECORD_TYPES.DOMAIN);
   assertDomainCapability(domain, callerUserId, "population");
+  assertRevision(domain, normalized.expectedModifiedTime, "O Domain");
 
   const before = foundry.utils.deepClone(domain.data);
   const data = foundry.utils.deepClone(domain.data);
@@ -151,6 +159,7 @@ export async function executePopulationGroupUpsert({ payload, callerUserId }) {
   const normalized = normalizePopulationGroupPayload(payload);
   const domain = resolveReference(normalized.domain, RECORD_TYPES.DOMAIN);
   assertDomainCapability(domain, callerUserId, "population");
+  assertRevision(domain, normalized.expectedModifiedTime, "O Domain");
 
   const before = foundry.utils.deepClone(domain.data);
   const data = foundry.utils.deepClone(domain.data);
@@ -161,6 +170,9 @@ export async function executePopulationGroupUpsert({ payload, callerUserId }) {
 
   const localId = normalized.localId || foundry.utils.randomID();
   const existingIndex = data.population.groups.findIndex((group) => group.localId === localId);
+  if (normalized.localId && existingIndex < 0) {
+    throw new ModuleError(ERROR_CODES.NOT_FOUND, `Grupo '${normalized.localId}' não encontrado. A edição não pode recriar um grupo removido.`);
+  }
   const allocated = data.population.workforce.allocations
     .filter((entry) => entry.groupLocalId === localId)
     .reduce((sum, entry) => sum + Number(entry.count ?? 0), 0);
@@ -210,6 +222,7 @@ export async function executePopulationGroupRemove({ payload, callerUserId }) {
   const normalized = normalizePopulationGroupRemovePayload(payload);
   const domain = resolveReference(normalized.domain, RECORD_TYPES.DOMAIN);
   assertDomainCapability(domain, callerUserId, "population");
+  assertRevision(domain, normalized.expectedModifiedTime, "O Domain");
 
   const existing = domain.data.population?.groups?.find((group) => group.localId === normalized.localId);
   if (!existing) throw new ModuleError(ERROR_CODES.NOT_FOUND, `Grupo '${normalized.localId}' não encontrado.`);
@@ -251,6 +264,7 @@ export async function executePopulationWorkforceSet({ payload, callerUserId }) {
   const normalized = normalizePopulationWorkforcePayload(payload);
   const domain = resolveReference(normalized.domain, RECORD_TYPES.DOMAIN);
   assertDomainCapability(domain, callerUserId, "population");
+  assertRevision(domain, normalized.expectedModifiedTime, "O Domain");
 
   const groups = new Map((domain.data.population?.groups ?? []).map((group) => [group.localId, group]));
   const pairKeys = new Set();
@@ -364,6 +378,7 @@ export async function executePersonCreate({ payload, callerUserId }) {
 export async function executePersonUpdate({ payload, callerUserId }) {
   const normalized = normalizePersonUpdatePayload(payload);
   const person = resolveReference(normalized.person, RECORD_TYPES.PERSON);
+  assertRevision(person, normalized.expectedModifiedTime, "A Person");
   if (!person.data.primaryDomain) {
     throw new ModuleError(ERROR_CODES.CONFLICT, "Person não possui Domain principal e precisa de reparo administrativo.");
   }

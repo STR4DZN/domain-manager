@@ -81,6 +81,7 @@ function makeDocument({ id, name, recordType, data, ownership = {} }) {
     documentName: "JournalEntry",
     name,
     ownership: structuredClone(ownership),
+    _stats: { modifiedTime: 100 },
     flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
     async update(changes) {
@@ -89,6 +90,7 @@ function makeDocument({ id, name, recordType, data, ownership = {} }) {
         else if (key === "ownership") this.ownership = structuredClone(value);
         else applyPath(this, key, value);
       }
+      this._stats.modifiedTime += 1;
       return this;
     },
     async delete() {
@@ -275,4 +277,21 @@ test("referência inconsistente UUID/entityId é rejeitada", async () => {
       patch: { morale: 10 }
     }
   }, { callerUserId: "GM" }), /entidades diferentes/i);
+});
+
+test("Squad rejeita formulário operacional obsoleto", async () => {
+  const domain = domainDocument();
+  const squad = squadDocument();
+  resetWorld(domain, squad);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "squad.patch",
+    operationId: "squad-stale-form",
+    payload: {
+      squad: { recordType: "squad", uuid: squad.uuid, entityId: "squad:S1" },
+      expectedModifiedTime: squad._stats.modifiedTime - 1,
+      patch: { morale: 61 }
+    }
+  }, { callerUserId: "P1" }), /mudou enquanto/i);
+  assert.equal(squad.getFlag("domain-manager", "data").morale, 60);
 });

@@ -193,6 +193,56 @@ export function planRequestDecision(
   };
 }
 
+export function planRequestResubmission(
+  requestData,
+  { type, title, intent, details = "", resubmittedByUserUuid }
+) {
+  if (requestData?.status !== "needs-changes") {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "A Request só pode ser corrigida depois que o Mestre solicitar ajustes."
+    );
+  }
+  if (requestData?.resultUuid) {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "Request com resultado materializado não pode ser corrigida."
+    );
+  }
+
+  const revised = normalizeRequestDraft({
+    operationId: requestData.operationId,
+    type,
+    requesterUserUuid: requestData.requesterUserUuid,
+    primaryDomainUuid: requestData.primaryDomainUuid,
+    title,
+    intent,
+    details
+  });
+
+  return {
+    ...requestData,
+    type: revised.type,
+    status: "submitted",
+    intent: revised.intent,
+    proposal: revised.proposal,
+    gmDecision: {
+      summary: "",
+      handling: "none",
+      decidedByUserUuid: null
+    },
+    history: [
+      ...(requestData.history ?? []),
+      {
+        kind: "resubmitted",
+        summary: "Solicitação corrigida e reenviada ao Mestre.",
+        userUuid: resubmittedByUserUuid ?? null,
+        tick: null
+      }
+    ]
+  };
+}
+
 const REQUEST_WITHDRAWABLE_STATUSES = Object.freeze([
   "submitted",
   "under-review",

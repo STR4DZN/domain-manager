@@ -2,6 +2,15 @@ import { RECORD_TYPES, SQUAD_STATUSES } from "../../core/constants.js";
 import { normalizeEntityReference } from "../../core/entity-contracts.js";
 import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 
+function revision(value) {
+  if (value == null || value === "") return null;
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized < 0) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser um inteiro não-negativo.");
+  }
+  return normalized;
+}
+
 function clampInteger(value, { min, max, label }) {
   const number = Math.floor(Number(value));
   if (!Number.isFinite(number) || number < min || number > max) {
@@ -66,7 +75,7 @@ export function normalizeSquadPatchPayload(payload = {}) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "Nenhuma alteração operacional foi informada para o Squad.");
   }
 
-  return { squad, patch: result };
+  return { squad, expectedModifiedTime: revision(payload.expectedModifiedTime), patch: result };
 }
 
 export function squadPatchResourceKeys(payload = {}) {
@@ -84,6 +93,7 @@ export function normalizeSquadAdminPayload(payload = {}) {
 
   return {
     squad,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
     name,
     controllerIds: normalizeControllers(payload.controllerIds),
     patch: {

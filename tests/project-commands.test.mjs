@@ -434,6 +434,26 @@ test("Project commands preservam expectedModifiedTime do contrato legado", async
   }), /mudou enquanto o formulário/i);
 });
 
+test("Project com progresso não pode regredir para planned", async () => {
+  const domain = domainDocument();
+  const project = projectDocument({ status: "active", completed: 20 });
+  resetWorld(domain, project);
+
+  await assert.rejects(() => command("project.update", "project-regress-planned", {
+    domain: ref(domain, "domain", "domain:D1"),
+    project: ref(project, "project", "project:PR1"),
+    name: project.name,
+    description: "Tentativa de regressão",
+    status: "planned",
+    blockedReason: "",
+    workRequired: 100,
+    rateAmount: 10,
+    periodTicks: 1
+  }), /não pode voltar ao estado planned/i);
+
+  assert.equal(project.getFlag("domain-manager", "data").status, "active");
+});
+
 test("APIs legadas de Project delegam ao kernel e hard-delete é recusado", async () => {
   const domain = domainDocument();
   const project = projectDocument({ status: "planned" });

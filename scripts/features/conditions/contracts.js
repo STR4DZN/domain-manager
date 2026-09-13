@@ -4,6 +4,14 @@ import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 
 function clean(value) { return String(value ?? "").trim(); }
 function domainRef(value) { return normalizeEntityReference(value, { allowedTypes: [RECORD_TYPES.DOMAIN] }); }
+function revision(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser inteiro não-negativo.");
+  }
+  return parsed;
+}
 function localId(value) {
   const id = clean(value);
   if (!id) throw new ModuleError(ERROR_CODES.VALIDATION, "Condition exige localId.");
@@ -38,13 +46,13 @@ function conditionInput(input = {}, { requireName = true } = {}) {
   return result;
 }
 export function normalizeConditionCreatePayload(payload = {}) {
-  return { domain: domainRef(payload.domain), condition: { localId: clean(payload.condition?.localId) || null, ...conditionInput(payload.condition ?? {}, { requireName: true }) } };
+  return { domain: domainRef(payload.domain), expectedModifiedTime: revision(payload.expectedModifiedTime), condition: { localId: clean(payload.condition?.localId) || null, ...conditionInput(payload.condition ?? {}, { requireName: true }) } };
 }
 export function normalizeConditionUpdatePayload(payload = {}) {
-  return { domain: domainRef(payload.domain), localId: localId(payload.localId), patch: conditionInput(payload.patch ?? {}, { requireName: false }) };
+  return { domain: domainRef(payload.domain), expectedModifiedTime: revision(payload.expectedModifiedTime), localId: localId(payload.localId), patch: conditionInput(payload.patch ?? {}, { requireName: false }) };
 }
 export function normalizeConditionReferencePayload(payload = {}) {
-  return { domain: domainRef(payload.domain), localId: localId(payload.localId) };
+  return { domain: domainRef(payload.domain), expectedModifiedTime: revision(payload.expectedModifiedTime), localId: localId(payload.localId) };
 }
 export function conditionResourceKeys(payload = {}) {
   const domain = domainRef(payload.domain);

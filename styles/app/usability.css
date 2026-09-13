@@ -236,7 +236,8 @@
   .dm-brand-mark{width:32px;height:32px;padding:6px}.dm-sidebar-brand>div:last-child{display:none}
   .dm-domain-switcher{height:52px;min-height:52px;margin:0;border:0;border-radius:0;background:#0d1215;padding:7px 10px}
   .dm-domain-switcher__status{height:30px}.dm-domain-switcher small{font-size:10px}.dm-domain-switcher strong{font-size:12px;margin:4px 0 0}.dm-domain-switcher em{display:none}
-  .dm-app-nav{grid-column:1/-1;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:7px 8px 8px;scrollbar-width:thin}
+  .dm-app-nav{grid-column:1/-1;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:7px 8px 8px;scrollbar-width:none;-ms-overflow-style:none}
+  .dm-app-nav::-webkit-scrollbar{display:none}
   .dm-nav-section{display:flex;align-items:center;gap:5px;flex:none}.dm-nav-section+.dm-nav-section{margin:0}.dm-nav-section__label{display:none}
   .dm-nav-item{min-width:max-content;min-height:38px;padding:0 11px;grid-template-columns:16px auto;gap:7px;font-size:11px}.dm-nav-item em{display:none}
   .dm-nav-workspace{display:flex;align-items:center;overflow:visible;margin:0;flex:none}.dm-nav-workspace__head{display:none}

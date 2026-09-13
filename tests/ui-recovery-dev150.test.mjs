@@ -61,18 +61,24 @@ test("responsividade reorganiza a aplicação em vez de encolher o conteúdo", (
   assert.match(recovery, /@container dm-window \(max-width:820px\)/);
   assert.match(recovery, /@container dm-window \(max-width:560px\)/);
   assert.match(recovery, /grid-template-columns:1fr;grid-template-rows:auto minmax\(0,1fr\)/);
-  assert.match(recovery, /\.dm-nav-workspace\.is-active \.dm-nav-workspace__children\{display:flex\}/);
+  assert.match(recovery, /\.dm-nav-workspace\.is-active\{display:flex!important\}/);
+  assert.match(recovery, /\.dm-nav-workspace__children,\.dm-nav-workspace\.is-active \.dm-nav-workspace__children\{display:flex/);
   assert.match(recovery, /\.dm-resource-matrix-live,.dm-project-board,.dm-request-board/);
   assert.match(recovery, /overflow:auto/);
 });
 
 test("camada recuperada remove telemetria decorativa e mantém texto operacional grande", () => {
-  for (const marker of [".dm-network-canvas__rings", ".dm-registry-scope__reticle", ".dm-core-gauge__rings", ".dm-target-reticle"]) {
-    assert.ok(recovery.includes(marker));
-  }
+  for (const marker of ["dm-network-canvas__rings", "dm-network-axis", "dm-network-core", "--level:", "dm-scope-line"]) assert.equal(template.includes(marker), false);
   assert.match(recovery, /--dm-text-base:15px/);
   assert.match(recovery, /--dm-hit:44px/);
   assert.match(recovery, /\.dm-view-header h2[^\n]*font-size:30px/);
+});
+
+test("navegação compacta usa seletor de área e não comprime palavras", () => {
+  assert.ok(template.includes("data-workspace-select"));
+  assert.match(recovery, /\.dm-nav-workspace-picker\{height:42px/);
+  assert.match(recovery, /overflow-wrap:normal!important/);
+  assert.match(recovery, /\.dm-nav-workspace\.is-active\{display:flex!important\}/);
 });
 
 test("textos estáticos principais não reintroduzem terminologia inglesa de produto", () => {

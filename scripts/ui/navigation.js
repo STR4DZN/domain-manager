@@ -8,6 +8,7 @@ const GLOBAL_VIEWS = Object.freeze([
 const DOMAIN_VIEWS = Object.freeze([
   { id: "overview", label: "Visão geral", icon: "fa-solid fa-chart-network", always: true, workspace: "command" },
   { id: "requests", label: "Solicitações", icon: "fa-solid fa-inbox", always: true, workspace: "command" },
+  { id: "conditions", label: "Condições", icon: "fa-solid fa-triangle-exclamation", always: true, workspace: "command" },
   { id: "history", label: "Histórico", icon: "fa-solid fa-clock-rotate-left", always: true, workspace: "command" },
   { id: "structures", label: "Infraestrutura", icon: "fa-solid fa-building-shield", capability: "structures", workspace: "base" },
   { id: "economy", label: "Recursos", icon: "fa-solid fa-coins", capability: "economy", workspace: "base" },
@@ -23,7 +24,7 @@ const DOMAIN_VIEWS = Object.freeze([
 ]);
 
 const WORKSPACE_GROUPS = Object.freeze([
-  { id: "command", label: "Gestão", code: "CMD", icon: "fa-solid fa-command", preferred: ["overview", "requests", "history"] },
+  { id: "command", label: "Gestão", code: "CMD", icon: "fa-solid fa-command", preferred: ["overview", "requests", "conditions", "history"] },
   { id: "base", label: "Base", code: "BAS", icon: "fa-solid fa-industry-windows", preferred: ["structures", "economy", "projects"] },
   { id: "operations", label: "Operações", code: "OPS", icon: "fa-solid fa-crosshairs", preferred: ["missions", "squads", "security"] },
   { id: "civil", label: "Pessoas", code: "CIV", icon: "fa-solid fa-people-group", preferred: ["population", "people"] },

@@ -19,6 +19,12 @@ function resolveDomain(reference) {
 function assertGM(callerUserId) {
   if (!game.users.get(callerUserId)?.isGM) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas GM pode alterar Conditions persistentes.");
 }
+function assertRevision(domain, expectedModifiedTime) {
+  const currentModifiedTime = domain.document._stats?.modifiedTime ?? null;
+  if (expectedModifiedTime !== null && currentModifiedTime !== expectedModifiedTime) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "O Domain mudou enquanto a edição de Condições estava aberta.");
+  }
+}
 function find(domain, id) { return (domain.data.conditions ?? []).find((entry) => entry.localId === id) ?? null; }
 async function persist(domain, data) {
   return updateRecord({ uuid: domain.uuid, recordType: RECORD_TYPES.DOMAIN, name: domain.document.name, data, controllerIds: domain.data.governance?.controllers ?? [] });
@@ -27,6 +33,7 @@ function rollback(domain, before) { return () => persist(domain, before); }
 
 export async function executeConditionCreate({ payload, callerUserId }) {
   assertGM(callerUserId); const normalized = normalizeConditionCreatePayload(payload); const domain = resolveDomain(normalized.domain);
+  assertRevision(domain, normalized.expectedModifiedTime);
   const before = foundry.utils.deepClone(domain.data);
   const condition = { ...normalized.condition, localId: normalized.condition.localId || foundry.utils.randomID() };
   const updated = await persist(domain, addDomainCondition(foundry.utils.deepClone(domain.data), condition));
@@ -35,6 +42,7 @@ export async function executeConditionCreate({ payload, callerUserId }) {
 }
 export async function executeConditionUpdate({ payload, callerUserId }) {
   assertGM(callerUserId); const normalized = normalizeConditionUpdatePayload(payload); const domain = resolveDomain(normalized.domain);
+  assertRevision(domain, normalized.expectedModifiedTime);
   if (!find(domain, normalized.localId)) throw new ModuleError(ERROR_CODES.NOT_FOUND, `Condição '${normalized.localId}' não encontrada.`);
   const before = foundry.utils.deepClone(domain.data);
   const updated = await persist(domain, updateDomainCondition(foundry.utils.deepClone(domain.data), normalized.localId, normalized.patch));
@@ -43,6 +51,7 @@ export async function executeConditionUpdate({ payload, callerUserId }) {
 }
 export async function executeConditionRemove({ payload, callerUserId }) {
   assertGM(callerUserId); const normalized = normalizeConditionReferencePayload(payload); const domain = resolveDomain(normalized.domain);
+  assertRevision(domain, normalized.expectedModifiedTime);
   const existing = find(domain, normalized.localId); if (!existing) throw new ModuleError(ERROR_CODES.NOT_FOUND, `Condição '${normalized.localId}' não encontrada.`);
   const before = foundry.utils.deepClone(domain.data);
   await persist(domain, removeDomainCondition(foundry.utils.deepClone(domain.data), normalized.localId));
@@ -50,6 +59,7 @@ export async function executeConditionRemove({ payload, callerUserId }) {
 }
 export async function executeConditionToggle({ payload, callerUserId }) {
   assertGM(callerUserId); const normalized = normalizeConditionReferencePayload(payload); const domain = resolveDomain(normalized.domain);
+  assertRevision(domain, normalized.expectedModifiedTime);
   const existing = find(domain, normalized.localId); if (!existing) throw new ModuleError(ERROR_CODES.NOT_FOUND, `Condição '${normalized.localId}' não encontrada.`);
   const before = foundry.utils.deepClone(domain.data);
   const updated = await persist(domain, updateDomainCondition(foundry.utils.deepClone(domain.data), normalized.localId, { active: !existing.active }));

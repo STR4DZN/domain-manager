@@ -180,6 +180,8 @@ function structureDocument({ status = "operational", condition = 100 } = {}) {
       status,
       condition,
       capacity: 100,
+      maintenancePriority: 73,
+      workforceRequired: 0,
       maintenance: [{ resourceId: "fuel", amount: 2 }],
       production: [{ resourceId: "energy", amount: 20 }],
       tags: ["critical"]
@@ -280,6 +282,7 @@ test("GM atualiza blueprint estrutural completo", async () => {
   assert.equal(structure.name, "Reator Helios II");
   assert.equal(data.tier, 2);
   assert.equal(data.condition, 60);
+  assert.equal(data.maintenancePriority, 73);
   assert.equal(data.activeProject, null);
   assert.equal(data.production[0].amount, 36);
 });
@@ -366,4 +369,59 @@ test("Structure rejeita referência UUID/entityId inconsistente", async () => {
       patch: { status: "disabled" }
     }
   }, { callerUserId: "P1" }), /entidades diferentes/i);
+});
+
+test("Structure recusa formulário obsoleto antes de alterar o registro", async () => {
+  const domain = domainDocument();
+  const structure = structureDocument();
+  structure._stats = { modifiedTime: 200 };
+  resetWorld(domain, structure);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "structure.patch",
+    operationId: "structure-stale-patch",
+    payload: {
+      structure: ref(structure, "structure", "structure:ST1"),
+      expectedModifiedTime: "199",
+      patch: { status: "disabled" }
+    }
+  }, { callerUserId: "P1" }), /mudou enquanto o formulário/i);
+
+  assert.equal(structure.getFlag("domain-manager", "data").status, "operational");
+});
+
+test("GM não pode comissionar manualmente Structure com Project ainda vinculado", async () => {
+  const domain = domainDocument();
+  const structure = structureDocument({ status: "planned" });
+  structure.getFlag("domain-manager", "data").activeProject = {
+    recordType: "project",
+    uuid: "JournalEntry.PR-ACTIVE",
+    entityId: "project:PR-ACTIVE"
+  };
+  resetWorld(domain, structure);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "structure.admin-update",
+    operationId: "structure-manual-commission",
+    payload: {
+      structure: ref(structure, "structure", "structure:ST1"),
+      name: structure.name,
+      description: "Tentativa manual",
+      category: "power",
+      tier: 1,
+      maxTier: 3,
+      status: "operational",
+      condition: 100,
+      capacity: 100,
+      maintenancePriority: 50,
+      workforceRequired: 0,
+      maintenance: [{ resourceId: "fuel", amount: 2 }],
+      production: [{ resourceId: "energy", amount: 20 }],
+      tags: ["critical"]
+    }
+  }, { callerUserId: "GM" }), /Project em andamento|comissionamento pela simulação/i);
+
+  const data = structure.getFlag("domain-manager", "data");
+  assert.equal(data.status, "planned");
+  assert.equal(data.activeProject.entityId, "project:PR-ACTIVE");
 });

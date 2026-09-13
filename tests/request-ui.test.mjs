@@ -7,10 +7,10 @@ const shell = fs.readFileSync(new URL("../scripts/ui/shell-app.js", import.meta.
 const nav = fs.readFileSync(new URL("../scripts/ui/navigation.js", import.meta.url), "utf8");
 const viewsCss = fs.readFileSync(new URL("../styles/app/views.css", import.meta.url), "utf8");
 
-test("Requests é ferramenta do workspace Command com queue, dossier e dois consoles", () => {
+test("Requests é ferramenta do workspace Command com fila, dossiê e três consoles", () => {
   for (const token of [
     'id: "requests", label: "Solicitações"',
-    'preferred: ["overview", "requests", "history"]'
+    'preferred: ["overview", "requests", "conditions", "history"]'
   ]) assert.equal(nav.includes(token), true, `navegação ausente: ${token}`);
   for (const token of [
     "GESTÃO // SOLICITAÇÕES",
@@ -18,9 +18,12 @@ test("Requests é ferramenta do workspace Command com queue, dossier e dois cons
     "DETALHES DA SOLICITAÇÃO",
     'id="dm-request-create-form"',
     'id="dm-request-review-form"',
+    'id="dm-request-revision-form"',
     'data-action="selectRequest"',
     'data-action="openRequestCreate"',
     'data-action="openRequestReview"',
+    'data-action="openRequestRevision"',
+    "CORRIGIR E REENVIAR",
     'data-action="createMissionFromRequest"',
     "CRIAR MISSÃO",
     'data-action="withdrawRequest"',
@@ -40,12 +43,13 @@ test("shell filtra ownership de Request antes de decode/render", () => {
   assert.equal(block.includes("requests: decode(recordIndex.requestsForDomain(domain.uuid))"), false);
 });
 
-test("Request UI usa somente Command Kernel para create/review", () => {
+test("Request UI usa somente Command Kernel para criar, revisar, corrigir e encerrar", () => {
   const start = shell.indexOf("static onSelectRequest");
   const end = shell.indexOf("static onSelectProject", start);
   const block = shell.slice(start, end);
   assert.equal(block.includes("COMMAND_TYPES.REQUEST_CREATE"), true);
   assert.equal(block.includes("COMMAND_TYPES.REQUEST_REVIEW"), true);
+  assert.equal(block.includes("COMMAND_TYPES.REQUEST_RESUBMIT"), true);
   assert.equal(block.includes("COMMAND_TYPES.REQUEST_CREATE_MISSION"), true);
   assert.equal(block.includes("COMMAND_TYPES.REQUEST_WITHDRAW"), true);
   assert.equal(block.includes("COMMAND_TYPES.REQUEST_FULFILL"), true);
@@ -57,6 +61,14 @@ test("Request UI usa somente Command Kernel para create/review", () => {
 test("UI não promete fulfillment automático", () => {
   assert.equal(template.includes("não há conclusão automática nesta etapa"), true);
   assert.equal(template.includes("não cria missão, projeto ou acordo automaticamente"), true);
+});
+
+test("correção só aparece para autor em needs-changes e usa revisão capturada", () => {
+  assert.equal(shell.includes('status === "needs-changes"'), true);
+  assert.equal(shell.includes('game.user.uuid === record.data.requesterUserUuid'), true);
+  assert.equal(template.includes('name="expectedModifiedTime" value="{{revisingRequest.modifiedTime}}"'), true);
+  assert.equal(template.includes("Solicitação corrigida e reenviada"), false, "mensagem de sucesso pertence ao shell, não a conteúdo estático");
+  assert.equal(shell.includes("Solicitação corrigida e reenviada para análise."), true);
 });
 
 
@@ -79,8 +91,8 @@ test("lifecycle UI só oferece withdraw ao solicitante e fulfill quando há evid
 });
 
 
-test("review congela após materialização de resultado", () => {
-  assert.equal(shell.includes("REQUEST_REVIEW_STATUSES.includes(status) && !record.data.resultUuid"), true);
+test("review congela após materialização e enquanto aguarda correção", () => {
+  assert.equal(shell.includes('status !== "needs-changes" && REQUEST_REVIEW_STATUSES.includes(status) && !record.data.resultUuid'), true);
 });
 
 
@@ -89,6 +101,7 @@ test("legacy actions não mantêm autoridade paralela", () => {
   assert.equal(actions.includes("dispatchAuthoritativeCommand"), true);
   assert.equal(actions.includes("COMMAND_TYPES.REQUEST_CREATE"), true);
   assert.equal(actions.includes("COMMAND_TYPES.REQUEST_REVIEW"), true);
+  assert.equal(actions.includes("COMMAND_TYPES.REQUEST_RESUBMIT"), true);
   assert.equal(actions.includes("createRecord"), false);
   assert.equal(actions.includes("updateRecord"), false);
   assert.equal(actions.includes("transactionQueue"), false);

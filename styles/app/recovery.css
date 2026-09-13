@@ -28,7 +28,8 @@
 .dm-os *{text-shadow:none!important}
 .dm-os :is(button,input,select,textarea){font-size:14px}
 .dm-os :is(button,input,select,textarea):not([type="checkbox"]):not([type="radio"]){min-height:42px}
-.dm-os :is(p,small,span,strong,em,label,button){overflow-wrap:anywhere}
+.dm-os :is(p,small,span,strong,em,label,button){overflow-wrap:break-word}
+.dm-nav-workspace-picker{display:none}
 
 /* Remove decorative texture/radar language from the working surfaces. */
 .dm-app-main,.dm-stage,.dm-view,.dm-network-field,.dm-network-canvas,.dm-core-diagram,.dm-domain-core,
@@ -207,7 +208,8 @@
   .dm-app-sidebar{grid-row:1;display:grid;grid-template-columns:62px minmax(180px,1fr);grid-template-rows:58px auto;border-right:0;border-bottom:1px solid var(--dm-line);background:#0b1013}
   .dm-sidebar-brand{height:58px;padding:8px 10px;border-right:1px solid var(--dm-line);border-bottom:0}.dm-sidebar-brand>div:last-child{display:none}.dm-brand-mark{width:40px;height:40px}
   .dm-domain-switcher{height:58px;min-height:58px;margin:0;border:0;border-radius:0;padding:7px 11px;background:#0e1418}.dm-domain-switcher__status{height:34px}.dm-domain-switcher strong{font-size:13px}.dm-domain-switcher small{font-size:11px}.dm-domain-switcher em{display:none}
-  .dm-app-nav{grid-column:1/-1;display:flex;gap:6px;align-items:center;overflow-x:auto;overflow-y:hidden;padding:8px 9px 9px;scrollbar-width:thin}
+  .dm-app-nav{grid-column:1/-1;display:flex;gap:6px;align-items:center;overflow-x:auto;overflow-y:hidden;padding:8px 9px 9px;scrollbar-width:none;-ms-overflow-style:none}
+  .dm-app-nav::-webkit-scrollbar{display:none}
   .dm-nav-section{display:flex;gap:5px;align-items:center;flex:none}.dm-nav-section+.dm-nav-section{margin:0}.dm-nav-section__label{display:none}
   .dm-nav-item{min-width:max-content;min-height:42px;padding:0 12px;display:flex;gap:8px;font-size:13px}.dm-nav-item em{display:none}
   .dm-nav-workspace{display:flex;align-items:center;overflow:visible;flex:none;margin:0}.dm-nav-workspace__head{display:none}.dm-nav-workspace__children,.dm-nav-workspace.is-active .dm-nav-workspace__children{display:flex;gap:5px;padding:0}.dm-nav-subitem{min-width:max-content;min-height:42px;padding:0 12px;display:flex;gap:7px;font-size:13px}.dm-nav-subitem>span{display:none}.dm-nav-subitem strong{font-size:13px}
@@ -280,11 +282,14 @@
 
 /* Compact navigation shows workspaces first and only the active workspace tools. */
 @container dm-window (max-width:1180px){
-  .dm-nav-workspace{gap:4px}
-  .dm-nav-workspace__head{display:flex;min-width:max-content;min-height:42px;padding:0 11px;gap:8px;border-radius:8px}
-  .dm-nav-workspace__head>span{display:block}.dm-nav-workspace__head strong{font-size:13px}.dm-nav-workspace__head small,.dm-nav-workspace__head em{display:none}.dm-nav-workspace__head>i{font-size:14px}
-  .dm-nav-workspace__children{display:none;padding:0;border:0;background:transparent}
-  .dm-nav-workspace.is-active .dm-nav-workspace__children{display:flex}
+  .dm-app-nav :is(button,strong,span,label,option){white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}
+  .dm-nav-workspace-picker{height:42px;min-width:150px;flex:none;padding:0 8px;border:1px solid var(--dm-line);border-radius:8px;background:#11171b;display:flex;align-items:center;gap:7px;color:var(--dm-muted)}
+  .dm-nav-workspace-picker>span{font-size:11px}.dm-nav-workspace-picker select{min-height:36px!important;height:36px;min-width:0;border:0!important;background:#11171b!important;color:var(--dm-text)!important;padding:0 24px 0 2px!important;font-size:13px!important;box-shadow:none!important}
+  .dm-nav-workspace{display:none!important;gap:4px}
+  .dm-nav-workspace.is-active{display:flex!important}
+  .dm-nav-workspace__head{display:none!important}
+  .dm-nav-workspace__children,.dm-nav-workspace.is-active .dm-nav-workspace__children{display:flex;gap:5px;padding:0;border:0;background:transparent}
+  .dm-nav-item,.dm-nav-subitem{flex:none;white-space:nowrap;overflow-wrap:normal;word-break:normal}
 }
 
 /* Very small widths trade optional global search for usable navigation/actions. */
@@ -305,4 +310,11 @@
   .dm-os[data-dm-height="short"] .dm-sidebar-brand,.dm-os[data-dm-height="short"] .dm-domain-switcher{height:50px;min-height:50px}
   .dm-os[data-dm-height="short"] .dm-app-nav{padding-top:5px;padding-bottom:5px}
   .dm-os[data-dm-height="short"] .dm-nav-item,.dm-os[data-dm-height="short"] .dm-nav-workspace__head,.dm-os[data-dm-height="short"] .dm-nav-subitem{min-height:38px}
+}
+
+@container dm-window (max-width:720px){
+  .dm-mission-card__summary{flex-direction:row;justify-content:flex-start;border-right:0;border-bottom:1px solid var(--dm-line);text-align:left}
+  .dm-mission-card__summary>i{font-size:16px}.dm-mission-card__summary>strong{font-size:15px}
+  .dm-mission-card__actions>.dm-action-button{flex:1 1 180px}
+  .dm-confirmation-summary{grid-template-columns:36px minmax(0,1fr)}.dm-confirmation-summary>i{width:36px;height:36px}
 }

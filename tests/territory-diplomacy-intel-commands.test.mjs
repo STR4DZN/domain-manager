@@ -34,6 +34,7 @@ users.activeGM = users.get("GM");
 users.contents = [...users.values()];
 
 const docs = new Map();
+let modifiedClock = 100;
 let ledger = { version: 1, receipts: [] };
 const dataFolder = { id: "DATA", type: "JournalEntry", getFlag: () => true };
 const folders = { get: (id) => id === "DATA" ? dataFolder : null, find: (fn) => fn(dataFolder) ? dataFolder : null };
@@ -63,6 +64,7 @@ let recordIndexRef = null;
 function makeDoc({ id, name, recordType, data, ownership = {} }) {
   const doc = {
     id, uuid: `JournalEntry.${id}`, documentName: "JournalEntry", name,
+    _stats: { modifiedTime: modifiedClock++ },
     ownership: structuredClone(ownership),
     flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
@@ -73,6 +75,7 @@ function makeDoc({ id, name, recordType, data, ownership = {} }) {
         else if (key === "ownership") this.ownership = structuredClone(value);
         else setPath(this, key, value);
       }
+      this._stats.modifiedTime = modifiedClock++;
       recordIndexRef?.upsert(this);
       return this;
     }
@@ -155,6 +158,19 @@ test("relation.upsert cria edge tipada e rejeita autorrelação", async () => {
   await assert.rejects(() => command("relation.upsert", "rel-self", { domain: ref(a), target: ref(a), posture: "neutral" }), /consigo mesmo/i);
 });
 
+test("Relations rejeita revisão obsoleta e não recria vínculo removido", async () => {
+  const a = domain("A", "P1"); const b = domain("B", "P2"); reset(a, b);
+  await assert.rejects(() => command("relation.upsert", "rel-stale", {
+    domain: ref(a), expectedModifiedTime: a._stats.modifiedTime - 1, target: ref(b), posture: "friendly"
+  }), /mudou enquanto estava aberto/i);
+  assert.equal(a.getFlag("domain-manager", "data").relations.length, 0);
+
+  await assert.rejects(() => command("relation.upsert", "rel-missing-update", {
+    domain: ref(a), expectedModifiedTime: a._stats.modifiedTime, localId: "rel-removed", target: ref(b), posture: "neutral"
+  }), /não pode recriar/i);
+  assert.equal(a.getFlag("domain-manager", "data").relations.length, 0);
+});
+
 test("legacy Relation actions preservam patch parcial e delegam ao Command Kernel", async () => {
   const a = domain("A", "P1"); const b = domain("B", "P2"); reset(a, b);
   const actions = await import("../scripts/features/relations/actions.js");
@@ -191,6 +207,16 @@ test("legacy Relation actions preservam patch parcial e delegam ao Command Kerne
   assert.match(relationSection, /COMMAND_TYPES\.RELATION_REMOVE/);
 });
 
+test("Agreement embutido legado é somente leitura e não conserva write path paralelo", async () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const source = fs.readFileSync(path.join(root, "scripts/features/relations/actions.js"), "utf8");
+  for (const forbidden of ["updateRecord", "createRecord", "document.update", "transactionQueue"]) {
+    assert.equal(source.includes(forbidden), false, `write path legado em Agreement: ${forbidden}`);
+  }
+  const actions = await import("../scripts/features/relations/actions.js");
+  await assert.rejects(() => actions.removeAgreement({ domainUuid: "JournalEntry.A", localId: "agr-old" }), /somente leitura/i);
+});
+
 test("agreement.create cria entidade independente, ownership agregado e valida transferências", async () => {
   const a = domain("A", "P1"); const b = domain("B", "P2"); reset(a, b);
   const created = await command("agreement.create", "agr-1", {
@@ -223,6 +249,24 @@ test("agreement.status atualiza lifecycle pelo command kernel", async () => {
   assert.equal(doc.getFlag("domain-manager", "data").status, "active");
 });
 
+test("Agreement encerrado é terminal e status valida revisão", async () => {
+  const a = domain("A", "P1"); const b = domain("B", "P2"); reset(a, b);
+  const created = await command("agreement.create", "agr-terminal-create", {
+    name: "Final Pact", parties: [ref(a), ref(b)], type: "custom", status: "active", transfers: []
+  });
+  const agreement = recordIndex.getByEntityId(created.entityId);
+  await assert.rejects(() => command("agreement.status", "agr-status-stale", {
+    agreement: ref(agreement, "agreement"), expectedModifiedTime: agreement._stats.modifiedTime - 1, status: "suspended"
+  }), /mudou enquanto estava aberto/i);
+  await command("agreement.status", "agr-terminal", {
+    agreement: ref(agreement, "agreement"), expectedModifiedTime: agreement._stats.modifiedTime, status: "terminated"
+  });
+  await assert.rejects(() => command("agreement.status", "agr-reactivate", {
+    agreement: ref(agreement, "agreement"), expectedModifiedTime: agreement._stats.modifiedTime, status: "active"
+  }), /não pode ser reativado/i);
+  assert.equal(agreement.getFlag("domain-manager", "data").status, "terminated");
+});
+
 test("intel.upsert mantém alvo tipado e intel.reveal torna pacote público", async () => {
   const a = domain("A", "P1"); const b = domain("B", "P2"); reset(a, b);
   const upserted = await command("intel.upsert", "intel-1", {
@@ -236,6 +280,26 @@ test("intel.upsert mantém alvo tipado e intel.reveal torna pacote público", as
   assert.equal(revealed.intel.visibility, "public");
   assert.equal(revealed.intel.revealed, true);
   assert.equal(a.getFlag("domain-manager", "data").intel[0].visibility, "public");
+});
+
+test("Intel rejeita revisão obsoleta, recriação silenciosa e publicação por edição", async () => {
+  const a = domain("A", "P1"); reset(a);
+  await assert.rejects(() => command("intel.upsert", "intel-stale", {
+    domain: ref(a), expectedModifiedTime: a._stats.modifiedTime - 1, title: "Stale", visibility: "gm_only"
+  }), /mudou enquanto a informação estava aberta/i);
+
+  await assert.rejects(() => command("intel.upsert", "intel-missing-update", {
+    domain: ref(a), expectedModifiedTime: a._stats.modifiedTime, localId: "intel-removed", title: "Removed", visibility: "gm_only"
+  }), /não pode recriar/i);
+
+  const created = await command("intel.upsert", "intel-controlled", {
+    domain: ref(a), expectedModifiedTime: a._stats.modifiedTime, title: "Controlled", visibility: "gm_only"
+  });
+  await assert.rejects(() => command("intel.upsert", "intel-publish-by-edit", {
+    domain: ref(a), expectedModifiedTime: a._stats.modifiedTime, localId: created.intel.localId,
+    title: "Controlled", visibility: "public"
+  }), /Use a ação Revelar/i);
+  assert.equal(a.getFlag("domain-manager", "data").intel[0].visibility, "gm_only");
 });
 
 

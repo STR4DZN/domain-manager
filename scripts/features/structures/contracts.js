@@ -19,6 +19,15 @@ function clean(value) {
   return String(value ?? "").trim();
 }
 
+function expectedModifiedTime(value) {
+  if (value == null || value === "") return null;
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser um número válido.");
+  }
+  return normalized;
+}
+
 function status(value, fallback = "operational") {
   const normalized = clean(value || fallback);
   if (!STRUCTURE_STATUSES.includes(normalized)) {
@@ -112,7 +121,7 @@ export function normalizeStructurePatchPayload(payload = {}) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "Nenhuma alteração operacional foi informada para a Structure.");
   }
 
-  return { structure, patch: result };
+  return { structure, expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime), patch: result };
 }
 
 export function structurePatchResourceKeys(payload = {}) {
@@ -123,6 +132,7 @@ export function structurePatchResourceKeys(payload = {}) {
 export function normalizeStructureAdminPayload(payload = {}) {
   return {
     structure: normalizeEntityReference(payload.structure, { allowedTypes: [RECORD_TYPES.STRUCTURE] }),
+    expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime),
     ...baseBlueprint(payload, { defaultStatus: "operational" })
   };
 }

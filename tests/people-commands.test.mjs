@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 
 class DummyField {}
 let entityCounter = 1;
@@ -24,6 +25,7 @@ globalThis.Hooks = { callAll() {} };
 
 const users = new Map([
   ["GM", { id: "GM", uuid: "User.GM", name: "Primary GM", isGM: true, active: true }],
+  ["GM2", { id: "GM2", uuid: "User.GM2", name: "Secondary GM", isGM: true, active: true }],
   ["P1", { id: "P1", uuid: "User.P1", name: "Controller", isGM: false, active: true }],
   ["P2", { id: "P2", uuid: "User.P2", name: "Visitor", isGM: false, active: true }]
 ]);
@@ -32,7 +34,9 @@ users.activeGM = users.get("GM");
 users.contents = [...users.values()];
 
 const docs = new Map();
+let modifiedClock = 100;
 let operationLedger = { version: 1, receipts: [] };
+let failLedgerWrite = false;
 const dataFolder = { id: "DATA", type: "JournalEntry", getFlag: () => true };
 const folders = { get: (id) => id === "DATA" ? dataFolder : null, find: (fn) => fn(dataFolder) ? dataFolder : null };
 
@@ -44,7 +48,11 @@ globalThis.game = {
       if (key === "operationLedger") return structuredClone(operationLedger);
       return null;
     },
-    async set(_m, key, value) { if (key === "operationLedger") operationLedger = structuredClone(value); return value; }
+    async set(_m, key, value) {
+      if (key === "operationLedger" && failLedgerWrite) throw new Error("ledger unavailable");
+      if (key === "operationLedger") operationLedger = structuredClone(value);
+      return value;
+    }
   }
 };
 globalThis.Folder = { async create() { throw new Error("folder exists"); } };
@@ -58,6 +66,7 @@ function setPath(target, path, value) {
 function makeDoc({ id, name, recordType, data, ownership = {} }) {
   const doc = {
     id, uuid: `JournalEntry.${id}`, documentName: "JournalEntry", name,
+    _stats: { modifiedTime: modifiedClock++ },
     ownership: structuredClone(ownership),
     flags: { "domain-manager": { recordType, schemaVersion: 9, data: structuredClone(data) } },
     getFlag(moduleId, key) { return this.flags[moduleId]?.[key]; },
@@ -68,6 +77,7 @@ function makeDoc({ id, name, recordType, data, ownership = {} }) {
         else if (key === "ownership") this.ownership = structuredClone(value);
         else setPath(this, key, value);
       }
+      this._stats.modifiedTime = modifiedClock++;
       recordIndexRef?.upsert(this);
       return this;
     },
@@ -81,7 +91,7 @@ let recordIndexRef = null;
 globalThis.JournalEntry = {
   async create(payload) {
     const flags = payload.flags["domain-manager"];
-    const doc = makeDoc({ id: `NEW${createCounter++}`, name: payload.name, recordType: flags.recordType, data: flags.data, ownership: payload.ownership });
+    const doc = makeDoc({ id: payload._id ?? `NEW${createCounter++}`, name: payload.name, recordType: flags.recordType, data: flags.data, ownership: payload.ownership });
     game.journal.push(doc); recordIndexRef?.upsert(doc); return doc;
   },
   async updateDocuments(changes) {
@@ -127,7 +137,7 @@ function squad(domainDoc, { id = "SQ1", entityId = "squad:SQ1" } = {}) {
 }
 function ref(doc, type) { const data = doc.getFlag("domain-manager", "data"); return { recordType: type, uuid: doc.uuid, entityId: data.entityId }; }
 function reset(...documents) {
-  docs.clear(); for (const d of documents) docs.set(d.uuid, d); game.journal = documents; operationLedger = { version: 1, receipts: [] }; game.user = users.get("GM"); recordIndex.rebuild();
+  docs.clear(); for (const d of documents) docs.set(d.uuid, d); game.journal = documents; operationLedger = { version: 1, receipts: [] }; failLedgerWrite = false; game.user = users.get("GM"); recordIndex.rebuild();
 }
 
 async function command(commandType, operationId, payload, callerUserId = "P1") {
@@ -177,6 +187,21 @@ test("grupo civil + workforce validam capacidade, Domain da Structure e remoçã
   ]}), /não pertence/i);
 });
 
+test("Population rejeita formulário obsoleto e edição não recria grupo removido", async () => {
+  const d = domain(); reset(d);
+  const initialRevision = d._stats.modifiedTime;
+  await assert.rejects(() => command("population.configure", "pop-stale", {
+    domain: ref(d, "domain"), expectedModifiedTime: initialRevision - 1, total: 99, countMode: "direct", morale: 70
+  }), /mudou enquanto estava aberto/i);
+  assert.equal(d.getFlag("domain-manager", "data").population.total, 10);
+
+  await assert.rejects(() => command("population.group-upsert", "group-missing-update", {
+    domain: ref(d, "domain"), expectedModifiedTime: d._stats.modifiedTime, localId: "removed-group",
+    name: "Grupo removido", count: 3, workforceEligible: 3, morale: 60, status: "active"
+  }), /não pode recriar/i);
+  assert.equal(d.getFlag("domain-manager", "data").population.groups.length, 0);
+});
+
 test("Person create/update usa people capability, ownership do Domain e Squad compatível", async () => {
   const d = domain(); const sq = squad(d); reset(d, sq);
   const created = await command("person.create", "person-1", {
@@ -198,8 +223,154 @@ test("Person create/update usa people capability, ownership do Domain e Squad co
   assert.equal(personDoc.name, "Dr. Helena Torres");
 });
 
+test("Person update rejeita revisão obsoleta sem sobrescrever cadastro", async () => {
+  const d = domain(); reset(d);
+  const created = await command("person.create", "person-stale-create", {
+    domain: ref(d, "domain"), name: "Lina", role: "Scout", morale: 70, condition: 90, status: "active"
+  });
+  const personDoc = recordIndex.getByEntityId(created.entityId);
+  const revision = personDoc._stats.modifiedTime;
+  await personDoc.update({ name: "Lina Atual" });
+  await assert.rejects(() => command("person.update", "person-stale-update", {
+    person: ref(personDoc, "person"), expectedModifiedTime: revision, name: "Lina Antiga", role: "Scout",
+    morale: 70, condition: 90, status: "active"
+  }), /mudou enquanto estava aberto/i);
+  assert.equal(personDoc.name, "Lina Atual");
+});
+
 test("Person rejeita visitante e Squad pertencente a outro Domain", async () => {
   const d1 = domain(); const d2 = domain({ id: "D2", entityId: "domain:D2" }); const sq2 = squad(d2, { id: "SQ2", entityId: "squad:SQ2" }); reset(d1, d2, sq2);
   await assert.rejects(() => command("person.create", "person-denied", { domain: ref(d1, "domain"), name: "Visitor", morale: 60, condition: 100 }, "P2"), /não controla/i);
   await assert.rejects(() => command("person.create", "person-cross", { domain: ref(d1, "domain"), name: "Wrong Squad", squad: ref(sq2, "squad"), morale: 60, condition: 100 }), /não pertence/i);
+});
+
+test("People legacy actions não mantêm escrita paralela e bloqueiam Notable embutido", async () => {
+  const source = fs.readFileSync(new URL("../scripts/features/people/actions.js", import.meta.url), "utf8");
+  for (const forbidden of ["updateRecord", "createRecord", "document.update", "transactionQueue"]) {
+    assert.equal(source.includes(forbidden), false, `write path legado em People: ${forbidden}`);
+  }
+  const d = domain(); reset(d);
+  const actions = await import("../scripts/features/people/actions.js");
+  await actions.updatePopulationSummaryAction({
+    domainUuid: d.uuid,
+    expectedModifiedTime: d._stats.modifiedTime,
+    total: 42,
+    countMode: "direct",
+    operationId: "people-action-population"
+  });
+  assert.equal(d.getFlag("domain-manager", "data").population.total, 42);
+  await assert.rejects(() => actions.upsertNotableAction({ domainUuid: d.uuid }), /somente leitura/i);
+});
+
+test("Domain create/update/media passam pelo kernel para GM secundário", async () => {
+  reset();
+  const created = await command("domain.create", "domain-create-1", {
+    name: "Estação Aurora",
+    description: "Entreposto orbital",
+    category: "Estação",
+    nature: "physical",
+    state: "active",
+    managementPreset: "outpost",
+    controllerIds: ["P1"]
+  }, "GM2");
+  const createdDocument = recordIndex.getByEntityId(created.entityId);
+  assert.ok(createdDocument);
+  assert.equal(created.name, "Estação Aurora");
+  assert.equal(created.preset, "outpost");
+
+  const updated = await command("domain.update", "domain-update-1", {
+    domain: ref(createdDocument, "domain"),
+    name: "Estação Aurora Prime",
+    description: "Entreposto principal",
+    category: "Estação",
+    nature: "physical",
+    state: "active",
+    tags: ["orbital"],
+    controllerIds: ["P1"],
+    locatedInUuid: null,
+    administrativeParentUuid: null,
+    managementPreset: "custom",
+    capabilities: { economy: true, people: true, projects: true }
+  }, "GM2");
+  assert.equal(updated.name, "Estação Aurora Prime");
+  assert.equal(updated.preset, "custom");
+  assert.equal(createdDocument.name, "Estação Aurora Prime");
+  assert.equal(createdDocument.getFlag("domain-manager", "data").management.capabilities.people, true);
+  assert.equal(createdDocument.getFlag("domain-manager", "data").management.capabilities.missions, false);
+
+  const media = await command("domain.media-update", "domain-media-1", {
+    domain: ref(createdDocument, "domain"),
+    fields: [
+      ["visuals.bannerImg", "images/aurora.webp"],
+      ["visuals.imagePosX", 72]
+    ]
+  }, "GM2");
+  assert.equal(media.uuid, createdDocument.uuid);
+  assert.equal(createdDocument.getFlag("domain-manager", "data").visuals.bannerImg, "images/aurora.webp");
+  assert.equal(createdDocument.getFlag("domain-manager", "data").visuals.imagePosX, 72);
+});
+
+test("Domain commands rejeitam caller que não é GM", async () => {
+  const d = domain(); reset(d);
+  await assert.rejects(() => command("domain.create", "domain-denied-create", {
+    name: "Inválido"
+  }, "P1"), /Somente GM/i);
+  await assert.rejects(() => command("domain.media-update", "domain-denied-media", {
+    domain: ref(d, "domain"),
+    fields: [["visuals.bannerImg", "images/nope.webp"]]
+  }, "P1"), /Somente GM/i);
+});
+
+test("Domain delete bloqueia registros com dependências e preserva todos os documentos", async () => {
+  const parent = domain();
+  const child = domain({ id: "D2", entityId: "domain:D2" });
+  child.flags["domain-manager"].data.hierarchy = {
+    locatedInUuid: parent.uuid,
+    administrativeParentUuid: null
+  };
+  const linkedStructure = structure(parent);
+  reset(parent, child, linkedStructure);
+
+  await assert.rejects(() => command("domain.delete", "domain-delete-blocked", {
+    domain: ref(parent, "domain"),
+    confirmation: "domain:D1"
+  }, "GM2"), /2 vinculaç/i);
+
+  assert.ok(recordIndex.get("domain", parent.uuid));
+  assert.ok(recordIndex.get("domain", child.uuid));
+  assert.ok(recordIndex.get("structure", linkedStructure.uuid));
+});
+
+test("Domain delete exige confirmação exata, aceita GM secundário e é idempotente", async () => {
+  const removable = domain();
+  reset(removable);
+
+  await assert.rejects(() => command("domain.delete", "domain-delete-wrong-confirmation", {
+    domain: ref(removable, "domain"),
+    confirmation: "D1"
+  }, "GM2"), /domain:D1/i);
+
+  const envelope = { domain: ref(removable, "domain"), confirmation: "domain:D1" };
+  const first = await command("domain.delete", "domain-delete-success", envelope, "GM2");
+  const duplicate = await command("domain.delete", "domain-delete-success", envelope, "GM2");
+  assert.equal(first.entityId, "domain:D1");
+  assert.equal(first.duplicate, false);
+  assert.equal(duplicate.duplicate, true);
+  assert.equal(recordIndex.get("domain", removable.uuid), null);
+  assert.equal(docs.has(removable.uuid), false);
+});
+
+test("Domain delete restaura o mesmo JournalEntry se a receipt não puder ser persistida", async () => {
+  const removable = domain();
+  reset(removable);
+  failLedgerWrite = true;
+
+  await assert.rejects(() => command("domain.delete", "domain-delete-rollback", {
+    domain: ref(removable, "domain"),
+    confirmation: "domain:D1"
+  }, "GM2"), /ledger unavailable/i);
+
+  assert.ok(docs.has(removable.uuid));
+  assert.equal(recordIndex.get("domain", removable.uuid)?.uuid, removable.uuid);
+  assert.equal(recordIndex.get("domain", removable.uuid)?.name, removable.name);
 });

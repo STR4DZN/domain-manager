@@ -25,7 +25,7 @@ async function run(commandType, domainUuid, payload, requestedOperationId) {
   return getRecord(domainUuid);
 }
 
-export function addIntel({
+export async function addIntel({
   domainUuid,
   title,
   category = "fact",
@@ -36,7 +36,9 @@ export function addIntel({
   tags = [],
   operationId: id = null
 }) {
+  const domain = await getRecord(domainUuid);
   return run(COMMAND_TYPES.INTEL_UPSERT, domainUuid, {
+    expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null,
     title,
     category,
     visibility,
@@ -54,6 +56,7 @@ export async function updateIntel({ domainUuid, localId, changes = {}, operation
 
   const merged = { ...existing, ...changes, localId };
   return run(COMMAND_TYPES.INTEL_UPSERT, domainUuid, {
+    expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null,
     localId,
     title: merged.title,
     category: merged.category,
@@ -67,10 +70,12 @@ export async function updateIntel({ domainUuid, localId, changes = {}, operation
   }, id);
 }
 
-export function removeIntel({ domainUuid, localId, operationId: id = null }) {
-  return run(COMMAND_TYPES.INTEL_REMOVE, domainUuid, { localId }, id);
+export async function removeIntel({ domainUuid, localId, operationId: id = null }) {
+  const domain = await getRecord(domainUuid);
+  return run(COMMAND_TYPES.INTEL_REMOVE, domainUuid, { expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null, localId }, id);
 }
 
-export function revealIntel({ domainUuid, localId, operationId: id = null }) {
-  return run(COMMAND_TYPES.INTEL_REVEAL, domainUuid, { localId }, id);
+export async function revealIntel({ domainUuid, localId, operationId: id = null }) {
+  const domain = await getRecord(domainUuid);
+  return run(COMMAND_TYPES.INTEL_REVEAL, domainUuid, { expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null, localId }, id);
 }

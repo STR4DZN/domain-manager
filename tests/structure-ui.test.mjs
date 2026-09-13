@@ -65,3 +65,17 @@ test("Infrastructure Control comunica vínculo Project e vetores por tick", () =
   assert.match(template, /VÍNCULO COM PROJETO/);
   assert.match(template, /activeProject|project\.progressDisplay|project\.statusLabel/);
 });
+
+test("controle de Structure envia revisão e mantém comissionamento sob a simulação", () => {
+  assert.match(template, /id="dm-structure-control-form"[\s\S]*?name="expectedModifiedTime"/);
+  assert.match(shell, /expectedModifiedTime:\s*record\.document\?\._stats\?\.modifiedTime/);
+  assert.match(shell, /STRUCTURE_ADMIN_UPDATE[\s\S]{0,400}expectedModifiedTime:/);
+  assert.match(shell, /STRUCTURE_PATCH[\s\S]{0,300}expectedModifiedTime:/);
+  assert.match(template, /A estrutura permanece planejada até o projeto ser concluído\./);
+});
+
+test("prioridade de manutenção é editável e não pode ser redefinida silenciosamente", () => {
+  assert.ok((template.match(/name="maintenancePriority"/g) ?? []).length >= 2);
+  assert.match(shell, /maintenancePriority:\s*Number\(record\.data\.maintenancePriority \?\? 50\)/);
+  assert.ok((shell.match(/maintenancePriority:\s*Number\(data\.get\("maintenancePriority"\)/g) ?? []).length >= 2);
+});

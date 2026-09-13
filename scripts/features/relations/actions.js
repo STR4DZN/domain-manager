@@ -2,16 +2,13 @@
  * APIs legadas de Relations.
  *
  * Relações diplomáticas modernas passam exclusivamente pelo Command Kernel.
- * Os helpers de Agreement embutido permanecem abaixo como compatibilidade
- * histórica separada: o modelo oficial de novos tratados é Agreement record.
+ * Os nomes legados de Agreement embutido permanecem apenas para emitir uma
+ * orientação de migração; o modelo oficial é o Agreement record independente.
  */
 
 import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
 import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
-import { getRecord, updateRecord } from "../../data/journal-store.js";
-import { recordIndex } from "../../data/record-index.js";
-import { decodeRecord } from "../../models/record-codec.js";
-import { validateAgreementData } from "./rules.js";
+import { getRecord } from "../../data/journal-store.js";
 
 function domainRef(uuid) {
   return { recordType: RECORD_TYPES.DOMAIN, uuid, entityId: null };
@@ -37,7 +34,9 @@ export async function addRelation({
   notes = "",
   operationId: requestedOperationId = null
 }) {
+  const domain = await getRecord(domainUuid);
   return runRelation(COMMAND_TYPES.RELATION_UPSERT, domainUuid, {
+    expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null,
     target: domainRef(targetDomainUuid),
     posture,
     score: 0,
@@ -62,6 +61,7 @@ export async function updateRelation({
   const targetEntityId = merged.target?.entityId ?? null;
 
   return runRelation(COMMAND_TYPES.RELATION_UPSERT, domainUuid, {
+    expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null,
     localId,
     target: {
       recordType: RECORD_TYPES.DOMAIN,
@@ -81,10 +81,11 @@ export async function removeRelation({
   localId,
   operationId: requestedOperationId = null
 }) {
+  const domain = await getRecord(domainUuid);
   return runRelation(
     COMMAND_TYPES.RELATION_REMOVE,
     domainUuid,
-    { localId },
+    { expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null, localId },
     requestedOperationId
   );
 }
@@ -92,96 +93,16 @@ export async function removeRelation({
 /*
  * Compatibility boundary — embedded Agreements.
  *
- * Estes três helpers são anteriores ao Agreement record independente criado no
- * schema moderno. Não existe equivalência 1:1 segura para update/remove por
- * localId (o Command Kernel opera Agreement por UUID/entityId e não oferece
- * hard-delete). Mantê-los isolados evita fabricar provenance, duração ou
- * identidade durante uma consolidação de Relations que não é migration.
+ * O formato antigo gravava tratados anônimos dentro do Domain e permitia
+ * hard-delete fora do Command Kernel. Ele não possui identidade suficiente
+ * para ser convertido com segurança em Agreement record. Os exports continuam
+ * presentes para produzir um erro de migração explícito em vez de corromper ou
+ * duplicar dados silenciosamente.
  */
-function generateLocalId(prefix = "agr") {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+function embeddedAgreementUnsupported() {
+  throw new Error("Acordos embutidos legados são somente leitura. Migre o registro e use Agreement independente pelo Command Kernel.");
 }
 
-export async function addAgreement({
-  domainUuid,
-  name,
-  targetDomainUuid,
-  type = "trade_pact",
-  transfers = [],
-  durationTicks = null,
-  notes = ""
-}) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode criar acordos diplomáticos.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  if (!Array.isArray(data.agreements)) data.agreements = [];
-
-  const agreementObj = {
-    localId: generateLocalId("agr"),
-    name: String(name ?? "Acordo").trim(),
-    targetDomainUuid,
-    type,
-    transfers: Array.isArray(transfers) ? transfers : [],
-    durationTicks: typeof durationTicks === "number" && durationTicks > 0 ? durationTicks : null,
-    remainingTicks: typeof durationTicks === "number" && durationTicks > 0 ? durationTicks : null,
-    status: "active",
-    notes: String(notes ?? "").trim()
-  };
-
-  validateAgreementData(agreementObj);
-  data.agreements.push(agreementObj);
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
-}
-
-export async function updateAgreement({ domainUuid, localId, changes = {} }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode alterar acordos diplomáticos.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  const list = data.agreements ?? [];
-  const idx = list.findIndex((a) => a.localId === localId);
-  if (idx === -1) throw new Error(`Acordo '${localId}' não encontrado.`);
-
-  const merged = { ...list[idx], ...changes, localId };
-  validateAgreementData(merged);
-  list[idx] = merged;
-  data.agreements = list;
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
-}
-
-export async function removeAgreement({ domainUuid, localId }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode remover acordos diplomáticos.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  data.agreements = (data.agreements ?? []).filter((a) => a.localId !== localId);
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
-  });
-}
+export async function addAgreement() { return embeddedAgreementUnsupported(); }
+export async function updateAgreement() { return embeddedAgreementUnsupported(); }
+export async function removeAgreement() { return embeddedAgreementUnsupported(); }
