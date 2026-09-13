@@ -50,8 +50,8 @@
   <section class="dm-app-main">
     <header class="dm-app-topbar">
       <div class="dm-app-breadcrumb">
-        <span>REDE DE DOMÍNIOS</span><i class="fa-solid fa-chevron-right"></i>
-        {{#if selectedDomain}}<strong>{{selectedDomain.name}}</strong><i class="fa-solid fa-chevron-right"></i>{{/if}}
+        <strong>{{#if selectedDomain}}{{selectedDomain.name}}{{else}}Rede de Domínios{{/if}}</strong>
+        <i class="fa-solid fa-chevron-right"></i>
         <em>{{activeWorkspace}}</em>
       </div>
 
@@ -294,7 +294,7 @@
               {{#if canManagePopulation}}<button type="button" class="dm-civil-overview__policy" data-action="openPopulationConfig"><i class="fa-solid fa-sliders"></i><span>CONFIGURAÇÃO DA POPULAÇÃO</span></button>{{/if}}
             </section>
             <div class="dm-civil-control-grid">
-              <section class="dm-cohort-table">
+              <section class="dm-cohort-table {{#unless populationGroups.length}}is-empty{{/unless}}">
                 <header><span>GRUPO</span><span>QUANTIDADE</span><span>MORAL</span><span>FORÇA DE TRABALHO</span><span>ESTADO</span></header>
                 {{#each populationGroups}}
                   <div class="dm-cohort-row">
@@ -450,14 +450,13 @@
               <span><small>CONFIRMADAS</small><strong>{{intelStats.confirmed}}</strong><em>informações verificadas</em></span>
               <span><small>RESTRITAS</small><strong>{{intelStats.restricted}}</strong><em>acesso controlado pelo GM</em></span>
               <span><small>REVELADAS</small><strong>{{intelStats.revealed}}</strong><em>tornadas públicas</em></span>
-              <i aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></i>
             </section>
             <section class="dm-intel-board">
-              <header><span>INFORMAÇÃO</span><span>CATEGORIA</span><span>ALVO</span><span>CREDIBILIDADE</span><span>VISIBILIDADE</span><span>FONTE</span></header>
+              <header><span>INFORMAÇÃO</span><span>CATEGORIA</span><span>ALVO</span><span>CREDIBILIDADE</span><span>VISIBILIDADE</span></header>
               {{#each intel}}
                 <button type="button" class="dm-intel-row {{#if selected}}is-selected{{/if}}" data-action="selectIntel" data-intel-id="{{localId}}">
                   <span class="dm-intel-row__identity"><i class="dm-status-pip dm-status-pip--{{tone}}"></i><span><strong>{{title}}</strong><small>{{tagLabel}}</small></span></span>
-                  <span>{{categoryLabel}}</span><span>{{targetName}}</span><span><em class="dm-chip dm-chip--{{tone}}">{{credibilityLabel}}</em></span><span>{{visibilityLabel}}</span><span class="dm-row-code">{{sourceLabel}}</span>
+                  <span data-label="Categoria">{{categoryLabel}}</span><span data-label="Alvo">{{targetName}}</span><span data-label="Credibilidade"><em class="dm-chip dm-chip--{{tone}}">{{credibilityLabel}}</em></span><span data-label="Visibilidade">{{visibilityLabel}}</span>
                 </button>
               {{else}}<div class="dm-empty"><i class="fa-solid fa-satellite-dish"></i><strong>NENHUMA INFORMAÇÃO CADASTRADA</strong><span>As informações coletadas por este domínio aparecerão aqui.</span>{{#if canManageIntel}}<button type="button" class="dm-action-button" data-action="openIntelEditor">CADASTRAR PRIMEIRA INFORMAÇÃO</button>{{/if}}</div>{{/each}}
             </section>
@@ -472,15 +471,15 @@
             </header>
             <section class="dm-territory-summary">
               <article><small>ESTADO DO CONTROLE</small><strong>{{territory.controlStateLabel}}</strong><span class="dm-chip dm-chip--{{territory.tone}}">{{territory.controllerName}}</span></article>
-              <article><small>CONTROLE</small><strong>{{territory.controlDisplay}}</strong><div class="dm-meter">{{#each territory.controlSegments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div></article>
-              <article><small>VALOR ESTRATÉGICO</small><strong>{{territory.strategicValueDisplay}}</strong><div class="dm-meter">{{#each territory.strategicSegments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div></article>
-              <article><small>INFLUÊNCIAS</small><strong>{{territory.influence.length}}</strong><span>{{selectedDomain.entityIdShort}}</span></article>
+              <article><small>CONTROLE</small><strong>{{territory.controlDisplay}}</strong><span>presença territorial</span></article>
+              <article><small>VALOR ESTRATÉGICO</small><strong>{{territory.strategicValueDisplay}}</strong><span>importância operacional</span></article>
+              <article><small>INFLUÊNCIAS</small><strong>{{territory.influence.length}}</strong><span>domínios relacionados</span></article>
             </section>
             <div class="dm-territory-layout">
               <section class="dm-territory-influence">
-                <header><div><span class="dm-kicker">MAPA DE INFLUÊNCIA</span><strong>Influência</strong></div><em>{{territory.influence.length}} INFLUÊNCIA(S)</em></header>
-                <div class="dm-territory-core"><span><small>DOMÍNIO ATUAL</small><strong>{{selectedDomain.name}}</strong><em>{{territory.controlStateLabel}}</em></span><i></i></div>
-                <div class="dm-influence-list">{{#each territory.influence}}<article><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{domainName}}</strong><small>{{domainEntityId}}</small></div><div class="dm-meter">{{#each segments}}<span class="{{#if on}}is-on{{/if}}"></span>{{/each}}</div><em>{{valueDisplay}}</em></article>{{else}}<div class="dm-empty-signal">NENHUMA INFLUÊNCIA CADASTRADA</div>{{/each}}</div>
+                <header><div><span class="dm-kicker">INFLUÊNCIA REGISTRADA</span><strong>Influências por domínio</strong></div><em>{{territory.influence.length}} REGISTRO(S)</em></header>
+                <div class="dm-territory-core"><span><small>DOMÍNIO ATUAL</small><strong>{{selectedDomain.name}}</strong><em>{{territory.controlStateLabel}}</em></span></div>
+                <div class="dm-influence-list">{{#each territory.influence}}<article><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{domainName}}</strong><small>Nível de influência</small></div><em>{{valueDisplay}}</em></article>{{else}}<div class="dm-empty-signal">NENHUMA INFLUÊNCIA CADASTRADA</div>{{/each}}</div>
               </section>
               <aside class="dm-territory-hierarchy">
                 <header><span>HIERARQUIA</span><strong>ATIVO</strong></header>
@@ -760,7 +759,7 @@
           <label class="dm-field"><span>Controlador</span><select name="controllerUuid"><option value="">Sem controlador</option>{{#each territoryDomainOptions}}<option value="{{uuid}}" {{#if controllerSelected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Controle %</span><input type="number" name="control" min="0" max="100" value="{{territory.control}}" /></label>
           <label class="dm-field"><span>Valor estratégico %</span><input type="number" name="strategicValue" min="0" max="100" value="{{territory.strategicValue}}" /></label>
-          <div class="dm-field dm-field--wide"><span>Influências</span><div class="dm-territory-form-grid">{{#each territoryDomainOptions}}<label><span><strong>{{name}}</strong><small>{{#if isSelf}}DOMÍNIO LOCAL{{else}}{{entityId}}{{/if}}</small></span><input type="number" min="0" max="100" name="influence:{{uuid}}" value="{{influenceValue}}" /></label>{{/each}}</div></div>
+          <div class="dm-field dm-field--wide"><span>Influências</span><div class="dm-territory-form-grid">{{#each territoryDomainOptions}}<label><span><strong>{{name}}</strong><small>{{#if isSelf}}DOMÍNIO ATUAL{{else}}INFLUÊNCIA EXTERNA{{/if}}</small></span><input type="number" min="0" max="100" name="influence:{{uuid}}" value="{{influenceValue}}" aria-label="Influência de {{name}}" /></label>{{/each}}</div></div>
           <label class="dm-field dm-field--wide"><span>Observação</span><textarea name="notes" rows="3">{{territory.notes}}</textarea></label>
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeTerritoryEditor">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitTerritoryEditor">SALVAR TERRITÓRIO</button></footer>

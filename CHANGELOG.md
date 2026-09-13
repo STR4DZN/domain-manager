@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-dev.153 — alinhamento, legibilidade e limpeza visual
+
+- Corrige breadcrumb/topbar truncado e alinha código de contexto com os botões de ação.
+- Remove elementos decorativos sem função da Inteligência e Território (onda, retícula e medidores segmentados).
+- Inteligência passa a usar quatro indicadores simples e uma tabela de cinco colunas, com layout em cartões em janelas estreitas.
+- Território deixa de exibir IDs técnicos na interface de influência e usa rótulos humanos.
+- Editor de Influências recebe cartões legíveis e campos numéricos alinhados.
+- Tabela de grupos populacionais deixa de criar barra horizontal quando vazia e vira layout responsivo em janelas estreitas.
+- Políticas de Recursos ganham tipografia maior e deixam de forçar uma matriz de 800px na janela normal.
+- Rodapés de diálogos removem texto decorativo, alinham ações e usam espaçador funcional quando necessário.
+- Mantém dados, schema e contratos funcionais da dev.152.
+
 ## 0.1.0-dev.152 — personalização funcional
 
 - O perfil **Personalizado** de Domínio deixa de ser uma opção ambígua: as áreas gerenciadas ficam imediatamente abaixo do perfil e qualquer alteração converte o perfil para personalizado.
