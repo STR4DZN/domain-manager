@@ -2,9 +2,10 @@ import {
   RECORD_TYPES
 } from "../../core/constants.js";
 import {
-  getResourceCatalogSetting,
-  setResourceCatalogSetting
+  getResourceCatalogSetting
 } from "../../core/settings.js";
+import { COMMAND_TYPES } from "../../core/constants.js";
+import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
 import {
   parseMinorUnits
 } from "../../core/numbers.js";
@@ -19,8 +20,7 @@ import {
 import {
   normalizeFlow,
   normalizeStockEntries,
-  upsertFlow,
-  upsertResourceInCatalog
+  upsertFlow
 } from "./rules.js";
 
 function assertGM() {
@@ -61,41 +61,24 @@ export async function upsertResourceDefinitionAction({
   tags = null
 }) {
   assertGM();
-
-  const catalog =
-    getResourceCatalogSetting();
-
-  const existing = originalId
-    ? (catalog.resources ?? []).find((entry) => entry.id === originalId)
-    : null;
-
-  const next =
-    upsertResourceInCatalog(
-      catalog,
-      {
-        id: originalId || undefined,
-        name,
-        unit,
-        precision,
-        allowNegative,
-        category: category ?? existing?.category ?? "general",
-        tags: tags ?? existing?.tags ?? []
-      },
-      { originalId }
-    );
-
-  await setResourceCatalogSetting(next);
-
-  return next.resources.find(
-    (resource) =>
-      resource.id === (
-        originalId
-        || next.resources.find(
-          (entry) =>
-            entry.name === String(name).trim()
-        )?.id
-      )
-  ) ?? null;
+  const catalog = getResourceCatalogSetting();
+  const existing = originalId ? (catalog.resources ?? []).find((entry) => entry.id === originalId) : null;
+  const result = await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.RESOURCE_CATALOG_UPSERT,
+    operationId: foundry.utils.randomID(),
+    payload: {
+      originalId,
+      expectedCatalogVersion: catalog.version ?? 1,
+      id: originalId || undefined,
+      name,
+      unit,
+      precision,
+      allowNegative,
+      category: category ?? existing?.category ?? "general",
+      tags: tags ?? existing?.tags ?? []
+    }
+  }, { callerUserId: game.user.id });
+  return result.resource ?? null;
 }
 
 export async function updateDomainStocksAction({
@@ -315,12 +298,12 @@ export async function upsertDomainFlowAction({
 export async function removeResourceDefinitionAction(resourceId) {
   assertGM();
   const catalog = getResourceCatalogSetting();
-  const next = {
-    version: (catalog.version ?? 1) + 1,
-    resources: (catalog.resources ?? []).filter((r) => r.id !== resourceId)
-  };
-  await setResourceCatalogSetting(next);
-  return next;
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.RESOURCE_CATALOG_REMOVE,
+    operationId: foundry.utils.randomID(),
+    payload: { resourceId, expectedCatalogVersion: catalog.version ?? 1 }
+  }, { callerUserId: game.user.id });
+  return getResourceCatalogSetting();
 }
 
 export async function removeDomainFlowAction({ domainUuid, localId }) {
@@ -345,4 +328,3 @@ export async function removeDomainFlowAction({ domainUuid, localId }) {
     controllerIds: record.data.governance.controllers
   });
 }
-

@@ -35,6 +35,12 @@ const resources = [
   { id: "water", name: "Água processada", unit: "m³", displayAmount: "6.920", stockDisplay: "6.920", criticalFloorDisplay: "2.500", reserveTargetDisplay: "6.000", storageCapacityDisplay: "9.000", storageUtilizationDisplay: "77%", netPerTickDisplay: "−180", reserveGapDisplay: "+920", policyState: "warning", tone: "warning" },
   { id: "alloys", name: "Ligas industriais", unit: "t", displayAmount: "1.280", stockDisplay: "1.280", criticalFloorDisplay: "400", reserveTargetDisplay: "1.600", storageCapacityDisplay: "3.000", storageUtilizationDisplay: "43%", netPerTickDisplay: "+35", reserveGapDisplay: "−320", policyState: "warning", tone: "warning" }
 ];
+const resourceCatalogRows = [
+  { id:"energy", name:"Energia", unit:"MW", precision:0, category:"infrastructure", categoryLabel:"Infraestrutura", tags:["energia","essencial"], tagsValue:"energia, essencial", precisionLabel:"0 casa(s) decimal(is)", allowNegative:false, usageCount:9, usageLabel:"9 registros", selected:true },
+  { id:"water", name:"Água processada", unit:"m³", precision:0, category:"sustenance", categoryLabel:"Sustento", tags:["água","básico"], tagsValue:"água, básico", precisionLabel:"0 casa(s) decimal(is)", allowNegative:false, usageCount:6, usageLabel:"6 registros", selected:false },
+  { id:"alloys", name:"Ligas industriais", unit:"t", precision:0, category:"industry", categoryLabel:"Indústria", tags:["construção"], tagsValue:"construção", precisionLabel:"0 casa(s) decimal(is)", allowNegative:false, usageCount:4, usageLabel:"4 registros", selected:false },
+  { id:"credits", name:"Créditos", unit:"¢", precision:2, category:"finance", categoryLabel:"Finanças", tags:["moeda"], tagsValue:"moeda", precisionLabel:"2 casa(s) decimal(is)", allowNegative:true, usageCount:0, usageLabel:"Não utilizado", selected:false }
+];
 const projects = [
   { uuid: "JournalEntry.PROJ1", entityId: "project:PROJ1", entityIdShort: "PROJ1", name: "Expansão do anel habitacional leste", description: "Ampliação modular para acomodar novos pesquisadores e equipes de manutenção.", status: "active", statusLabel: "Ativo", tone: "nominal", progressDisplay: "64%", rateDisplay: "12 / ciclo", workDisplay: "640 / 1.000", carry: 0, costCount: 3, costPlanMutable: false, canEdit: true, segments: Array.from({length: 20}, (_,i)=>({on:i<13})), costs: [
     { localId: "c1", resourceName: "Ligas industriais", modeLabel: "Reservado", unit: "t", amountDisplay: "800", consumedDisplay: "510", remainingDisplay: "290" },
@@ -78,7 +84,7 @@ function contextFor(viewName) {
   const selectedPerson = people[0];
   const selectedProject = projects[0];
   return {
-    appVersion: "0.1.0-dev.150", schemaVersion: 9, isGM: true, authorityReady: true,
+    appVersion: "0.1.0-dev.154", schemaVersion: 9, isGM: true, authorityReady: true,
     activeView: viewName, activeWorkspace: workspace, view: { [viewName]: true }, inspectorOpen: false,
     globalNav: nav.map(n => ({...n, active:n.id===viewName})), workspaceNav: clonedWorkspaces,
     selectedDomain: domain, hasSelectedDomain: true, domains: [domain, {...domain,uuid:"JournalEntry.DOM2",name:"Consórcio do Cinturão de Tarsis",category:"Organização logística interplanetária",entityId:"domain:DOM2",entityIdShort:"DOM2",population:7300,selected:false}], domainCount: 2,
@@ -89,6 +95,9 @@ function contextFor(viewName) {
     allSquads:[{name:"Vanguarda Órion",statusLabel:"Pronta",tone:"nominal",entityId:"squad:S1"},{name:"Equipe Delta-7",statusLabel:"Recuperando",tone:"warning",entityId:"squad:S2"}],
     allProjects:projects, allStructures:structures,
     resources, projects, selectedProject, people, selectedPerson, structures,
+    isEconomyConfigOpen:false, isResourceCatalogOpen:false, resourceCatalogVersion:4, resourceCatalogRows,
+    resourceCatalogEditor:{id:"",name:"",unit:"",precision:0,allowNegative:false,category:"general",tagsValue:"",isEdit:false,usageCount:0},
+    pendingResourceRemoval:null,
     conditions, activeConditions:conditions.filter(condition=>condition.active), conditionStats:{total:3,active:2,severe:1,finite:1,indefinite:1}, canManageConditions:true,
     controllers:["Fusion","Operadora Helena"],
     missions, squads, requests, selectedRequest:requests[0], canCreateRequest:true, history:[], relations, agreements, intel, selectedIntel:intel[0], intelStats:{visible:1,confirmed:0,restricted:1,revealed:0},
@@ -101,7 +110,7 @@ function contextFor(viewName) {
   };
 }
 
-const views = ["command","domains","domain-editor","domain-delete-blocked","domain-delete-ready","overview","requests","request-create","request-review","request-revision","conditions","condition-editor","condition-remove","missions","mission-editor","mission-release","mission-launch","mission-resolve","squads","squad-editor","squad-supply","structures","structure-editor","projects","project-editor","project-cost-remove","population","population-group-remove","people","diplomacy","relation-remove","agreement-terminate","intel","intel-remove","intel-reveal"];
+const views = ["command","domains","domain-editor","domain-delete-blocked","domain-delete-ready","overview","requests","request-create","request-review","request-revision","conditions","condition-editor","condition-remove","missions","mission-editor","mission-release","mission-launch","mission-resolve","squads","squad-editor","squad-supply","structures","structure-editor","economy","economy-policies","resource-catalog","resource-catalog-edit","resource-remove-blocked","resource-remove-ready","projects","project-editor","project-cost-remove","population","population-group-remove","people","diplomacy","relation-remove","agreement-terminate","intel","intel-remove","intel-reveal"];
 const rendered = Object.fromEntries(views.map(view => {
   const baseView = ["domain-editor","domain-delete-blocked","domain-delete-ready"].includes(view)
     ? "domains"
@@ -111,6 +120,7 @@ const rendered = Object.fromEntries(views.map(view => {
       : ["mission-editor","mission-release","mission-launch","mission-resolve"].includes(view) ? "missions"
         : ["squad-editor","squad-supply"].includes(view) ? "squads"
           : view === "structure-editor" ? "structures"
+            : ["economy-policies","resource-catalog","resource-catalog-edit","resource-remove-blocked","resource-remove-ready"].includes(view) ? "economy"
             : view === "population-group-remove" ? "population"
               : ["relation-remove","agreement-terminate"].includes(view) ? "diplomacy"
                 : ["intel-remove","intel-reveal"].includes(view) ? "intel" : view;
@@ -198,6 +208,38 @@ const rendered = Object.fromEntries(views.map(view => {
     context.structureStatusOptions = ["planned","operational","damaged","disabled","destroyed","decommissioned"].map(value => ({ value, label: value, selected: value === "operational" }));
     context.structureOperatorStatusOptions = [];
     context.structureResourceOptions = resources.map(resource => ({ id: resource.id, name: resource.name, unit: resource.unit, maintenanceValue: "", productionValue: "" }));
+  }
+  if (view === "economy-policies") {
+    context.isEconomyConfigOpen = true;
+    context.economyPolicyRows = resources.map(resource => ({
+      ...resource,
+      stockValue:resource.stockDisplay,
+      criticalValue:resource.criticalFloorDisplay,
+      reserveValue:resource.reserveTargetDisplay,
+      capacityValue:resource.storageCapacityDisplay
+    }));
+    context.domainData = { economy:{ sustenanceSettings:{ enabled:true, foodResourceId:"water", waterResourceId:"water", foodPer100:2, waterPer100:3, guardUpkeep:1 } } };
+  }
+  if (["resource-catalog","resource-catalog-edit","resource-remove-blocked","resource-remove-ready"].includes(view)) {
+    context.isResourceCatalogOpen = true;
+    const isEdit = view !== "resource-catalog";
+    context.resourceCatalogRows = resourceCatalogRows.map(resource => ({...resource, selected:isEdit && resource.id === "energy"}));
+    context.resourceCatalogEditor = isEdit ? {...resourceCatalogRows[0], isEdit:true} : context.resourceCatalogEditor;
+  }
+  if (view === "resource-remove-blocked") {
+    context.pendingResourceRemoval = {
+      ...resourceCatalogRows[0], blocked:true, dependencyCount:9, expectedCatalogVersion:4,
+      dependencies:[
+        {name:"Colônia Aurélia",typeLabel:"Domínio",paths:["economy.stocks[0].resourceId","economy.resourcePolicies[0].resourceId"]},
+        {name:"Reator Helios-4",typeLabel:"Estrutura",paths:["maintenance[0].resourceId","production[0].resourceId"]},
+        {name:"Expansão do anel habitacional leste",typeLabel:"Projeto",paths:["costs[0].resourceId"]}
+      ]
+    };
+  }
+  if (view === "resource-remove-ready") {
+    context.resourceCatalogRows = resourceCatalogRows.map(resource => ({...resource, selected:resource.id === "credits"}));
+    context.resourceCatalogEditor = {...resourceCatalogRows[3],isEdit:true};
+    context.pendingResourceRemoval = {...resourceCatalogRows[3],blocked:false,dependencyCount:0,dependencies:[],expectedCatalogVersion:4};
   }
   if (view === "population-group-remove") context.pendingPopulationGroupRemoval = { name:"Equipe de manutenção exterior", count:184, workforceEligible:126 };
   if (view === "relation-remove") context.pendingRelationRemoval = { targetName:"Consórcio do Cinturão de Tarsis", postureLabel:"Parceiro comercial" };

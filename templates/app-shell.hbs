@@ -50,8 +50,8 @@
   <section class="dm-app-main">
     <header class="dm-app-topbar">
       <div class="dm-app-breadcrumb">
-        <strong>{{#if selectedDomain}}{{selectedDomain.name}}{{else}}Rede de Domínios{{/if}}</strong>
-        <i class="fa-solid fa-chevron-right"></i>
+        <span>REDE DE DOMÍNIOS</span><i class="fa-solid fa-chevron-right"></i>
+        {{#if selectedDomain}}<strong>{{selectedDomain.name}}</strong><i class="fa-solid fa-chevron-right"></i>{{/if}}
         <em>{{activeWorkspace}}</em>
       </div>
 
@@ -101,7 +101,7 @@
                   {{#each domains}}
                     <button type="button" class="dm-command-domain-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
                       <span class="dm-command-domain-row__identity"><i class="dm-status-pip dm-status-pip--{{stateTone}}"></i><span><strong>{{name}}</strong><small>{{entityId}}</small></span></span>
-                      <span>{{category}}</span><strong>{{population}}</strong><em class="dm-chip dm-chip--{{stateTone}}">{{stateLabel}}</em>
+                      <span>{{category}}</span><strong>{{population}}</strong><em class="dm-chip dm-chip--{{stateTone}}">{{state}}</em>
                     </button>
                   {{else}}
                     <div class="dm-empty"><i class="fa-solid fa-sitemap"></i><strong>Nenhum domínio cadastrado</strong><span>Crie o primeiro domínio para iniciar a gestão do mundo.</span>{{#if ../isGM}}<button type="button" class="dm-action-button" data-action="openCreateDomain">CRIAR PRIMEIRO DOMÍNIO</button>{{/if}}</div>
@@ -142,7 +142,7 @@
                 <div class="dm-registry-index__header"><span>DOMÍNIO</span><span>CATEGORIA</span><span>PERFIL</span><span>POP</span><span>ESTADO</span></div>
                 {{#each domains}}
                   <button type="button" class="dm-registry-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
-                    <span><i></i><strong>{{name}}</strong><small>{{entityId}}</small></span><span>{{category}}</span><span>{{presetLabel}}</span><span>{{population}}</span><span class="dm-chip dm-chip--{{stateTone}}">{{stateLabel}}</span>
+                    <span><i></i><strong>{{name}}</strong><small>{{entityId}}</small></span><span>{{category}}</span><span>{{preset}}</span><span>{{population}}</span><span class="dm-chip dm-chip--{{stateTone}}">{{state}}</span>
                   </button>
                 {{else}}<div class="dm-empty-signal">NENHUM DOMÍNIO CADASTRADO</div>{{/each}}
               </section>
@@ -258,20 +258,20 @@
 
         {{#if view.economy}}
           <section class="dm-view dm-view--economy">
-            <header class="dm-view-header"><div><span class="dm-kicker">BASE // RECURSOS</span><h2>Recursos</h2><p>Estoque, reservas, produção, consumo e capacidade do domínio.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{telemetry.activeFlows}} FLUXO(S)</span>{{#if canConfigureEconomy}}<button type="button" class="dm-action-button" data-action="openEconomyConfig"><i class="fa-solid fa-sliders"></i> CONFIGURAR</button>{{/if}}</div></header>
+            <header class="dm-view-header"><div><span class="dm-kicker">BASE // RECURSOS</span><h2>Recursos</h2><p>Estoque, reservas, produção, consumo e capacidade do domínio.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{telemetry.activeFlows}} FLUXO(S)</span>{{#if isGM}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openResourceCatalog"><i class="fa-solid fa-boxes-stacked"></i> CATÁLOGO</button>{{/if}}{{#if canConfigureEconomy}}<button type="button" class="dm-action-button" data-action="openEconomyConfig"><i class="fa-solid fa-sliders"></i> POLÍTICAS</button>{{/if}}</div></header>
             <div class="dm-economy-scope">
               <section class="dm-resource-matrix-live dm-resource-matrix-live--strategic">
                 <header><span>RECURSO</span><span>ESTOQUE</span><span>DISPONÍVEL</span><span>SALDO/T</span><span>RESERVA</span><span>CAPACIDADE</span><span>AUTONOMIA</span><span>ESTADO</span></header>
                 {{#each resources}}
                   <div class="dm-resource-line dm-resource-line--strategic dm-resource-line--{{tone}}">
-                    <span><i></i><span><strong>{{name}}</strong><small>{{contributionCount}} vector(s) · {{unit}}</small></span></span>
-                    <span>{{stockDisplay}}</span>
-                    <span>{{availableDisplay}}</span>
-                    <span class="dm-flow dm-flow--{{tone}}">{{netPerTickDisplay}}</span>
-                    <span><strong>{{reserveTargetDisplay}}</strong><small>falta {{reserveGapDisplay}}</small></span>
-                    <span><strong>{{storageCapacityDisplay}}</strong><small>{{storageUtilizationDisplay}}</small></span>
-                    <span>{{autonomyLabel}}</span>
-                    <span><em class="dm-chip dm-chip--{{tone}}">{{policyState}}</em></span>
+                    <span><i></i><span><strong>{{name}}</strong><small>{{contributionLabel}}{{#if unit}} · {{unit}}{{/if}}</small></span></span>
+                    <span data-label="Estoque">{{stockDisplay}}{{#if unit}} {{unit}}{{/if}}</span>
+                    <span data-label="Disponível">{{availableDisplay}}{{#if unit}} {{unit}}{{/if}}</span>
+                    <span data-label="Saldo por tick" class="dm-flow dm-flow--{{tone}}">{{netPerTickDisplay}}{{#if unit}} {{unit}}{{/if}}</span>
+                    <span data-label="Reserva"><strong>{{reserveTargetDisplay}}{{#if unit}} {{unit}}{{/if}}</strong><small>falta {{reserveGapDisplay}}{{#if unit}} {{unit}}{{/if}}</small></span>
+                    <span data-label="Capacidade"><strong>{{storageCapacityDisplay}}{{#if unit}} {{unit}}{{/if}}</strong><small>{{storageUtilizationDisplay}}</small></span>
+                    <span data-label="Autonomia">{{autonomyLabel}}</span>
+                    <span data-label="Estado"><em class="dm-chip dm-chip--{{tone}}">{{policyState}}</em></span>
                   </div>
                 {{else}}<div class="dm-empty-signal">CATÁLOGO DE RECURSOS VAZIO</div>{{/each}}
               </section>
@@ -294,17 +294,19 @@
               {{#if canManagePopulation}}<button type="button" class="dm-civil-overview__policy" data-action="openPopulationConfig"><i class="fa-solid fa-sliders"></i><span>CONFIGURAÇÃO DA POPULAÇÃO</span></button>{{/if}}
             </section>
             <div class="dm-civil-control-grid">
-              <section class="dm-cohort-table {{#unless populationGroups.length}}is-empty{{/unless}}">
-                <header><span>GRUPO</span><span>QUANTIDADE</span><span>MORAL</span><span>FORÇA DE TRABALHO</span><span>ESTADO</span></header>
-                {{#each populationGroups}}
+              <section class="dm-cohort-table">
+                {{#if populationGroups}}
+                  <header><span>GRUPO</span><span>QUANTIDADE</span><span>MORAL</span><span>FORÇA DE TRABALHO</span><span>ESTADO</span></header>
+                  {{#each populationGroups}}
                   <div class="dm-cohort-row">
                     <span class="dm-cohort-row__identity"><i class="dm-status-pip dm-status-pip--{{tone}}"></i><span><strong>{{name}}</strong><small>{{#if function}}{{function}}{{else}}Sem função{{/if}}{{#if assignment}} · {{assignment}}{{/if}}</small></span></span>
-                    <span><strong>{{count}}</strong><small>{{#if includedInTotal}}incluído{{else}}externo{{/if}}</small></span>
-                    <span><strong class="dm-tone-{{moraleTone}}">{{moraleDisplay}}</strong><small>{{quality}}</small></span>
-                    <span><strong>{{assigned}} / {{workforceEligible}}</strong><small>{{available}} disponíveis</small></span>
-                    <span class="dm-cohort-row__state"><em class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</em>{{#if canEdit}}<button type="button" class="dm-icon-button" data-action="openPopulationGroup" data-group-id="{{localId}}" title="Editar grupo populacional"><i class="fa-solid fa-pen"></i></button>{{/if}}</span>
+                    <span data-label="Quantidade"><strong>{{count}}</strong><small>{{#if includedInTotal}}incluído{{else}}externo{{/if}}</small></span>
+                    <span data-label="Moral"><strong class="dm-tone-{{moraleTone}}">{{moraleDisplay}}</strong><small>{{quality}}</small></span>
+                    <span data-label="Força de trabalho"><strong>{{assigned}} / {{workforceEligible}}</strong><small>{{available}} disponíveis</small></span>
+                    <span class="dm-cohort-row__state" data-label="Estado"><em class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</em>{{#if canEdit}}<button type="button" class="dm-icon-button" data-action="openPopulationGroup" data-group-id="{{localId}}" title="Editar grupo populacional"><i class="fa-solid fa-pen"></i></button>{{/if}}</span>
                   </div>
-                {{else}}<div class="dm-empty"><i class="fa-solid fa-people-group"></i><strong>NENHUM GRUPO CADASTRADO</strong><span>Crie um grupo para organizar população e força de trabalho.</span>{{#if canManagePopulation}}<button type="button" class="dm-action-button" data-action="openPopulationGroup">CRIAR PRIMEIRO GRUPO</button>{{/if}}</div>{{/each}}
+                  {{/each}}
+                {{else}}<div class="dm-empty"><i class="fa-solid fa-people-group"></i><strong>NENHUM GRUPO CADASTRADO</strong><span>Crie um grupo para organizar população e força de trabalho.</span>{{#if canManagePopulation}}<button type="button" class="dm-action-button" data-action="openPopulationGroup">CRIAR PRIMEIRO GRUPO</button>{{/if}}</div>{{/if}}
               </section>
               <section class="dm-workforce-board">
                 <header><div><span class="dm-kicker">ALOCAÇÃO DE TRABALHO</span><strong>Distribuição por Estrutura</strong></div><span>{{populationSummary.workforceAssigned}} / {{populationSummary.workforceEligible}}</span></header>
@@ -472,14 +474,13 @@
             <section class="dm-territory-summary">
               <article><small>ESTADO DO CONTROLE</small><strong>{{territory.controlStateLabel}}</strong><span class="dm-chip dm-chip--{{territory.tone}}">{{territory.controllerName}}</span></article>
               <article><small>CONTROLE</small><strong>{{territory.controlDisplay}}</strong><span>presença territorial</span></article>
-              <article><small>VALOR ESTRATÉGICO</small><strong>{{territory.strategicValueDisplay}}</strong><span>importância operacional</span></article>
+              <article><small>VALOR ESTRATÉGICO</small><strong>{{territory.strategicValueDisplay}}</strong><span>importância do território</span></article>
               <article><small>INFLUÊNCIAS</small><strong>{{territory.influence.length}}</strong><span>domínios relacionados</span></article>
             </section>
             <div class="dm-territory-layout">
               <section class="dm-territory-influence">
-                <header><div><span class="dm-kicker">INFLUÊNCIA REGISTRADA</span><strong>Influências por domínio</strong></div><em>{{territory.influence.length}} REGISTRO(S)</em></header>
-                <div class="dm-territory-core"><span><small>DOMÍNIO ATUAL</small><strong>{{selectedDomain.name}}</strong><em>{{territory.controlStateLabel}}</em></span></div>
-                <div class="dm-influence-list">{{#each territory.influence}}<article><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{domainName}}</strong><small>Nível de influência</small></div><em>{{valueDisplay}}</em></article>{{else}}<div class="dm-empty-signal">NENHUMA INFLUÊNCIA CADASTRADA</div>{{/each}}</div>
+                <header><div><span class="dm-kicker">RELAÇÕES TERRITORIAIS</span><strong>Influência</strong></div><em>{{territory.influence.length}} INFLUÊNCIA(S)</em></header>
+                <div class="dm-influence-list">{{#each territory.influence}}<article><span class="dm-status-pip dm-status-pip--{{tone}}"></span><div><strong>{{domainName}}</strong><small>{{contextLabel}}</small></div><em>{{valueDisplay}}</em></article>{{else}}<div class="dm-empty-signal">NENHUMA INFLUÊNCIA CADASTRADA</div>{{/each}}</div>
               </section>
               <aside class="dm-territory-hierarchy">
                 <header><span>HIERARQUIA</span><strong>ATIVO</strong></header>
@@ -623,8 +624,8 @@
         <header class="dm-system-dialog__header"><div><span class="dm-kicker">SOLICITAÇÃO // NOVO PEDIDO</span><h2>Nova Solicitação</h2></div><button type="button" class="dm-icon-button" data-action="closeRequestCreate"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>AUTORIDADE</small><strong>FILA DO GM</strong></span><span><small>VISIBILIDADE</small><strong>SOLICITANTE + GM</strong></span><span><small>ESQUEMA</small><strong>SOLICITAÇÃO / V{{schemaVersion}}</strong></span></div>
         <div class="dm-system-dialog__body">
-          <label class="dm-field"><span>Tipo</span><select name="type" data-request-type-select>{{#each requestTypeOptions}}<option value="{{value}}">{{label}}</option>{{/each}}</select></label>
-          <label class="dm-field" data-request-custom-type-field hidden><span>Nome do tipo personalizado</span><input name="customTypeLabel" maxlength="80" placeholder="Ex.: Pesquisa, evacuação, permissão especial" aria-hidden="true" /></label>
+          <label class="dm-field"><span>Tipo</span><select name="type" data-request-type>{{#each requestTypeOptions}}<option value="{{value}}">{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field" data-custom-request-type hidden><span>Nome do tipo personalizado</span><input name="customTypeLabel" maxlength="80" placeholder="Ex.: Evacuação civil" /></label>
           <label class="dm-field"><span>Título</span><input name="title" maxlength="160" required placeholder="Solicitar reconhecimento externo" /></label>
           <label class="dm-field dm-field--wide"><span>Intenção</span><textarea name="intent" rows="4" maxlength="1200" required placeholder="O que precisa ser alcançado e por quê"></textarea></label>
           <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="7" maxlength="6000" placeholder="Contexto adicional, restrições ou prioridade"></textarea></label>
@@ -659,8 +660,8 @@
         <div class="dm-system-dialog__telemetry"><span><small>SOLICITANTE</small><strong>{{revisingRequest.requesterName}}</strong></span><span><small>ESTADO ATUAL</small><strong>{{revisingRequest.statusLabel}}</strong></span><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>PRÓXIMO ESTADO</small><strong>ENVIADA</strong></span></div>
         <div class="dm-system-dialog__body">
           <input type="hidden" name="expectedModifiedTime" value="{{revisingRequest.modifiedTime}}" />
-          <label class="dm-field"><span>Tipo</span><select name="type" data-request-type-select>{{#each requestRevisionTypeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
-          <label class="dm-field" data-request-custom-type-field {{#unless revisingRequest.customTypeLabel}}hidden{{/unless}}><span>Nome do tipo personalizado</span><input name="customTypeLabel" maxlength="80" value="{{revisingRequest.customTypeLabel}}" placeholder="Ex.: Pesquisa, evacuação, permissão especial" /></label>
+          <label class="dm-field"><span>Tipo</span><select name="type" data-request-type>{{#each requestRevisionTypeOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field" data-custom-request-type hidden><span>Nome do tipo personalizado</span><input name="customTypeLabel" maxlength="80" value="{{revisingRequest.customTypeLabel}}" placeholder="Ex.: Evacuação civil" /></label>
           <label class="dm-field"><span>Título</span><input name="title" maxlength="160" required value="{{revisingRequest.name}}" /></label>
           <label class="dm-field dm-field--wide"><span>Intenção</span><textarea name="intent" rows="4" maxlength="1200" required>{{revisingRequest.intent}}</textarea></label>
           <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="7" maxlength="6000">{{revisingRequest.details}}</textarea></label>
@@ -759,7 +760,7 @@
           <label class="dm-field"><span>Controlador</span><select name="controllerUuid"><option value="">Sem controlador</option>{{#each territoryDomainOptions}}<option value="{{uuid}}" {{#if controllerSelected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Controle %</span><input type="number" name="control" min="0" max="100" value="{{territory.control}}" /></label>
           <label class="dm-field"><span>Valor estratégico %</span><input type="number" name="strategicValue" min="0" max="100" value="{{territory.strategicValue}}" /></label>
-          <div class="dm-field dm-field--wide"><span>Influências</span><div class="dm-territory-form-grid">{{#each territoryDomainOptions}}<label><span><strong>{{name}}</strong><small>{{#if isSelf}}DOMÍNIO ATUAL{{else}}INFLUÊNCIA EXTERNA{{/if}}</small></span><input type="number" min="0" max="100" name="influence:{{uuid}}" value="{{influenceValue}}" aria-label="Influência de {{name}}" /></label>{{/each}}</div></div>
+          <div class="dm-field dm-field--wide"><span>Influências</span><div class="dm-territory-form-grid">{{#each territoryDomainOptions}}<label><span><strong>{{name}}</strong><small>{{#if isSelf}}DOMÍNIO ATUAL{{else}}INFLUÊNCIA EXTERNA{{/if}}</small></span><input type="number" min="0" max="100" name="influence:{{uuid}}" value="{{influenceValue}}" /></label>{{/each}}</div></div>
           <label class="dm-field dm-field--wide"><span>Observação</span><textarea name="notes" rows="3">{{territory.notes}}</textarea></label>
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeTerritoryEditor">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitTerritoryEditor">SALVAR TERRITÓRIO</button></footer>
@@ -885,11 +886,6 @@
           <label class="dm-field"><span>Natureza</span><select name="nature">{{#each domainEditor.natureOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Estado</span><select name="state">{{#each domainEditor.stateOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Perfil de gerenciamento</span><select name="preset" data-domain-preset>{{#each domainEditor.presetOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
-          <fieldset class="dm-controller-grid dm-capability-grid dm-field--wide dm-capability-config">
-            <legend>Personalização das áreas</legend>
-            <div class="dm-capability-config__note"><i class="fa-solid fa-sliders"></i><span><strong>ESCOLHA O QUE ESTE DOMÍNIO GERENCIA</strong><small>Perfis prontos preenchem as áreas automaticamente. Marcar ou desmarcar qualquer área transforma o perfil em Personalizado.</small></span></div>
-            {{#each domainEditor.capabilityOptions}}<label class="dm-controller-option"><input type="checkbox" name="capabilities" value="{{value}}" {{#if checked}}checked{{/if}} /><i class="fa-solid fa-puzzle-piece"></i><strong>{{label}}</strong><small>{{#if checked}}ATIVA{{else}}DESATIVADA{{/if}}</small></label>{{/each}}
-          </fieldset>
           <label class="dm-field"><span>Marcadores</span><input name="tags" value="{{domainEditor.tagsValue}}" placeholder="orbital, comércio, fronteira" /></label>
           <label class="dm-field"><span>Localizado em</span><select name="locatedInUuid"><option value="">Nenhum domínio</option>{{#each domainEditor.locatedInOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Administração superior</span><select name="administrativeParentUuid"><option value="">Nenhum domínio</option>{{#each domainEditor.administrativeParentOptions}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
@@ -897,6 +893,10 @@
           <fieldset class="dm-controller-grid dm-field--wide">
             <legend>Controladores</legend>
             {{#each domainEditor.controllerOptions}}<label class="dm-controller-option"><input type="checkbox" name="controllerIds" value="{{id}}" {{#if selected}}checked{{/if}} /><span class="dm-sysdot {{#if active}}is-online{{/if}}"></span><strong>{{name}}</strong><small>{{#if active}}ATIVO{{else}}INATIVO{{/if}}</small></label>{{else}}<div class="dm-muted">Nenhum jogador disponível.</div>{{/each}}
+          </fieldset>
+          <fieldset class="dm-controller-grid dm-capability-grid dm-field--wide">
+            <legend>Personalização das áreas</legend>
+            {{#each domainEditor.capabilityOptions}}<label class="dm-controller-option"><input type="checkbox" name="capabilities" value="{{value}}" {{#if checked}}checked{{/if}} /><i class="fa-solid fa-puzzle-piece"></i><strong>{{label}}</strong><small>{{#if checked}}ATIVA{{else}}DESATIVADA{{/if}}</small></label>{{/each}}
           </fieldset>
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelCreateDomain" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button" data-action="submitCreateDomain" {{#if isDomainBusy}}disabled{{/if}}><i class="fa-solid fa-floppy-disk"></i> {{#if domainEditor.isEdit}}SALVAR DOMÍNIO{{else}}CRIAR DOMÍNIO{{/if}}</button></footer>
@@ -1169,6 +1169,7 @@
   {{#if isEconomyConfigOpen}}
     <div class="dm-modal-layer">
       <form id="dm-economy-config-form" class="dm-system-dialog dm-system-dialog--wide dm-economy-dialog" autocomplete="off">
+        <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
         <header class="dm-system-dialog__header">
           <div><span class="dm-kicker">RECURSOS // POLÍTICAS</span><h2>{{selectedDomain.name}}</h2></div>
           <button type="button" class="dm-icon-button" data-action="closeEconomyConfig"><i class="fa-solid fa-xmark"></i></button>
@@ -1186,10 +1187,10 @@
             {{#each economyPolicyRows}}
               <div class="dm-economy-policy-matrix__row">
                 <strong>{{name}} {{#if unit}}<small>{{unit}}</small>{{/if}}</strong>
-                <input name="stock:{{id}}" inputmode="decimal" value="{{stockValue}}" />
-                <input name="critical:{{id}}" inputmode="decimal" value="{{criticalValue}}" />
-                <input name="reserve:{{id}}" inputmode="decimal" value="{{reserveValue}}" />
-                <input name="capacity:{{id}}" inputmode="decimal" value="{{capacityValue}}" />
+                <label><small>ESTOQUE</small><input name="stock:{{id}}" inputmode="decimal" value="{{stockValue}}" /></label>
+                <label><small>CRÍTICO</small><input name="critical:{{id}}" inputmode="decimal" value="{{criticalValue}}" /></label>
+                <label><small>RESERVA</small><input name="reserve:{{id}}" inputmode="decimal" value="{{reserveValue}}" /></label>
+                <label><small>CAPACIDADE</small><input name="capacity:{{id}}" inputmode="decimal" value="{{capacityValue}}" /></label>
               </div>
             {{else}}<div class="dm-empty-signal">CATÁLOGO DE RECURSOS VAZIO</div>{{/each}}
           </section>
@@ -1205,6 +1206,51 @@
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeEconomyConfig">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitEconomyConfig">SALVAR POLÍTICAS</button></footer>
       </form>
+    </div>
+  {{/if}}
+
+  {{#if isResourceCatalogOpen}}
+    <div class="dm-modal-layer">
+      <form id="dm-resource-catalog-form" class="dm-system-dialog dm-system-dialog--ultrawide dm-resource-catalog-dialog" autocomplete="off">
+        <input type="hidden" name="expectedCatalogVersion" value="{{resourceCatalogVersion}}" />
+        <input type="hidden" name="originalId" value="{{#if resourceCatalogEditor.isEdit}}{{resourceCatalogEditor.id}}{{/if}}" />
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">RECURSOS // CATÁLOGO GLOBAL</span><h2>Catálogo de Recursos</h2><p>Defina os tipos de recurso disponíveis para todos os domínios.</p></div><button type="button" class="dm-icon-button" data-action="closeResourceCatalog" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__telemetry"><span><small>VERSÃO</small><strong>{{resourceCatalogVersion}}</strong></span><span><small>RECURSOS</small><strong>{{resourceCatalogRows.length}}</strong></span><span><small>IDENTIDADE</small><strong>ID IMUTÁVEL</strong></span><span><small>SEGURANÇA</small><strong>USO VERIFICADO</strong></span></div>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <div class="dm-resource-catalog-workspace">
+            <section class="dm-resource-catalog-list">
+              <header><div><span class="dm-kicker">RECURSOS CADASTRADOS</span><strong>Tipos disponíveis</strong></div><button type="button" class="dm-action-button dm-action-button--compact" data-action="newResourceDefinition"><i class="fa-solid fa-plus"></i> NOVO</button></header>
+              <div>{{#each resourceCatalogRows}}<button type="button" class="dm-resource-catalog-row {{#if selected}}is-selected{{/if}}" data-action="editResourceDefinition" data-resource-id="{{id}}"><span><strong>{{name}}</strong><small>{{id}} · {{categoryLabel}}</small></span><span><strong>{{unit}}</strong><small>{{precisionLabel}}</small></span><em class="dm-chip {{#if usageCount}}dm-chip--warning{{else}}dm-chip--neutral{{/if}}">{{usageLabel}}</em></button>{{else}}<div class="dm-empty"><i class="fa-solid fa-box-open"></i><strong>CATÁLOGO VAZIO</strong><span>Crie o primeiro tipo de recurso para habilitar estoques e políticas.</span></div>{{/each}}</div>
+            </section>
+            <section class="dm-resource-definition-editor">
+              <header><span><small>{{#if resourceCatalogEditor.isEdit}}EDITAR RECURSO{{else}}NOVO RECURSO{{/if}}</small><strong>{{#if resourceCatalogEditor.isEdit}}{{resourceCatalogEditor.name}}{{else}}Definição do recurso{{/if}}</strong></span>{{#if resourceCatalogEditor.isEdit}}<em>{{resourceCatalogEditor.usageLabel}}</em>{{/if}}</header>
+              <div class="dm-resource-definition-fields">
+                <label class="dm-field"><span>ID estável</span><input name="id" value="{{resourceCatalogEditor.id}}" {{#if resourceCatalogEditor.isEdit}}readonly{{/if}} placeholder="gerado pelo nome" /><small>{{#if resourceCatalogEditor.isEdit}}O ID não pode ser alterado após a criação.{{else}}Use letras minúsculas, números e hífens; deixe vazio para gerar automaticamente.{{/if}}</small></label>
+                <label class="dm-field"><span>Nome</span><input name="name" value="{{resourceCatalogEditor.name}}" required placeholder="Alimentos" /></label>
+                <label class="dm-field"><span>Unidade de exibição</span><input name="unit" value="{{resourceCatalogEditor.unit}}" placeholder="kg, créditos, L..." /></label>
+                <label class="dm-field"><span>Casas decimais</span><input name="precision" type="number" min="0" max="4" value="{{resourceCatalogEditor.precision}}" required /></label>
+                <label class="dm-field"><span>Categoria</span><input name="category" value="{{resourceCatalogEditor.category}}" required placeholder="sustento" /></label>
+                <label class="dm-field"><span>Marcadores</span><input name="tags" value="{{resourceCatalogEditor.tagsValue}}" placeholder="comida, básico, perecível" /></label>
+                <label class="dm-controller-option dm-field--wide"><input type="checkbox" name="allowNegative" {{#if resourceCatalogEditor.allowNegative}}checked{{/if}} /><span class="dm-sysdot {{#if resourceCatalogEditor.allowNegative}}is-online{{/if}}"></span><strong>Permitir saldo negativo</strong><small>{{#if resourceCatalogEditor.allowNegative}}PERMITIDO{{else}}BLOQUEADO{{/if}}</small></label>
+              </div>
+              {{#if resourceCatalogEditor.isEdit}}<footer><button type="button" class="dm-action-button dm-action-button--critical" data-action="removeResourceDefinition"><i class="fa-solid fa-trash"></i> REMOVER RECURSO</button><span>{{#if resourceCatalogEditor.usageCount}}A remoção fica bloqueada enquanto houver registros usando este recurso.{{else}}Este recurso ainda não é utilizado.{{/if}}</span></footer>{{/if}}
+            </section>
+          </div>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeResourceCatalog">FECHAR</button><button type="button" class="dm-action-button" data-action="submitResourceDefinition"><i class="fa-solid fa-floppy-disk"></i> SALVAR RECURSO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if pendingResourceRemoval}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm dm-resource-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-resource-remove-title">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">CATÁLOGO // REMOÇÃO</span><h2 id="dm-resource-remove-title">Remover {{pendingResourceRemoval.name}}?</h2><p>O tipo de recurso será retirado do catálogo global.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemoveResourceDefinition" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          {{#if pendingResourceRemoval.blocked}}<section class="dm-domain-delete-blocked"><i class="fa-solid fa-link"></i><div><strong>REMOÇÃO BLOQUEADA</strong><p>{{pendingResourceRemoval.dependencyCount}} registro(s) ainda utilizam este recurso. Remova ou substitua essas referências primeiro.</p></div></section><section class="dm-resource-dependency-list">{{#each pendingResourceRemoval.dependencies}}<article><span><strong>{{name}}</strong><small>{{typeLabel}}</small></span><em>{{paths.length}} referência(s)</em></article>{{/each}}</section>{{else}}<section class="dm-domain-delete-ready"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>RECURSO SEM REFERÊNCIAS</strong><p>Esta ação é permanente. Estoques e formulários novos deixarão de oferecer {{pendingResourceRemoval.name}}.</p></div></section>{{/if}}
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemoveResourceDefinition">VOLTAR</button>{{#unless pendingResourceRemoval.blocked}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemoveResourceDefinition"><i class="fa-solid fa-trash"></i> REMOVER DEFINITIVAMENTE</button>{{/unless}}</footer>
+      </section>
     </div>
   {{/if}}
 

@@ -5,6 +5,7 @@ import { getResourceCatalogSetting } from "../core/settings.js";
 import { formatMinorUnits, parseMinorUnits } from "../core/numbers.js";
 import { executeCommandAuthoritatively } from "../authority/execute.js";
 import { buildStrategicDomainLedger } from "../features/economy/strategic.js";
+import { buildResourceDependencyReport } from "../features/economy/catalog-dependencies.js";
 import { buildDomainProjectReservations } from "../features/projects/selectors.js";
 import { calculateDomainRisks } from "../features/risks/rules.js";
 import { capabilityDefaultsForPreset } from "../core/management-contracts.js";
@@ -148,7 +149,7 @@ const MANAGEMENT_PRESET_LABELS = Object.freeze({
   outpost: "Posto avançado",
   base: "Base",
   "strategic-organization": "Organização estratégica",
-  custom: "Personalizado — escolher áreas"
+  custom: "Personalizado"
 });
 
 const CAPABILITY_LABELS = Object.freeze({
@@ -176,6 +177,13 @@ function managementPresetLabel(value) {
 
 function capabilityLabel(value) {
   return CAPABILITY_LABELS[value] ?? titleCase(value);
+}
+
+function requestTypeLabel(requestData = {}) {
+  if (requestData.type === "custom") {
+    return String(requestData.customTypeLabel ?? "").trim() || REQUEST_TYPE_LABELS.custom;
+  }
+  return REQUEST_TYPE_LABELS[requestData.type] ?? titleCase(requestData.type);
 }
 
 function referenceMatchesDomain(reference, domain) {
@@ -241,14 +249,8 @@ const REQUEST_TYPE_LABELS = Object.freeze({
   mission: "Missão",
   agreement: "Acordo",
   transfer: "Transferência",
-  custom: "Personalizada — definir tipo"
+  custom: "Personalizada"
 });
-
-function requestTypeLabel(type, customTypeLabel = "") {
-  const customLabel = String(customTypeLabel ?? "").trim();
-  if (type === "custom" && customLabel) return customLabel;
-  return REQUEST_TYPE_LABELS[type] ?? titleCase(type);
-}
 const REQUEST_STATUS_LABELS = Object.freeze({
   submitted: "Enviada",
   resubmitted: "Reenviada",
@@ -339,6 +341,7 @@ function buildResourceRows(domain, catalog, structures = []) {
       storageCapacityDisplay: Number(policy.storageCapacity ?? 0) > 0 ? formatMinorUnits(policy.storageCapacity, precision) : "∞",
       storageUtilizationDisplay: entry.storageUtilizationPercent == null ? "—" : `${Math.min(999, entry.storageUtilizationPercent)}%`,
       contributionCount: entry.contributions?.length ?? 0,
+      contributionLabel: `${entry.contributions?.length ?? 0} ${(entry.contributions?.length ?? 0) === 1 ? "vetor" : "vetores"}`,
       reserveGapDisplay: formatMinorUnits(entry.reserveGap ?? 0, precision)
     };
   });
@@ -443,6 +446,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isPeopleBusy = false;
   isAdvanceBusy = false;
   isEconomyConfigOpen = false;
+  isResourceCatalogOpen = false;
+  editingResourceId = null;
+  pendingResourceRemoval = null;
   isEconomyBusy = false;
   isSecurityEditorOpen = false;
   isSecurityBusy = false;
@@ -566,6 +572,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openEconomyConfig: DomainManagerShellApp.onOpenEconomyConfig,
       closeEconomyConfig: DomainManagerShellApp.onCloseEconomyConfig,
       submitEconomyConfig: DomainManagerShellApp.onSubmitEconomyConfig,
+      openResourceCatalog: DomainManagerShellApp.onOpenResourceCatalog,
+      closeResourceCatalog: DomainManagerShellApp.onCloseResourceCatalog,
+      newResourceDefinition: DomainManagerShellApp.onNewResourceDefinition,
+      editResourceDefinition: DomainManagerShellApp.onEditResourceDefinition,
+      submitResourceDefinition: DomainManagerShellApp.onSubmitResourceDefinition,
+      removeResourceDefinition: DomainManagerShellApp.onRemoveResourceDefinition,
+      cancelRemoveResourceDefinition: DomainManagerShellApp.onCancelRemoveResourceDefinition,
+      confirmRemoveResourceDefinition: DomainManagerShellApp.onConfirmRemoveResourceDefinition,
       openSecurityEditor: DomainManagerShellApp.onOpenSecurityEditor,
       closeSecurityEditor: DomainManagerShellApp.onCloseSecurityEditor,
       submitSecurityEditor: DomainManagerShellApp.onSubmitSecurityEditor,
@@ -649,6 +663,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isPersonEditorOpen = false;
     this.editingPersonUuid = null;
     this.isEconomyConfigOpen = false;
+    this.isResourceCatalogOpen = false;
+    this.editingResourceId = null;
+    this.pendingResourceRemoval = null;
     this.isSecurityEditorOpen = false;
     this.isTerritoryEditorOpen = false;
     this.editingRelationId = null;
@@ -677,43 +694,30 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const domainPreset = this.element?.querySelector?.("[data-domain-preset]");
     const capabilityInputs = Array.from(this.element?.querySelectorAll?.('[name="capabilities"]') ?? []);
     if (domainPreset && capabilityInputs.length) {
-      const syncCapabilityBadge = (input) => {
-        const badge = input.closest?.(".dm-controller-option")?.querySelector?.("small");
-        if (badge) badge.textContent = input.checked ? "ATIVA" : "DESATIVADA";
-      };
       domainPreset.addEventListener("change", () => {
-        if (domainPreset.value === "custom") {
-          capabilityInputs.forEach(syncCapabilityBadge);
-          return;
-        }
+        if (domainPreset.value === "custom") return;
         const defaults = capabilityDefaultsForPreset(domainPreset.value);
-        for (const input of capabilityInputs) {
-          input.checked = defaults[input.value] === true;
-          syncCapabilityBadge(input);
-        }
+        for (const input of capabilityInputs) input.checked = defaults[input.value] === true;
       });
       for (const input of capabilityInputs) {
         input.addEventListener("change", () => {
-          syncCapabilityBadge(input);
-          if (domainPreset.value !== "custom") domainPreset.value = "custom";
+          const defaults = capabilityDefaultsForPreset(domainPreset.value);
+          const isPresetDefault = capabilityInputs.every((candidate) => candidate.checked === (defaults[candidate.value] === true));
+          if (!isPresetDefault) domainPreset.value = "custom";
         });
       }
     }
-    const requestTypeSelects = Array.from(this.element?.querySelectorAll?.("[data-request-type-select]") ?? []);
-    for (const select of requestTypeSelects) {
-      const form = select.closest?.("form");
-      const customField = form?.querySelector?.("[data-request-custom-type-field]");
-      const customInput = customField?.querySelector?.('input[name="customTypeLabel"]');
-      if (!customField || !customInput) continue;
-      const syncCustomRequestType = () => {
-        const isCustom = select.value === "custom";
-        customField.hidden = !isCustom;
-        customInput.required = isCustom;
-        if (isCustom) customInput.removeAttribute("aria-hidden");
-        else customInput.setAttribute("aria-hidden", "true");
+    for (const typeSelect of this.element?.querySelectorAll?.("[data-request-type]") ?? []) {
+      const customField = typeSelect.closest("form")?.querySelector?.("[data-custom-request-type]");
+      if (!customField) continue;
+      const customInput = customField.querySelector("input");
+      const syncCustomType = () => {
+        const active = typeSelect.value === "custom";
+        customField.hidden = !active;
+        if (customInput) customInput.required = active;
       };
-      select.addEventListener("change", syncCustomRequestType);
-      syncCustomRequestType();
+      typeSelect.addEventListener("change", syncCustomType);
+      syncCustomType();
     }
     const deleteConfirmation = this.element?.querySelector?.("[data-domain-delete-confirmation]");
     const deleteSubmit = this.element?.querySelector?.("[data-domain-delete-submit]");
@@ -798,6 +802,38 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     const related = domainRelatedRecords(selectedDomain);
     const catalog = getResourceCatalogSetting();
+    const resourceCatalogRows = (catalog?.resources ?? []).map((resource) => {
+      const dependencies = buildResourceDependencyReport(resource.id);
+      return {
+        ...resource,
+        tagsLabel: (resource.tags ?? []).join(", ") || "Sem marcadores",
+        categoryLabel: titleCase(resource.category || "general"),
+        precisionLabel: `${resource.precision ?? 0} casa(s) decimal(is)`,
+        usageCount: dependencies.total,
+        usageLabel: dependencies.total ? `${dependencies.total} registro(s)` : "Não utilizado",
+        selected: resource.id === this.editingResourceId
+      };
+    });
+    const editingResource = this.editingResourceId
+      ? resourceCatalogRows.find((resource) => resource.id === this.editingResourceId) ?? null
+      : null;
+    if (this.editingResourceId && !editingResource) this.editingResourceId = null;
+    const resourceCatalogEditor = editingResource ? {
+      ...editingResource,
+      isEdit: true,
+      allowNegative: editingResource.allowNegative === true,
+      tagsValue: (editingResource.tags ?? []).join(", ")
+    } : {
+      id: "",
+      name: "",
+      unit: "",
+      precision: 0,
+      allowNegative: false,
+      category: "general",
+      tagsValue: "",
+      isEdit: false,
+      usageCount: 0
+    };
     const resources = buildResourceRows(selectedDomain, catalog, related.structures);
     const economyPolicyRows = (catalog?.resources ?? []).map((resource) => {
       const stock = selectedDomain?.data.economy?.stocks?.find((entry) => entry.resourceId === resource.id)?.amount ?? 0;
@@ -823,11 +859,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const activeWorkspace = selectedDomain ? resolveWorkspaceForView(this.activeView) : null;
     const subsystemNav = workspaceNav.find((workspace) => workspace.active)?.children ?? [];
 
-    const domainCards = filteredDomains.map((record) => ({
-      ...buildDomainCard(record, { selectedUuid: this.selectedDomainUuid }),
-      stateLabel: stateLabel(record.data.identity?.state),
-      presetLabel: managementPresetLabel(record.data.management?.preset)
-    }));
+    const domainCards = filteredDomains.map((record) => buildDomainCard(record, { selectedUuid: this.selectedDomainUuid }));
     const globalNav = buildGlobalNavigation({ isGM: game.user.isGM, activeView: this.activeView });
 
     const allMissions = listVisibleRecords(RECORD_TYPES.MISSION).map(recordSummary);
@@ -1079,8 +1111,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         ...recordSummary(record),
         selected: record.uuid === this.selectedRequestUuid,
         type: record.data.type,
+        typeLabel: requestTypeLabel(record.data),
         customTypeLabel: record.data.customTypeLabel ?? "",
-        typeLabel: requestTypeLabel(record.data.type, record.data.customTypeLabel),
         status,
         statusLabel: REQUEST_STATUS_LABELS[status] ?? stateLabel(status),
         tone: requestTone(status),
@@ -1122,10 +1154,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ? requests.find((entry) => entry.uuid === this.revisingRequestUuid && entry.canRevise) ?? null
       : null;
     if (this.revisingRequestUuid && !revisingRequest) this.revisingRequestUuid = null;
-    const requestTypeOptions = REQUEST_TYPES.map((value) => ({ value, label: REQUEST_TYPE_LABELS[value] ?? titleCase(value) }));
+    const requestTypeOptions = REQUEST_TYPES.map((value) => ({
+      value,
+      label: value === "custom" ? "Personalizada — definir tipo" : (REQUEST_TYPE_LABELS[value] ?? titleCase(value))
+    }));
     const requestRevisionTypeOptions = REQUEST_TYPES.map((value) => ({
       value,
-      label: REQUEST_TYPE_LABELS[value] ?? titleCase(value),
+      label: value === "custom" ? "Personalizada — definir tipo" : (REQUEST_TYPE_LABELS[value] ?? titleCase(value)),
       selected: revisingRequest?.type === value
     }));
     const requestReviewStatusOptions = REQUEST_REVIEW_STATUSES.map((value) => ({
@@ -1596,6 +1631,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         ...entry,
         domainName: domain?.document?.name ?? "Domínio desconhecido",
         domainEntityId: domain?.data?.entityId ?? entry.domain?.entityId ?? "—",
+        contextLabel: selectedDomain && domain?.uuid === selectedDomain.uuid ? "Domínio atual" : "Influência externa",
         value,
         valueDisplay: `${value}%`,
         segments: meterSegments(value),
@@ -1853,6 +1889,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       squadStatusOptions,
       canCreateSquad: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.squads),
       isEconomyConfigOpen: this.isEconomyConfigOpen,
+      isResourceCatalogOpen: this.isResourceCatalogOpen,
+      resourceCatalogVersion: Math.max(1, Number(catalog?.version ?? 1)),
+      resourceCatalogRows,
+      resourceCatalogEditor,
+      pendingResourceRemoval: this.pendingResourceRemoval,
       economyPolicyRows,
       canConfigureEconomy: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.economy),
       defense,
@@ -2040,20 +2081,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const domain = document ? decodeRecord(document) : null;
     if (!form || !canSubmitDomainRequest(domain)) return;
     const data = new FormData(form);
-    const requestType = String(data.get("type") ?? "custom");
-    const customTypeLabel = String(data.get("customTypeLabel") ?? "").trim();
-    if (requestType === "custom" && !customTypeLabel) {
-      ui.notifications.warn("Informe o nome do tipo personalizado da solicitação.");
-      return;
-    }
     this.isRequestBusy = true;
     try {
       const result = await executeCommandAuthoritatively({
         commandType: COMMAND_TYPES.REQUEST_CREATE,
         payload: {
           domain: entityReference(domain),
-          type: requestType,
-          customTypeLabel,
+          type: String(data.get("type") ?? "custom"),
+          customTypeLabel: String(data.get("customTypeLabel") ?? ""),
           title: String(data.get("title") ?? ""),
           intent: String(data.get("intent") ?? ""),
           details: String(data.get("details") ?? "")
@@ -2147,12 +2182,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!form || !document || !canViewDocument(document)) return;
     const request = decodeRecord(document);
     const data = new FormData(form);
-    const requestType = String(data.get("type") ?? "custom");
-    const customTypeLabel = String(data.get("customTypeLabel") ?? "").trim();
-    if (requestType === "custom" && !customTypeLabel) {
-      ui.notifications.warn("Informe o nome do tipo personalizado da solicitação.");
-      return;
-    }
     this.isRequestBusy = true;
     try {
       await executeCommandAuthoritatively({
@@ -2160,8 +2189,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: {
           request: entityReference(request),
           expectedModifiedTime: data.get("expectedModifiedTime"),
-          type: requestType,
-          customTypeLabel,
+          type: String(data.get("type") ?? "custom"),
+          customTypeLabel: String(data.get("customTypeLabel") ?? ""),
           title: String(data.get("title") ?? ""),
           intent: String(data.get("intent") ?? ""),
           details: String(data.get("details") ?? "")
@@ -2658,6 +2687,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         commandType: COMMAND_TYPES.ECONOMY_CONFIGURE,
         payload: {
           domain: entityReference(domain),
+          expectedModifiedTime: data.get("expectedModifiedTime"),
           stocks,
           resourcePolicies,
           sustenanceSettings: {
@@ -2674,6 +2704,119 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     } catch (error) {
       console.error("Domain Manager | Falha ao configurar economia", error);
       ui.notifications.error(error.message ?? "Falha ao configurar economia estratégica.");
+    } finally {
+      this.isEconomyBusy = false;
+    }
+  }
+
+  static onOpenResourceCatalog() {
+    if (!game.user.isGM) return;
+    this.isResourceCatalogOpen = true;
+    this.editingResourceId = null;
+    this.pendingResourceRemoval = null;
+    this.render({ force: true });
+  }
+
+  static onCloseResourceCatalog() {
+    this.isResourceCatalogOpen = false;
+    this.editingResourceId = null;
+    this.pendingResourceRemoval = null;
+    this.render({ force: true });
+  }
+
+  static onNewResourceDefinition() {
+    if (!game.user.isGM || !this.isResourceCatalogOpen) return;
+    this.editingResourceId = null;
+    this.pendingResourceRemoval = null;
+    this.render({ force: true });
+  }
+
+  static onEditResourceDefinition(event, target) {
+    if (!game.user.isGM || !this.isResourceCatalogOpen) return;
+    const resourceId = String(target?.dataset?.resourceId ?? "");
+    if (!(getResourceCatalogSetting().resources ?? []).some((resource) => resource.id === resourceId)) return;
+    this.editingResourceId = resourceId;
+    this.pendingResourceRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onSubmitResourceDefinition() {
+    if (!game.user.isGM || this.isEconomyBusy || !this.isResourceCatalogOpen) return;
+    const form = this.element?.querySelector?.("#dm-resource-catalog-form");
+    if (!form) return;
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    if (!name) {
+      ui.notifications.warn("Informe o nome do recurso.");
+      return;
+    }
+    this.isEconomyBusy = true;
+    try {
+      const result = await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.RESOURCE_CATALOG_UPSERT,
+        payload: {
+          originalId: String(data.get("originalId") ?? "").trim() || null,
+          expectedCatalogVersion: data.get("expectedCatalogVersion"),
+          id: String(data.get("id") ?? ""),
+          name,
+          unit: String(data.get("unit") ?? ""),
+          precision: Number(data.get("precision") ?? 0),
+          allowNegative: data.get("allowNegative") === "on",
+          category: String(data.get("category") ?? "general"),
+          tags: String(data.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean)
+        }
+      });
+      this.editingResourceId = result.resource?.id ?? null;
+      ui.notifications.info(`${result.resource?.name ?? name} salvo no catálogo.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao salvar Resource", error);
+      ui.notifications.error(error.message ?? "Falha ao salvar recurso.");
+    } finally {
+      this.isEconomyBusy = false;
+    }
+  }
+
+  static onRemoveResourceDefinition() {
+    if (!game.user.isGM || !this.editingResourceId) return;
+    const catalog = getResourceCatalogSetting();
+    const resource = (catalog.resources ?? []).find((entry) => entry.id === this.editingResourceId);
+    if (!resource) return;
+    const dependencies = buildResourceDependencyReport(resource.id);
+    this.pendingResourceRemoval = {
+      ...resource,
+      expectedCatalogVersion: Math.max(1, Number(catalog.version ?? 1)),
+      blocked: dependencies.total > 0,
+      dependencyCount: dependencies.total,
+      dependencies: dependencies.entries
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelRemoveResourceDefinition() {
+    this.pendingResourceRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemoveResourceDefinition() {
+    const pending = this.pendingResourceRemoval;
+    if (!game.user.isGM || this.isEconomyBusy || !pending || pending.blocked) return;
+    this.isEconomyBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.RESOURCE_CATALOG_REMOVE,
+        payload: {
+          resourceId: pending.id,
+          expectedCatalogVersion: pending.expectedCatalogVersion
+        }
+      });
+      this.pendingResourceRemoval = null;
+      this.editingResourceId = null;
+      ui.notifications.info(`${pending.name} removido do catálogo.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao remover Resource", error);
+      ui.notifications.error(error.message ?? "Falha ao remover recurso.");
     } finally {
       this.isEconomyBusy = false;
     }

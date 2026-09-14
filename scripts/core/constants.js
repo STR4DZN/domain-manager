@@ -1,6 +1,6 @@
 export const MODULE_ID = "domain-manager";
 export const MODULE_TITLE = "Domínios // Domain Manager";
-export const MODULE_VERSION = "0.1.0-dev.153";
+export const MODULE_VERSION = "0.1.0-dev.154";
 export const SCHEMA_VERSION = 9;
 
 export const RECORD_TYPES = Object.freeze({
@@ -195,6 +195,8 @@ export const COMMAND_TYPES = Object.freeze({
   PROJECT_COST_UPSERT: "project.cost-upsert",
   PROJECT_COST_REMOVE: "project.cost-remove",
   ECONOMY_CONFIGURE: "economy.configure",
+  RESOURCE_CATALOG_UPSERT: "resource-catalog.upsert",
+  RESOURCE_CATALOG_REMOVE: "resource-catalog.remove",
   POPULATION_CONFIGURE: "population.configure",
   POPULATION_GROUP_UPSERT: "population.group-upsert",
   POPULATION_GROUP_REMOVE: "population.group-remove",
@@ -247,6 +249,8 @@ export const EVENT_TYPES = Object.freeze({
   PROJECT_CREATED: "project.created",
   PROJECT_UPDATED: "project.updated",
   ECONOMY_CONFIGURED: "economy.configured",
+  RESOURCE_CATALOG_UPDATED: "resource-catalog.updated",
+  RESOURCE_CATALOG_REMOVED: "resource-catalog.removed",
   POPULATION_CONFIGURED: "population.configured",
   POPULATION_GROUP_UPDATED: "population.group-updated",
   POPULATION_GROUP_REMOVED: "population.group-removed",

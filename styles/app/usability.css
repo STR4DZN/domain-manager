@@ -386,7 +386,7 @@
 .dm-mission-resource-input{min-height:58px}.dm-mission-resource-input strong{font-size:12px}.dm-mission-resource-input small{font-size:10px}.dm-mission-dialog-note{min-height:48px;font-size:11px}
 .dm-resolution-section>header{min-height:40px;font-size:10px}.dm-resolution-unit__title strong{font-size:12px}.dm-resolution-unit__title span{font-size:10px}.dm-resolution-objective strong{font-size:11px}.dm-resolution-objective small{font-size:10px}.dm-resolution-objective select{min-height:40px!important;font-size:12px!important}
 .dm-resource-matrix>header>span,.dm-resource-matrix__head,.dm-economy-policy-matrix__head{font-size:10px}.dm-resource-matrix__row>strong,.dm-economy-policy-matrix__row>span strong{font-size:11px}.dm-resource-matrix__row small,.dm-economy-policy-matrix__row>span small{font-size:10px}
-.dm-resource-matrix__row input,.dm-resource-matrix__row select,.dm-economy-policy-matrix__row input{min-height:40px!important;font-size:11px!important}
+.dm-resource-matrix__row input,.dm-resource-matrix__row select{min-height:40px!important;font-size:11px!important}
 .dm-workforce-matrix>header{min-height:40px;font-size:10px}.dm-workforce-matrix__group strong{font-size:11px}.dm-workforce-matrix__group small{font-size:10px}.dm-workforce-matrix__cells>label{min-height:62px}.dm-workforce-matrix__cells>label span{font-size:10px}.dm-workforce-matrix__cells input{min-height:38px!important;font-size:11px!important}
 .dm-checkline{min-height:46px;font-size:10px}.dm-project-dialog__guardrail strong{font-size:10px}.dm-project-dialog__guardrail small{font-size:10px}
 
@@ -400,7 +400,6 @@
   .dm-mission-resource-input,.dm-resolution-objective{grid-template-columns:1fr}
   .dm-resolution-unit{grid-template-columns:1fr}.dm-resolution-unit__title{grid-column:1}
   .dm-system-dialog__footer{min-height:58px;padding:8px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.dm-system-dialog__footer .dm-action-button{width:100%}
-  .dm-economy-policy-matrix__head,.dm-economy-policy-matrix__row{min-width:720px}
   .dm-workforce-matrix>header,.dm-workforce-matrix>article{min-width:680px;grid-template-columns:150px 1fr}
 }
 

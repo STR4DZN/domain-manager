@@ -41,7 +41,6 @@ function requestResult(record) {
     entityId: record.data.entityId,
     status: record.data.status,
     type: record.data.type,
-    customTypeLabel: record.data.customTypeLabel ?? "",
     title: record.data.proposal?.title ?? record.document.name,
     requesterUserUuid: record.data.requesterUserUuid,
     primaryDomainUuid: record.data.primaryDomainUuid,

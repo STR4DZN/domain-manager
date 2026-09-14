@@ -1,6 +1,7 @@
 import { ECONOMY_LIMITS, RECORD_TYPES } from "../../core/constants.js";
 import { normalizeEntityReference } from "../../core/entity-contracts.js";
 import { ERROR_CODES, ModuleError } from "../../core/errors.js";
+import { normalizeResourceDefinition } from "./rules.js";
 
 function clean(value) { return String(value ?? "").trim(); }
 
@@ -10,6 +11,14 @@ function integer(value, { min = 0, max = ECONOMY_LIMITS.MAX_MINOR_AMOUNT, label 
     throw new ModuleError(ERROR_CODES.VALIDATION, `${label} precisa ser um inteiro entre ${min} e ${max}.`);
   }
   return number;
+}
+
+function expectedRevision(value, label) {
+  const revision = value == null || value === "" ? null : Number(value);
+  if (revision !== null && (!Number.isSafeInteger(revision) || revision < 0)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `${label} precisa ser um inteiro não-negativo.`);
+  }
+  return revision;
 }
 
 export function normalizeResourcePolicies(values = [], catalog = { resources: [] }) {
@@ -43,7 +52,10 @@ export function normalizeResourcePolicies(values = [], catalog = { resources: []
 
 export function normalizeEconomyConfigurePayload(payload = {}, catalog = { resources: [] }) {
   const domain = normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] });
-  const result = { domain };
+  const result = {
+    domain,
+    expectedModifiedTime: expectedRevision(payload.expectedModifiedTime, "expectedModifiedTime")
+  };
 
   if (payload.resourcePolicies != null) {
     result.resourcePolicies = normalizeResourcePolicies(payload.resourcePolicies, catalog);
@@ -86,10 +98,40 @@ export function normalizeEconomyConfigurePayload(payload = {}, catalog = { resou
     }).sort((a, b) => a.resourceId.localeCompare(b.resourceId));
   }
 
-  if (!Object.keys(result).some((key) => key !== "domain")) {
+  if (!Object.keys(result).some((key) => !["domain", "expectedModifiedTime"].includes(key))) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "Nenhuma configuração econômica foi informada.");
   }
   return result;
+}
+
+export function normalizeResourceCatalogUpsertPayload(payload = {}) {
+  const originalId = clean(payload.originalId) || null;
+  return {
+    originalId,
+    expectedCatalogVersion: expectedRevision(payload.expectedCatalogVersion, "expectedCatalogVersion"),
+    definition: normalizeResourceDefinition({
+      id: clean(payload.id) || originalId || undefined,
+      name: payload.name,
+      unit: payload.unit,
+      precision: payload.precision,
+      allowNegative: payload.allowNegative === true,
+      category: payload.category,
+      tags: payload.tags
+    })
+  };
+}
+
+export function normalizeResourceCatalogRemovePayload(payload = {}) {
+  const resourceId = clean(payload.resourceId);
+  if (!resourceId) throw new ModuleError(ERROR_CODES.VALIDATION, "Informe o recurso que será removido.");
+  return {
+    resourceId,
+    expectedCatalogVersion: expectedRevision(payload.expectedCatalogVersion, "expectedCatalogVersion")
+  };
+}
+
+export function resourceCatalogResourceKeys() {
+  return ["resource-catalog"];
 }
 
 export function economyConfigureResourceKeys(payload = {}) {

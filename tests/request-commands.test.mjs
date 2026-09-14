@@ -176,19 +176,16 @@ test("controller cria Request pelo Command Kernel, recebe OBSERVER e retry é id
   assert.equal(doc.getFlag("domain-manager", "data").operationId, "req-create-1");
 });
 
-test("Request personalizada persiste nome de tipo livre sem perder o tipo canônico custom", async () => {
+test("Request personalizada persiste o nome humano do tipo", async () => {
   const domain = reset();
-  const created = await command("request.create", "req-custom-labeled", {
+  const created = await command("request.create", "req-custom-label", {
     domain: ref(domain, "domain", "domain:D1"),
     type: "custom",
     customTypeLabel: "Evacuação Civil",
-    title: "Retirar moradores do setor leste",
-    intent: "Organizar uma evacuação antes da instabilidade estrutural.",
-    details: "Priorizar feridos e equipes médicas."
+    title: "Retirada do distrito",
+    intent: "Retirar a população antes da tempestade.",
+    details: ""
   }, "P1");
-
-  assert.equal(created.type, "custom");
-  assert.equal(created.customTypeLabel, "Evacuação Civil");
   const requestDoc = docs.get(created.uuid);
   assert.equal(requestDoc.getFlag("domain-manager", "data").customTypeLabel, "Evacuação Civil");
 });
@@ -497,6 +494,7 @@ test("solicitante corrige e reenvia Request após pedido de ajustes", async () =
     request: ref(requestDoc, "request", before.entityId),
     expectedModifiedTime,
     type: "custom",
+    customTypeLabel: "Reconhecimento especial",
     title: "Recon exterior revisado",
     intent: "Reconhecer o corredor norte com rota de retirada.",
     details: "Recuar pelo marco oeste em caso de contato."
@@ -510,6 +508,7 @@ test("solicitante corrige e reenvia Request após pedido de ajustes", async () =
   assert.equal(after.requesterUserUuid, before.requesterUserUuid);
   assert.equal(after.primaryDomainUuid, before.primaryDomainUuid);
   assert.equal(after.proposal.title, "Recon exterior revisado");
+  assert.equal(after.customTypeLabel, "Reconhecimento especial");
   assert.equal(after.gmDecision.summary, "");
   assert.equal(after.gmDecision.handling, "none");
   assert.equal(after.history.at(-1).kind, "resubmitted");

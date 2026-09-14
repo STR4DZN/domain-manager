@@ -71,6 +71,8 @@ Consulte `docs/STRUCTURES_BASE_CORE.md`.
 - Agreements temporários, storage overflow e Projects são resolvidos dentro da mesma linha temporal.
 - Logistics usa Strategic Ledger real em vez de exibir somente flows persistentes.
 - Policy Console configura economia exclusivamente pelo Command Kernel.
+- O catálogo global de recursos pode ser criado, editado e removido pela interface, com ID estável, versão otimista e inventário de dependências antes de excluir.
+- Recursos em uso não podem mudar a precisão nem ser removidos, protegendo estoques, custos, estruturas, acordos e demais referências persistentes.
 - `advance(N)` é testado contra N avanços unitários em cenários combinados.
 
 Consulte `docs/STRATEGIC_ECONOMY.md`.
@@ -126,7 +128,7 @@ Consulte `docs/PROJECTS_ADVANCED.md` e `DEV138_AUDIT.md`.
 
 ## Instalação manual
 
-1. Baixe `domain-manager-v0.1.0-dev.138.zip`.
+1. Baixe `domain-manager-v0.1.0-dev.154.zip`.
 2. Extraia em `Data/modules/domain-manager`.
 3. Ative Domain Manager e socketlib no mundo.
 

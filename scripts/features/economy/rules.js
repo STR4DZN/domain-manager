@@ -151,7 +151,7 @@ export function upsertResourceInCatalog(
   );
 
   return {
-    version: 1,
+    version: Math.max(1, Number(catalog?.version ?? 1)) + 1,
     resources
   };
 }

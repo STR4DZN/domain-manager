@@ -22,12 +22,13 @@ export function normalizeRequestDraft({
     String(operationId ?? "").trim();
   const cleanIntent =
     String(intent ?? "").trim();
-  const cleanCustomTypeLabel =
-    String(customTypeLabel ?? "").trim();
   const cleanTitle =
     String(title ?? "").trim();
   const cleanDetails =
     String(details ?? "").trim();
+  const cleanCustomTypeLabel = type === "custom"
+    ? String(customTypeLabel ?? "").trim()
+    : "";
 
   if (!cleanOperationId) {
     throw new ModuleError(
@@ -78,13 +79,6 @@ export function normalizeRequestDraft({
     );
   }
 
-  if (cleanCustomTypeLabel.length > 80) {
-    throw new ModuleError(
-      ERROR_CODES.VALIDATION,
-      "O nome do tipo personalizado não pode exceder 80 caracteres."
-    );
-  }
-
   if (cleanIntent.length > 1200) {
     throw new ModuleError(
       ERROR_CODES.VALIDATION,
@@ -98,11 +92,17 @@ export function normalizeRequestDraft({
       "Os detalhes não podem exceder 6000 caracteres."
     );
   }
+  if (cleanCustomTypeLabel.length > 80) {
+    throw new ModuleError(
+      ERROR_CODES.VALIDATION,
+      "O nome do tipo personalizado não pode exceder 80 caracteres."
+    );
+  }
 
   return {
     operationId: cleanOperationId,
     type,
-    customTypeLabel: type === "custom" ? cleanCustomTypeLabel : "",
+    customTypeLabel: cleanCustomTypeLabel,
     status: "submitted",
     requesterUserUuid,
     primaryDomainUuid,

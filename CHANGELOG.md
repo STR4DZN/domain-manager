@@ -1,35 +1,27 @@
 # Changelog
 
-## 0.1.0-dev.153 — alinhamento, legibilidade e limpeza visual
+## 0.1.0-dev.154 — Catálogo de Recursos e Consolidação Visual
 
-- Corrige breadcrumb/topbar truncado e alinha código de contexto com os botões de ação.
-- Remove elementos decorativos sem função da Inteligência e Território (onda, retícula e medidores segmentados).
-- Inteligência passa a usar quatro indicadores simples e uma tabela de cinco colunas, com layout em cartões em janelas estreitas.
-- Território deixa de exibir IDs técnicos na interface de influência e usa rótulos humanos.
-- Editor de Influências recebe cartões legíveis e campos numéricos alinhados.
-- Tabela de grupos populacionais deixa de criar barra horizontal quando vazia e vira layout responsivo em janelas estreitas.
-- Políticas de Recursos ganham tipografia maior e deixam de forçar uma matriz de 800px na janela normal.
-- Rodapés de diálogos removem texto decorativo, alinham ações e usam espaçador funcional quando necessário.
-- Mantém dados, schema e contratos funcionais da dev.152.
+### Catálogo global de recursos
+- Nova interface completa para criar, editar e remover definições de recursos sem editar configurações manualmente.
+- Definições expõem nome, unidade, precisão, categoria, marcadores e permissão de saldo negativo; o identificador torna-se imutável após a criação.
+- Escritas passam pelo Command Kernel com autoridade exclusiva do GM, lock global, idempotência, versão otimista, eventos e rollback do catálogo quando o receipt falha.
+- Alterar a precisão de um recurso já utilizado é bloqueado para impedir reinterpretação silenciosa de valores persistidos.
+- Remoção realiza varredura de dependências e apresenta inventário legível dos registros que ainda referenciam o recurso.
 
-## 0.1.0-dev.152 — personalização funcional
+### Economia e concorrência
+- O formulário de políticas captura a revisão do Domain ao abrir e recusa sobrescrever uma alteração mais recente.
+- Estoques, saldos, reservas e capacidades exibem unidades de forma consistente.
+- A matriz econômica e os formulários passam para cards rotulados em larguras menores, preservando leitura e ações.
 
-- O perfil **Personalizado** de Domínio deixa de ser uma opção ambígua: as áreas gerenciadas ficam imediatamente abaixo do perfil e qualquer alteração converte o perfil para personalizado.
-- Selecionar **Personalizado** não apaga mais a seleção atual de áreas; ele preserva o perfil de partida para edição manual.
-- A Solicitação **Personalizada** ganha um campo real de **nome do tipo personalizado**.
-- O nome personalizado da Solicitação passa a ser persistido e exibido na lista, no inspetor, na revisão e no reenvio.
-- Solicitações antigas do tipo `custom` continuam compatíveis; quando editadas pela UI, o nome personalizado passa a ser solicitado.
-- Schema global permanece **v9**; o novo campo de Request é retrocompatível e possui valor vazio padrão para registros antigos.
+### Consolidação do resgate visual
+- Incorporadas as correções visuais posteriores ao dev.150: botões sem altura global indevida, dialogs opacos, textos e ícones alinhados, e retirada de ondas, retículas e medidores cenográficos sem função.
+- Population, Intel, Territory, Policies e listas de recursos receberam estados vazios e layouts compactos responsivos.
+- Domínios personalizados preservam as capabilities escolhidas; solicitações personalizadas persistem o rótulo definido pelo usuário durante criação, revisão e reenvio.
 
-## 0.1.0-dev.151 — correções visuais fotografadas
-
-- Corrige compressão global de botões que quebrava seletor de domínio, registro e lista de pessoas.
-- Corrige diálogos transparentes e vazamento visual do conteúdo ao fundo.
-- Corrige o resumo de Inteligência em larguras intermediárias.
-- Corrige layout do painel Sistema após a simplificação do diagrama decorativo.
-- Corrige estado vazio de Alertas e Fortificações.
-- Restaura o indicador central de Defesa e melhora o resumo legado de Recursos.
-- Exibe rótulos de perfil/estado de domínio em português no Registro.
+### Validação
+- Schema permanece **v9**; nenhuma migration é necessária.
+- Gates dedicados cobrem comandos do catálogo, dependências, rollback, concorrência, interface responsiva e regressões visuais.
 
 ## 0.1.0-dev.150 — Reconstrução da Aplicação e Recuperação de Gestão
 

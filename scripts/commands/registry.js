@@ -11,8 +11,8 @@ import {
   domainMediaUpdateResourceKeys,
   domainUpdateResourceKeys
 } from "../features/domains/contracts.js";
-import { executeEconomyConfigure } from "../features/economy/commands.js";
-import { economyConfigureResourceKeys } from "../features/economy/contracts.js";
+import { executeEconomyConfigure, executeResourceCatalogRemove, executeResourceCatalogUpsert } from "../features/economy/commands.js";
+import { economyConfigureResourceKeys, resourceCatalogResourceKeys } from "../features/economy/contracts.js";
 import {
   executeResourceTransfer,
   transferResourceKeys
@@ -133,6 +133,14 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.ECONOMY_CONFIGURE]: Object.freeze({
     resourceKeys: economyConfigureResourceKeys,
     execute: executeEconomyConfigure
+  }),
+  [COMMAND_TYPES.RESOURCE_CATALOG_UPSERT]: Object.freeze({
+    resourceKeys: resourceCatalogResourceKeys,
+    execute: executeResourceCatalogUpsert
+  }),
+  [COMMAND_TYPES.RESOURCE_CATALOG_REMOVE]: Object.freeze({
+    resourceKeys: resourceCatalogResourceKeys,
+    execute: executeResourceCatalogRemove
   }),
   [COMMAND_TYPES.TRANSFER_RESOURCES]: Object.freeze({
     resourceKeys: transferResourceKeys,
