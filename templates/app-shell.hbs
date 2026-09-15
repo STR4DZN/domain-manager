@@ -258,7 +258,7 @@
 
         {{#if view.economy}}
           <section class="dm-view dm-view--economy">
-            <header class="dm-view-header"><div><span class="dm-kicker">BASE // RECURSOS</span><h2>Recursos</h2><p>Estoque, reservas, produção, consumo e capacidade do domínio.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{telemetry.activeFlows}} FLUXO(S)</span>{{#if isGM}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openResourceCatalog"><i class="fa-solid fa-boxes-stacked"></i> CATÁLOGO</button>{{/if}}{{#if canConfigureEconomy}}<button type="button" class="dm-action-button" data-action="openEconomyConfig"><i class="fa-solid fa-sliders"></i> POLÍTICAS</button>{{/if}}</div></header>
+            <header class="dm-view-header"><div><span class="dm-kicker">BASE // RECURSOS</span><h2>Recursos</h2><p>Estoque, reservas, produção, consumo e capacidade do domínio.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{telemetry.activeFlows}} FLUXO(S)</span>{{#if canConfigureEconomy}}<button type="button" class="dm-action-button" data-action="openEconomyFlowEditor" data-flow-id="__new__"><i class="fa-solid fa-plus"></i> NOVO FLUXO</button>{{/if}}{{#if isGM}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openResourceCatalog"><i class="fa-solid fa-boxes-stacked"></i> CATÁLOGO</button>{{/if}}{{#if canConfigureEconomy}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openEconomyConfig"><i class="fa-solid fa-sliders"></i> POLÍTICAS</button>{{/if}}</div></header>
             <div class="dm-economy-scope">
               <section class="dm-resource-matrix-live dm-resource-matrix-live--strategic">
                 <header><span>RECURSO</span><span>ESTOQUE</span><span>DISPONÍVEL</span><span>SALDO/T</span><span>RESERVA</span><span>CAPACIDADE</span><span>AUTONOMIA</span><span>ESTADO</span></header>
@@ -274,6 +274,23 @@
                     <span data-label="Estado"><em class="dm-chip dm-chip--{{tone}}">{{policyState}}</em></span>
                   </div>
                 {{else}}<div class="dm-empty-signal">CATÁLOGO DE RECURSOS VAZIO</div>{{/each}}
+              </section>
+              <section class="dm-economy-flow-board" aria-label="Fluxos econômicos cadastrados">
+                <header class="dm-economy-flow-board__title"><div><span class="dm-kicker">FLUXOS RECORRENTES</span><strong>Produção e consumo manual</strong><p>Entradas e saídas persistentes aplicadas pela simulação a cada período.</p></div><span>{{economyFlows.length}} CADASTRADO(S)</span></header>
+                <div class="dm-economy-flow-board__head"><span>FLUXO</span><span>DIREÇÃO</span><span>QUANTIDADE</span><span>PERÍODO</span><span>ORIGEM</span><span>ESTADO</span><span>AÇÕES</span></div>
+                {{#each economyFlows}}
+                  <article class="dm-economy-flow-row {{#unless active}}is-inactive{{/unless}}">
+                    <span class="dm-economy-flow-row__identity"><i class="dm-status-pip dm-status-pip--{{tone}}"></i><span><strong>{{name}}</strong><small>{{resourceName}} · {{categoryLabel}}</small></span></span>
+                    <span data-label="Direção" class="dm-economy-flow-row__direction {{#if isOutflow}}is-outflow{{else}}is-inflow{{/if}}"><i class="fa-solid {{#if isOutflow}}fa-arrow-up{{else}}fa-arrow-down{{/if}}"></i><strong>{{directionLabel}}</strong></span>
+                    <span data-label="Quantidade"><strong>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}}</strong></span>
+                    <span data-label="Período"><strong>{{cadenceLabel}}</strong></span>
+                    <span data-label="Origem"><strong>{{sourceLabel}}</strong></span>
+                    <span data-label="Estado"><em class="dm-chip dm-chip--{{tone}}">{{activeLabel}}</em></span>
+                    <span class="dm-economy-flow-row__actions">{{#if ../canConfigureEconomy}}<button type="button" class="dm-icon-button" data-action="openEconomyFlowEditor" data-flow-id="{{localId}}" aria-label="Editar fluxo {{name}}" title="Editar fluxo"><i class="fa-solid fa-pen"></i></button><button type="button" class="dm-icon-button dm-icon-button--danger" data-action="removeEconomyFlow" data-flow-id="{{localId}}" aria-label="Remover fluxo {{name}}" title="Remover fluxo"><i class="fa-solid fa-trash"></i></button>{{else}}<span>SOMENTE LEITURA</span>{{/if}}</span>
+                  </article>
+                {{else}}
+                  <div class="dm-empty dm-empty--economy-flow"><i class="fa-solid fa-arrow-right-arrow-left"></i><strong>NENHUM FLUXO MANUAL CADASTRADO</strong><span>Crie entradas de produção, rotas de comércio ou consumos recorrentes.</span>{{#if canConfigureEconomy}}<button type="button" class="dm-action-button" data-action="openEconomyFlowEditor" data-flow-id="__new__">CRIAR PRIMEIRO FLUXO</button>{{/if}}</div>
+                {{/each}}
               </section>
             </div>
           </section>
@@ -413,8 +430,8 @@
         {{/if}}
 
         {{#if view.missions}}
-          <section class="dm-view dm-view--missions dm-page--forensic dm-mission-control"><header class="dm-view-header"><div><span class="dm-kicker">OPERAÇÕES // MISSÕES</span><h2>Missões</h2><p>Crie, prepare, inicie e resolva missões.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{missions.length}} MISSÃO(ÕES)</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission"><i class="fa-solid fa-plus"></i> NOVA MISSÃO</button>{{/if}}</div></header>
-            <div class="dm-mission-list">{{#each missions}}<article class="dm-mission-card dm-mission-card--{{status}}"><div class="dm-mission-card__summary"><i class="fa-solid fa-clipboard-check"></i><strong>{{completedObjectives}} / {{objectiveCount}}</strong><small>OBJETIVOS</small></div><div class="dm-mission-card__body"><header><span class="dm-kicker">MISSÃO // {{entityIdShort}}</span><span class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</span></header><h3>{{name}}</h3><p>{{description}}</p><div class="dm-mission-telemetry"><span><small>VISIBILIDADE</small><strong>{{audienceLabel}}</strong></span><span><small>OBJETIVOS</small><strong>{{completedObjectives}} / {{objectiveCount}}</strong></span><span><small>FALHOU</small><strong>{{failedObjectives}}</strong></span><span><small>UNIDADES</small><strong>{{assignmentCount}}</strong></span></div><div class="dm-objective-grid">{{#each objectives}}<div class="dm-objective-row is-{{status}}"><span class="dm-objective-row__status"></span><div><strong>{{title}}</strong>{{#if description}}<small>{{description}}</small>{{/if}}</div><span>{{status}}</span></div>{{else}}<div class="dm-muted">SEM OBJETIVOS</div>{{/each}}</div>{{#if assignments.length}}<div class="dm-mission-units"><div class="dm-mission-subhead"><span>UNIDADES DESIGNADAS</span><strong>{{assignmentCount}}</strong></div>{{#each assignments}}<div class="dm-mission-unit"><div class="dm-mission-unit__id"><span class="dm-status-pip dm-status-pip--{{../tone}}"></span><div><strong>{{squadName}}</strong><small>{{stateLabel}} · {{committedStrength}} efetivo</small></div></div><div class="dm-mission-unit__resources">{{#each resources}}<span>{{name}} <strong>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}}</strong></span>{{else}}<span>SEM SUPRIMENTOS DESIGNADOS</span>{{/each}}</div>{{#if canRelease}}<button type="button" class="dm-icon-button" title="Liberar unidade" data-action="releaseMissionAssignment" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{squadUuid}}"><i class="fa-solid fa-link-slash"></i></button>{{/if}}</div>{{/each}}</div>{{/if}}{{#if isAvailable}}<div class="dm-mission-ready-units"><div class="dm-mission-subhead"><span>FORÇAS DISPONÍVEIS</span><strong>{{eligibleSquads.length}}</strong></div><div class="dm-mission-ready-grid">{{#each eligibleSquads}}<button type="button" class="dm-mission-ready-unit {{#if isPrepared}}is-prepared{{/if}}" data-action="openMissionPrepare" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{uuid}}"><span><strong>{{name}}</strong><small>{{strength}} / {{capacity}} · {{statusLabel}}</small></span><span>{{prepareLabel}}</span></button>{{else}}<div class="dm-muted">NENHUMA FORÇA DISPONÍVEL</div>{{/each}}</div></div>{{/if}}{{#if outcomeSummary}}<div class="dm-mission-outcome"><span>RELATÓRIO FINAL</span><p>{{outcomeSummary}}</p></div>{{/if}}<footer class="dm-mission-card__actions">{{#if canEdit}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openEditMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-pen"></i> EDITAR</button>{{/if}}{{#if canPublish}}<button type="button" class="dm-action-button" data-action="publishMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-bullhorn"></i> DISPONIBILIZAR</button>{{/if}}{{#if canLaunch}}<button type="button" class="dm-action-button" data-action="launchMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-play"></i> INICIAR MISSÃO</button>{{/if}}{{#if canResolve}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="openMissionResolve" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-flag-checkered"></i> RESOLVER MISSÃO</button>{{/if}}</footer></div></article>{{else}}<div class="dm-empty dm-empty--force"><i class="fa-solid fa-clipboard-list"></i><strong>NENHUMA MISSÃO CADASTRADA</strong><span>As missões aparecerão aqui quando forem cadastradas.</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission">CRIAR PRIMEIRA MISSÃO</button>{{/if}}</div>{{/each}}</div>
+          <section class="dm-view dm-view--missions dm-page--forensic dm-mission-control"><header class="dm-view-header"><div><span class="dm-kicker">OPERAÇÕES // MISSÕES</span><h2>Missões</h2><p>Crie, prepare, inicie, resolva ou cancele missões preservando seu histórico.</p></div><div class="dm-view-header__actions"><span class="dm-view-code">{{missions.length}} MISSÃO(ÕES)</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission"><i class="fa-solid fa-plus"></i> NOVA MISSÃO</button>{{/if}}</div></header>
+            <div class="dm-mission-list">{{#each missions}}<article class="dm-mission-card dm-mission-card--{{status}}"><div class="dm-mission-card__summary"><i class="fa-solid fa-clipboard-check"></i><strong>{{completedObjectives}} / {{objectiveCount}}</strong><small>OBJETIVOS</small></div><div class="dm-mission-card__body"><header><span class="dm-kicker">MISSÃO // {{entityIdShort}}</span><span class="dm-chip dm-chip--{{tone}}">{{statusLabel}}</span></header><h3>{{name}}</h3><p>{{description}}</p><div class="dm-mission-telemetry"><span><small>VISIBILIDADE</small><strong>{{audienceLabel}}</strong></span><span><small>OBJETIVOS</small><strong>{{completedObjectives}} / {{objectiveCount}}</strong></span><span><small>FALHOU</small><strong>{{failedObjectives}}</strong></span><span><small>UNIDADES</small><strong>{{assignmentCount}}</strong></span></div><div class="dm-objective-grid">{{#each objectives}}<div class="dm-objective-row is-{{status}}"><span class="dm-objective-row__status"></span><div><strong>{{title}}</strong>{{#if description}}<small>{{description}}</small>{{/if}}</div><span>{{status}}</span></div>{{else}}<div class="dm-muted">SEM OBJETIVOS</div>{{/each}}</div>{{#if assignments.length}}<div class="dm-mission-units"><div class="dm-mission-subhead"><span>UNIDADES DESIGNADAS</span><strong>{{assignmentCount}}</strong></div>{{#each assignments}}<div class="dm-mission-unit"><div class="dm-mission-unit__id"><span class="dm-status-pip dm-status-pip--{{../tone}}"></span><div><strong>{{squadName}}</strong><small>{{stateLabel}} · {{committedStrength}} efetivo</small></div></div><div class="dm-mission-unit__resources">{{#each resources}}<span>{{name}} <strong>{{amountDisplay}}{{#if unit}} {{unit}}{{/if}}</strong></span>{{else}}<span>SEM SUPRIMENTOS DESIGNADOS</span>{{/each}}</div>{{#if canRelease}}<button type="button" class="dm-icon-button" title="Liberar unidade" aria-label="Liberar {{squadName}} da missão" data-action="releaseMissionAssignment" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{squadUuid}}"><i class="fa-solid fa-link-slash"></i></button>{{/if}}</div>{{/each}}</div>{{/if}}{{#if isAvailable}}<div class="dm-mission-ready-units"><div class="dm-mission-subhead"><span>FORÇAS DISPONÍVEIS</span><strong>{{eligibleSquads.length}}</strong></div><div class="dm-mission-ready-grid">{{#each eligibleSquads}}<button type="button" class="dm-mission-ready-unit {{#if isPrepared}}is-prepared{{/if}}" data-action="openMissionPrepare" data-mission-uuid="{{../uuid}}" data-squad-uuid="{{uuid}}"><span><strong>{{name}}</strong><small>{{strength}} / {{capacity}} · {{statusLabel}}</small></span><span>{{prepareLabel}}</span></button>{{else}}<div class="dm-muted">NENHUMA FORÇA DISPONÍVEL</div>{{/each}}</div></div>{{/if}}{{#if outcomeSummary}}<div class="dm-mission-outcome"><span>RELATÓRIO FINAL</span><p>{{outcomeSummary}}</p></div>{{/if}}<footer class="dm-mission-card__actions">{{#if canEdit}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openEditMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-pen"></i> EDITAR</button>{{/if}}{{#if canPublish}}<button type="button" class="dm-action-button" data-action="publishMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-bullhorn"></i> DISPONIBILIZAR</button>{{/if}}{{#if canLaunch}}<button type="button" class="dm-action-button" data-action="launchMission" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-play"></i> INICIAR MISSÃO</button>{{/if}}{{#if canResolve}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="openMissionResolve" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-flag-checkered"></i> RESOLVER MISSÃO</button>{{/if}}{{#if canCancel}}<button type="button" class="dm-action-button dm-action-button--secondary dm-mission-cancel-trigger" data-action="openMissionCancel" data-mission-uuid="{{uuid}}"><i class="fa-solid fa-ban"></i> CANCELAR MISSÃO</button>{{/if}}</footer></div></article>{{else}}<div class="dm-empty dm-empty--force"><i class="fa-solid fa-clipboard-list"></i><strong>NENHUMA MISSÃO CADASTRADA</strong><span>As missões aparecerão aqui quando forem cadastradas.</span>{{#if canCreateMission}}<button type="button" class="dm-action-button" data-action="openCreateMission">CRIAR PRIMEIRA MISSÃO</button>{{/if}}</div>{{/each}}</div>
           </section>
         {{/if}}
 
@@ -514,7 +531,40 @@
         {{/if}}
 
         {{#if view.history}}
-          <section class="dm-view dm-view--history"><header class="dm-view-header"><div><span class="dm-kicker">GESTÃO // HISTÓRICO</span><h2>Histórico</h2><p>Registro de alterações e eventos deste domínio.</p></div><div class="dm-view-code">{{history.length}} EVENTO(S)</div></header><div class="dm-history-stream">{{#each history}}<article><span class="dm-history-stream__tick"></span><div><small>{{category}}</small><strong>{{title}}</strong><p>{{description}}</p></div><time>{{timestamp}}</time></article>{{else}}<div class="dm-empty-signal">HISTÓRICO VAZIO</div>{{/each}}</div></section>
+          <section class="dm-view dm-view--history">
+            <header class="dm-view-header dm-view-header--history">
+              <div><span class="dm-kicker">GESTÃO // HISTÓRICO</span><h2>Histórico</h2><p>Crônica persistente de alterações e eventos deste domínio.</p></div>
+              <div class="dm-view-header__actions">
+                <span class="dm-view-code">{{history.length}} EVENTO(S)</span>
+                {{#if canManageHistory}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="openHistoryClear" {{#unless history.length}}disabled{{/unless}}><i class="fa-solid fa-broom"></i> LIMPAR</button><button type="button" class="dm-action-button" data-action="openHistoryEntry"><i class="fa-solid fa-plus"></i> REGISTRO</button>{{/if}}
+              </div>
+            </header>
+
+            {{#if canManageHistory}}
+              <section class="dm-history-event-console">
+                <div><span class="dm-kicker">EVENTOS DE DOMÍNIO</span><strong>Sortear e aplicar evento</strong><p>O evento só altera o domínio depois da confirmação. O resultado também entra nesta crônica.</p></div>
+                <label><span>Categoria</span><select data-domain-event-category>{{#each domainEventCategoryOptions}}<option value="{{value}}">{{label}}</option>{{/each}}</select></label>
+                <button type="button" class="dm-action-button dm-action-button--secondary" data-action="rollDomainEvent" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-dice"></i> SORTEAR EVENTO</button>
+              </section>
+            {{/if}}
+
+            <div class="dm-history-stream">
+              {{#each history}}
+                <article class="dm-history-entry dm-history-entry--{{tone}}">
+                  <span class="dm-history-stream__tick"><i class="{{categoryIcon}}"></i></span>
+                  <div class="dm-history-entry__content">
+                    <small>{{categoryLabel}} · {{significanceLabel}}{{#if isRestricted}} · SOMENTE GM{{/if}}</small>
+                    <strong>{{title}}</strong>
+                    <p>{{summaryText}}</p>
+                    {{#if hasAdditionalDetails}}<p class="dm-history-entry__details">{{details}}</p>{{/if}}
+                  </div>
+                  <div class="dm-history-entry__meta"><time>{{timestampLabel}}</time>{{#if tickLabel}}<span>{{tickLabel}}</span>{{/if}}{{#if ../canManageHistory}}<button type="button" class="dm-icon-button dm-icon-button--danger" data-action="removeHistoryEntry" data-history-id="{{localId}}" title="Remover registro"><i class="fa-solid fa-trash"></i></button>{{/if}}</div>
+                </article>
+              {{else}}
+                <div class="dm-empty-signal">HISTÓRICO VAZIO</div>
+              {{/each}}
+            </div>
+          </section>
         {{/if}}
       </div>
 
@@ -668,6 +718,62 @@
           <div class="dm-request-console-note dm-field--wide"><strong>RETORNO DO MESTRE</strong><p>{{#if revisingRequest.decisionSummary}}{{revisingRequest.decisionSummary}}{{else}}Revise o conteúdo solicitado antes de reenviar.{{/if}}</p></div>
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeRequestRevision">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitRequestRevision"><i class="fa-solid fa-paper-plane"></i> REENVIAR SOLICITAÇÃO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if isHistoryEntryOpen}}
+    <div class="dm-modal-layer">
+      <form id="dm-history-entry-form" class="dm-system-dialog dm-system-dialog--wide dm-history-entry-dialog" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">HISTÓRICO // NOVO REGISTRO</span><h2>Adicionar à crônica</h2><p>Registre uma decisão, acontecimento ou marco narrativo do domínio.</p></div><button type="button" class="dm-icon-button" data-action="closeHistoryEntry" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body">
+          <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
+          <label class="dm-field dm-field--wide"><span>Título</span><input name="title" maxlength="160" required placeholder="Ex.: Fundação do Conselho de Defesa" /></label>
+          <label class="dm-field"><span>Categoria</span><select name="category">{{#each historyCategoryOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Importância</span><select name="significance">{{#each historySignificanceOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Visibilidade</span><select name="visibility">{{#each historyVisibilityOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <label class="dm-field"><span>Tick do mundo</span><input type="number" name="tick" min="0" step="1" placeholder="Opcional" /></label>
+          <label class="dm-field dm-field--wide"><span>Resumo</span><textarea name="summary" rows="3" maxlength="1200" placeholder="Uma leitura curta para a linha do tempo."></textarea></label>
+          <label class="dm-field dm-field--wide"><span>Detalhes</span><textarea name="details" rows="6" maxlength="6000" placeholder="Contexto, participantes, consequências e próximos passos."></textarea></label>
+          <div class="dm-history-dialog__note dm-field--wide"><i class="fa-solid fa-eye"></i><span><strong>PRIVACIDADE EXPLÍCITA</strong><small>Registros marcados como Somente GM não são enviados ao contexto nem renderizados para jogadores.</small></span></div>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeHistoryEntry" {{#if isHistoryBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button" data-action="submitHistoryEntry" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-bookmark"></i> ADICIONAR REGISTRO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if pendingHistoryRemoval}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm dm-history-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-history-remove-title">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">HISTÓRICO // REMOÇÃO</span><h2 id="dm-history-remove-title">Remover este registro?</h2><p>A crônica será alterada permanentemente.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemoveHistoryEntry" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body"><section class="dm-confirmation-summary"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>{{pendingHistoryRemoval.title}}</strong><p>{{#if pendingHistoryRemoval.summary}}{{pendingHistoryRemoval.summary}}{{else}}{{pendingHistoryRemoval.details}}{{/if}}</p><p><b>Registro criado em {{pendingHistoryRemoval.timestampLabel}}.</b> Se o domínio mudou desde a abertura, a remoção será recusada.</p></div></section></div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemoveHistoryEntry" {{#if isHistoryBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemoveHistoryEntry" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-trash"></i> REMOVER REGISTRO</button></footer>
+      </section>
+    </div>
+  {{/if}}
+
+  {{#if pendingHistoryClear}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm dm-history-clear-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-history-clear-title">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">HISTÓRICO // LIMPEZA TOTAL</span><h2 id="dm-history-clear-title">Limpar todo o histórico?</h2><p>Esta operação remove a crônica completa do domínio.</p></div><button type="button" class="dm-icon-button" data-action="cancelHistoryClear" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body"><section class="dm-confirmation-summary"><i class="fa-solid fa-radiation"></i><div><strong>{{pendingHistoryClear.count}} REGISTRO(S) SERÃO REMOVIDOS</strong><p>Entradas públicas, narrativas, automáticas e restritas ao GM serão apagadas em conjunto.</p><p><b>A limpeza não pode ser desfeita.</b> Uma revisão concorrente do domínio interromperá a operação.</p></div></section></div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelHistoryClear" {{#if isHistoryBusy}}disabled{{/if}}>MANTER HISTÓRICO</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmHistoryClear" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-broom"></i> LIMPAR TUDO</button></footer>
+      </section>
+    </div>
+  {{/if}}
+
+  {{#if pendingDomainEvent}}
+    <div class="dm-modal-layer">
+      <form id="dm-domain-event-form" class="dm-system-dialog dm-system-dialog--wide dm-domain-event-dialog" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">EVENTO DE DOMÍNIO // CONFIRMAÇÃO</span><h2>{{pendingDomainEvent.title}}</h2><p>{{pendingDomainEvent.description}}</p></div><button type="button" class="dm-icon-button" data-action="closeDomainEvent" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-domain-event-dialog__identity"><span class="dm-chip dm-chip--{{pendingDomainEvent.tone}}">{{pendingDomainEvent.severityLabel}}</span><strong>{{pendingDomainEvent.categoryLabel}}</strong><small>NENHUMA ALTERAÇÃO FOI APLICADA AINDA</small></div>
+        <div class="dm-system-dialog__body">
+          <label class="dm-field dm-field--wide"><span>Resultado a aplicar</span><select name="outcomeIndex">{{#each pendingDomainEvent.outcomes}}<option value="{{index}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+          <section class="dm-domain-event-outcomes dm-field--wide">{{#each pendingDomainEvent.outcomes}}<article><span>{{impactLabel}}</span><strong>{{label}}</strong><p>{{description}}</p>{{#if condition}}<small>Condição: {{condition.name}}</small>{{/if}}</article>{{/each}}</section>
+          <label class="dm-checkline dm-field--wide"><input type="checkbox" name="postToChat" checked /><span>Publicar o resultado no chat depois da confirmação autoritativa</span></label>
+          <div class="dm-history-dialog__note dm-field--wide"><i class="fa-solid fa-shield-halved"></i><span><strong>APLICAÇÃO ATÔMICA</strong><small>Estoques, condições e crônica são gravados juntos. Retry não duplica o evento nem a mensagem de chat.</small></span></div>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeDomainEvent" {{#if isHistoryBusy}}disabled{{/if}}>DESCARTAR</button><button type="button" class="dm-action-button" data-action="confirmDomainEvent" {{#if isHistoryBusy}}disabled{{/if}}><i class="fa-solid fa-bolt"></i> APLICAR EVENTO</button></footer>
       </form>
     </div>
   {{/if}}
@@ -1059,6 +1165,22 @@
     </div>
   {{/if}}
 
+  {{#if pendingMissionCancel}}
+    <div class="dm-modal-layer">
+      <form id="dm-mission-cancel-form" class="dm-system-dialog dm-system-dialog--confirm dm-mission-cancel-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-mission-cancel-title" aria-describedby="dm-mission-cancel-description" autocomplete="off">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">MISSÃO // CANCELAMENTO</span><h2 id="dm-mission-cancel-title">Cancelar {{pendingMissionCancel.missionName}}?</h2><p id="dm-mission-cancel-description">A missão será encerrada como cancelada, preservando objetivos, designações e compromissos no histórico.</p></div><button type="button" class="dm-icon-button" data-action="closeMissionCancel" aria-label="Fechar confirmação de cancelamento"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__telemetry"><span><small>ESTADO ATUAL</small><strong>{{pendingMissionCancel.statusLabel}}</strong></span><span><small>UNIDADES</small><strong>{{pendingMissionCancel.assignmentCount}}</strong></span></div>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <div class="dm-confirmation-summary"><i class="fa-solid fa-ban"></i><div><strong>Encerramento explícito e auditável</strong><p>Cada unidade vinculada será liberada e sua designação ficará marcada como retornada. A missão não poderá voltar ao planejamento.</p></div></div>
+          <div class="dm-mission-cancel-impact" role="note"><i class="fa-solid fa-shield-halved"></i><div><strong>{{#if pendingMissionCancel.isActive}}Recursos consumidos não serão devolvidos{{else}}Reservas ainda não consumidas serão liberadas{{/if}}</strong><p>{{#if pendingMissionCancel.isActive}}O cancelamento encerra a operação em campo sem inventar reembolsos ou consequências de combate.{{else}}Nenhum estoque será debitado; somente os vínculos de preparação serão encerrados.{{/if}}</p></div></div>
+          {{#if pendingMissionCancel.squads.length}}<section class="dm-mission-cancel-squads" aria-label="Unidades que serão liberadas">{{#each pendingMissionCancel.squads}}<span><strong>{{name}}</strong><small>{{statusLabel}} · {{assignmentStateLabel}}</small></span>{{/each}}</section>{{/if}}
+          <label class="dm-field dm-field--wide"><span>Motivo do cancelamento</span><textarea name="reason" rows="4" maxlength="4000" required aria-required="true" placeholder="Registre por que a operação foi encerrada..."></textarea><small>O texto será mantido como relatório final da missão.</small></label>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeMissionCancel" {{#if isMissionBusy}}disabled{{/if}}>MANTER MISSÃO</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmMissionCancel" {{#if isMissionBusy}}disabled{{/if}}><i class="fa-solid fa-ban"></i> CONFIRMAR CANCELAMENTO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
   {{#if isCreateSquadOpen}}
     <div class="dm-modal-layer">
       <form id="dm-create-squad-form" class="dm-system-dialog dm-system-dialog--wide" autocomplete="off">
@@ -1172,7 +1294,7 @@
         <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
         <header class="dm-system-dialog__header">
           <div><span class="dm-kicker">RECURSOS // POLÍTICAS</span><h2>{{selectedDomain.name}}</h2></div>
-          <button type="button" class="dm-icon-button" data-action="closeEconomyConfig"><i class="fa-solid fa-xmark"></i></button>
+          <button type="button" class="dm-icon-button" data-action="closeEconomyConfig" aria-label="Fechar políticas econômicas" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
         </header>
         <div class="dm-system-dialog__telemetry">
           <span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span>
@@ -1206,6 +1328,41 @@
         </div>
         <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeEconomyConfig">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitEconomyConfig">SALVAR POLÍTICAS</button></footer>
       </form>
+    </div>
+  {{/if}}
+
+  {{#if isEconomyFlowEditorOpen}}
+    <div class="dm-modal-layer">
+      <form id="dm-economy-flow-form" class="dm-system-dialog dm-system-dialog--wide dm-economy-flow-dialog" autocomplete="off">
+        <input type="hidden" name="expectedModifiedTime" value="{{selectedDomain.expectedModifiedTime}}" />
+        <input type="hidden" name="localId" value="{{editingEconomyFlow.localId}}" />
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">RECURSOS // FLUXO RECORRENTE</span><h2>{{#if editingEconomyFlow.isEdit}}Editar fluxo{{else}}Novo fluxo{{/if}}</h2><p>Defina uma entrada ou saída que a simulação aplicará de forma recorrente.</p></div><button type="button" class="dm-icon-button" data-action="closeEconomyFlowEditor" aria-label="Fechar editor de fluxo" title="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__telemetry"><span><small>DOMÍNIO</small><strong>{{selectedDomain.name}}</strong></span><span><small>TIPO</small><strong>{{#if editingEconomyFlow.isEdit}}EDIÇÃO{{else}}NOVO{{/if}}</strong></span><span><small>CADÊNCIA</small><strong>CICLOS</strong></span><span><small>AUTORIDADE</small><strong>GM</strong></span></div>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <section class="dm-economy-flow-note"><i class="fa-solid fa-circle-info"></i><div><strong>VALORES EM UNIDADE DE EXIBIÇÃO</strong><span>O saldo será convertido conforme as casas decimais do recurso. Alterar o período reinicia o progresso parcial do fluxo.</span></div></section>
+          <div class="dm-dialog-grid">
+            <label class="dm-field dm-field--wide"><span>Nome do fluxo</span><input name="name" value="{{editingEconomyFlow.name}}" required placeholder="Ex.: Produção da refinaria" /></label>
+            <label class="dm-field"><span>Recurso</span><select name="resourceId" required>{{#each economyFlowResourceOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+            <label class="dm-field"><span>Direção</span><select name="direction" required>{{#each economyFlowDirectionOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+            <label class="dm-field"><span>Quantidade por período</span><input name="amount" inputmode="decimal" value="{{editingEconomyFlow.amountValue}}" required placeholder="0" /><small>{{#if editingEconomyFlow.resourceUnit}}Use {{editingEconomyFlow.resourceUnit}} como unidade de exibição.{{else}}Informe um valor maior que zero.{{/if}}</small></label>
+            <label class="dm-field"><span>Período em ciclos</span><input name="periodTicks" type="number" min="1" max="10000000" value="{{editingEconomyFlow.periodTicks}}" required /><small>1 aplica o fluxo em todo ciclo.</small></label>
+            <label class="dm-field"><span>Categoria</span><select name="category">{{#each economyFlowCategoryOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
+            <label class="dm-field"><span>Origem ou referência</span><input name="source" value="{{editingEconomyFlow.source}}" placeholder="Ex.: Usina norte, contrato 04" /></label>
+            <label class="dm-controller-option dm-field--wide"><input type="checkbox" name="active" {{#if editingEconomyFlow.active}}checked{{/if}} /><span class="dm-sysdot {{#if editingEconomyFlow.active}}is-online{{/if}}"></span><strong>Fluxo ativo na simulação</strong><small>{{#if editingEconomyFlow.active}}ATIVO{{else}}PAUSADO{{/if}}</small></label>
+          </div>
+        </div>
+        <footer class="dm-system-dialog__footer">{{#if editingEconomyFlow.isEdit}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="removeEconomyFlow" data-flow-id="{{editingEconomyFlow.localId}}"><i class="fa-solid fa-trash"></i> REMOVER</button>{{/if}}<button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeEconomyFlowEditor">CANCELAR</button><button type="button" class="dm-action-button" data-action="submitEconomyFlowEditor"><i class="fa-solid fa-floppy-disk"></i> SALVAR FLUXO</button></footer>
+      </form>
+    </div>
+  {{/if}}
+
+  {{#if pendingEconomyFlowRemoval}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm dm-economy-flow-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-economy-flow-remove-title">
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">RECURSOS // REMOÇÃO</span><h2 id="dm-economy-flow-remove-title">Remover {{pendingEconomyFlowRemoval.name}}?</h2><p>O fluxo deixará de afetar {{pendingEconomyFlowRemoval.resourceName}} nos próximos ciclos.</p></div><button type="button" class="dm-icon-button" data-action="cancelRemoveEconomyFlow" aria-label="Fechar confirmação" title="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked"><section class="dm-domain-delete-ready"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>REMOÇÃO PERMANENTE</strong><p>O histórico já registrado permanece intacto, mas o fluxo e seu progresso parcial serão removidos do domínio.</p></div></section></div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelRemoveEconomyFlow">VOLTAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmRemoveEconomyFlow"><i class="fa-solid fa-trash"></i> REMOVER FLUXO</button></footer>
+      </section>
     </div>
   {{/if}}
 
@@ -1448,6 +1605,29 @@
       <div class="dm-system-dialog__body"><section class="dm-project-cost-remove-summary"><span><small>INFORMAÇÃO</small><strong>{{pendingIntelAction.title}}</strong></span><span><small>VISIBILIDADE ATUAL</small><strong>{{pendingIntelAction.visibilityLabel}}</strong></span><span><small>DESTINO</small><strong>{{#if pendingIntelAction.isRemove}}EXCLUÍDA{{else}}PÚBLICA{{/if}}</strong></span></section><div class="dm-project-dialog__guardrail"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>{{#if pendingIntelAction.isRemove}}REMOÇÃO PERMANENTE{{else}}DIVULGAÇÃO IRREVERSÍVEL{{/if}}</strong><small>A revisão do domínio será conferida novamente antes da operação.</small></span></div></div>
       <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelIntelAction">CANCELAR</button><button type="button" class="dm-action-button {{#if pendingIntelAction.isRemove}}dm-action-button--critical{{/if}}" data-action="confirmIntelAction"><i class="fa-solid {{#if pendingIntelAction.isRemove}}fa-trash{{else}}fa-eye{{/if}}"></i> {{#if pendingIntelAction.isRemove}}REMOVER{{else}}REVELAR AO PÚBLICO{{/if}}</button></footer>
     </section></div>
+  {{/if}}
+
+  {{#if pendingTerminalTransition}}
+    <div class="dm-modal-layer">
+      <section class="dm-system-dialog dm-system-dialog--confirm dm-terminal-transition-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-terminal-transition-title" aria-describedby="dm-terminal-transition-description">
+        <header class="dm-system-dialog__header">
+          <div><span class="dm-kicker">{{pendingTerminalTransition.entityTypeLabel}} // TRANSIÇÃO TERMINAL</span><h2 id="dm-terminal-transition-title">{{pendingTerminalTransition.title}}</h2><p id="dm-terminal-transition-description">{{pendingTerminalTransition.description}}</p></div>
+          <button type="button" class="dm-icon-button" data-action="closeTerminalTransition" aria-label="Fechar confirmação" {{#if isTerminalTransitionBusy}}disabled{{/if}}><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="dm-system-dialog__telemetry dm-terminal-transition-telemetry">
+          <span><small>REGISTRO</small><strong>{{pendingTerminalTransition.entityName}}</strong></span>
+          <span><small>ESTADO ATUAL</small><strong>{{pendingTerminalTransition.fromLabel}}</strong></span>
+          <span><small>NOVO ESTADO</small><strong>{{pendingTerminalTransition.toLabel}}</strong></span>
+        </div>
+        <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
+          <div class="dm-confirmation-summary"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Confirmação consciente e protegida</strong><p>O estado será conferido novamente antes da gravação. Se outra pessoa tiver alterado o registro, a operação será recusada sem sobrescrever dados.</p></div></div>
+          <section class="dm-terminal-transition-effects" aria-label="Consequências desta alteração">
+            {{#each pendingTerminalTransition.effects}}<article><i class="fa-solid fa-arrow-right"></i><div><strong>{{title}}</strong><p>{{detail}}</p></div></article>{{/each}}
+          </section>
+        </div>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="closeTerminalTransition" {{#if isTerminalTransitionBusy}}disabled{{/if}}>VOLTAR E REVISAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="confirmTerminalTransition" {{#if isTerminalTransitionBusy}}disabled{{/if}}><i class="fa-solid fa-check"></i> {{pendingTerminalTransition.confirmLabel}}</button></footer>
+      </section>
+    </div>
   {{/if}}
 
 </div>

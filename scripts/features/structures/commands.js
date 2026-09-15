@@ -208,6 +208,14 @@ export async function executeStructureAdminUpdate({ payload, callerUserId }) {
   const domain = resolveReference(structure.data.domain, RECORD_TYPES.DOMAIN);
   assertDomainOperator(domain, callerUserId);
   assertRevision(structure, normalized.expectedModifiedTime);
+  const isTerminalTransition = ["destroyed", "decommissioned"].includes(normalized.status)
+    && normalized.status !== structure.data.status;
+  if (isTerminalTransition && !normalized.confirmTerminalTransition) {
+    throw new ModuleError(
+      ERROR_CODES.VALIDATION,
+      "Confirme explicitamente a retirada terminal da Structure antes de continuar."
+    );
+  }
   if (!Object.hasOwn(payload, "maintenancePriority")) {
     normalized.maintenancePriority = Number(structure.data.maintenancePriority ?? 50);
   }

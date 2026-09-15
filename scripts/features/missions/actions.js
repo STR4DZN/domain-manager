@@ -58,8 +58,8 @@ export async function createMissionAction({
 /**
  * Compatibility wrapper for Mission metadata edits. Lifecycle transitions are
  * intentionally not owned here: `status` is treated as an expected current
- * status and the canonical launch/resolve commands remain the only transition
- * path for operational states.
+ * status and the canonical publish/launch/cancel/resolve commands remain the
+ * only transition path for lifecycle states.
  */
 export async function updateMissionAction({
   missionUuid,

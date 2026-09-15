@@ -5,6 +5,22 @@
 
 **Domain Manager** é um framework estratégico e operacional para Foundry VTT v13. Ele conecta Domains, economia, projetos, squads, pessoas, estruturas, missões, diplomacia, território e inteligência dentro de um estado persistente e multiplayer.
 
+## Linha 0.2.0 — base operacional consolidada
+
+A `0.2.0` fecha a etapa de fundação do produto: as áreas que antes funcionavam apenas como leitura ou protótipo visual agora possuem operações reais, validação e autoridade centralizada. Criação, edição e remoção estão disponíveis onde a remoção é segura; entidades com histórico ou vínculos operacionais usam cancelamento ou transições terminais explícitas para evitar perda silenciosa de dados.
+
+Principais entregas desta linha:
+
+- mutações de Domain, recursos, economia, população, pessoas, Structures, Projects, Squads, Missions, Requests, relações, Agreements, Intel, Conditions, segurança, Events e History passam pelo **Command Kernel** ou por wrappers de compatibilidade que delegam a ele;
+- **Economy Flows** podem ser criados, editados e removidos pela interface, com validação de recursos, revisão otimista e confirmação de remoção;
+- Missions planejadas, disponíveis ou ativas podem ser canceladas por GM com motivo, liberação atômica das Squads e preservação dos suprimentos já consumidos;
+- Events e History possuem comandos autoritativos, receipts idempotentes, gestão completa pela interface, filtragem de registros restritos para jogadores e publicação no chat somente depois da aplicação confirmada;
+- estados irreversíveis de Person, Squad e Structure usam confirmação guiada e guardas contra vínculos ativos;
+- a interface prioriza legibilidade e responsividade: sem scans, miras ou animações decorativas contínuas, com tipografia, ícones, áreas de clique, overflow e dialogs adaptados a janelas compactas;
+- o gate automatizado da candidata aprovou **394 de 394 testes**, cobrindo comportamento funcional, autoridade, concorrência, rollback, referências, contratos da interface e regressões responsivas.
+
+A candidata também foi inspecionada na prévia local representativa em `1280`, `1000`, `760` e `520` px, incluindo a visão GM e a filtragem de History para jogador. Isso não substitui a instalação e a homologação multiplayer dentro do Foundry VTT. O roteiro completo e os limites conhecidos estão em `audit/IMPLEMENTACAO_0.2.0.md`.
+
 ## DOMAIN//OS — True App Architecture
 
 A partir do `dev.134.3`, a camada de apresentação passa a seguir um contrato de produto reconstruído a partir de **26 referências FUI** e **3 referências de aplicativos modernos**. O kernel/schema permanecem independentes da apresentação.
@@ -128,7 +144,7 @@ Consulte `docs/PROJECTS_ADVANCED.md` e `DEV138_AUDIT.md`.
 
 ## Instalação manual
 
-1. Baixe `domain-manager-v0.1.0-dev.154.zip`.
+1. Baixe `domain-manager-v0.2.0.zip`.
 2. Extraia em `Data/modules/domain-manager`.
 3. Ative Domain Manager e socketlib no mundo.
 

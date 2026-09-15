@@ -1,4 +1,4 @@
-import { ECONOMY_LIMITS, RECORD_TYPES } from "../../core/constants.js";
+import { ECONOMY_LIMITS, FLOW_DIRECTIONS, RECORD_TYPES } from "../../core/constants.js";
 import { normalizeEntityReference } from "../../core/entity-contracts.js";
 import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 import { normalizeResourceDefinition } from "./rules.js";
@@ -130,6 +130,47 @@ export function normalizeResourceCatalogRemovePayload(payload = {}) {
   };
 }
 
+export function normalizeEconomyFlowUpsertPayload(payload = {}) {
+  const domain = normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] });
+  const localId = clean(payload.localId) || null;
+  const name = clean(payload.name);
+  const resourceId = clean(payload.resourceId);
+  const direction = clean(payload.direction);
+  if (!name) throw new ModuleError(ERROR_CODES.VALIDATION, "O nome do fluxo é obrigatório.");
+  if (!resourceId) throw new ModuleError(ERROR_CODES.VALIDATION, "Informe o recurso do fluxo.");
+  if (!FLOW_DIRECTIONS.includes(direction)) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, `Direção inválida: ${direction || "(vazia)"}.`);
+  }
+
+  return {
+    domain,
+    expectedModifiedTime: expectedRevision(payload.expectedModifiedTime, "expectedModifiedTime"),
+    localId,
+    name,
+    resourceId,
+    direction,
+    amount: integer(payload.amount, { min: 1, label: "Quantidade do fluxo" }),
+    periodTicks: integer(payload.periodTicks, {
+      min: 1,
+      max: ECONOMY_LIMITS.MAX_PERIOD_TICKS,
+      label: "Período do fluxo"
+    }),
+    category: clean(payload.category) || "manual",
+    source: clean(payload.source),
+    active: payload.active !== false
+  };
+}
+
+export function normalizeEconomyFlowRemovePayload(payload = {}) {
+  const localId = clean(payload.localId);
+  if (!localId) throw new ModuleError(ERROR_CODES.VALIDATION, "Informe o fluxo que será removido.");
+  return {
+    domain: normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] }),
+    expectedModifiedTime: expectedRevision(payload.expectedModifiedTime, "expectedModifiedTime"),
+    localId
+  };
+}
+
 export function resourceCatalogResourceKeys() {
   return ["resource-catalog"];
 }
@@ -138,3 +179,5 @@ export function economyConfigureResourceKeys(payload = {}) {
   const reference = normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] });
   return [reference.entityId ?? reference.uuid].filter(Boolean);
 }
+
+export const economyFlowResourceKeys = economyConfigureResourceKeys;

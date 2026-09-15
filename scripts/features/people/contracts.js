@@ -160,7 +160,8 @@ export function normalizePersonUpdatePayload(payload = {}) {
   return {
     person: normalizeEntityReference(payload.person, { allowedTypes: [RECORD_TYPES.PERSON] }),
     expectedModifiedTime: revision(payload.expectedModifiedTime),
-    ...normalizePersonBase(payload)
+    ...normalizePersonBase(payload),
+    confirmTerminalTransition: payload.confirmTerminalTransition === true
   };
 }
 

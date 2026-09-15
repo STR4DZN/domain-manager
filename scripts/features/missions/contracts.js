@@ -254,3 +254,37 @@ export function missionResolveResourceKeys(payload = {}) {
     ...normalized.results.map((entry) => entry.squad.entityId ?? entry.squad.uuid)
   ].filter(Boolean);
 }
+
+export function normalizeMissionCancelPayload(payload = {}) {
+  const reason = text(payload.reason);
+  if (!reason) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Informe o motivo do cancelamento da Mission.");
+  }
+  if (reason.length > 4000) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "O motivo do cancelamento deve ter no máximo 4000 caracteres.");
+  }
+
+  const squads = (payload.squads ?? []).map((entry) => ({
+    squad: normalizeEntityReference(entry?.squad ?? entry, { allowedTypes: [RECORD_TYPES.SQUAD] }),
+    expectedModifiedTime: revision(entry?.expectedModifiedTime, "expectedModifiedTime do Squad")
+  }));
+  const squadKeys = squads.map((entry) => entry.squad.entityId ?? entry.squad.uuid);
+  if (new Set(squadKeys).size !== squadKeys.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "O snapshot de cancelamento contém Squads duplicados.");
+  }
+
+  return {
+    mission: normalizeEntityReference(payload.mission, { allowedTypes: [RECORD_TYPES.MISSION] }),
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
+    reason,
+    squads
+  };
+}
+
+export function missionCancelResourceKeys(payload = {}) {
+  const normalized = normalizeMissionCancelPayload(payload);
+  return [
+    normalized.mission.entityId ?? normalized.mission.uuid,
+    ...normalized.squads.map((entry) => entry.squad.entityId ?? entry.squad.uuid)
+  ].filter(Boolean);
+}

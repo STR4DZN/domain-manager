@@ -107,7 +107,7 @@ export function getSecondsPerTickSetting() {
   try {
     const value = game.settings.get(MODULE_ID, SETTINGS.SECONDS_PER_TICK);
     return Math.max(1, Number(value) || 86400);
-  } catch (_err) {
+  } catch {
     return 86400;
   }
 }
@@ -115,7 +115,7 @@ export function getSecondsPerTickSetting() {
 export function getSyncTimekeepingSetting() {
   try {
     return Boolean(game.settings.get(MODULE_ID, SETTINGS.SYNC_TIMEKEEPING));
-  } catch (_err) {
+  } catch {
     return true;
   }
 }

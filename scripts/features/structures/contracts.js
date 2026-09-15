@@ -133,7 +133,8 @@ export function normalizeStructureAdminPayload(payload = {}) {
   return {
     structure: normalizeEntityReference(payload.structure, { allowedTypes: [RECORD_TYPES.STRUCTURE] }),
     expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime),
-    ...baseBlueprint(payload, { defaultStatus: "operational" })
+    ...baseBlueprint(payload, { defaultStatus: "operational" }),
+    confirmTerminalTransition: payload.confirmTerminalTransition === true
   };
 }
 

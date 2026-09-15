@@ -1,10 +1,7 @@
-import {
-  RECORD_TYPES
-} from "../../core/constants.js";
+import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
 import {
   getResourceCatalogSetting
 } from "../../core/settings.js";
-import { COMMAND_TYPES } from "../../core/constants.js";
 import { dispatchAuthoritativeCommand } from "../../commands/execute.js";
 import {
   parseMinorUnits
@@ -13,15 +10,7 @@ import {
   ERROR_CODES,
   ModuleError
 } from "../../core/errors.js";
-import {
-  getRecord,
-  updateRecord
-} from "../../data/journal-store.js";
-import {
-  normalizeFlow,
-  normalizeStockEntries,
-  upsertFlow
-} from "./rules.js";
+import { getRecord } from "../../data/journal-store.js";
 
 function assertGM() {
   if (!game.user.isGM) {
@@ -32,23 +21,8 @@ function assertGM() {
   }
 }
 
-function assertRevision(
-  document,
-  expectedModifiedTime
-) {
-  if (expectedModifiedTime == null) return;
-
-  const current =
-    document._stats?.modifiedTime ?? null;
-
-  if (
-    current !== expectedModifiedTime
-  ) {
-    throw new ModuleError(
-      ERROR_CODES.CONFLICT,
-      "O Domain mudou enquanto o formulário estava aberto."
-    );
-  }
+function commandOperationId(operationId) {
+  return String(operationId ?? "").trim() || foundry.utils.randomID();
 }
 
 export async function upsertResourceDefinitionAction({
@@ -84,7 +58,8 @@ export async function upsertResourceDefinitionAction({
 export async function updateDomainStocksAction({
   domainUuid,
   expectedModifiedTime,
-  displayAmounts
+  displayAmounts,
+  operationId = null
 }) {
   assertGM();
 
@@ -100,11 +75,6 @@ export async function updateDomainStocksAction({
       "O registro não é um Domain."
     );
   }
-
-  assertRevision(
-    record.document,
-    expectedModifiedTime
-  );
 
   const catalog =
     getResourceCatalogSetting();
@@ -155,29 +125,16 @@ export async function updateDomainStocksAction({
     }
   );
 
-  const stocks =
-    normalizeStockEntries(
-      entries,
-      catalog
-    );
-
-  const nextData = {
-    ...record.data,
-
-    economy: {
-      ...record.data.economy,
-      stocks
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.ECONOMY_CONFIGURE,
+    operationId: commandOperationId(operationId),
+    payload: {
+      domain: { recordType: RECORD_TYPES.DOMAIN, uuid: domainUuid, entityId: record.data.entityId },
+      expectedModifiedTime,
+      stocks: entries
     }
-  };
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    name: record.document.name,
-    data: nextData,
-    controllerIds:
-      record.data.governance.controllers
-  });
+  }, { callerUserId: game.user.id });
+  return getRecord(domainUuid);
 }
 
 export async function upsertDomainFlowAction({
@@ -191,7 +148,8 @@ export async function upsertDomainFlowAction({
   periodTicks,
   category,
   source,
-  active
+  active,
+  operationId = null
 }) {
   assertGM();
 
@@ -207,11 +165,6 @@ export async function upsertDomainFlowAction({
       "O registro não é um Domain."
     );
   }
-
-  assertRevision(
-    record.document,
-    expectedModifiedTime
-  );
 
   const catalog =
     getResourceCatalogSetting();
@@ -244,55 +197,24 @@ export async function upsertDomainFlowAction({
     );
   }
 
-
-  const existingFlow = localId
-    ? (record.data.economy?.flows ?? []).find((entry) => entry.localId === localId)
-    : null;
-  const normalizedPeriodTicks = Number(periodTicks);
-  const carry = existingFlow && existingFlow.periodTicks === normalizedPeriodTicks
-    ? Number(existingFlow.carry ?? 0)
-    : 0;
-
-  const flow =
-    normalizeFlow(
-      {
-        localId,
-        name,
-        resourceId,
-        direction,
-        amount,
-        periodTicks: normalizedPeriodTicks,
-        carry,
-        category,
-        source,
-        active
-      },
-      catalog
-    );
-
-  const flows =
-    upsertFlow(
-      record.data.economy?.flows,
-      flow
-    );
-
-  const nextData = {
-    ...record.data,
-
-    economy: {
-      ...record.data.economy,
-      flows
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.ECONOMY_FLOW_UPSERT,
+    operationId: commandOperationId(operationId),
+    payload: {
+      domain: { recordType: RECORD_TYPES.DOMAIN, uuid: domainUuid, entityId: record.data.entityId },
+      expectedModifiedTime,
+      localId,
+      name,
+      resourceId,
+      direction,
+      amount,
+      periodTicks: Number(periodTicks),
+      category,
+      source,
+      active
     }
-  };
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    name: record.document.name,
-    data: nextData,
-    controllerIds:
-      record.data.governance.controllers
-  });
+  }, { callerUserId: game.user.id });
+  return getRecord(domainUuid);
 }
 
 export async function removeResourceDefinitionAction(resourceId) {
@@ -306,25 +228,25 @@ export async function removeResourceDefinitionAction(resourceId) {
   return getResourceCatalogSetting();
 }
 
-export async function removeDomainFlowAction({ domainUuid, localId }) {
+export async function removeDomainFlowAction({
+  domainUuid,
+  localId,
+  expectedModifiedTime = null,
+  operationId = null
+}) {
   assertGM();
   const record = await getRecord(domainUuid);
   if (record.recordType !== RECORD_TYPES.DOMAIN) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "O registro não é um Domain.");
   }
-  const flows = (record.data.economy?.flows ?? []).filter((f) => f.localId !== localId);
-  const nextData = {
-    ...record.data,
-    economy: {
-      ...record.data.economy,
-      flows
+  await dispatchAuthoritativeCommand({
+    commandType: COMMAND_TYPES.ECONOMY_FLOW_REMOVE,
+    operationId: commandOperationId(operationId),
+    payload: {
+      domain: { recordType: RECORD_TYPES.DOMAIN, uuid: domainUuid, entityId: record.data.entityId },
+      expectedModifiedTime,
+      localId
     }
-  };
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    name: record.document.name,
-    data: nextData,
-    controllerIds: record.data.governance.controllers
-  });
+  }, { callerUserId: game.user.id });
+  return getRecord(domainUuid);
 }

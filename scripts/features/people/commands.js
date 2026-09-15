@@ -234,7 +234,7 @@ export async function executePopulationGroupRemove({ payload, callerUserId }) {
   const before = foundry.utils.deepClone(domain.data);
   const data = foundry.utils.deepClone(domain.data);
   data.population.groups = data.population.groups.filter((group) => group.localId !== normalized.localId);
-  const updated = await updateRecord({
+  await updateRecord({
     uuid: domain.uuid,
     recordType: RECORD_TYPES.DOMAIN,
     name: domain.document.name,
@@ -384,7 +384,15 @@ export async function executePersonUpdate({ payload, callerUserId }) {
   }
   const domain = resolveReference(person.data.primaryDomain, RECORD_TYPES.DOMAIN);
   assertDomainCapability(domain, callerUserId, "people");
-  const squad = validateSquadForDomain(normalized.squad, domain);
+  const isTerminalStatus = ["dead", "retired"].includes(normalized.status);
+  const isTerminalTransition = isTerminalStatus && normalized.status !== person.data.status;
+  if (isTerminalTransition && !normalized.confirmTerminalTransition) {
+    throw new ModuleError(
+      ERROR_CODES.VALIDATION,
+      "Confirme explicitamente a transição terminal desta Person antes de continuar."
+    );
+  }
+  const squad = isTerminalStatus ? null : validateSquadForDomain(normalized.squad, domain);
   const currentLocation = canonicalOptionalReference(normalized.currentLocation, RECORD_TYPES.DOMAIN);
 
   const before = foundry.utils.deepClone(person.data);

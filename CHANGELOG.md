@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.2.0 — Base Operacional Consolidada
+
+### Autoridade e gestão editável
+
+- O Command Kernel passa a ser o caminho canônico para as mutações das áreas operacionais; actions legadas de Domain, Projects, Structures, Events e History foram reduzidas a bridges de compatibilidade, sem manter uma segunda autoridade de escrita.
+- Os fluxos de criação e edição preservam identidade estável, referências tipadas e revisão otimista. Remoções só são oferecidas quando não quebram proveniência ou vínculos; nos demais casos, o produto usa cancelamento ou estado terminal explícito.
+- Receipts idempotentes impedem a repetição de efeitos em retries, enquanto locks por recurso e persistência em batch reduzem disputas entre clientes.
+
+### Economy Flows
+
+- Fluxos econômicos persistentes podem ser criados, editados e removidos pela interface.
+- O formulário cobre nome, recurso, direção, quantidade, período, categoria, origem e estado ativo sem exigir edição manual do registro.
+- Upsert e remoção passam por contratos canônicos, permissão GM, revisão otimista, idempotência e confirmação de exclusão.
+
+### Missions, Events e History
+
+- Preparação e lançamento de Mission rejeitam Squads dissolvidas no backend, impedindo reativação acidental de estado terminal.
+- History agora pode ser adicionado, removido e limpo pela interface com confirmação, revisão otimista e autoridade do GM.
+- Domain Events podem ser sorteados, pré-visualizados e aplicados pela interface; a publicação opcional no chat ocorre somente após a confirmação autoritativa.
+- A visão de jogador usa a filtragem canônica e não recebe registros `gm_only` nem controles administrativos.
+
+- Novo command `mission.cancel` para Missions `planned`, `available` ou `active`, restrito a GM e acompanhado de motivo operacional.
+- O cancelamento libera as Squads no mesmo batch, evita devolução duplicada e preserva suprimentos que já haviam sido consumidos no lançamento.
+- Aplicação de Domain Event e manutenção de History (`add`, `remove` e `clear`) passam pelo Command Kernel, com rollback e proteção contra revisão obsoleta.
+- A publicação de Event no chat ocorre somente após receipt confirmado e não é repetida em retry idempotente.
+
+### Transições terminais seguras
+
+- Person exige confirmação explícita para `dead` e `retired` e encerra sua associação operacional com Squad.
+- Squad exige confirmação para `disbanded` e não pode ser dissolvida enquanto estiver vinculada a uma Mission atual.
+- Structure exige confirmação para `destroyed` e `decommissioned` e bloqueia a transição enquanto possuir Project ativo.
+- Um dialog guiado apresenta consequências e permite voltar antes de confirmar a operação irreversível.
+
+### Legibilidade, responsividade e acessibilidade
+
+- Cards, listas, matrizes, formulários e dialogs foram reorganizados para impedir texto ou ícones fora de seus limites e preservar leitura em janelas compactas.
+- Tipografia, áreas de clique, alinhamento de ícones, contraste, estados vazios e tratamento de overflow foram consolidados em uma linguagem visual coerente.
+- Scans, miras, linhas, ondas, retículas, medidores cenográficos e animações ambientais contínuas não fazem parte da interface operacional.
+- Dialogs críticos possuem título, contexto, consequências e ações inequívocas; o conteúdo degrada para uma coluna em largura reduzida.
+
+### Garantias e validação
+
+- Schema permanece **v9**; a atualização não exige migration nova.
+- Gate automatizado integral da candidata: **394/394 testes aprovados, 0 falhas**.
+- A suíte cobre idempotência, concorrência, rollback/compensação, permissões, referências, lifecycle, actions da interface, primeiro frame e contratos responsivos.
+- A prévia local representativa foi inspecionada em `1280`, `1000`, `760` e `520` px; o console do navegador permaneceu sem erros ou avisos.
+- O escopo e o roteiro de homologação estão registrados em `audit/IMPLEMENTACAO_0.2.0.md`.
+
+### Limites conhecidos
+
+- Persistência em batch com compensação não equivale a uma transação ACID contra encerramento abrupto do processo hospedeiro.
+- A instalação do pacote, as diferenças visuais do tema real e o comportamento com GM primário, GM secundário e jogador ainda devem ser homologados em uma instância real do Foundry VTT 13.351.
+- O núcleo 0.2.0 administra o lifecycle estratégico deliberado; ele não adiciona, por inferência, viagem automática de Missions, mapa geográfico avançado ou um editor visual completo para Agreements multi-party complexos.
+
 ## 0.1.0-dev.154 — Catálogo de Recursos e Consolidação Visual
 
 ### Catálogo global de recursos

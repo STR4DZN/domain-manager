@@ -1,7 +1,7 @@
 {
   "name": "domain-manager",
   "private": true,
-  "version": "0.1.0-dev.154",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "build:css": "node scripts/build-css.js",

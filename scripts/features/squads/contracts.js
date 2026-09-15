@@ -75,7 +75,12 @@ export function normalizeSquadPatchPayload(payload = {}) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "Nenhuma alteração operacional foi informada para o Squad.");
   }
 
-  return { squad, expectedModifiedTime: revision(payload.expectedModifiedTime), patch: result };
+  return {
+    squad,
+    expectedModifiedTime: revision(payload.expectedModifiedTime),
+    confirmTerminalTransition: payload.confirmTerminalTransition === true,
+    patch: result
+  };
 }
 
 export function squadPatchResourceKeys(payload = {}) {
@@ -94,6 +99,7 @@ export function normalizeSquadAdminPayload(payload = {}) {
   return {
     squad,
     expectedModifiedTime: revision(payload.expectedModifiedTime),
+    confirmTerminalTransition: payload.confirmTerminalTransition === true,
     name,
     controllerIds: normalizeControllers(payload.controllerIds),
     patch: {

@@ -1,16 +1,19 @@
 import { EVENT_TYPES, RECORD_TYPES } from "../../core/constants.js";
 import { ERROR_CODES, ModuleError } from "../../core/errors.js";
+import { hasCapability } from "../../core/management-contracts.js";
 import { getResourceCatalogSetting, setResourceCatalogSetting } from "../../core/settings.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
 import {
   normalizeEconomyConfigurePayload,
+  normalizeEconomyFlowRemovePayload,
+  normalizeEconomyFlowUpsertPayload,
   normalizeResourceCatalogRemovePayload,
   normalizeResourceCatalogUpsertPayload
 } from "./contracts.js";
 import { buildResourceDependencyReport } from "./catalog-dependencies.js";
-import { upsertResourceInCatalog } from "./rules.js";
+import { normalizeFlow, upsertFlow, upsertResourceInCatalog } from "./rules.js";
 
 function resolveDomain(reference) {
   const byEntityId = reference.entityId ? recordIndex.getByEntityId(reference.entityId) : null;
@@ -39,11 +42,21 @@ function catalogVersion(catalog) {
   return Math.max(1, Number(catalog?.version ?? 1));
 }
 
+function assertEconomyCapability(domain) {
+  if (!hasCapability(domain.data, "economy")) {
+    throw new ModuleError(
+      ERROR_CODES.VALIDATION,
+      `O Domain '${domain.document.name}' não possui a capability economy.`
+    );
+  }
+}
+
 export async function executeEconomyConfigure({ payload, callerUserId }) {
   assertGM(callerUserId);
   const catalog = getResourceCatalogSetting();
   const normalized = normalizeEconomyConfigurePayload(payload, catalog);
   const domain = resolveDomain(normalized.domain);
+  assertEconomyCapability(domain);
   assertExpectedRevision(
     domain.document?._stats?.modifiedTime ?? null,
     normalized.expectedModifiedTime,
@@ -76,6 +89,114 @@ export async function executeEconomyConfigure({ payload, callerUserId }) {
       type: EVENT_TYPES.ECONOMY_CONFIGURED,
       entities: [domain.data.entityId],
       payload: { entityId: domain.data.entityId }
+    }],
+    rollback: () => updateRecord({
+      uuid: domain.uuid,
+      recordType: RECORD_TYPES.DOMAIN,
+      name: domain.document.name,
+      data: before,
+      controllerIds: domain.data.governance?.controllers ?? []
+    })
+  };
+}
+
+export async function executeEconomyFlowUpsert({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const catalog = getResourceCatalogSetting();
+  const normalized = normalizeEconomyFlowUpsertPayload(payload);
+  const domain = resolveDomain(normalized.domain);
+  assertEconomyCapability(domain);
+  assertExpectedRevision(
+    domain.document?._stats?.modifiedTime ?? null,
+    normalized.expectedModifiedTime,
+    "O Domain mudou enquanto o fluxo estava aberto. Reabra o editor antes de salvar."
+  );
+
+  const currentFlows = domain.data.economy?.flows ?? [];
+  const existing = normalized.localId
+    ? currentFlows.find((flow) => flow.localId === normalized.localId)
+    : null;
+  if (normalized.localId && !existing) {
+    throw new ModuleError(ERROR_CODES.NOT_FOUND, "O fluxo que seria editado não existe mais.");
+  }
+
+  const before = foundry.utils.deepClone(domain.data);
+  const data = foundry.utils.deepClone(domain.data);
+  data.economy ??= { stocks: [], flows: [], resourcePolicies: [] };
+  const carry = existing && existing.periodTicks === normalized.periodTicks
+    ? Number(existing.carry ?? 0)
+    : 0;
+  const flow = normalizeFlow({ ...normalized, carry }, catalog);
+  data.economy.flows = upsertFlow(data.economy.flows, flow);
+
+  const updated = await updateRecord({
+    uuid: domain.uuid,
+    recordType: RECORD_TYPES.DOMAIN,
+    name: domain.document.name,
+    data,
+    controllerIds: domain.data.governance?.controllers ?? []
+  });
+
+  return {
+    result: {
+      uuid: updated.uuid,
+      entityId: updated.data.entityId,
+      flow: updated.data.economy?.flows?.find((entry) => entry.localId === flow.localId) ?? flow
+    },
+    entities: [domain.data.entityId],
+    events: [{
+      type: EVENT_TYPES.ECONOMY_FLOW_UPDATED,
+      entities: [domain.data.entityId],
+      payload: { entityId: domain.data.entityId, localId: flow.localId }
+    }],
+    rollback: () => updateRecord({
+      uuid: domain.uuid,
+      recordType: RECORD_TYPES.DOMAIN,
+      name: domain.document.name,
+      data: before,
+      controllerIds: domain.data.governance?.controllers ?? []
+    })
+  };
+}
+
+export async function executeEconomyFlowRemove({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const normalized = normalizeEconomyFlowRemovePayload(payload);
+  const domain = resolveDomain(normalized.domain);
+  assertEconomyCapability(domain);
+  assertExpectedRevision(
+    domain.document?._stats?.modifiedTime ?? null,
+    normalized.expectedModifiedTime,
+    "O Domain mudou enquanto a remoção do fluxo estava aberta. Reabra a confirmação antes de remover."
+  );
+
+  const existing = (domain.data.economy?.flows ?? [])
+    .find((flow) => flow.localId === normalized.localId);
+  if (!existing) throw new ModuleError(ERROR_CODES.NOT_FOUND, "O fluxo que seria removido não existe mais.");
+
+  const before = foundry.utils.deepClone(domain.data);
+  const data = foundry.utils.deepClone(domain.data);
+  data.economy ??= { stocks: [], flows: [], resourcePolicies: [] };
+  data.economy.flows = data.economy.flows.filter((flow) => flow.localId !== normalized.localId);
+  const updated = await updateRecord({
+    uuid: domain.uuid,
+    recordType: RECORD_TYPES.DOMAIN,
+    name: domain.document.name,
+    data,
+    controllerIds: domain.data.governance?.controllers ?? []
+  });
+
+  return {
+    result: {
+      uuid: updated.uuid,
+      entityId: updated.data.entityId,
+      localId: normalized.localId
+    },
+    entities: [domain.data.entityId],
+    events: [{
+      type: EVENT_TYPES.ECONOMY_FLOW_REMOVED,
+      entities: [domain.data.entityId],
+      payload: { entityId: domain.data.entityId, localId: normalized.localId }
     }],
     rollback: () => updateRecord({
       uuid: domain.uuid,

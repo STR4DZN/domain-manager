@@ -1,6 +1,6 @@
 export const MODULE_ID = "domain-manager";
 export const MODULE_TITLE = "Domínios // Domain Manager";
-export const MODULE_VERSION = "0.1.0-dev.154";
+export const MODULE_VERSION = "0.2.0";
 export const SCHEMA_VERSION = 9;
 
 export const RECORD_TYPES = Object.freeze({
@@ -185,6 +185,7 @@ export const COMMAND_TYPES = Object.freeze({
   MISSION_RELEASE: "mission.release",
   MISSION_PUBLISH: "mission.publish",
   MISSION_LAUNCH: "mission.launch",
+  MISSION_CANCEL: "mission.cancel",
   MISSION_RESOLVE: "mission.resolve",
   STRUCTURE_CREATE: "structure.create",
   STRUCTURE_PATCH: "structure.patch",
@@ -195,6 +196,8 @@ export const COMMAND_TYPES = Object.freeze({
   PROJECT_COST_UPSERT: "project.cost-upsert",
   PROJECT_COST_REMOVE: "project.cost-remove",
   ECONOMY_CONFIGURE: "economy.configure",
+  ECONOMY_FLOW_UPSERT: "economy.flow-upsert",
+  ECONOMY_FLOW_REMOVE: "economy.flow-remove",
   RESOURCE_CATALOG_UPSERT: "resource-catalog.upsert",
   RESOURCE_CATALOG_REMOVE: "resource-catalog.remove",
   POPULATION_CONFIGURE: "population.configure",
@@ -217,6 +220,10 @@ export const COMMAND_TYPES = Object.freeze({
   CONDITION_UPDATE: "condition.update",
   CONDITION_REMOVE: "condition.remove",
   CONDITION_TOGGLE: "condition.toggle",
+  DOMAIN_EVENT_APPLY: "domain-event.apply",
+  HISTORY_ADD: "history.add",
+  HISTORY_REMOVE: "history.remove",
+  HISTORY_CLEAR: "history.clear",
   REQUEST_CREATE: "request.create",
   REQUEST_RESUBMIT: "request.resubmit",
   REQUEST_REVIEW: "request.review",
@@ -241,6 +248,7 @@ export const EVENT_TYPES = Object.freeze({
   MISSION_RELEASED: "mission.released",
   MISSION_PUBLISHED: "mission.published",
   MISSION_LAUNCHED: "mission.launched",
+  MISSION_CANCELLED: "mission.cancelled",
   MISSION_RESOLVED: "mission.resolved",
   STRUCTURE_CREATED: "structure.created",
   STRUCTURE_UPDATED: "structure.updated",
@@ -249,6 +257,8 @@ export const EVENT_TYPES = Object.freeze({
   PROJECT_CREATED: "project.created",
   PROJECT_UPDATED: "project.updated",
   ECONOMY_CONFIGURED: "economy.configured",
+  ECONOMY_FLOW_UPDATED: "economy.flow-updated",
+  ECONOMY_FLOW_REMOVED: "economy.flow-removed",
   RESOURCE_CATALOG_UPDATED: "resource-catalog.updated",
   RESOURCE_CATALOG_REMOVED: "resource-catalog.removed",
   POPULATION_CONFIGURED: "population.configured",
@@ -271,6 +281,10 @@ export const EVENT_TYPES = Object.freeze({
   CONDITION_UPDATED: "condition.updated",
   CONDITION_REMOVED: "condition.removed",
   CONDITION_TOGGLED: "condition.toggled",
+  DOMAIN_EVENT_APPLIED: "domain-event.applied",
+  HISTORY_ADDED: "history.added",
+  HISTORY_REMOVED: "history.removed",
+  HISTORY_CLEARED: "history.cleared",
   REQUEST_CREATED: "request.created",
   REQUEST_RESUBMITTED: "request.resubmitted",
   REQUEST_REVIEWED: "request.reviewed",

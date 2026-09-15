@@ -55,7 +55,7 @@ export function normalizeDomainDraft({
   const sourcePopulation = population ?? base.population;
   const sourceEconomy = economy ?? base.economy;
   const sourceManagement = {
-    ...(base.management ?? {}),
+    ...base.management,
     ...(managementPreset != null ? { preset: managementPreset } : {}),
     ...(capabilities != null ? { capabilities } : {})
   };
@@ -81,14 +81,14 @@ export function normalizeDomainDraft({
     description: cleanDescription,
     management: normalizeManagementConfig(sourceManagement, { defaultPreset: "base" }),
     identity: {
-      ...(base.identity ?? {}),
+      ...base.identity,
       category: cleanCategory,
       nature,
       state,
       tags: normalizeTags(tags)
     },
     hierarchy: {
-      ...(base.hierarchy ?? {}),
+      ...base.hierarchy,
       locatedInUuid: locatedInUuid || null,
       administrativeParentUuid: administrativeParentUuid || null
     },
@@ -116,7 +116,7 @@ export function normalizeDomainDraft({
     },
 
     governance: {
-      ...(base.governance ?? {}),
+      ...base.governance,
       controllers: normalizeControllerIds(controllers)
     }
   };

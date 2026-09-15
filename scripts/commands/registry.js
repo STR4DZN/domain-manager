@@ -11,8 +11,14 @@ import {
   domainMediaUpdateResourceKeys,
   domainUpdateResourceKeys
 } from "../features/domains/contracts.js";
-import { executeEconomyConfigure, executeResourceCatalogRemove, executeResourceCatalogUpsert } from "../features/economy/commands.js";
-import { economyConfigureResourceKeys, resourceCatalogResourceKeys } from "../features/economy/contracts.js";
+import {
+  executeEconomyConfigure,
+  executeEconomyFlowRemove,
+  executeEconomyFlowUpsert,
+  executeResourceCatalogRemove,
+  executeResourceCatalogUpsert
+} from "../features/economy/commands.js";
+import { economyConfigureResourceKeys, economyFlowResourceKeys, resourceCatalogResourceKeys } from "../features/economy/contracts.js";
 import {
   executeResourceTransfer,
   transferResourceKeys
@@ -23,6 +29,7 @@ import {
   executeSquadPatch
 } from "../features/squads/commands.js";
 import {
+  executeMissionCancel,
   executeMissionCreate,
   executeMissionLaunch,
   executeMissionObjectiveRemove,
@@ -34,6 +41,7 @@ import {
   executeMissionUpdate
 } from "../features/missions/commands.js";
 import {
+  missionCancelResourceKeys,
   missionCreateResourceKeys,
   missionObjectiveRemoveResourceKeys,
   missionObjectiveUpsertResourceKeys,
@@ -113,6 +121,10 @@ import {
 
 import { executeRequestCreate, executeRequestCreateMission, executeRequestFulfill, executeRequestResubmit, executeRequestReview, executeRequestWithdraw } from "../features/requests/commands.js";
 import { requestCreateResourceKeys, requestLifecycleResourceKeys, requestMissionResourceKeys, requestResubmitResourceKeys, requestReviewResourceKeys } from "../features/requests/contracts.js";
+import { executeDomainEventApply } from "../features/events/commands.js";
+import { domainEventResourceKeys } from "../features/events/contracts.js";
+import { executeHistoryAdd, executeHistoryClear, executeHistoryRemove } from "../features/history/commands.js";
+import { historyResourceKeys } from "../features/history/contracts.js";
 const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.DOMAIN_CREATE]: Object.freeze({
     resourceKeys: domainCreateResourceKeys,
@@ -133,6 +145,14 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.ECONOMY_CONFIGURE]: Object.freeze({
     resourceKeys: economyConfigureResourceKeys,
     execute: executeEconomyConfigure
+  }),
+  [COMMAND_TYPES.ECONOMY_FLOW_UPSERT]: Object.freeze({
+    resourceKeys: economyFlowResourceKeys,
+    execute: executeEconomyFlowUpsert
+  }),
+  [COMMAND_TYPES.ECONOMY_FLOW_REMOVE]: Object.freeze({
+    resourceKeys: economyFlowResourceKeys,
+    execute: executeEconomyFlowRemove
   }),
   [COMMAND_TYPES.RESOURCE_CATALOG_UPSERT]: Object.freeze({
     resourceKeys: resourceCatalogResourceKeys,
@@ -189,6 +209,10 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.MISSION_LAUNCH]: Object.freeze({
     resourceKeys: missionReferenceResourceKeys,
     execute: executeMissionLaunch
+  }),
+  [COMMAND_TYPES.MISSION_CANCEL]: Object.freeze({
+    resourceKeys: missionCancelResourceKeys,
+    execute: executeMissionCancel
   }),
   [COMMAND_TYPES.MISSION_RESOLVE]: Object.freeze({
     resourceKeys: missionResolveResourceKeys,
@@ -264,6 +288,10 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.CONDITION_UPDATE]: Object.freeze({ resourceKeys: conditionResourceKeys, execute: executeConditionUpdate }),
   [COMMAND_TYPES.CONDITION_REMOVE]: Object.freeze({ resourceKeys: conditionResourceKeys, execute: executeConditionRemove }),
   [COMMAND_TYPES.CONDITION_TOGGLE]: Object.freeze({ resourceKeys: conditionResourceKeys, execute: executeConditionToggle }),
+  [COMMAND_TYPES.DOMAIN_EVENT_APPLY]: Object.freeze({ resourceKeys: domainEventResourceKeys, execute: executeDomainEventApply }),
+  [COMMAND_TYPES.HISTORY_ADD]: Object.freeze({ resourceKeys: historyResourceKeys, execute: executeHistoryAdd }),
+  [COMMAND_TYPES.HISTORY_REMOVE]: Object.freeze({ resourceKeys: historyResourceKeys, execute: executeHistoryRemove }),
+  [COMMAND_TYPES.HISTORY_CLEAR]: Object.freeze({ resourceKeys: historyResourceKeys, execute: executeHistoryClear }),
   [COMMAND_TYPES.REQUEST_CREATE]: Object.freeze({ resourceKeys: requestCreateResourceKeys, execute: executeRequestCreate }),
   [COMMAND_TYPES.REQUEST_RESUBMIT]: Object.freeze({ resourceKeys: requestResubmitResourceKeys, execute: executeRequestResubmit }),
   [COMMAND_TYPES.REQUEST_REVIEW]: Object.freeze({ resourceKeys: requestReviewResourceKeys, execute: executeRequestReview }),

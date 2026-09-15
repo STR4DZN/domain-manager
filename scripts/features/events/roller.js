@@ -15,7 +15,7 @@ import { EVENT_SEVERITIES } from "./constants.js";
  * @returns {Object} Evento selecionado
  */
 export function rollDomainEvent({
-  domain = null,
+  domain: _domain = null,
   category = null,
   risks = null,
   randomFn = Math.random

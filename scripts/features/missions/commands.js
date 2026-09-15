@@ -7,6 +7,7 @@ import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
 import {
   normalizeMissionCreatePayload,
+  normalizeMissionCancelPayload,
   normalizeMissionObjectiveRemovePayload,
   normalizeMissionObjectiveUpsertPayload,
   normalizeMissionPreparePayload,
@@ -90,6 +91,12 @@ function ensureSquadBelongsToMissionDomain(squad, mission) {
   const parentDocument = parent.entityId ? recordIndex.getByEntityId(parent.entityId) : null;
   if (parentDocument && allowed.has(parentDocument.uuid)) return;
   throw new ModuleError(ERROR_CODES.VALIDATION, "Squad não pertence a um Domain vinculado à Mission.");
+}
+
+function ensureSquadIsOperational(squad) {
+  if (squad.data.status === "disbanded") {
+    throw new ModuleError(ERROR_CODES.CONFLICT, `Squad ${squad.document.name} está dissolvido e não pode participar de Missions.`);
+  }
 }
 
 function assignmentFor(missionData, squad) {
@@ -298,6 +305,7 @@ export async function executeMissionPrepare({ payload, callerUserId }) {
     if (!controllers(squad).includes(caller.id)) throw new ModuleError(ERROR_CODES.PERMISSION, "Você não controla este Squad.");
   }
   ensureSquadBelongsToMissionDomain(squad, mission);
+  ensureSquadIsOperational(squad);
   if (normalized.committedStrength > squad.data.strength) throw new ModuleError(ERROR_CODES.CONFLICT, "Efetivo comprometido excede o efetivo atual do Squad.");
   if (squad.data.currentMission && !sameRef(squad.data.currentMission, mission)) throw new ModuleError(ERROR_CODES.CONFLICT, "Squad já está comprometido com outra Mission.");
 
@@ -427,6 +435,7 @@ export async function executeMissionLaunch({ payload, callerUserId }) {
 
   for (const assignment of missionData.assignments) {
     const squad = resolve(assignment.squad, RECORD_TYPES.SQUAD);
+    ensureSquadIsOperational(squad);
     if (!sameRef(squad.data.currentMission, mission)) throw new ModuleError(ERROR_CODES.CONFLICT, `Squad ${squad.document.name} não está mais comprometido com a Mission.`);
     if (squad.data.strength < assignment.committedStrength) throw new ModuleError(ERROR_CODES.CONFLICT, `Squad ${squad.document.name} perdeu efetivo antes do lançamento.`);
     const data = foundry.utils.deepClone(squad.data);
@@ -451,6 +460,79 @@ export async function executeMissionLaunch({ payload, callerUserId }) {
     entities: [mission.data.entityId, ...missionData.assignments.map((entry) => entry.squad.entityId).filter(Boolean)],
     events: [{ type: EVENT_TYPES.MISSION_LAUNCHED, entities: [mission.data.entityId], payload: { assignments: missionData.assignments.length } }],
     rollback: () => updateRecordsBatch([{ uuid: mission.uuid, recordType: RECORD_TYPES.MISSION, data: beforeMission }, ...rollback])
+  };
+}
+
+export async function executeMissionCancel({ payload, callerUserId }) {
+  assertGM(callerUserId);
+  const normalized = normalizeMissionCancelPayload(payload);
+  const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
+  assertRevision(mission, normalized.expectedModifiedTime);
+  if (!["planned", "available", "active"].includes(mission.data.status)) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Somente Mission planejada, disponível ou ativa pode ser cancelada.");
+  }
+
+  const assignedSquads = (mission.data.assignments ?? []).map((assignment) => resolve(assignment.squad, RECORD_TYPES.SQUAD));
+  if (normalized.squads.length !== assignedSquads.length
+    || assignedSquads.some((squad) => !normalized.squads.some((snapshot) => sameRef(snapshot.squad, squad)))) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Os Squads da Mission mudaram. Reabra a confirmação de cancelamento.");
+  }
+
+  const beforeMission = foundry.utils.deepClone(mission.data);
+  const missionData = foundry.utils.deepClone(mission.data);
+  const updates = [];
+  const rollback = [];
+
+  for (const assignment of missionData.assignments ?? []) {
+    const squad = resolve(assignment.squad, RECORD_TYPES.SQUAD);
+    const snapshot = normalized.squads.find((entry) => sameRef(entry.squad, squad));
+    assertRevision(squad, snapshot?.expectedModifiedTime ?? null, "O Squad");
+    if (squad.data.currentMission && !sameRef(squad.data.currentMission, mission)) {
+      throw new ModuleError(ERROR_CODES.CONFLICT, `Squad ${squad.document.name} está comprometido com outra Mission.`);
+    }
+
+    const data = foundry.utils.deepClone(squad.data);
+    rollback.push({ uuid: squad.uuid, recordType: RECORD_TYPES.SQUAD, data: foundry.utils.deepClone(squad.data) });
+    if (sameRef(data.currentMission, mission)) data.currentMission = null;
+    if (data.status === "deployed") data.status = Number(data.strength ?? 0) > 0 ? "ready" : "inactive";
+    updates.push({ uuid: squad.uuid, recordType: RECORD_TYPES.SQUAD, data });
+    assignment.state = "returned";
+  }
+
+  const cancelledAtWorldTime = worldTime();
+  missionData.status = "cancelled";
+  missionData.outcomeSummary = normalized.reason;
+  missionData.resolvedAtWorldTime = cancelledAtWorldTime;
+  await updateRecordsBatch([{ uuid: mission.uuid, recordType: RECORD_TYPES.MISSION, data: missionData }, ...updates]);
+
+  const returnedAssignments = (missionData.assignments ?? []).map((assignment) => ({
+    localId: assignment.localId,
+    squad: assignment.squad,
+    state: assignment.state
+  }));
+  const entityIds = [mission.data.entityId, ...assignedSquads.map((squad) => squad.data.entityId).filter(Boolean)];
+  return {
+    result: {
+      missionEntityId: mission.data.entityId,
+      status: "cancelled",
+      reason: normalized.reason,
+      cancelledAtWorldTime,
+      assignments: returnedAssignments
+    },
+    entities: entityIds,
+    events: [{
+      type: EVENT_TYPES.MISSION_CANCELLED,
+      entities: entityIds,
+      payload: {
+        reason: normalized.reason,
+        cancelledAtWorldTime,
+        assignments: returnedAssignments.length
+      }
+    }],
+    rollback: () => updateRecordsBatch([
+      { uuid: mission.uuid, recordType: RECORD_TYPES.MISSION, data: beforeMission },
+      ...rollback
+    ])
   };
 }
 

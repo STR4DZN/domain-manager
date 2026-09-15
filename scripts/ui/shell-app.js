@@ -1,4 +1,4 @@
-import { CAPABILITY_KEYS, COMMAND_TYPES, DOMAIN_NATURES, DOMAIN_STATES, MANAGEMENT_PRESETS, MODULE_ID, MODULE_TITLE, RECORD_TYPES, REQUEST_HANDLINGS, REQUEST_REVIEW_STATUSES, REQUEST_TYPES, SCHEMA_VERSION, TERRITORY_CONTROL_STATES } from "../core/constants.js";
+import { CAPABILITY_KEYS, COMMAND_TYPES, DOMAIN_NATURES, DOMAIN_STATES, FLOW_CATEGORIES, MANAGEMENT_PRESETS, MODULE_ID, MODULE_TITLE, RECORD_TYPES, REQUEST_HANDLINGS, REQUEST_REVIEW_STATUSES, REQUEST_TYPES, SCHEMA_VERSION, TERRITORY_CONTROL_STATES } from "../core/constants.js";
 import { recordIndex } from "../data/record-index.js";
 import { decodeRecord } from "../models/record-codec.js";
 import { getResourceCatalogSetting } from "../core/settings.js";
@@ -10,6 +10,15 @@ import { buildDomainProjectReservations } from "../features/projects/selectors.j
 import { calculateDomainRisks } from "../features/risks/rules.js";
 import { capabilityDefaultsForPreset } from "../core/management-contracts.js";
 import { buildDomainDependencyReport } from "../features/domains/dependencies.js";
+import { executeApplyEventOutcome, rollEventForDomain } from "../features/events/actions.js";
+import { EVENT_CATEGORY_LABELS, EVENT_SEVERITY_LABELS } from "../features/events/constants.js";
+import { addHistoryEvent, clearHistory, removeHistoryEvent } from "../features/history/actions.js";
+import {
+  HISTORY_CATEGORY_ICONS,
+  HISTORY_CATEGORY_LABELS,
+  HISTORY_SIGNIFICANCE_LABELS,
+  listVisibleHistoryEvents
+} from "../features/history/rules.js";
 import {
   createSquadAction,
   patchSquadAction,
@@ -135,6 +144,15 @@ function stateLabel(value) {
     vassal: "Vassalo"
   };
   return labels[value] ?? titleCase(value || "indefinido");
+}
+
+function formatHistoryTimestamp(value) {
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return "SEM DATA";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(new Date(timestamp));
 }
 
 const DOMAIN_NATURE_LABELS = Object.freeze({
@@ -416,6 +434,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   preparingSquadUuid = null;
   pendingMissionRelease = null;
   pendingMissionLaunch = null;
+  pendingMissionCancel = null;
   resolvingMissionUuid = null;
   isMissionBusy = false;
   isCreateStructureOpen = false;
@@ -435,6 +454,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   editingConditionId = null;
   pendingConditionRemoval = null;
   isConditionBusy = false;
+  isHistoryEntryOpen = false;
+  pendingHistoryRemoval = null;
+  pendingHistoryClear = null;
+  pendingDomainEvent = null;
+  isHistoryBusy = false;
   selectedPersonUuid = null;
   isPopulationConfigOpen = false;
   editingPopulationGroupId = null;
@@ -444,8 +468,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isPersonEditorOpen = false;
   editingPersonUuid = null;
   isPeopleBusy = false;
+  pendingTerminalTransition = null;
+  isTerminalTransitionBusy = false;
   isAdvanceBusy = false;
   isEconomyConfigOpen = false;
+  editingEconomyFlowId = null;
+  pendingEconomyFlowRemoval = null;
   isResourceCatalogOpen = false;
   editingResourceId = null;
   pendingResourceRemoval = null;
@@ -514,6 +542,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       launchMission: DomainManagerShellApp.onLaunchMission,
       cancelLaunchMission: DomainManagerShellApp.onCancelLaunchMission,
       confirmLaunchMission: DomainManagerShellApp.onConfirmLaunchMission,
+      openMissionCancel: DomainManagerShellApp.onOpenMissionCancel,
+      closeMissionCancel: DomainManagerShellApp.onCloseMissionCancel,
+      confirmMissionCancel: DomainManagerShellApp.onConfirmMissionCancel,
       openMissionResolve: DomainManagerShellApp.onOpenMissionResolve,
       closeMissionResolve: DomainManagerShellApp.onCloseMissionResolve,
       submitMissionResolve: DomainManagerShellApp.onSubmitMissionResolve,
@@ -553,6 +584,18 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       removeCondition: DomainManagerShellApp.onRemoveCondition,
       cancelRemoveCondition: DomainManagerShellApp.onCancelRemoveCondition,
       confirmRemoveCondition: DomainManagerShellApp.onConfirmRemoveCondition,
+      openHistoryEntry: DomainManagerShellApp.onOpenHistoryEntry,
+      closeHistoryEntry: DomainManagerShellApp.onCloseHistoryEntry,
+      submitHistoryEntry: DomainManagerShellApp.onSubmitHistoryEntry,
+      removeHistoryEntry: DomainManagerShellApp.onRemoveHistoryEntry,
+      cancelRemoveHistoryEntry: DomainManagerShellApp.onCancelRemoveHistoryEntry,
+      confirmRemoveHistoryEntry: DomainManagerShellApp.onConfirmRemoveHistoryEntry,
+      openHistoryClear: DomainManagerShellApp.onOpenHistoryClear,
+      cancelHistoryClear: DomainManagerShellApp.onCancelHistoryClear,
+      confirmHistoryClear: DomainManagerShellApp.onConfirmHistoryClear,
+      rollDomainEvent: DomainManagerShellApp.onRollDomainEvent,
+      closeDomainEvent: DomainManagerShellApp.onCloseDomainEvent,
+      confirmDomainEvent: DomainManagerShellApp.onConfirmDomainEvent,
       selectPerson: DomainManagerShellApp.onSelectPerson,
       openPopulationConfig: DomainManagerShellApp.onOpenPopulationConfig,
       closePopulationConfig: DomainManagerShellApp.onClosePopulationConfig,
@@ -569,9 +612,17 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openPersonEditor: DomainManagerShellApp.onOpenPersonEditor,
       closePersonEditor: DomainManagerShellApp.onClosePersonEditor,
       submitPersonEditor: DomainManagerShellApp.onSubmitPersonEditor,
+      closeTerminalTransition: DomainManagerShellApp.onCloseTerminalTransition,
+      confirmTerminalTransition: DomainManagerShellApp.onConfirmTerminalTransition,
       openEconomyConfig: DomainManagerShellApp.onOpenEconomyConfig,
       closeEconomyConfig: DomainManagerShellApp.onCloseEconomyConfig,
       submitEconomyConfig: DomainManagerShellApp.onSubmitEconomyConfig,
+      openEconomyFlowEditor: DomainManagerShellApp.onOpenEconomyFlowEditor,
+      closeEconomyFlowEditor: DomainManagerShellApp.onCloseEconomyFlowEditor,
+      submitEconomyFlowEditor: DomainManagerShellApp.onSubmitEconomyFlowEditor,
+      removeEconomyFlow: DomainManagerShellApp.onRemoveEconomyFlow,
+      cancelRemoveEconomyFlow: DomainManagerShellApp.onCancelRemoveEconomyFlow,
+      confirmRemoveEconomyFlow: DomainManagerShellApp.onConfirmRemoveEconomyFlow,
       openResourceCatalog: DomainManagerShellApp.onOpenResourceCatalog,
       closeResourceCatalog: DomainManagerShellApp.onCloseResourceCatalog,
       newResourceDefinition: DomainManagerShellApp.onNewResourceDefinition,
@@ -641,6 +692,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.preparingSquadUuid = null;
     this.pendingMissionRelease = null;
     this.pendingMissionLaunch = null;
+    this.pendingMissionCancel = null;
     this.resolvingMissionUuid = null;
     this.isCreateStructureOpen = false;
     this.structureCreateMode = "construction";
@@ -655,6 +707,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.revisingRequestUuid = null;
     this.editingConditionId = null;
     this.pendingConditionRemoval = null;
+    this.isHistoryEntryOpen = false;
+    this.pendingHistoryRemoval = null;
+    this.pendingHistoryClear = null;
+    this.pendingDomainEvent = null;
     this.selectedPersonUuid = null;
     this.isPopulationConfigOpen = false;
     this.editingPopulationGroupId = null;
@@ -662,7 +718,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.isWorkforceOpen = false;
     this.isPersonEditorOpen = false;
     this.editingPersonUuid = null;
+    this.pendingTerminalTransition = null;
     this.isEconomyConfigOpen = false;
+    this.editingEconomyFlowId = null;
+    this.pendingEconomyFlowRemoval = null;
     this.isResourceCatalogOpen = false;
     this.editingResourceId = null;
     this.pendingResourceRemoval = null;
@@ -849,6 +908,64 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         capacityValue: formatMinorUnits(policy.storageCapacity ?? 0, resource.precision ?? 0)
       };
     });
+    const resourceDefinitions = new Map((catalog?.resources ?? []).map((resource) => [resource.id, resource]));
+    const economyFlows = (selectedDomain?.data.economy?.flows ?? []).map((flow) => {
+      const resource = resourceDefinitions.get(flow.resourceId) ?? {};
+      const precision = Number(resource.precision ?? 0);
+      const periodTicks = Math.max(1, Number(flow.periodTicks ?? 1));
+      return {
+        ...flow,
+        resourceName: resource.name ?? flow.resourceId,
+        unit: resource.unit ?? "",
+        amountDisplay: formatMinorUnits(flow.amount ?? 0, precision),
+        cadenceLabel: periodTicks === 1 ? "A cada ciclo" : `A cada ${periodTicks} ciclos`,
+        directionLabel: flow.direction === "outflow" ? "Saída" : "Entrada",
+        isOutflow: flow.direction === "outflow",
+        categoryLabel: titleCase(flow.category || "manual"),
+        sourceLabel: String(flow.source ?? "").trim() || "Origem não informada",
+        activeLabel: flow.active === false ? "Pausado" : "Ativo",
+        tone: flow.active === false ? "neutral" : flow.direction === "outflow" ? "warning" : "nominal"
+      };
+    });
+    let editingEconomyFlow = null;
+    if (this.editingEconomyFlowId !== null) {
+      const existing = this.editingEconomyFlowId === "__new__"
+        ? null
+        : economyFlows.find((flow) => flow.localId === this.editingEconomyFlowId) ?? null;
+      if (this.editingEconomyFlowId !== "__new__" && !existing) {
+        this.editingEconomyFlowId = null;
+      } else {
+        const resourceId = existing?.resourceId ?? catalog?.resources?.[0]?.id ?? "";
+        const resource = resourceDefinitions.get(resourceId) ?? {};
+        editingEconomyFlow = {
+          localId: existing?.localId ?? "",
+          isEdit: Boolean(existing),
+          name: existing?.name ?? "",
+          resourceId,
+          resourceUnit: resource.unit ?? "",
+          amountValue: existing ? formatMinorUnits(existing.amount ?? 0, resource.precision ?? 0) : "",
+          periodTicks: existing?.periodTicks ?? 1,
+          category: existing?.category ?? "manual",
+          source: existing?.source ?? "",
+          active: existing?.active !== false,
+          direction: existing?.direction ?? "inflow"
+        };
+      }
+    }
+    const economyFlowResourceOptions = (catalog?.resources ?? []).map((resource) => ({
+      value: resource.id,
+      label: `${resource.name ?? resource.id}${resource.unit ? ` (${resource.unit})` : ""}`,
+      selected: resource.id === editingEconomyFlow?.resourceId
+    }));
+    const economyFlowDirectionOptions = [
+      { value: "inflow", label: "Entrada — adiciona ao estoque" },
+      { value: "outflow", label: "Saída — consome do estoque" }
+    ].map((option) => ({ ...option, selected: option.value === editingEconomyFlow?.direction }));
+    const economyFlowCategoryOptions = FLOW_CATEGORIES.map((value) => ({
+      value,
+      label: titleCase(value),
+      selected: value === editingEconomyFlow?.category
+    }));
     const telemetry = summarizeDomainTelemetry({ domain: selectedDomain, ...related });
     const domainNav = selectedDomain
       ? buildDomainNavigation(selectedDomain.data, { activeView: this.activeView })
@@ -886,7 +1003,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         imagePosY: 50,
         imageZoom: 100,
         themeColorHex: "",
-        ...(selectedDomain.data.visuals ?? {})
+        ...selectedDomain.data.visuals
       },
       capabilities: Object.entries(selectedDomain.data.management?.capabilities ?? {})
         .filter(([, enabled]) => enabled)
@@ -1258,6 +1375,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       });
       const eligibleSquads = squads.filter((squad) => {
         if (record.data.status !== "available") return false;
+        if (squad.status === "disbanded") return false;
         if (!squad.canOperate) return false;
         const squadDocument = recordIndex.get(RECORD_TYPES.SQUAD, squad.uuid);
         const squadRecord = squadDocument ? decodeRecord(squadDocument) : null;
@@ -1294,6 +1412,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           : "GM ONLY",
         canLaunch: Boolean(game.user.isGM && record.data.status === "available" && assignments.length),
         canResolve: Boolean(game.user.isGM && record.data.status === "active"),
+        canCancel: Boolean(game.user.isGM && ["planned", "available", "active"].includes(record.data.status)),
         canEdit: Boolean(game.user.isGM && ["planned", "available"].includes(record.data.status)),
         canPublish: Boolean(game.user.isGM && record.data.status === "planned"),
         isAvailable: record.data.status === "available",
@@ -1346,6 +1465,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         checked: editingSquadRecord?.data.governance?.controllers?.includes(user.id) ?? false
       }));
     const squadStatusOptions = ["forming", "ready", "deployed", "recovering", "inactive", "disbanded"]
+      .filter((value) => game.user.isGM || value !== "disbanded")
       .map((value) => ({ value, label: stateLabel(value), selected: editingSquadRecord?.data.status === value }));
 
     const preparingMissionRecord = this.preparingMissionUuid
@@ -1792,7 +1912,30 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       selected: Boolean(editingIntel?.targetDomain && referenceMatchesDomain(editingIntel.targetDomain, domain))
     }));
 
-    const history = [...(selectedDomain?.data?.history ?? [])].reverse();
+    const history = listVisibleHistoryEvents(selectedDomain?.data?.history ?? [], game.user).map((entry) => ({
+      ...entry,
+      categoryLabel: HISTORY_CATEGORY_LABELS[entry.category] ?? titleCase(entry.category || "custom"),
+      categoryIcon: HISTORY_CATEGORY_ICONS[entry.category] ?? HISTORY_CATEGORY_ICONS.custom,
+      significanceLabel: HISTORY_SIGNIFICANCE_LABELS[entry.significance] ?? titleCase(entry.significance || "minor"),
+      tone: entry.significance === "critical" ? "critical" : entry.significance === "major" ? "warning" : "neutral",
+      timestampLabel: formatHistoryTimestamp(entry.timestamp),
+      tickLabel: entry.tick == null ? null : `TICK ${entry.tick}`,
+      summaryText: entry.summary || entry.details || "Registro sem resumo adicional.",
+      hasAdditionalDetails: Boolean(entry.summary && entry.details && entry.details !== entry.summary),
+      isRestricted: entry.visibility === "gm_only"
+    }));
+    const historyCategoryOptions = Object.entries(HISTORY_CATEGORY_LABELS)
+      .map(([value, label]) => ({ value, label, selected: value === "story" }));
+    const historySignificanceOptions = Object.entries(HISTORY_SIGNIFICANCE_LABELS)
+      .map(([value, label]) => ({ value, label, selected: value === "minor" }));
+    const historyVisibilityOptions = [
+      { value: "all", label: "Todos com acesso ao domínio", selected: true },
+      { value: "gm_only", label: "Somente GM", selected: false }
+    ];
+    const domainEventCategoryOptions = [
+      { value: "", label: "Todas as categorias" },
+      ...Object.entries(EVENT_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))
+    ];
     const conditions = (selectedDomain?.data?.conditions ?? []).map((condition) => ({
       ...condition,
       label: condition.name,
@@ -1879,6 +2022,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       resolvingMission,
       pendingMissionRelease: this.pendingMissionRelease,
       pendingMissionLaunch: this.pendingMissionLaunch,
+      pendingMissionCancel: this.pendingMissionCancel,
       missionAudienceOptions,
       canCreateMission: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.missions),
       editingSquad,
@@ -1889,6 +2033,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       squadStatusOptions,
       canCreateSquad: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.squads),
       isEconomyConfigOpen: this.isEconomyConfigOpen,
+      isEconomyFlowEditorOpen: this.editingEconomyFlowId !== null,
+      editingEconomyFlow,
+      economyFlows,
+      economyFlowResourceOptions,
+      economyFlowDirectionOptions,
+      economyFlowCategoryOptions,
+      pendingEconomyFlowRemoval: this.pendingEconomyFlowRemoval,
       isResourceCatalogOpen: this.isResourceCatalogOpen,
       resourceCatalogVersion: Math.max(1, Number(catalog?.version ?? 1)),
       resourceCatalogRows,
@@ -1916,6 +2067,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       personSquadOptions,
       personStatusOptions,
       canManagePeople,
+      pendingTerminalTransition: this.pendingTerminalTransition,
+      isTerminalTransitionBusy: this.isTerminalTransitionBusy,
       isCreateStructureOpen: this.isCreateStructureOpen,
       structureCreateMode: this.structureCreateMode,
       structureCreateIsConstruction: this.structureCreateMode === "construction",
@@ -1993,6 +2146,16 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       pendingIntelAction: this.pendingIntelAction,
       canManageIntel,
       history,
+      historyCategoryOptions,
+      historySignificanceOptions,
+      historyVisibilityOptions,
+      domainEventCategoryOptions,
+      canManageHistory: Boolean(game.user.isGM && selectedDomain),
+      isHistoryEntryOpen: this.isHistoryEntryOpen,
+      pendingHistoryRemoval: this.pendingHistoryRemoval,
+      pendingHistoryClear: this.pendingHistoryClear,
+      pendingDomainEvent: this.pendingDomainEvent,
+      isHistoryBusy: this.isHistoryBusy,
       conditions,
       activeConditions,
       conditionStats,
@@ -2407,6 +2570,205 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  static onOpenHistoryEntry() {
+    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!document) return;
+    this.isHistoryEntryOpen = true;
+    this.pendingHistoryRemoval = null;
+    this.pendingHistoryClear = null;
+    this.pendingDomainEvent = null;
+    this.render({ force: true });
+  }
+
+  static onCloseHistoryEntry() {
+    if (this.isHistoryBusy) return;
+    this.isHistoryEntryOpen = false;
+    this.render({ force: true });
+  }
+
+  static async onSubmitHistoryEntry() {
+    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.isHistoryEntryOpen) return;
+    const form = this.element?.querySelector?.("#dm-history-entry-form");
+    if (!form) return;
+    const data = new FormData(form);
+    this.isHistoryBusy = true;
+    try {
+      await addHistoryEvent({
+        domainUuid: this.selectedDomainUuid,
+        title: String(data.get("title") ?? ""),
+        category: String(data.get("category") ?? "story"),
+        summary: String(data.get("summary") ?? ""),
+        details: String(data.get("details") ?? ""),
+        significance: String(data.get("significance") ?? "minor"),
+        tick: String(data.get("tick") ?? "").trim() || null,
+        visibility: String(data.get("visibility") ?? "all"),
+        expectedModifiedTime: data.get("expectedModifiedTime")
+      });
+      this.isHistoryEntryOpen = false;
+      ui.notifications.info("Registro adicionado ao histórico.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao adicionar registro histórico", error);
+      ui.notifications.error(error.message ?? "Falha ao adicionar registro histórico.");
+    } finally {
+      this.isHistoryBusy = false;
+    }
+  }
+
+  static onRemoveHistoryEntry(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    const localId = String(target?.dataset?.historyId ?? "");
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    const entry = domain?.data?.history?.find((candidate) => candidate.localId === localId);
+    if (!domain || !entry) return;
+    this.isHistoryEntryOpen = false;
+    this.pendingHistoryClear = null;
+    this.pendingDomainEvent = null;
+    this.pendingHistoryRemoval = {
+      ...entry,
+      timestampLabel: formatHistoryTimestamp(entry.timestamp),
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelRemoveHistoryEntry() {
+    if (this.isHistoryBusy) return;
+    this.pendingHistoryRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemoveHistoryEntry() {
+    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingHistoryRemoval) return;
+    const pending = this.pendingHistoryRemoval;
+    this.isHistoryBusy = true;
+    try {
+      await removeHistoryEvent({
+        domainUuid: this.selectedDomainUuid,
+        localId: pending.localId,
+        expectedModifiedTime: pending.expectedModifiedTime
+      });
+      this.pendingHistoryRemoval = null;
+      ui.notifications.info("Registro removido do histórico.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao remover registro histórico", error);
+      ui.notifications.error(error.message ?? "Falha ao remover registro histórico.");
+    } finally {
+      this.isHistoryBusy = false;
+    }
+  }
+
+  static onOpenHistoryClear() {
+    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    const count = domain?.data?.history?.length ?? 0;
+    if (!domain || count === 0) return;
+    this.isHistoryEntryOpen = false;
+    this.pendingHistoryRemoval = null;
+    this.pendingDomainEvent = null;
+    this.pendingHistoryClear = {
+      count,
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelHistoryClear() {
+    if (this.isHistoryBusy) return;
+    this.pendingHistoryClear = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmHistoryClear() {
+    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingHistoryClear) return;
+    const pending = this.pendingHistoryClear;
+    this.isHistoryBusy = true;
+    try {
+      await clearHistory({
+        domainUuid: this.selectedDomainUuid,
+        expectedModifiedTime: pending.expectedModifiedTime
+      });
+      this.pendingHistoryClear = null;
+      ui.notifications.info(`${pending.count} registro(s) removido(s) do histórico.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao limpar histórico", error);
+      ui.notifications.error(error.message ?? "Falha ao limpar histórico.");
+    } finally {
+      this.isHistoryBusy = false;
+    }
+  }
+
+  static onRollDomainEvent() {
+    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    const categoryField = this.element?.querySelector?.("[data-domain-event-category]");
+    const category = String(categoryField?.value ?? "").trim() || null;
+    try {
+      const { domain, event } = rollEventForDomain({ domainUuid: this.selectedDomainUuid, category });
+      this.isHistoryEntryOpen = false;
+      this.pendingHistoryRemoval = null;
+      this.pendingHistoryClear = null;
+      this.pendingDomainEvent = {
+        event: foundry.utils.deepClone(event),
+        title: event.title,
+        description: event.description,
+        categoryLabel: EVENT_CATEGORY_LABELS[event.category] ?? titleCase(event.category),
+        severityLabel: EVENT_SEVERITY_LABELS[event.severity] ?? titleCase(event.severity),
+        tone: event.severity === "crisis" ? "critical" : event.severity === "boon" ? "nominal" : "neutral",
+        expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null,
+        outcomes: (event.outcomes ?? []).map((outcome, index) => ({
+          ...outcome,
+          index,
+          selected: index === 0,
+          impactLabel: [
+            outcome.stockBonus ? "ESTOQUE" : null,
+            outcome.condition ? "CONDIÇÃO" : null
+          ].filter(Boolean).join(" + ") || "CRÔNICA"
+        }))
+      };
+      this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao sortear evento", error);
+      ui.notifications.error(error.message ?? "Falha ao sortear evento de domínio.");
+    }
+  }
+
+  static onCloseDomainEvent() {
+    if (this.isHistoryBusy) return;
+    this.pendingDomainEvent = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmDomainEvent() {
+    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingDomainEvent) return;
+    const form = this.element?.querySelector?.("#dm-domain-event-form");
+    if (!form) return;
+    const pending = this.pendingDomainEvent;
+    const data = new FormData(form);
+    this.isHistoryBusy = true;
+    try {
+      await executeApplyEventOutcome({
+        domainUuid: this.selectedDomainUuid,
+        event: pending.event,
+        outcomeIndex: Number(data.get("outcomeIndex") ?? 0),
+        postToChat: data.has("postToChat"),
+        expectedModifiedTime: pending.expectedModifiedTime
+      });
+      this.pendingDomainEvent = null;
+      ui.notifications.info("Evento aplicado e registrado no histórico.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao aplicar evento", error);
+      ui.notifications.error(error.message ?? "Falha ao aplicar evento de domínio.");
+    } finally {
+      this.isHistoryBusy = false;
+    }
+  }
+
   static onSelectProject(event, target) {
     const uuid = String(target?.dataset?.projectUuid ?? "");
     if (!uuid) return;
@@ -2704,6 +3066,132 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     } catch (error) {
       console.error("Domain Manager | Falha ao configurar economia", error);
       ui.notifications.error(error.message ?? "Falha ao configurar economia estratégica.");
+    } finally {
+      this.isEconomyBusy = false;
+    }
+  }
+
+  static onOpenEconomyFlowEditor(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = document ? decodeRecord(document) : null;
+    if (!domain?.data.management?.capabilities?.economy) return;
+    if (!(getResourceCatalogSetting()?.resources?.length ?? 0)) {
+      ui.notifications.warn("Cadastre pelo menos um recurso antes de criar um fluxo.");
+      return;
+    }
+    const localId = String(target?.dataset?.flowId ?? "__new__").trim() || "__new__";
+    if (localId !== "__new__" && !(domain.data.economy?.flows ?? []).some((flow) => flow.localId === localId)) {
+      ui.notifications.warn("O fluxo selecionado não existe mais.");
+      return;
+    }
+    this.editingEconomyFlowId = localId;
+    this.pendingEconomyFlowRemoval = null;
+    this.render({ force: true });
+  }
+
+  static onCloseEconomyFlowEditor() {
+    this.editingEconomyFlowId = null;
+    this.render({ force: true });
+  }
+
+  static async onSubmitEconomyFlowEditor() {
+    if (!game.user.isGM || this.isEconomyBusy || !this.selectedDomainUuid) return;
+    const form = this.element?.querySelector?.("#dm-economy-flow-form");
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!form || !domainDocument) return;
+    const domain = decodeRecord(domainDocument);
+    if (!domain.data.management?.capabilities?.economy) return;
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    const resourceId = String(data.get("resourceId") ?? "").trim();
+    const resource = (getResourceCatalogSetting()?.resources ?? []).find((entry) => entry.id === resourceId);
+    if (!name || !resource) {
+      ui.notifications.warn(!name ? "Informe o nome do fluxo." : "Selecione um recurso válido.");
+      return;
+    }
+    let amount;
+    try {
+      amount = parseMinorUnits(String(data.get("amount") ?? ""), resource.precision ?? 0);
+    } catch (error) {
+      ui.notifications.warn(`${resource.name ?? resourceId}: ${error.message}`);
+      return;
+    }
+
+    this.isEconomyBusy = true;
+    try {
+      const result = await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.ECONOMY_FLOW_UPSERT,
+        payload: {
+          domain: entityReference(domain),
+          expectedModifiedTime: data.get("expectedModifiedTime"),
+          localId: String(data.get("localId") ?? "").trim() || null,
+          name,
+          resourceId,
+          direction: String(data.get("direction") ?? "inflow"),
+          amount,
+          periodTicks: Number(data.get("periodTicks") ?? 1),
+          category: String(data.get("category") ?? "manual"),
+          source: String(data.get("source") ?? ""),
+          active: data.get("active") === "on"
+        }
+      });
+      this.editingEconomyFlowId = null;
+      ui.notifications.info(`${result.flow?.name ?? name} salvo nos fluxos do domínio.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao salvar fluxo econômico", error);
+      ui.notifications.error(error.message ?? "Falha ao salvar fluxo econômico.");
+    } finally {
+      this.isEconomyBusy = false;
+    }
+  }
+
+  static onRemoveEconomyFlow(event, target) {
+    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const domain = domainDocument ? decodeRecord(domainDocument) : null;
+    const localId = String(target?.dataset?.flowId ?? "").trim();
+    const flow = (domain?.data.economy?.flows ?? []).find((entry) => entry.localId === localId);
+    if (!domain || !flow) return;
+    const resource = (getResourceCatalogSetting()?.resources ?? []).find((entry) => entry.id === flow.resourceId);
+    this.pendingEconomyFlowRemoval = {
+      localId,
+      name: flow.name,
+      resourceName: resource?.name ?? flow.resourceId,
+      expectedModifiedTime: domain.document?._stats?.modifiedTime ?? null
+    };
+    this.render({ force: true });
+  }
+
+  static onCancelRemoveEconomyFlow() {
+    this.pendingEconomyFlowRemoval = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmRemoveEconomyFlow() {
+    const pending = this.pendingEconomyFlowRemoval;
+    if (!game.user.isGM || this.isEconomyBusy || !pending || !this.selectedDomainUuid) return;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    if (!domainDocument) return;
+    const domain = decodeRecord(domainDocument);
+    this.isEconomyBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.ECONOMY_FLOW_REMOVE,
+        payload: {
+          domain: entityReference(domain),
+          expectedModifiedTime: pending.expectedModifiedTime,
+          localId: pending.localId
+        }
+      });
+      this.pendingEconomyFlowRemoval = null;
+      if (this.editingEconomyFlowId === pending.localId) this.editingEconomyFlowId = null;
+      ui.notifications.info(`${pending.name} removido dos fluxos do domínio.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao remover fluxo econômico", error);
+      ui.notifications.error(error.message ?? "Falha ao remover fluxo econômico.");
     } finally {
       this.isEconomyBusy = false;
     }
@@ -3061,18 +3549,52 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       squad: squad ? { recordType: RECORD_TYPES.SQUAD, uuid: squad.uuid, entityId: squadEntityId } : null,
       currentLocation: entityReference(domain)
     };
+    const personDocument = this.editingPersonUuid
+      ? recordIndex.get(RECORD_TYPES.PERSON, this.editingPersonUuid)
+      : null;
+    if (this.editingPersonUuid && !personDocument) {
+      ui.notifications.warn("A pessoa selecionada não está mais disponível.");
+      return;
+    }
+    const person = personDocument ? decodeRecord(personDocument) : null;
+    const updatePayload = person ? {
+      person: entityReference(person),
+      expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+      ...common
+    } : null;
+    if (person && ["dead", "retired"].includes(common.status) && common.status !== person.data.status) {
+      const isDeath = common.status === "dead";
+      this.pendingTerminalTransition = {
+        kind: "person",
+        entityTypeLabel: "PESSOA",
+        commandType: COMMAND_TYPES.PERSON_UPDATE,
+        payload: updatePayload,
+        entityUuid: person.uuid,
+        entityName: common.name || person.document.name,
+        fromLabel: stateLabel(person.data.status),
+        toLabel: stateLabel(common.status),
+        title: isDeath
+          ? `Registrar o falecimento de ${common.name || person.document.name}?`
+          : `Aposentar ${common.name || person.document.name}?`,
+        description: "O cadastro e o histórico serão preservados, mas esta pessoa deixará de ocupar uma função operacional.",
+        confirmLabel: isDeath ? "CONFIRMAR FALECIMENTO" : "CONFIRMAR APOSENTADORIA",
+        successMessage: `${common.name || person.document.name} passou ao estado ${stateLabel(common.status).toLowerCase()}.`,
+        effects: [
+          { title: "Vínculo com a unidade encerrado", detail: "A pessoa será removida da unidade atual para não permanecer em escalas ou designações ativas." },
+          { title: "Registro preservado", detail: "Identidade, notas, retrato, localização e histórico continuam disponíveis para consulta." }
+        ]
+      };
+      await this.render({ force: true });
+      return;
+    }
     this.isPeopleBusy = true;
     try {
-      if (this.editingPersonUuid) {
-        const personDocument = recordIndex.get(RECORD_TYPES.PERSON, this.editingPersonUuid);
-        if (!personDocument) throw new Error("Person selecionada não está mais disponível.");
-        const person = decodeRecord(personDocument);
+      if (person) {
         await executeCommandAuthoritatively({
           commandType: COMMAND_TYPES.PERSON_UPDATE,
           payload: {
-            person: entityReference(person),
-            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
-            ...common
+            ...updatePayload,
+            expectedModifiedTime: updatePayload?.expectedModifiedTime ?? (Number(data.get("expectedModifiedTime")) || null)
           }
         });
         this.selectedPersonUuid = person.uuid;
@@ -3092,6 +3614,42 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ui.notifications.error(error.message ?? "Falha ao salvar pessoa.");
     } finally {
       this.isPeopleBusy = false;
+    }
+  }
+
+  static onCloseTerminalTransition() {
+    if (this.isTerminalTransitionBusy) return;
+    this.pendingTerminalTransition = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmTerminalTransition() {
+    if (this.isTerminalTransitionBusy || !this.pendingTerminalTransition) return;
+    const pending = this.pendingTerminalTransition;
+    this.isTerminalTransitionBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: pending.commandType,
+        payload: { ...pending.payload, confirmTerminalTransition: true }
+      });
+      if (pending.kind === "person") {
+        this.selectedPersonUuid = pending.entityUuid;
+        this.isPersonEditorOpen = false;
+        this.editingPersonUuid = null;
+      } else if (pending.kind === "squad") {
+        this.editingSquadUuid = null;
+      } else if (pending.kind === "structure") {
+        this.editingStructureUuid = null;
+      }
+      this.pendingTerminalTransition = null;
+      ui.notifications.info(pending.successMessage ?? `${pending.entityName} atualizado.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao confirmar transição terminal", error);
+      ui.notifications.error(error.message ?? "Falha ao confirmar a alteração de estado.");
+    } finally {
+      this.isTerminalTransitionBusy = false;
+      if (this.pendingTerminalTransition) await this.render({ force: true });
     }
   }
 
@@ -3408,32 +3966,63 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!form || !document) return;
     const squad = decodeRecord(document);
     const data = new FormData(form);
+    const administrationPayload = {
+      squad: entityReference(squad),
+      expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+      name: data.get("name"),
+      description: data.get("description"),
+      controllerIds: data.getAll("controllerIds"),
+      capacity: data.get("capacity"),
+      strength: data.get("strength"),
+      morale: data.get("morale"),
+      condition: data.get("condition"),
+      status: data.get("status")
+    };
+    const operationalPayload = {
+      squad: entityReference(squad),
+      expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+      patch: {
+        description: data.get("description"),
+        morale: data.get("morale"),
+        condition: data.get("condition"),
+        status: data.get("status")
+      }
+    };
+    const isDisbanding = game.user.isGM
+      && administrationPayload.status === "disbanded"
+      && squad.data.status !== "disbanded";
+    if (isDisbanding && squad.data.currentMission) {
+      ui.notifications.warn("Libere a unidade da missão atual antes de dissolvê-la.");
+      return;
+    }
+    if (isDisbanding) {
+      this.pendingTerminalTransition = {
+        kind: "squad",
+        entityTypeLabel: "UNIDADE",
+        commandType: COMMAND_TYPES.SQUAD_ADMIN_UPDATE,
+        payload: administrationPayload,
+        entityUuid: squad.uuid,
+        entityName: squad.document.name,
+        fromLabel: stateLabel(squad.data.status),
+        toLabel: stateLabel("disbanded"),
+        title: `Dissolver ${squad.document.name}?`,
+        description: "A unidade deixará o serviço ativo e não poderá ser preparada para novas missões.",
+        confirmLabel: "CONFIRMAR DISSOLUÇÃO",
+        successMessage: `Unidade ${squad.document.name} dissolvida.`,
+        effects: [
+          { title: "Operação encerrada", detail: "A unidade deixa de ser elegível para preparação, lançamento e emprego operacional." },
+          { title: "Dados preservados", detail: "Composição, pessoas vinculadas, controladores e inventário permanecem registrados para consulta ou redistribuição." }
+        ]
+      };
+      await this.render({ force: true });
+      return;
+    }
     this.isSquadBusy = true;
     try {
       if (game.user.isGM) {
-        await updateSquadAdministrationAction({
-          squad: entityReference(squad),
-          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
-          name: data.get("name"),
-          description: data.get("description"),
-          controllerIds: data.getAll("controllerIds"),
-          capacity: data.get("capacity"),
-          strength: data.get("strength"),
-          morale: data.get("morale"),
-          condition: data.get("condition"),
-          status: data.get("status")
-        });
+        await updateSquadAdministrationAction(administrationPayload);
       } else {
-        await patchSquadAction({
-          squad: entityReference(squad),
-          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
-          patch: {
-            description: data.get("description"),
-            morale: data.get("morale"),
-            condition: data.get("condition"),
-            status: data.get("status")
-          }
-        });
+        await patchSquadAction(operationalPayload);
       }
       ui.notifications.info(`Unidade ${squad.document.name} atualizada.`);
       this.editingSquadUuid = null;
@@ -3531,6 +4120,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.preparingSquadUuid = null;
     this.pendingMissionRelease = null;
     this.pendingMissionLaunch = null;
+    this.pendingMissionCancel = null;
     this.resolvingMissionUuid = null;
     this.render({ force: true });
   }
@@ -3551,6 +4141,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.preparingSquadUuid = null;
     this.pendingMissionRelease = null;
     this.pendingMissionLaunch = null;
+    this.pendingMissionCancel = null;
     this.resolvingMissionUuid = null;
     this.render({ force: true });
   }
@@ -3582,7 +4173,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       .map((title) => title.trim())
       .filter(Boolean);
     const objectives = objectiveTitles.map((title, index) => ({
-      ...(mission?.data.objectives?.[index] ?? {}),
+      ...mission?.data.objectives?.[index],
       title,
       status: mission?.data.objectives?.[index]?.status ?? "pending"
     }));
@@ -3679,6 +4270,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.editingMissionUuid = null;
     this.pendingMissionRelease = null;
     this.pendingMissionLaunch = null;
+    this.pendingMissionCancel = null;
     this.resolvingMissionUuid = null;
     this.render({ force: true });
   }
@@ -3857,6 +4449,97 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  static onOpenMissionCancel(event, target) {
+    if (!game.user.isGM || this.isMissionBusy) return;
+    const missionUuid = target?.dataset?.missionUuid;
+    const missionDocument = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
+    if (!missionDocument) return;
+    const mission = decodeRecord(missionDocument);
+    if (!["planned", "available", "active"].includes(mission.data.status)) {
+      ui.notifications.warn("Esta missão já está encerrada e não pode ser cancelada.");
+      return;
+    }
+
+    const squads = (mission.data.assignments ?? []).map((assignment) => {
+      const squadDocument = assignment.squad?.entityId
+        ? recordIndex.getByEntityId(assignment.squad.entityId)
+        : assignment.squad?.uuid
+          ? recordIndex.get(RECORD_TYPES.SQUAD, assignment.squad.uuid)
+          : null;
+      const squad = squadDocument ? decodeRecord(squadDocument) : null;
+      return {
+        squad: assignment.squad,
+        expectedModifiedTime: squadDocument?._stats?.modifiedTime ?? null,
+        name: squadDocument?.name ?? assignment.squad?.entityId ?? "Unidade indisponível",
+        statusLabel: stateLabel(squad?.data.status ?? "unknown"),
+        assignmentStateLabel: stateLabel(assignment.state)
+      };
+    });
+
+    this.pendingMissionCancel = {
+      missionUuid,
+      missionName: mission.document.name,
+      statusLabel: stateLabel(mission.data.status),
+      expectedModifiedTime: mission.document?._stats?.modifiedTime ?? null,
+      assignmentCount: squads.length,
+      isActive: mission.data.status === "active",
+      squads
+    };
+    this.isCreateMissionOpen = false;
+    this.editingMissionUuid = null;
+    this.preparingMissionUuid = null;
+    this.preparingSquadUuid = null;
+    this.pendingMissionRelease = null;
+    this.pendingMissionLaunch = null;
+    this.resolvingMissionUuid = null;
+    this.render({ force: true });
+  }
+
+  static onCloseMissionCancel() {
+    this.pendingMissionCancel = null;
+    this.render({ force: true });
+  }
+
+  static async onConfirmMissionCancel() {
+    if (!game.user.isGM || this.isMissionBusy || !this.pendingMissionCancel) return;
+    const form = this.element?.querySelector?.("#dm-mission-cancel-form");
+    if (!form) return;
+    const reason = String(new FormData(form).get("reason") ?? "").trim();
+    if (!reason) {
+      ui.notifications.warn("Informe o motivo do cancelamento.");
+      form.querySelector?.('[name="reason"]')?.focus?.();
+      return;
+    }
+
+    const pending = this.pendingMissionCancel;
+    const missionDocument = recordIndex.get(RECORD_TYPES.MISSION, pending.missionUuid);
+    if (!missionDocument) return;
+    const mission = decodeRecord(missionDocument);
+    this.isMissionBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.MISSION_CANCEL,
+        payload: {
+          mission: entityReference(mission),
+          expectedModifiedTime: pending.expectedModifiedTime,
+          reason,
+          squads: pending.squads.map((entry) => ({
+            squad: entry.squad,
+            expectedModifiedTime: entry.expectedModifiedTime
+          }))
+        }
+      });
+      this.pendingMissionCancel = null;
+      ui.notifications.info(`${mission.document.name} cancelada; unidades vinculadas foram liberadas.`);
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao cancelar Mission", error);
+      ui.notifications.error(error.message ?? "Falha ao cancelar missão.");
+    } finally {
+      this.isMissionBusy = false;
+    }
+  }
+
   static onOpenMissionResolve(event, target) {
     if (!game.user.isGM) return;
     const missionUuid = target?.dataset?.missionUuid;
@@ -3874,6 +4557,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     this.editingMissionUuid = null;
     this.pendingMissionRelease = null;
     this.pendingMissionLaunch = null;
+    this.pendingMissionCancel = null;
     this.render({ force: true });
   }
 
@@ -4054,45 +4738,79 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!form || !structureDocument) return;
     const structure = decodeRecord(structureDocument);
     const data = new FormData(form);
-    this.isStructureBusy = true;
+    let commandType;
+    let payload;
     try {
       if (game.user.isGM) {
         const catalog = getResourceCatalogSetting();
-        const maintenance = parseResourceMatrix(data, catalog, "maintenance");
-        const production = parseResourceMatrix(data, catalog, "production");
-        await executeCommandAuthoritatively({
-          commandType: COMMAND_TYPES.STRUCTURE_ADMIN_UPDATE,
-          payload: {
-            structure: entityReference(structure),
-            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
-            name: String(data.get("name") ?? structure.document.name),
-            description: String(data.get("description") ?? ""),
-            category: String(data.get("category") ?? "general"),
-            tier: Number(data.get("tier") ?? 1),
-            maxTier: Number(data.get("maxTier") ?? 1),
-            status: String(data.get("status") ?? structure.data.status),
-            condition: Number(data.get("condition") ?? structure.data.condition),
-            capacity: Number(data.get("capacity") ?? 0),
-            maintenancePriority: Number(data.get("maintenancePriority") ?? 50),
-            workforceRequired: Number(data.get("workforceRequired") ?? 0),
-            maintenance,
-            production,
-            tags: String(data.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean)
-          }
-        });
+        commandType = COMMAND_TYPES.STRUCTURE_ADMIN_UPDATE;
+        payload = {
+          structure: entityReference(structure),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+          name: String(data.get("name") ?? structure.document.name),
+          description: String(data.get("description") ?? ""),
+          category: String(data.get("category") ?? "general"),
+          tier: Number(data.get("tier") ?? 1),
+          maxTier: Number(data.get("maxTier") ?? 1),
+          status: String(data.get("status") ?? structure.data.status),
+          condition: Number(data.get("condition") ?? structure.data.condition),
+          capacity: Number(data.get("capacity") ?? 0),
+          maintenancePriority: Number(data.get("maintenancePriority") ?? 50),
+          workforceRequired: Number(data.get("workforceRequired") ?? 0),
+          maintenance: parseResourceMatrix(data, catalog, "maintenance"),
+          production: parseResourceMatrix(data, catalog, "production"),
+          tags: String(data.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean)
+        };
       } else {
-        await executeCommandAuthoritatively({
-          commandType: COMMAND_TYPES.STRUCTURE_PATCH,
-          payload: {
-            structure: entityReference(structure),
-            expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
-            patch: {
-              description: String(data.get("description") ?? ""),
-              status: String(data.get("status") ?? structure.data.status)
-            }
+        commandType = COMMAND_TYPES.STRUCTURE_PATCH;
+        payload = {
+          structure: entityReference(structure),
+          expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
+          patch: {
+            description: String(data.get("description") ?? ""),
+            status: String(data.get("status") ?? structure.data.status)
           }
-        });
+        };
       }
+    } catch (error) {
+      ui.notifications.error(error.message ?? "Revise os campos da estrutura antes de salvar.");
+      return;
+    }
+    const isTerminalTransition = game.user.isGM
+      && ["destroyed", "decommissioned"].includes(payload.status)
+      && payload.status !== structure.data.status;
+    if (isTerminalTransition && structure.data.activeProject) {
+      ui.notifications.warn("Conclua ou cancele o projeto vinculado antes de retirar esta estrutura de serviço.");
+      return;
+    }
+    if (isTerminalTransition) {
+      const isDestroyed = payload.status === "destroyed";
+      this.pendingTerminalTransition = {
+        kind: "structure",
+        entityTypeLabel: "ESTRUTURA",
+        commandType,
+        payload,
+        entityUuid: structure.uuid,
+        entityName: structure.document.name,
+        fromLabel: stateLabel(structure.data.status),
+        toLabel: stateLabel(payload.status),
+        title: isDestroyed
+          ? `Registrar a destruição de ${structure.document.name}?`
+          : `Descomissionar ${structure.document.name}?`,
+        description: "A estrutura permanecerá no cadastro, mas deixará de participar da operação econômica do domínio.",
+        confirmLabel: isDestroyed ? "CONFIRMAR DESTRUIÇÃO" : "CONFIRMAR DESCOMISSIONAMENTO",
+        successMessage: `${structure.document.name} passou ao estado ${stateLabel(payload.status).toLowerCase()}.`,
+        effects: [
+          { title: "Produção interrompida", detail: "Produção, capacidade operacional e rotinas de manutenção deixam de ser aplicadas enquanto o estado terminal permanecer." },
+          { title: "Alocações preservadas", detail: "O cadastro técnico e as alocações de trabalho continuam visíveis para que possam ser revisadas ou redistribuídas conscientemente." }
+        ]
+      };
+      await this.render({ force: true });
+      return;
+    }
+    this.isStructureBusy = true;
+    try {
+      await executeCommandAuthoritatively({ commandType, payload });
       ui.notifications.info(`${structure.document.name} sincronizada com a gestão de infraestrutura.`);
       this.editingStructureUuid = null;
       await this.render({ force: true });

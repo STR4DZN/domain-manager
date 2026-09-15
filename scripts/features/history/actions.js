@@ -1,15 +1,45 @@
 /**
- * Ações e Mutações do Bloco 12: Crônicas e Histórico (History Actions).
+ * Pontes de compatibilidade do Bloco 12: toda persistência passa pelo kernel
+ * transacional, inclusive quando uma integração ainda usa as ações legadas.
  */
 
-import { RECORD_TYPES } from "../../core/constants.js";
-import { recordIndex } from "../../data/record-index.js";
-import { decodeRecord } from "../../models/record-codec.js";
-import { updateRecord } from "../../data/journal-store.js";
-import { validateHistoryEventData } from "./rules.js";
+import { executeCommandAuthoritatively } from "../../authority/execute.js";
+import { COMMAND_TYPES, RECORD_TYPES } from "../../core/constants.js";
+import { getRecord } from "../../data/journal-store.js";
 
-function generateLocalId(prefix = "hist") {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+function domainReference(uuid) {
+  return { recordType: RECORD_TYPES.DOMAIN, uuid, entityId: null };
+}
+
+function operationId(value = null) {
+  return String(value ?? "").trim() || null;
+}
+
+async function domainRevision(domainUuid, expectedModifiedTime) {
+  if (expectedModifiedTime != null && expectedModifiedTime !== "") {
+    return expectedModifiedTime;
+  }
+  const domain = await getRecord(domainUuid);
+  return domain.document?._stats?.modifiedTime;
+}
+
+async function runHistoryCommand({
+  commandType,
+  domainUuid,
+  expectedModifiedTime = null,
+  operationId: requestedOperationId = null,
+  payload = {}
+}) {
+  await executeCommandAuthoritatively({
+    commandType,
+    operationId: operationId(requestedOperationId),
+    payload: {
+      domain: domainReference(domainUuid),
+      expectedModifiedTime: await domainRevision(domainUuid, expectedModifiedTime),
+      ...payload
+    }
+  });
+  return getRecord(domainUuid);
 }
 
 export async function addHistoryEvent({
@@ -20,73 +50,45 @@ export async function addHistoryEvent({
   details = "",
   significance = "minor",
   tick = null,
-  visibility = "all"
+  visibility = "all",
+  expectedModifiedTime = null,
+  operationId: requestedOperationId = null
 }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode registrar crônicas ou eventos no histórico.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  if (!Array.isArray(data.history)) data.history = [];
-
-  const eventObj = {
-    localId: generateLocalId("hist"),
-    timestamp: Date.now(),
-    tick: tick !== null && tick !== undefined ? Number(tick) : null,
-    title: String(title ?? "").trim(),
-    category,
-    summary: String(summary ?? "").trim(),
-    details: String(details ?? "").trim(),
-    significance,
-    visibility
-  };
-
-  validateHistoryEventData(eventObj);
-  data.history.push(eventObj);
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
+  return runHistoryCommand({
+    commandType: COMMAND_TYPES.HISTORY_ADD,
+    domainUuid,
+    expectedModifiedTime,
+    operationId: requestedOperationId,
+    payload: {
+      entry: { title, category, summary, details, significance, tick, visibility }
+    }
   });
 }
 
-export async function removeHistoryEvent({ domainUuid, localId }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode remover registros do histórico.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  data.history = (data.history ?? []).filter((h) => h.localId !== localId);
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
+export async function removeHistoryEvent({
+  domainUuid,
+  localId,
+  expectedModifiedTime = null,
+  operationId: requestedOperationId = null
+}) {
+  return runHistoryCommand({
+    commandType: COMMAND_TYPES.HISTORY_REMOVE,
+    domainUuid,
+    expectedModifiedTime,
+    operationId: requestedOperationId,
+    payload: { localId }
   });
 }
 
-export async function clearHistory({ domainUuid }) {
-  if (!game.user.isGM) throw new Error("Apenas o Mestre pode limpar o histórico.");
-
-  const doc = recordIndex.get(RECORD_TYPES.DOMAIN, domainUuid);
-  if (!doc) throw new Error(`Domínio '${domainUuid}' não encontrado.`);
-
-  const decoded = decodeRecord(doc);
-  const data = foundry.utils.deepClone(decoded.data);
-
-  data.history = [];
-
-  return updateRecord({
-    uuid: domainUuid,
-    recordType: RECORD_TYPES.DOMAIN,
-    data
+export async function clearHistory({
+  domainUuid,
+  expectedModifiedTime = null,
+  operationId: requestedOperationId = null
+}) {
+  return runHistoryCommand({
+    commandType: COMMAND_TYPES.HISTORY_CLEAR,
+    domainUuid,
+    expectedModifiedTime,
+    operationId: requestedOperationId
   });
 }
-

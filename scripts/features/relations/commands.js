@@ -1,4 +1,4 @@
-import { COMMAND_TYPES, EVENT_TYPES, RECORD_TYPES } from "../../core/constants.js";
+import { EVENT_TYPES, RECORD_TYPES } from "../../core/constants.js";
 import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 import { hasCapability } from "../../core/management-contracts.js";
 import { getResourceCatalogSetting } from "../../core/settings.js";

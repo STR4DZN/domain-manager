@@ -125,6 +125,16 @@ export async function executeSquadPatch({ payload, callerUserId }) {
   if (!user.isGM && !controllerIds(squad).includes(user.id)) {
     throw new ModuleError(ERROR_CODES.PERMISSION, "O usuário não controla este Squad.");
   }
+  const isDisbanding = normalized.patch.status === "disbanded" && squad.data.status !== "disbanded";
+  if (isDisbanding && !user.isGM) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "Somente GM pode dissolver um Squad.");
+  }
+  if (isDisbanding && !normalized.confirmTerminalTransition) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Confirme explicitamente a dissolução do Squad antes de continuar.");
+  }
+  if (isDisbanding && squad.data.currentMission) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "O Squad precisa ser liberado da Mission atual antes de ser dissolvido.");
+  }
 
   const before = foundry.utils.deepClone(squad.data);
   const data = foundry.utils.deepClone(squad.data);
@@ -159,6 +169,13 @@ export async function executeSquadAdminUpdate({ payload, callerUserId }) {
   const squad = resolveReference(normalized.squad, RECORD_TYPES.SQUAD);
   assertRevision(squad, normalized.expectedModifiedTime);
   assertControllersExist(normalized.controllerIds);
+  const isDisbanding = normalized.patch.status === "disbanded" && squad.data.status !== "disbanded";
+  if (isDisbanding && !normalized.confirmTerminalTransition) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Confirme explicitamente a dissolução do Squad antes de continuar.");
+  }
+  if (isDisbanding && squad.data.currentMission) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "O Squad precisa ser liberado da Mission atual antes de ser dissolvido.");
+  }
 
   const before = foundry.utils.deepClone(squad.data);
   const beforeName = squad.document.name;
