@@ -295,3 +295,52 @@ test("Squad rejeita formulário operacional obsoleto", async () => {
   }, { callerUserId: "P1" }), /mudou enquanto/i);
   assert.equal(squad.getFlag("domain-manager", "data").morale, 60);
 });
+
+test("dissolução de Squad é GM-only, confirmada e bloqueada durante Mission", async () => {
+  const domain = domainDocument();
+  const squad = squadDocument();
+  resetWorld(domain, squad);
+  const reference = { recordType: "squad", uuid: squad.uuid, entityId: "squad:S1" };
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "squad.patch",
+    operationId: "squad-disband-controller",
+    payload: { squad: reference, confirmTerminalTransition: true, patch: { status: "disbanded" } }
+  }, { callerUserId: "P1" }), /somente GM/i);
+
+  const administration = {
+    squad: reference,
+    name: "Raven",
+    controllerIds: ["P1"],
+    description: "Recon",
+    status: "disbanded",
+    capacity: 20,
+    strength: 20,
+    morale: 60,
+    condition: 100
+  };
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "squad.admin-update",
+    operationId: "squad-disband-unconfirmed",
+    payload: administration
+  }, { callerUserId: "GM" }), /confirme explicitamente/i);
+
+  squad.getFlag("domain-manager", "data").currentMission = {
+    recordType: "mission",
+    uuid: "JournalEntry.M1",
+    entityId: "mission:M1"
+  };
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "squad.admin-update",
+    operationId: "squad-disband-mission",
+    payload: { ...administration, confirmTerminalTransition: true }
+  }, { callerUserId: "GM" }), /liberado da Mission/i);
+
+  squad.getFlag("domain-manager", "data").currentMission = null;
+  await dispatchAuthoritativeCommand({
+    commandType: "squad.admin-update",
+    operationId: "squad-disband-confirmed",
+    payload: { ...administration, confirmTerminalTransition: true }
+  }, { callerUserId: "GM" });
+  assert.equal(squad.getFlag("domain-manager", "data").status, "disbanded");
+});

@@ -29,7 +29,7 @@ test("grafo de imports estáticos não possui ciclos ESM de inicialização", ()
   const files = listFiles(root).filter((file) => !file.includes(`${path.sep}node_modules${path.sep}`));
   const known = new Set(files.map((file) => path.resolve(file)));
   const graph = new Map(files.map((file) => [path.resolve(file), new Set()]));
-  const staticImport = /(?:^|\n)\s*(?:import\s+(?!\()[^'\"]*?(?:\s+from\s+)?|export\s+[^'\"]*?\s+from\s+)["']([^"']+)["']/gm;
+  const staticImport = /(?:^|\n)\s*(?:import\s+(?!\()[^'"]*?(?:\s+from\s+)?|export\s+[^'"]*?\s+from\s+)["']([^"']+)["']/gm;
 
   for (const file of files) {
     const source = fs.readFileSync(file, "utf8");

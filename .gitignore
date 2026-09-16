@@ -1,9 +1,5 @@
-node_modules/
-.DS_Store
-Thumbs.db
-*.log
-.vscode/
-.idea/
-*.tmp
-.agents/
-temp_build/
+test-observatory/runs/
+test-observatory/product-baseline.sha256.json
+playwright-report/
+test-results/
+blob-report/

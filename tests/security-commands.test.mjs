@@ -101,7 +101,7 @@ test("security.configure persiste Defense pelo Command Kernel e é idempotente",
 });
 
 test("security.configure rejeita player e Domain sem capability security", async () => {
-  const domain = reset();
+  reset();
   const payload = { domain: { recordType: "domain", entityId: "domain:D1" }, defenseRating: 20, guardCount: 5, fortifications: [] };
   await assert.rejects(() => envelope("sec-player", payload, "P1"), /Apenas GM/i);
 

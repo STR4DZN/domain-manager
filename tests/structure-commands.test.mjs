@@ -40,6 +40,7 @@ users.activeGM = users.get("GM");
 users.contents = [...users.values()];
 
 let operationLedger = { version: 1, receipts: [] };
+let failOperationLedgerWrite = false;
 const resourceCatalog = {
   version: 1,
   resources: [
@@ -67,7 +68,10 @@ globalThis.game = {
       return null;
     },
     async set(_moduleId, key, value) {
-      if (key === "operationLedger") operationLedger = structuredClone(value);
+      if (key === "operationLedger") {
+        if (failOperationLedgerWrite) throw new Error("simulated operation ledger failure");
+        operationLedger = structuredClone(value);
+      }
       return value;
     }
   }
@@ -143,6 +147,7 @@ globalThis.JournalEntry = {
 
 const { recordIndex } = await import("../scripts/data/record-index.js");
 const { dispatchAuthoritativeCommand } = await import("../scripts/commands/execute.js");
+const structureActions = await import("../scripts/features/structures/actions.js");
 
 function domainDocument({ stocks = [{ resourceId: "metal", amount: 200 }] } = {}) {
   return makeDocument({
@@ -195,6 +200,7 @@ function resetWorld(...documents) {
   game.journal = documents;
   game.user = users.get("GM");
   operationLedger = { version: 1, receipts: [] };
+  failOperationLedgerWrite = false;
   recordIndex.rebuild();
 }
 
@@ -424,4 +430,193 @@ test("GM não pode comissionar manualmente Structure com Project ainda vinculado
   const data = structure.getFlag("domain-manager", "data");
   assert.equal(data.status, "planned");
   assert.equal(data.activeProject.entityId, "project:PR-ACTIVE");
+});
+
+test("APIs de compatibilidade de Structure delegam ao kernel e preservam operationId", async () => {
+  const domain = domainDocument();
+  resetWorld(domain);
+  const payload = {
+    operationId: "legacy-structure-create",
+    name: "Refinaria Wrapper",
+    domain: ref(domain, "domain", "domain:D1"),
+    category: "industry",
+    maintenance: [{ resourceId: "fuel", amount: 1 }],
+    production: [{ resourceId: "energy", amount: 4 }]
+  };
+
+  const first = await structureActions.createStructureAction(payload);
+  const second = await structureActions.createStructureAction(payload);
+
+  assert.equal(first.operationId, "legacy-structure-create");
+  assert.equal(first.duplicate, false);
+  assert.equal(second.duplicate, true);
+  assert.equal(second.uuid, first.uuid);
+  assert.equal(game.journal.filter((entry) => entry.getFlag("domain-manager", "recordType") === "structure").length, 1);
+  assert.equal(operationLedger.receipts[0].commandType, "structure.create");
+});
+
+test("patch parcial via action preserva blueprint e revisão do registro", async () => {
+  const domain = domainDocument();
+  const structure = structureDocument();
+  structure._stats = { modifiedTime: 300 };
+  resetWorld(domain, structure);
+
+  const result = await structureActions.patchStructureAction({
+    operationId: "legacy-structure-patch",
+    structure: ref(structure, "structure", "structure:ST1"),
+    expectedModifiedTime: 300,
+    patch: { description: "Parada preventiva", status: "disabled" }
+  });
+
+  const data = structure.getFlag("domain-manager", "data");
+  assert.equal(result.operationId, "legacy-structure-patch");
+  assert.equal(data.description, "Parada preventiva");
+  assert.equal(data.status, "disabled");
+  assert.equal(data.category, "power");
+  assert.equal(data.tier, 1);
+  assert.deepEqual(data.maintenance, [{ resourceId: "fuel", amount: 2 }]);
+  assert.deepEqual(data.production, [{ resourceId: "energy", amount: 20 }]);
+});
+
+test("admin-update também recusa revisão obsoleta sem alterar blueprint", async () => {
+  const domain = domainDocument();
+  const structure = structureDocument();
+  structure._stats = { modifiedTime: 400 };
+  resetWorld(domain, structure);
+
+  await assert.rejects(() => structureActions.updateStructureAdministrationAction({
+    operationId: "legacy-structure-stale-admin",
+    structure: ref(structure, "structure", "structure:ST1"),
+    expectedModifiedTime: 399,
+    name: "Nome obsoleto",
+    description: "Não deve persistir",
+    category: "industry",
+    tier: 2,
+    maxTier: 4,
+    status: "damaged",
+    condition: 50,
+    capacity: 200,
+    maintenancePriority: 90,
+    workforceRequired: 10,
+    maintenance: [],
+    production: [],
+    tags: []
+  }), /mudou enquanto o formulário/i);
+
+  assert.equal(structure.name, "Reator Helios");
+  assert.equal(structure.getFlag("domain-manager", "data").category, "power");
+  assert.equal(operationLedger.receipts.length, 0);
+});
+
+test("falha ao gravar receipt desfaz criação direta de Structure", async () => {
+  const domain = domainDocument();
+  resetWorld(domain);
+  failOperationLedgerWrite = true;
+
+  await assert.rejects(() => structureActions.createStructureAction({
+    operationId: "structure-create-ledger-failure",
+    name: "Estrutura transitória",
+    domain: ref(domain, "domain", "domain:D1"),
+    maintenance: [],
+    production: []
+  }), /operation ledger failure/i);
+
+  assert.deepEqual(game.journal.map((entry) => entry.uuid), [domain.uuid]);
+  assert.equal(operationLedger.receipts.length, 0);
+});
+
+test("falha ao gravar receipt desfaz patch e administração de Structure", async () => {
+  const domain = domainDocument();
+  const structure = structureDocument();
+  resetWorld(domain, structure);
+  failOperationLedgerWrite = true;
+
+  await assert.rejects(() => structureActions.patchStructureAction({
+    operationId: "structure-patch-ledger-failure",
+    structure: ref(structure, "structure", "structure:ST1"),
+    patch: { description: "Não deve persistir", status: "disabled" }
+  }), /operation ledger failure/i);
+  assert.equal(structure.getFlag("domain-manager", "data").description, "Power core");
+  assert.equal(structure.getFlag("domain-manager", "data").status, "operational");
+
+  await assert.rejects(() => structureActions.updateStructureAdministrationAction({
+    operationId: "structure-admin-ledger-failure",
+    structure: ref(structure, "structure", "structure:ST1"),
+    name: "Nome transitório",
+    description: "Não deve persistir",
+    category: "industry",
+    tier: 2,
+    maxTier: 4,
+    status: "damaged",
+    condition: 50,
+    capacity: 200,
+    maintenancePriority: 90,
+    workforceRequired: 10,
+    maintenance: [],
+    production: [],
+    tags: []
+  }), /operation ledger failure/i);
+  assert.equal(structure.name, "Reator Helios");
+  assert.equal(structure.getFlag("domain-manager", "data").description, "Power core");
+  assert.equal(structure.getFlag("domain-manager", "data").category, "power");
+  assert.equal(operationLedger.receipts.length, 0);
+});
+
+test("falha ao gravar receipt desfaz Project e Structure da construção", async () => {
+  const domain = domainDocument();
+  resetWorld(domain);
+  failOperationLedgerWrite = true;
+
+  await assert.rejects(() => structureActions.beginStructureConstructionAction({
+    operationId: "structure-construction-ledger-failure",
+    name: "Hangar transitório",
+    domain: ref(domain, "domain", "domain:D1"),
+    maintenance: [{ resourceId: "fuel", amount: 1 }],
+    production: [],
+    project: {
+      workRequired: 20,
+      rateAmount: 2,
+      periodTicks: 1,
+      costs: [{ resourceId: "metal", mode: "reserved", amount: 10 }]
+    }
+  }), /operation ledger failure/i);
+
+  assert.deepEqual(game.journal.map((entry) => entry.uuid), [domain.uuid]);
+  assert.equal(operationLedger.receipts.length, 0);
+});
+
+test("destruição ou descomissionamento de Structure exige confirmação explícita", async () => {
+  const domain = domainDocument();
+  const structure = structureDocument();
+  resetWorld(domain, structure);
+  const payload = {
+    structure: ref(structure, "structure", "structure:ST1"),
+    name: "Reator Helios",
+    description: "Power core",
+    category: "power",
+    tier: 1,
+    maxTier: 3,
+    status: "decommissioned",
+    condition: 100,
+    capacity: 100,
+    maintenancePriority: 50,
+    workforceRequired: 0,
+    maintenance: [],
+    production: [],
+    tags: []
+  };
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "structure.admin-update",
+    operationId: "structure-terminal-unconfirmed",
+    payload
+  }, { callerUserId: "GM" }), /confirme explicitamente/i);
+  assert.equal(structure.getFlag("domain-manager", "data").status, "operational");
+
+  await dispatchAuthoritativeCommand({
+    commandType: "structure.admin-update",
+    operationId: "structure-terminal-confirmed",
+    payload: { ...payload, confirmTerminalTransition: true }
+  }, { callerUserId: "GM" });
+  assert.equal(structure.getFlag("domain-manager", "data").status, "decommissioned");
 });

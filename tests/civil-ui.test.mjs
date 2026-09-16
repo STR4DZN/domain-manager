@@ -63,7 +63,8 @@ test("Population e Person enviam revisão e remoção de grupo exige confirmaç�
     assert.ok(template.includes(marker) || shell.includes(marker), `confirmação de grupo sem ${marker}`);
   }
   assert.match(shell, /POPULATION_GROUP_REMOVE[\s\S]{0,350}expectedModifiedTime:/);
-  assert.match(shell, /PERSON_UPDATE[\s\S]{0,300}expectedModifiedTime:/);
+  assert.match(shell, /const updatePayload = person \? \{[\s\S]{0,350}expectedModifiedTime:/);
+  assert.match(shell, /commandType:\s*COMMAND_TYPES\.PERSON_UPDATE,[\s\S]{0,120}payload:\s*updatePayload/);
 });
 
 test("Domain UI usa o Command Kernel e seleciona a Person criada pelo resultado achatado", () => {

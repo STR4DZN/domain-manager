@@ -77,9 +77,10 @@ test("Projects Advanced dev.138 preserva schema 9", () => {
 
 test("Project legacy actions não mantêm write path ou hard-delete direto", () => {
   const actions = fs.readFileSync(path.join(root, "scripts/features/projects/actions.js"), "utf8");
-  for (const forbidden of ["createRecord", "updateRecord", "updateRecordsBatch", "record.document.delete", "transactionQueue"]) {
+  for (const forbidden of ["createRecord", "updateRecord", "updateRecordsBatch", "record.document.delete", "transactionQueue", "dispatchAuthoritativeCommand"]) {
     assert.ok(!actions.includes(forbidden), `projects/actions.js ainda contém write path legado: ${forbidden}`);
   }
+  assert.match(actions, /executeCommandAuthoritatively/, "wrappers precisam atravessar a ponte local/socket da autoridade");
   for (const commandType of ["PROJECT_CREATE", "PROJECT_UPDATE", "PROJECT_COST_UPSERT", "PROJECT_COST_REMOVE"]) {
     assert.match(actions, new RegExp(`COMMAND_TYPES\\.${commandType}`), `wrapper não delega ${commandType}`);
   }

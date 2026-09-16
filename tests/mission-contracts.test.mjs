@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const {
+  normalizeMissionCancelPayload,
   normalizeMissionCreatePayload,
   normalizeMissionPreparePayload,
   normalizeMissionResolvePayload,
@@ -67,4 +68,24 @@ test("Mission resolve aceita consequências operacionais e rejeita status final 
   assert.equal(value.objectiveResults[0].status, "completed");
 
   assert.throws(() => normalizeMissionResolvePayload({ mission, status: "cancelled" }), /resolved ou failed/i);
+});
+
+test("Mission cancel exige motivo e snapshot sem Squads duplicados", () => {
+  const value = normalizeMissionCancelPayload({
+    mission,
+    expectedModifiedTime: 101,
+    reason: "  Janela operacional encerrada  ",
+    squads: [{ squad, expectedModifiedTime: 202 }]
+  });
+
+  assert.equal(value.reason, "Janela operacional encerrada");
+  assert.equal(value.expectedModifiedTime, 101);
+  assert.equal(value.squads[0].expectedModifiedTime, 202);
+
+  assert.throws(() => normalizeMissionCancelPayload({ mission, reason: "   " }), /motivo/i);
+  assert.throws(() => normalizeMissionCancelPayload({
+    mission,
+    reason: "Encerrar",
+    squads: [{ squad }, { squad }]
+  }), /duplicados/i);
 });

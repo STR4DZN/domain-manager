@@ -54,6 +54,7 @@ import {
   statusTone,
   summarizeDomainTelemetry
 } from "./presentation.js";
+import { applyShellMotion, presentPlayerIntro } from "./motion.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -491,6 +492,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   isStrategicIntelBusy = false;
   responsiveObserver = null;
   isInspectorOpen = false;
+  lastMotionView = null;
 
   static DEFAULT_OPTIONS = {
     id: "domain-manager-app",
@@ -739,6 +741,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   _onRender(context, options) {
     super._onRender?.(context, options);
+    const root = this.element?.querySelector?.(".dm-os");
+    applyShellMotion(root, { previousView: this.lastMotionView, nextView: this.activeView });
+    presentPlayerIntro({ root, user: game.user, world: game.world, domain: context.selectedDomain });
+    this.lastMotionView = this.activeView;
     this.#syncResponsiveState();
     const search = this.element?.querySelector?.("[data-dm-search]");
     if (search) {
@@ -3592,10 +3598,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       if (person) {
         await executeCommandAuthoritatively({
           commandType: COMMAND_TYPES.PERSON_UPDATE,
-          payload: {
-            ...updatePayload,
-            expectedModifiedTime: updatePayload?.expectedModifiedTime ?? (Number(data.get("expectedModifiedTime")) || null)
-          }
+          payload: updatePayload
         });
         this.selectedPersonUuid = person.uuid;
       } else {

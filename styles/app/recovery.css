@@ -251,6 +251,10 @@
   .dm-core-matrix,.dm-civil-overview,.dm-intel-overview,.dm-territory-summary{grid-template-columns:1fr}
   .dm-person-profile__facts{grid-template-columns:1fr}.dm-person-profile__header{grid-template-columns:72px minmax(0,1fr)}.dm-person-profile__portrait{width:72px;height:72px}.dm-person-profile__identity h3{font-size:21px}
   .dm-modal-layer{padding:5px}.dm-system-dialog,.dm-system-dialog--wide,.dm-system-dialog--ultrawide{width:100%;max-height:100%;border-radius:8px}.dm-system-dialog__telemetry{display:none}.dm-system-dialog__body,.dm-media-dialog__body,.dm-person-dialog__body{grid-template-columns:1fr;padding:13px;gap:12px}.dm-field--wide{grid-column:1}.dm-system-dialog__footer{display:grid;grid-template-columns:1fr;min-height:0;padding:9px 12px}.dm-system-dialog__footer .dm-action-button{width:100%}.dm-file-field{grid-template-columns:1fr}.dm-file-field .dm-action-button{width:100%}.dm-media-preview,.dm-person-editor-preview{align-items:flex-start;flex-direction:column}.dm-media-preview__image,.dm-person-editor-preview__portrait{width:100%;height:150px}
+  .dm-system-dialog:has(>.dm-system-dialog__telemetry){grid-template-rows:auto minmax(0,1fr) auto}
+  .dm-economy-flow-dialog .dm-system-dialog__footer{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dm-economy-flow-note{display:block;min-height:max-content}
+  .dm-economy-flow-note>i{display:none}
 }
 
 /* Economy dialogs follow the application window, not the browser viewport. */
@@ -342,3 +346,7 @@
   .dm-mission-card__actions>.dm-action-button{flex:1 1 180px}
   .dm-confirmation-summary{grid-template-columns:36px minmax(0,1fr)}.dm-confirmation-summary>i{width:36px;height:36px}
 }
+
+/* 0.2.0 economy flow readability overrides. */
+.dm-stage .dm-economy-flow-board :is(.dm-kicker,.dm-chip){font-size:12px!important}.dm-stage .dm-economy-flow-row :is(strong,small){overflow-wrap:anywhere}.dm-stage .dm-economy-flow-row__identity strong{font-size:14px!important}.dm-stage .dm-economy-flow-row__identity small{font-size:12px!important}.dm-stage .dm-economy-flow-row>span>strong{font-size:12px!important}
+@container dm-window (max-width:900px){.dm-stage .dm-economy-flow-row>span>strong{white-space:normal;line-height:1.4}.dm-view--economy .dm-view-header__actions>.dm-action-button{flex:1 1 150px}}

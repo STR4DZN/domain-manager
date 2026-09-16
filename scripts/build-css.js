@@ -11,7 +11,8 @@ const CSS_FILES = [
   "styles/app/views.css",
   "styles/app/dialogs.css",
   "styles/app/usability.css",
-  "styles/app/recovery.css"
+  "styles/app/recovery.css",
+  "styles/app/motion.css"
 ];
 
 export function buildCss() {

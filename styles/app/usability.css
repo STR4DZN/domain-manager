@@ -334,7 +334,7 @@
 .dm-system-core-grid{gap:14px}.dm-core-readouts small{font-size:10px}.dm-core-readouts strong{font-size:11px}.dm-simulation-console p{font-size:12px}
 .dm-sim-buttons button{min-height:48px;font-size:12px}
 
-.dm-history-stream article{min-height:64px}.dm-history-stream strong{font-size:12px}.dm-history-stream p{font-size:11px}.dm-history-stream time{font-size:10px}
+.dm-history-stream article{min-height:100px}.dm-history-stream small{font-size:10px}.dm-history-stream strong{font-size:14px}.dm-history-stream p{font-size:12px}.dm-history-stream time{font-size:10px}
 
 /* Remove redundant force-page primary action when the empty state already owns it. */
 .dm-page--force-control:has(.dm-empty--force) .dm-view-header__actions .dm-action-button{display:none}
@@ -400,6 +400,9 @@
   .dm-mission-resource-input,.dm-resolution-objective{grid-template-columns:1fr}
   .dm-resolution-unit{grid-template-columns:1fr}.dm-resolution-unit__title{grid-column:1}
   .dm-system-dialog__footer{min-height:58px;padding:8px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.dm-system-dialog__footer .dm-action-button{width:100%}
+  .dm-economy-flow-dialog .dm-system-dialog__footer .dm-action-button:last-child{grid-column:1/-1}
+  .dm-history-event-console{grid-template-columns:1fr;align-items:stretch}.dm-history-event-console .dm-action-button{width:100%}
+  .dm-history-stream article{grid-template-columns:38px minmax(0,1fr)}.dm-history-entry__meta{grid-column:2;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap}.dm-history-entry__meta .dm-icon-button{margin:0 0 0 auto}
   .dm-workforce-matrix>header,.dm-workforce-matrix>article{min-width:680px;grid-template-columns:150px 1fr}
 }
 

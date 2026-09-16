@@ -499,3 +499,144 @@ test("APIs legadas de Project delegam ao kernel e hard-delete é recusado", asyn
   await assert.rejects(() => actions.deleteProjectAction({ projectUuid: project.uuid }), /Hard-delete|cancelamento/i);
   assert.ok(game.journal.includes(project), "Project não deve ser removido fisicamente");
 });
+
+test("updateProjectAction preserva patch parcial, campos sistêmicos e retry idempotente", async () => {
+  const domain = domainDocument();
+  const project = projectDocument({ status: "planned" });
+  project.flags["domain-manager"].data.presentation = { accent: "amber", pinned: true };
+  resetWorld(domain, project);
+  const actions = await import("../scripts/features/projects/actions.js");
+
+  const patch = {
+    projectUuid: project.uuid,
+    changes: {
+      data: { description: "Somente este campo mudou." },
+      work: { rateAmount: 17 }
+    },
+    operationId: "legacy-project-partial"
+  };
+
+  await actions.updateProjectAction(patch);
+  await actions.updateProjectAction(patch);
+
+  const stored = project.getFlag("domain-manager", "data");
+  assert.equal(project.name, "Fortificar perímetro");
+  assert.equal(stored.description, "Somente este campo mudou.");
+  assert.equal(stored.status, "planned");
+  assert.deepEqual(stored.work, { required: 100, completed: 0, rateAmount: 17, periodTicks: 1, carry: 0 });
+  assert.deepEqual(stored.presentation, { accent: "amber", pinned: true });
+  assert.equal(operationLedger.receipts.length, 1, "retry com o mesmo operationId não deve gravar duas vezes");
+});
+
+test("wrappers legados preservam defaults canônicos e semântica decimal dos custos", async (t) => {
+  const domain = domainDocument();
+  resetWorld(domain);
+  const actions = await import("../scripts/features/projects/actions.js");
+  const fuel = resourceCatalog.resources.find((entry) => entry.id === "fuel");
+  const originalPrecision = fuel.precision;
+  fuel.precision = 2;
+  t.after(() => { fuel.precision = originalPrecision; });
+
+  const created = await actions.createProjectAction({
+    domainUuid: domain.uuid,
+    name: "Projeto com defaults",
+    operationId: "legacy-project-defaults"
+  });
+  assert.deepEqual(created.data.work, { required: 100, completed: 0, rateAmount: 10, periodTicks: 1, carry: 0 });
+  recordIndex.rebuild();
+
+  await actions.upsertProjectCostAction({
+    projectUuid: created.uuid,
+    resourceId: "fuel",
+    mode: "progressive",
+    displayAmount: "5,25",
+    operationId: "legacy-project-cost-add"
+  });
+  await actions.upsertProjectCostAction({
+    projectUuid: created.uuid,
+    resourceId: "fuel",
+    mode: "progressive",
+    displayAmount: "5,25",
+    operationId: "legacy-project-cost-add"
+  });
+
+  let stored = docs.get(created.uuid).getFlag("domain-manager", "data");
+  assert.equal(stored.costs.length, 1);
+  assert.equal(stored.costs[0].amount, 525);
+
+  const localId = stored.costs[0].localId;
+  await actions.removeProjectCostAction({
+    projectUuid: created.uuid,
+    localId,
+    operationId: "legacy-project-cost-remove"
+  });
+  await actions.removeProjectCostAction({
+    projectUuid: created.uuid,
+    localId,
+    operationId: "legacy-project-cost-remove"
+  });
+  stored = docs.get(created.uuid).getFlag("domain-manager", "data");
+  assert.deepEqual(stored.costs, []);
+});
+
+test("updateProjectAction encaminha revisão obsoleta e não aplica patch", async () => {
+  const domain = domainDocument();
+  const project = projectDocument({ status: "planned" });
+  project._stats = { modifiedTime: 700 };
+  resetWorld(domain, project);
+  const actions = await import("../scripts/features/projects/actions.js");
+
+  await assert.rejects(() => actions.updateProjectAction({
+    projectUuid: project.uuid,
+    expectedModifiedTime: 699,
+    changes: { description: "Patch obsoleto" },
+    operationId: "legacy-project-stale-patch"
+  }), /mudou enquanto o formulário/i);
+
+  assert.equal(project.getFlag("domain-manager", "data").description, "Reforço estrutural.");
+});
+
+test("wrapper de Project chamado por controller usa a autoridade remota", async () => {
+  const domain = domainDocument();
+  const project = projectDocument({ status: "planned" });
+  resetWorld(domain, project);
+
+  const handlers = new Map();
+  const remoteCalls = [];
+  game.modules = new Map([["domain-manager", { version: "test", socket: true }]]);
+  globalThis.socketlib = {
+    registerModule() {
+      return {
+        register(name, handler) { handlers.set(name, handler); },
+        async executeAsGM(name, envelope) {
+          remoteCalls.push({ name, envelope: structuredClone(envelope), callerUserId: game.user.id });
+          const caller = game.user;
+          game.user = users.get("GM");
+          try {
+            return await handlers.get(name).call({ socketdata: { userId: caller.id } }, envelope);
+          } finally {
+            game.user = caller;
+          }
+        }
+      };
+    }
+  };
+
+  const { registerAuthoritySocket } = await import("../scripts/authority/socket.js");
+  registerAuthoritySocket();
+  const actions = await import("../scripts/features/projects/actions.js");
+  game.user = users.get("P1");
+
+  await actions.updateProjectAction({
+    projectUuid: project.uuid,
+    changes: { description: "Executado no GM primário" },
+    operationId: "legacy-project-remote"
+  });
+
+  assert.equal(remoteCalls.length, 1);
+  assert.equal(remoteCalls[0].name, "command.execute");
+  assert.equal(remoteCalls[0].callerUserId, "P1");
+  assert.equal(remoteCalls[0].envelope.commandType, "project.update");
+  assert.equal(project.getFlag("domain-manager", "data").description, "Executado no GM primário");
+  assert.equal(operationLedger.receipts[0].callerUserId, "P1");
+});

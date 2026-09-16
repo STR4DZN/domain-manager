@@ -37,6 +37,8 @@ users.activeGM = users.get("GM");
 users.contents = [...users.values()];
 
 let operationLedger = { version: 1, receipts: [] };
+let failOperationLedgerWrite = false;
+let updateDocumentBatches = [];
 const resourceCatalog = {
   version: 1,
   resources: [
@@ -64,7 +66,10 @@ globalThis.game = {
       return null;
     },
     async set(_moduleId, key, value) {
-      if (key === "operationLedger") operationLedger = structuredClone(value);
+      if (key === "operationLedger") {
+        if (failOperationLedgerWrite) throw new Error("simulated operation ledger failure");
+        operationLedger = structuredClone(value);
+      }
       return value;
     }
   }
@@ -127,6 +132,7 @@ globalThis.JournalEntry = {
     return doc;
   },
   async updateDocuments(changes) {
+    updateDocumentBatches.push(structuredClone(changes));
     const result = [];
     for (const update of changes) {
       const doc = [...docs.values()].find((entry) => entry.id === update._id);
@@ -214,11 +220,29 @@ function resetWorld(...documents) {
   game.user = users.get("GM");
   game.time.worldTime = 4200;
   operationLedger = { version: 1, receipts: [] };
+  failOperationLedgerWrite = false;
+  updateDocumentBatches = [];
   recordIndex.rebuild();
 }
 
 function ref(document, recordType, entityId) {
   return { recordType, uuid: document.uuid, entityId };
+}
+
+function assignmentForTest(squad, {
+  state = "prepared",
+  committedStrength = 10,
+  resources = []
+} = {}) {
+  const data = squad.getFlag("domain-manager", "data");
+  return {
+    localId: `assignment-${squad.id}`,
+    squad: ref(squad, "squad", data.entityId),
+    committedStrength,
+    resources,
+    state,
+    result: { casualties: 0, moraleDelta: 0, conditionDelta: 0, notes: "" }
+  };
 }
 
 test("GM cria Mission no Domain e audiência recebe ownership OBSERVER", async () => {
@@ -316,6 +340,56 @@ test("jogador prepara Squad, lançamento consome recursos uma vez e resolução 
   assert.equal(squadData.condition, 85);
   assert.equal(squadData.status, "recovering");
   assert.equal(squadData.currentMission, null);
+});
+
+test("Mission nunca prepara nem reativa um Squad dissolvido", async () => {
+  const domain = domainDocument();
+  const dissolvedSquad = squadDocument();
+  const mission = missionDocument();
+  dissolvedSquad.getFlag("domain-manager", "data").status = "disbanded";
+  resetWorld(domain, dissolvedSquad, mission);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.prepare",
+    operationId: "mission-prepare-disbanded",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      squad: ref(dissolvedSquad, "squad", "squad:S1"),
+      committedStrength: 5,
+      resources: [{ resourceId: "ammo", amount: 10 }]
+    }
+  }, { callerUserId: "P1" }), /dissolvido/i);
+
+  assert.equal(mission.getFlag("domain-manager", "data").status, "available");
+  assert.equal(mission.getFlag("domain-manager", "data").assignments.length, 0);
+  assert.equal(dissolvedSquad.getFlag("domain-manager", "data").status, "disbanded");
+  assert.equal(dissolvedSquad.getFlag("domain-manager", "data").currentMission, null);
+  assert.equal(dissolvedSquad.getFlag("domain-manager", "data").resources.find((entry) => entry.resourceId === "ammo").amount, 120);
+
+  const preparedSquad = squadDocument();
+  const preparedAssignment = assignmentForTest(preparedSquad, {
+    committedStrength: 8,
+    resources: [{ resourceId: "ammo", amount: 20 }]
+  });
+  const launchMission = missionDocument({ assignments: [preparedAssignment] });
+  const preparedData = preparedSquad.getFlag("domain-manager", "data");
+  preparedData.currentMission = ref(launchMission, "mission", "mission:M1");
+  preparedData.status = "disbanded";
+  resetWorld(domain, preparedSquad, launchMission);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.launch",
+    operationId: "mission-launch-disbanded",
+    payload: {
+      mission: ref(launchMission, "mission", "mission:M1"),
+      squads: [ref(preparedSquad, "squad", "squad:S1")]
+    }
+  }, { callerUserId: "GM" }), /dissolvido/i);
+
+  assert.equal(launchMission.getFlag("domain-manager", "data").status, "available");
+  assert.equal(launchMission.getFlag("domain-manager", "data").assignments[0].state, "prepared");
+  assert.equal(preparedSquad.getFlag("domain-manager", "data").status, "disbanded");
+  assert.equal(preparedSquad.getFlag("domain-manager", "data").resources.find((entry) => entry.resourceId === "ammo").amount, 120);
 });
 
 test("jogador sem audiência/controle é rejeitado e release desfaz compromisso antes do lançamento", async () => {
@@ -581,6 +655,177 @@ test("objetivos de Mission usam Command Kernel e retry idempotente não duplica"
     payload: { mission: ref(mission, "mission", "mission:M1"), localId: added.localId }
   }, { callerUserId: "GM" });
   assert.equal(mission.getFlag("domain-manager", "data").objectives.length, 1);
+});
+
+test("mission.cancel encerra estados planejado, disponível e ativo sem devolver suprimentos", async () => {
+  for (const status of ["planned", "available", "active"]) {
+    const domain = domainDocument();
+    const squad = squadDocument();
+    const assignmentState = status === "active" ? "deployed" : "prepared";
+    const assignments = status === "planned"
+      ? []
+      : [assignmentForTest(squad, {
+        state: assignmentState,
+        committedStrength: 12,
+        resources: [{ resourceId: "ammo", amount: 40 }]
+      })];
+    const mission = missionDocument({ status, assignments });
+
+    if (assignments.length) {
+      const squadData = squad.getFlag("domain-manager", "data");
+      squadData.currentMission = ref(mission, "mission", "mission:M1");
+      if (status === "active") {
+        squadData.status = "deployed";
+        squadData.resources.find((entry) => entry.resourceId === "ammo").amount = 80;
+      }
+    }
+
+    resetWorld(domain, squad, mission);
+    const ammoBefore = squad.getFlag("domain-manager", "data").resources.find((entry) => entry.resourceId === "ammo").amount;
+    const command = {
+      commandType: "mission.cancel",
+      operationId: `mission-cancel-${status}`,
+      payload: {
+        mission: ref(mission, "mission", "mission:M1"),
+        expectedModifiedTime: mission._stats.modifiedTime,
+        reason: `Cancelada em estado ${status}`,
+        squads: assignments.map((assignment) => ({
+          squad: assignment.squad,
+          expectedModifiedTime: squad._stats.modifiedTime
+        }))
+      }
+    };
+
+    const first = await dispatchAuthoritativeCommand(command, { callerUserId: "GM" });
+    const second = await dispatchAuthoritativeCommand(command, { callerUserId: "GM" });
+    const missionData = mission.getFlag("domain-manager", "data");
+    const squadData = squad.getFlag("domain-manager", "data");
+
+    assert.equal(first.duplicate, false);
+    assert.equal(second.duplicate, true, "retry do cancelamento deve reutilizar a receipt");
+    assert.equal(missionData.status, "cancelled");
+    assert.equal(missionData.outcomeSummary, `Cancelada em estado ${status}`);
+    assert.equal(missionData.resolvedAtWorldTime, 4200);
+    assert.equal(operationLedger.receipts.length, 1);
+    assert.equal(updateDocumentBatches.length, 1, "cancelamento deve persistir em um único batch");
+    assert.equal(updateDocumentBatches[0].length, 1 + assignments.length);
+
+    if (assignments.length) {
+      assert.equal(missionData.assignments[0].state, "returned");
+      assert.equal(squadData.currentMission, null);
+      assert.equal(squadData.resources.find((entry) => entry.resourceId === "ammo").amount, ammoBefore);
+      assert.equal(squadData.status, "ready");
+    }
+  }
+});
+
+test("mission.cancel é GM-only e rejeita Mission já encerrada", async () => {
+  const domain = domainDocument();
+  const mission = missionDocument({ status: "resolved" });
+  resetWorld(domain, mission);
+
+  const payload = {
+    mission: ref(mission, "mission", "mission:M1"),
+    expectedModifiedTime: mission._stats.modifiedTime,
+    reason: "Encerramento administrativo",
+    squads: []
+  };
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.cancel",
+    operationId: "mission-cancel-player-denied",
+    payload
+  }, { callerUserId: "P1" }), /Somente GM/i);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.cancel",
+    operationId: "mission-cancel-final-denied",
+    payload
+  }, { callerUserId: "GM" }), /planejada|disponível|ativa/i);
+
+  assert.equal(mission.getFlag("domain-manager", "data").status, "resolved");
+  assert.equal(operationLedger.receipts.length, 0);
+});
+
+test("mission.cancel rejeita revisões obsoletas e snapshot incompleto sem mutação parcial", async () => {
+  const domain = domainDocument();
+  const squad = squadDocument();
+  const assignment = assignmentForTest(squad);
+  const mission = missionDocument({ assignments: [assignment] });
+  squad.getFlag("domain-manager", "data").currentMission = ref(mission, "mission", "mission:M1");
+  resetWorld(domain, squad, mission);
+
+  const missionSnapshot = structuredClone(mission.getFlag("domain-manager", "data"));
+  const squadSnapshot = structuredClone(squad.getFlag("domain-manager", "data"));
+  const basePayload = {
+    mission: ref(mission, "mission", "mission:M1"),
+    expectedModifiedTime: mission._stats.modifiedTime,
+    reason: "Condições alteradas",
+    squads: [{ squad: assignment.squad, expectedModifiedTime: squad._stats.modifiedTime }]
+  };
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.cancel",
+    operationId: "mission-cancel-incomplete-snapshot",
+    payload: { ...basePayload, squads: [] }
+  }, { callerUserId: "GM" }), /Squads.*mudaram|reabra/i);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.cancel",
+    operationId: "mission-cancel-stale-mission",
+    payload: { ...basePayload, expectedModifiedTime: mission._stats.modifiedTime - 1 }
+  }, { callerUserId: "GM" }), /Mission mudou/i);
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.cancel",
+    operationId: "mission-cancel-stale-squad",
+    payload: {
+      ...basePayload,
+      squads: [{ squad: assignment.squad, expectedModifiedTime: squad._stats.modifiedTime - 1 }]
+    }
+  }, { callerUserId: "GM" }), /Squad mudou/i);
+
+  assert.deepEqual(mission.getFlag("domain-manager", "data"), missionSnapshot);
+  assert.deepEqual(squad.getFlag("domain-manager", "data"), squadSnapshot);
+  assert.equal(updateDocumentBatches.length, 0);
+  assert.equal(operationLedger.receipts.length, 0);
+});
+
+test("mission.cancel restaura Mission e Squads se a receipt falhar", async () => {
+  const domain = domainDocument();
+  const squad = squadDocument();
+  const assignment = assignmentForTest(squad, {
+    state: "deployed",
+    resources: [{ resourceId: "ammo", amount: 40 }]
+  });
+  const mission = missionDocument({ status: "active", assignments: [assignment] });
+  const squadData = squad.getFlag("domain-manager", "data");
+  squadData.currentMission = ref(mission, "mission", "mission:M1");
+  squadData.status = "deployed";
+  squadData.resources.find((entry) => entry.resourceId === "ammo").amount = 80;
+  resetWorld(domain, squad, mission);
+
+  const missionBefore = structuredClone(mission.getFlag("domain-manager", "data"));
+  const squadBefore = structuredClone(squad.getFlag("domain-manager", "data"));
+  failOperationLedgerWrite = true;
+
+  await assert.rejects(() => dispatchAuthoritativeCommand({
+    commandType: "mission.cancel",
+    operationId: "mission-cancel-ledger-failure",
+    payload: {
+      mission: ref(mission, "mission", "mission:M1"),
+      expectedModifiedTime: mission._stats.modifiedTime,
+      reason: "Cancelamento transitório",
+      squads: [{ squad: assignment.squad, expectedModifiedTime: squad._stats.modifiedTime }]
+    }
+  }, { callerUserId: "GM" }), /operation ledger failure/i);
+
+  assert.deepEqual(mission.getFlag("domain-manager", "data"), missionBefore);
+  assert.deepEqual(squad.getFlag("domain-manager", "data"), squadBefore);
+  assert.equal(updateDocumentBatches.length, 2, "commit e rollback devem usar batches completos");
+  assert.equal(updateDocumentBatches[0].length, 2);
+  assert.equal(updateDocumentBatches[1].length, 2);
+  assert.equal(operationLedger.receipts.length, 0);
 });
 
 test("APIs legadas de Mission delegam ao kernel e bloqueiam origem derivada direta", async () => {

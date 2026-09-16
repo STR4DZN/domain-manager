@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — Motion e abertura personalizada
+
+- Adiciona transições leves entre as áreas da aplicação, sem animações contínuas de alto custo.
+- Respeita `prefers-reduced-motion`, com perfis completo, reduzido e sem motion.
+- Exibe uma abertura individual por sessão, contextualizada com jogador, papel, mundo e domínio ativo.
+- Inclui testes unitários para as regras de preferência de motion e contexto da abertura.
+
 ## 0.2.0 — Base Operacional Consolidada
 
 ### Autoridade e gestão editável

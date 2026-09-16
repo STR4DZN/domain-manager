@@ -374,3 +374,185 @@ test("Domain delete restaura o mesmo JournalEntry se a receipt não puder ser pe
   assert.equal(recordIndex.get("domain", removable.uuid)?.uuid, removable.uuid);
   assert.equal(recordIndex.get("domain", removable.uuid)?.name, removable.name);
 });
+
+test("bridges legadas de Domain usam somente o Command Kernel", () => {
+  const actionsSource = fs.readFileSync(new URL("../scripts/features/domains/actions.js", import.meta.url), "utf8");
+  const mediaSource = fs.readFileSync(new URL("../scripts/features/domains/media.js", import.meta.url), "utf8");
+  const commandsSource = fs.readFileSync(new URL("../scripts/features/domains/commands.js", import.meta.url), "utf8");
+
+  for (const [label, source] of [["actions", actionsSource], ["media", mediaSource]]) {
+    assert.match(source, /executeCommandAuthoritatively/, `${label} precisa delegar ao kernel`);
+    assert.doesNotMatch(
+      source,
+      /createRecord|updateRecord|deleteRecord|recordIndex|decodeRecord|\.document\.update|JournalEntry\./,
+      `${label} não pode manter uma rota de escrita paralela`
+    );
+  }
+  assert.match(actionsSource, /COMMAND_TYPES\.DOMAIN_CREATE/);
+  assert.match(actionsSource, /COMMAND_TYPES\.DOMAIN_UPDATE/);
+  assert.match(mediaSource, /COMMAND_TYPES\.DOMAIN_MEDIA_UPDATE/);
+  assert.doesNotMatch(commandsSource, /from\s+["']\.\/actions\.js["']/);
+  assert.doesNotMatch(commandsSource, /from\s+["']\.\/media\.js["']/);
+});
+
+test("bridges de create/update preservam retorno legado, revisão e idempotência", async () => {
+  reset();
+  const actions = await import("../scripts/features/domains/actions.js");
+  const createPayload = {
+    name: "Porto Celeste",
+    description: "Entreposto de fronteira",
+    category: "Porto",
+    nature: "physical",
+    state: "active",
+    tags: ["fronteira"],
+    controllerIds: ["P1"],
+    managementPreset: "outpost",
+    operationId: "legacy-domain-create"
+  };
+
+  const created = await actions.createDomainAction(createPayload);
+  const duplicate = await actions.createDomainAction(createPayload);
+  assert.equal(created.uuid, duplicate.uuid);
+  assert.equal(created.recordType, "domain");
+  assert.equal(game.journal.length, 1, "retry da bridge não pode criar outro Domain");
+  assert.equal(operationLedger.receipts.length, 1);
+
+  const revision = created.document._stats.modifiedTime;
+  const updatePayload = {
+    domainUuid: created.uuid,
+    expectedModifiedTime: revision,
+    name: "Porto Celeste Prime",
+    description: "Entreposto ampliado",
+    category: "Porto",
+    nature: "physical",
+    state: "active",
+    tags: ["fronteira", "comercial"],
+    controllerIds: ["P1"],
+    locatedInUuid: null,
+    administrativeParentUuid: null,
+    operationId: "legacy-domain-update"
+  };
+  const updated = await actions.updateDomainAction(updatePayload);
+  const updateRetry = await actions.updateDomainAction(updatePayload);
+  assert.equal(updated.document.name, "Porto Celeste Prime");
+  assert.equal(updateRetry.document.name, "Porto Celeste Prime");
+  assert.equal(operationLedger.receipts.length, 2, "retry da bridge deve reutilizar a receipt do update");
+
+  await assert.rejects(() => actions.updateDomainAction({
+    ...updatePayload,
+    expectedModifiedTime: revision,
+    description: "Edição obsoleta",
+    operationId: "legacy-domain-update-stale"
+  }), /mudou enquanto o formulário/i);
+  assert.equal(created.document.getFlag("domain-manager", "data").description, "Entreposto ampliado");
+});
+
+test("bridge de mídia preserva revisão, valida campos e deduplica retry", async () => {
+  const d = domain();
+  reset(d);
+  const media = await import("../scripts/features/domains/media.js");
+  const revision = d._stats.modifiedTime;
+  const payload = {
+    domainUuid: d.uuid,
+    expectedModifiedTime: revision,
+    fields: [
+      ["visuals.bannerImg", "images/aurelia.webp"],
+      ["visuals.imagePosX", 140]
+    ],
+    operationId: "legacy-domain-media"
+  };
+
+  await media.updateDomainMediaFields(payload);
+  await media.updateDomainMediaFields(payload);
+  const stored = d.getFlag("domain-manager", "data");
+  assert.equal(stored.visuals.bannerImg, "images/aurelia.webp");
+  assert.equal(stored.visuals.imagePosX, 100, "coordenada visual continua limitada pelo contrato");
+  assert.equal(operationLedger.receipts.length, 1);
+
+  const staleRevision = d._stats.modifiedTime;
+  await d.update({ name: "Aurelia alterada" });
+  await assert.rejects(() => media.updateDomainMediaField({
+    domainUuid: d.uuid,
+    expectedModifiedTime: staleRevision,
+    fieldPath: "visuals.crestImg",
+    value: "images/crest.webp",
+    operationId: "legacy-domain-media-stale"
+  }), /mudou enquanto a edição de aparência/i);
+  assert.equal(d.getFlag("domain-manager", "data").visuals.crestImg, undefined);
+
+  await assert.rejects(() => media.updateDomainMediaField({
+    domainUuid: d.uuid,
+    fieldPath: "visuals.script",
+    value: "não permitido",
+    operationId: "legacy-domain-media-invalid"
+  }), /Campo de mídia não permitido/i);
+});
+
+test("rollback do kernel desfaz create e mídia feitos pelas bridges legadas", async () => {
+  reset();
+  const actions = await import("../scripts/features/domains/actions.js");
+  failLedgerWrite = true;
+  await assert.rejects(() => actions.createDomainAction({
+    name: "Domain transitório",
+    controllerIds: [],
+    operationId: "legacy-domain-create-rollback"
+  }), /ledger unavailable/i);
+  assert.equal(game.journal.length, 0, "Domain criado deve ser removido se a receipt falhar");
+
+  const d = domain();
+  d.flags["domain-manager"].data.visuals = { bannerImg: "images/original.webp" };
+  reset(d);
+  const media = await import("../scripts/features/domains/media.js");
+  failLedgerWrite = true;
+  await assert.rejects(() => media.updateDomainMediaField({
+    domainUuid: d.uuid,
+    fieldPath: "visuals.bannerImg",
+    value: "images/nao-commitado.webp",
+    operationId: "legacy-domain-media-rollback"
+  }), /ledger unavailable/i);
+  assert.equal(
+    d.getFlag("domain-manager", "data").visuals.bannerImg,
+    "images/original.webp",
+    "rollback deve restaurar os dados anteriores"
+  );
+});
+
+test("Person exige confirmação terminal e sai da unidade ao morrer ou se aposentar", async () => {
+  const d = domain();
+  const sq = squad(d);
+  reset(d, sq);
+  const created = await command("person.create", "person-terminal-create", {
+    domain: ref(d, "domain"),
+    name: "Rosa Vidal",
+    role: "Piloto",
+    morale: 70,
+    condition: 82,
+    status: "active",
+    squad: ref(sq, "squad")
+  });
+  const person = recordIndex.getByEntityId(created.entityId);
+  const terminalPayload = {
+    person: ref(person, "person"),
+    expectedModifiedTime: person._stats.modifiedTime,
+    name: "Rosa Vidal",
+    role: "Piloto veterana",
+    morale: 70,
+    condition: 82,
+    status: "retired",
+    squad: ref(sq, "squad")
+  };
+
+  await assert.rejects(
+    () => command("person.update", "person-terminal-unconfirmed", terminalPayload),
+    /confirme explicitamente/i
+  );
+  assert.equal(person.getFlag("domain-manager", "data").status, "active");
+  assert.equal(person.getFlag("domain-manager", "data").squad.entityId, "squad:SQ1");
+
+  await command("person.update", "person-terminal-confirmed", {
+    ...terminalPayload,
+    confirmTerminalTransition: true
+  });
+  assert.equal(person.getFlag("domain-manager", "data").status, "retired");
+  assert.equal(person.getFlag("domain-manager", "data").squad, null);
+});

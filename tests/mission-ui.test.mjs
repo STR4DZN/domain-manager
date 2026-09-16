@@ -26,6 +26,9 @@ const requiredMissionActions = [
   "launchMission",
   "cancelLaunchMission",
   "confirmLaunchMission",
+  "openMissionCancel",
+  "closeMissionCancel",
+  "confirmMissionCancel",
   "openMissionResolve",
   "closeMissionResolve",
   "submitMissionResolve"
@@ -39,7 +42,7 @@ test("Mission Control expõe todos os actions do lifecycle e todos estão regist
 });
 
 test("Mission Control chama exclusivamente os command types autoritativos para mutações operacionais", () => {
-  for (const type of ["MISSION_CREATE", "MISSION_UPDATE", "MISSION_PUBLISH", "MISSION_PREPARE", "MISSION_RELEASE", "MISSION_LAUNCH", "MISSION_RESOLVE"]) {
+  for (const type of ["MISSION_CREATE", "MISSION_UPDATE", "MISSION_PUBLISH", "MISSION_PREPARE", "MISSION_RELEASE", "MISSION_LAUNCH", "MISSION_CANCEL", "MISSION_RESOLVE"]) {
     assert.match(shell, new RegExp(`COMMAND_TYPES\\.${type}`));
   }
 });
@@ -69,18 +72,22 @@ test("Mission Control possui linguagem visual própria para cards, preparação 
   ]) assert.ok(viewsCss.includes(selector), `selector ausente: ${selector}`);
   for (const selector of [
     ".dm-mission-resource-form",
+    ".dm-mission-cancel-dialog",
+    ".dm-mission-cancel-impact",
     ".dm-system-dialog--mission-resolve",
     ".dm-resolution-unit",
     ".dm-resolution-objective"
   ]) assert.ok(dialogsCss.includes(selector), `selector ausente: ${selector}`);
 });
 
-test("Mission Control remove mira decorativa e confirma release/launch antes do comando", () => {
+test("Mission Control remove mira decorativa e confirma release/launch/cancel antes do comando", () => {
   assert.ok(!template.includes("dm-target-reticle"));
   assert.match(template, /data-action="confirmReleaseMissionAssignment"/);
   assert.match(template, /data-action="confirmLaunchMission"/);
+  assert.match(template, /data-action="confirmMissionCancel"/);
   assert.match(shell, /pendingMissionRelease/);
   assert.match(shell, /pendingMissionLaunch/);
+  assert.match(shell, /pendingMissionCancel/);
 });
 
 test("formulários de Mission e Squad enviam revisão otimista", () => {
