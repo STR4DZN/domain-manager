@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 — Pacote para validação no Foundry
+
+- Publica o pacote atual com manifesto, tag e asset sincronizados para atualização pelo Foundry.
+- Mantém a camada de motion e abertura personalizada da linha 0.2.1.
+- Reserva a validação de permissões, exclusão de Domínios e correções de interface para o teste em ambiente Foundry.
+
 ## 0.2.1 — Motion e abertura personalizada
 
 - Adiciona transições leves entre as áreas da aplicação, sem animações contínuas de alto custo.
