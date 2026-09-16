@@ -17,9 +17,12 @@ function getOrCreateApplication() {
   return application;
 }
 
-async function renderRoute({ section = null, domainUuid = undefined } = {}) {
+// Todas as funções exportadas abaixo são portas de entrada no módulo, inclusive
+// as que já abrem uma seção específica a partir de um chat ou atalho.
+async function renderRoute({ section = null, domainUuid = undefined, presentIntro = true } = {}) {
   const app = getOrCreateApplication();
   app.setRoute({ section, domainUuid });
+  if (presentIntro) app.introPendingForModuleOpen = true;
   try {
     return await app.render({ force: true, focus: true });
   } catch (error) {

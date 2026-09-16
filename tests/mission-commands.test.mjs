@@ -190,6 +190,28 @@ function squadDocument({ id = "S1", entityId = "squad:S1", controllers = ["P1"] 
   });
 }
 
+function personDocument() {
+  return makeDocument({
+    id: "P1",
+    name: "Rudra",
+    recordType: "person",
+    ownership: { default: 0, P1: 2 },
+    data: {
+      entityId: "person:P1",
+      primaryDomain: { recordType: "domain", uuid: "JournalEntry.D1", entityId: "domain:D1" },
+      squad: null,
+      currentLocation: null,
+      role: "Especialista",
+      specialization: "Reconhecimento",
+      morale: 70,
+      condition: 100,
+      status: "active",
+      tags: [],
+      notes: ""
+    }
+  });
+}
+
 function missionDocument({ status = "available", assignments = [], audience = ["P1"] } = {}) {
   return makeDocument({
     id: "M1",
@@ -267,6 +289,37 @@ test("GM cria Mission no Domain e audiência recebe ownership OBSERVER", async (
   assert.equal(created.ownership.P1, 2);
   assert.equal(created.getFlag("domain-manager", "data").status, "available");
   assert.equal(created.getFlag("domain-manager", "data").assignments.length, 0);
+});
+
+test("GM pode criar e lançar Mission somente com Pessoas designadas", async () => {
+  const domain = domainDocument();
+  const person = personDocument();
+  resetWorld(domain, person);
+
+  const result = await dispatchAuthoritativeCommand({
+    commandType: "mission.create",
+    operationId: "mission-create-person-1",
+    payload: {
+      name: "Operação Sombra",
+      primaryDomain: ref(domain, "domain", "domain:D1"),
+      status: "available",
+      personAssignments: [ref(person, "person", "person:P1")]
+    }
+  }, { callerUserId: "GM" });
+
+  const mission = game.journal.find((entry) => entry.uuid === result.uuid);
+  assert.equal(mission.getFlag("domain-manager", "data").personAssignments[0].entityId, "person:P1");
+  recordIndex.rebuild();
+  await dispatchAuthoritativeCommand({
+    commandType: "mission.launch",
+    operationId: "mission-launch-person-1",
+    payload: {
+      mission: ref(mission, "mission", mission.getFlag("domain-manager", "data").entityId),
+      expectedModifiedTime: mission._stats.modifiedTime,
+      squads: []
+    }
+  }, { callerUserId: "GM" });
+  assert.equal(mission.getFlag("domain-manager", "data").status, "active");
 });
 
 test("jogador prepara Squad, lançamento consome recursos uma vez e resolução aplica consequências", async () => {

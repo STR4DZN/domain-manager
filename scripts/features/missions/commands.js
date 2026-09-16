@@ -93,6 +93,27 @@ function ensureSquadBelongsToMissionDomain(squad, mission) {
   throw new ModuleError(ERROR_CODES.VALIDATION, "Squad não pertence a um Domain vinculado à Mission.");
 }
 
+function ensurePersonBelongsToMissionDomain(person, mission) {
+  const parent = person.data.primaryDomain;
+  if (!parent) throw new ModuleError(ERROR_CODES.VALIDATION, "Pessoa não possui Domain principal.");
+  const allowed = new Set([mission.data.primaryDomainUuid, ...(mission.data.relatedDomainUuids ?? [])]);
+  if (parent.uuid && allowed.has(parent.uuid)) return;
+  const parentDocument = parent.entityId ? recordIndex.getByEntityId(parent.entityId) : null;
+  if (parentDocument && allowed.has(parentDocument.uuid)) return;
+  throw new ModuleError(ERROR_CODES.VALIDATION, "Pessoa não pertence a um Domain vinculado à Mission.");
+}
+
+function resolveMissionPeople(references, mission) {
+  return (references ?? []).map((reference) => {
+    const person = resolve(reference, RECORD_TYPES.PERSON);
+    if (["dead", "retired"].includes(person.data.status)) {
+      throw new ModuleError(ERROR_CODES.CONFLICT, `Pessoa ${person.document.name} não está disponível para Missions.`);
+    }
+    ensurePersonBelongsToMissionDomain(person, mission);
+    return person;
+  });
+}
+
 function ensureSquadIsOperational(squad) {
   if (squad.data.status === "disbanded") {
     throw new ModuleError(ERROR_CODES.CONFLICT, `Squad ${squad.document.name} está dissolvido e não pode participar de Missions.`);
@@ -124,6 +145,8 @@ export async function executeMissionCreate({ payload, callerUserId }) {
   }
   assertAudience(normalized.audienceUserIds);
 
+  const missionScope = { data: { primaryDomainUuid: domain.uuid, relatedDomainUuids: related.map((entry) => entry.uuid) } };
+  const assignedPeople = resolveMissionPeople(normalized.personAssignments, missionScope);
   const created = await createRecord({
     recordType: RECORD_TYPES.MISSION,
     name: normalized.name,
@@ -137,6 +160,7 @@ export async function executeMissionCreate({ payload, callerUserId }) {
       audienceUserIds: normalized.audienceUserIds,
       objectives: normalized.objectives,
       assignments: [],
+      personAssignments: assignedPeople.map(ref),
       startedAtWorldTime: null,
       resolvedAtWorldTime: null,
       outcomeSummary: normalized.outcomeSummary
@@ -178,6 +202,10 @@ export async function executeMissionUpdate({ payload, callerUserId }) {
   if (domainSetChanged && (mission.data.assignments?.length ?? 0) > 0) {
     throw new ModuleError(ERROR_CODES.CONFLICT, "Libere os Squads preparados antes de alterar os Domains da Mission.");
   }
+  const missionScope = { data: { primaryDomainUuid: primary.uuid, relatedDomainUuids: related.map((entry) => entry.uuid) } };
+  const assignedPeople = normalized.personAssignments == null
+    ? null
+    : resolveMissionPeople(normalized.personAssignments, missionScope);
 
   const before = {
     name: mission.document.name,
@@ -190,6 +218,7 @@ export async function executeMissionUpdate({ payload, callerUserId }) {
   data.briefing = normalized.briefing;
   data.audienceUserIds = normalized.audienceUserIds;
   data.outcomeSummary = normalized.outcomeSummary;
+  if (assignedPeople) data.personAssignments = assignedPeople.map(ref);
   if (normalized.objectives) {
     const objectiveIds = new Set();
     data.objectives = normalized.objectives.map((objective) => {
@@ -420,7 +449,9 @@ export async function executeMissionLaunch({ payload, callerUserId }) {
   const mission = resolve(normalized.mission, RECORD_TYPES.MISSION);
   assertRevision(mission, normalized.expectedModifiedTime);
   if (mission.data.status !== "available") throw new ModuleError(ERROR_CODES.CONFLICT, "Somente Mission disponível pode ser lançada.");
-  if (!(mission.data.assignments?.length)) throw new ModuleError(ERROR_CODES.CONFLICT, "Mission precisa de pelo menos um Squad preparado.");
+  if (!((mission.data.assignments?.length ?? 0) + (mission.data.personAssignments?.length ?? 0))) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, "Mission precisa de pelo menos uma Força ou Pessoa designada.");
+  }
   const suppliedSquads = normalized.squads.map((reference) => resolve(reference, RECORD_TYPES.SQUAD));
   if (suppliedSquads.length !== mission.data.assignments.length
     || mission.data.assignments.some((assignment) => !suppliedSquads.some((squad) => sameRef(assignment.squad, squad)))) {

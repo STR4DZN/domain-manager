@@ -88,6 +88,10 @@ export class MissionModel extends foundry.abstract.DataModel {
       ),
       objectives: new ArrayField(objectiveSchema(), { required: true, nullable: false, initial: [] }),
       assignments: new ArrayField(assignmentSchema(), { required: true, nullable: false, initial: [] }),
+      personAssignments: new ArrayField(
+        entityReferenceSchema({ allowedTypes: [RECORD_TYPES.PERSON] }),
+        { required: true, nullable: false, initial: [] }
+      ),
       startedAtWorldTime: nullableNumber(),
       resolvedAtWorldTime: nullableNumber(),
       outcomeSummary: new StringField({ required: true, nullable: false, blank: true, initial: "" })
@@ -124,6 +128,12 @@ export class MissionModel extends foundry.abstract.DataModel {
       if ((assignment.result?.casualties ?? 0) > assignment.committedStrength) {
         throw new Error("Mission assignment casualties não pode exceder committedStrength.");
       }
+    }
+
+    const personAssignments = data?.personAssignments ?? [];
+    assertUniqueEntityReferences(personAssignments);
+    for (const person of personAssignments) {
+      normalizeEntityReference(person, { allowedTypes: [RECORD_TYPES.PERSON] });
     }
   }
 }

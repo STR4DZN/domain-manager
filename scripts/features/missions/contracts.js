@@ -20,6 +20,16 @@ function int(value, { min, max, label }) {
   }
   return n;
 }
+function people(references = []) {
+  const normalized = (references ?? []).map((entry) =>
+    normalizeEntityReference(entry, { allowedTypes: [RECORD_TYPES.PERSON] })
+  );
+  const keys = normalized.map((entry) => entry.entityId ?? entry.uuid);
+  if (new Set(keys).size !== keys.length) {
+    throw new ModuleError(ERROR_CODES.VALIDATION, "Pessoas duplicadas na Mission.");
+  }
+  return normalized;
+}
 
 export function normalizeMissionCreatePayload(payload = {}) {
   const name = text(payload.name);
@@ -53,6 +63,7 @@ export function normalizeMissionCreatePayload(payload = {}) {
     status,
     briefing: text(payload.briefing),
     objectives,
+    personAssignments: people(payload.personAssignments),
     outcomeSummary: text(payload.outcomeSummary)
   };
 }
@@ -61,7 +72,8 @@ export function missionCreateResourceKeys(payload = {}) {
   const normalized = normalizeMissionCreatePayload(payload);
   return [
     normalized.primaryDomain.entityId ?? normalized.primaryDomain.uuid,
-    ...(normalized.relatedDomains ?? []).map((entry) => entry.entityId ?? entry.uuid)
+    ...(normalized.relatedDomains ?? []).map((entry) => entry.entityId ?? entry.uuid),
+    ...normalized.personAssignments.map((entry) => entry.entityId ?? entry.uuid)
   ].filter(Boolean);
 }
 
@@ -89,6 +101,7 @@ export function normalizeMissionUpdatePayload(payload = {}) {
     audienceUserIds: uniqueIds(payload.audienceUserIds),
     briefing: text(payload.briefing),
     outcomeSummary: text(payload.outcomeSummary),
+    personAssignments: payload.personAssignments == null ? null : people(payload.personAssignments),
     objectives: payload.objectives == null ? null : (payload.objectives ?? []).map((objective, index) => normalizeObjective({
       localId: text(objective.localId) || `new-objective-${index + 1}`,
       title: objective.title,
@@ -104,7 +117,8 @@ export function missionUpdateResourceKeys(payload = {}) {
   return [
     normalized.mission.entityId ?? normalized.mission.uuid,
     normalized.primaryDomain.entityId ?? normalized.primaryDomain.uuid,
-    ...normalized.relatedDomains.map((entry) => entry.entityId ?? entry.uuid)
+    ...normalized.relatedDomains.map((entry) => entry.entityId ?? entry.uuid),
+    ...(normalized.personAssignments ?? []).map((entry) => entry.entityId ?? entry.uuid)
   ].filter(Boolean);
 }
 

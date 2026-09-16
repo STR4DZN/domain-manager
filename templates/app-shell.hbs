@@ -1055,6 +1055,12 @@
           <label class="dm-field dm-field--wide"><span>Objetivos · um por linha</span><textarea name="objectives" rows="4" placeholder="Localizar o transmissor&#10;Recuperar inteligência&#10;Extrair sem comprometer a posição">{{editingMission.objectiveLines}}</textarea><small>Ao salvar, linhas removidas deixam de fazer parte do planejamento.</small></label>
           <label class="dm-field dm-field--wide"><span>Notas de planejamento</span><textarea name="outcomeSummary" rows="2" placeholder="Observações internas antes do lançamento...">{{editingMission.outcomeSummary}}</textarea></label>
           <fieldset class="dm-controller-grid dm-field--wide">
+            <legend>Pessoas designadas</legend>
+            {{#each missionPersonOptions}}
+              <label class="dm-controller-option"><input type="checkbox" name="personEntityIds" value="{{entityId}}" {{#if checked}}checked{{/if}} /><span class="dm-sysdot"></span><strong>{{name}}</strong><small>{{role}} · {{statusLabel}}</small></label>
+            {{else}}<div class="dm-muted">Cadastre pessoas ativas neste domínio para designá-las individualmente.</div>{{/each}}
+          </fieldset>
+          <fieldset class="dm-controller-grid dm-field--wide">
             <legend>Visibilidade</legend>
             {{#each missionAudienceOptions}}
               <label class="dm-controller-option"><input type="checkbox" name="audienceUserIds" value="{{id}}" {{#if checked}}checked{{/if}} /><span class="dm-sysdot {{#if active}}is-online{{/if}}"></span><strong>{{name}}</strong><small>{{#if active}}ATIVO{{else}}INATIVO{{/if}}</small></label>

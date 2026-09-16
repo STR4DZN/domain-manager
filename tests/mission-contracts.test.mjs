@@ -12,6 +12,7 @@ const {
 const domain = { recordType: "domain", uuid: "JournalEntry.D1", entityId: "domain:D1" };
 const mission = { recordType: "mission", uuid: "JournalEntry.M1", entityId: "mission:M1" };
 const squad = { recordType: "squad", uuid: "JournalEntry.S1", entityId: "squad:S1" };
+const person = { recordType: "person", uuid: "JournalEntry.P1", entityId: "person:P1" };
 
 test("Mission create normaliza audiência e objetivos para operação disponível", () => {
   const value = normalizeMissionCreatePayload({
@@ -19,7 +20,8 @@ test("Mission create normaliza audiência e objetivos para operação disponíve
     primaryDomain: domain,
     audienceUserIds: ["P1", "P1", "P2"],
     briefing: " Reconhecer setor ",
-    objectives: [{ title: " Localizar transmissor ", optional: false }]
+    objectives: [{ title: " Localizar transmissor ", optional: false }],
+    personAssignments: [person]
   });
 
   assert.equal(value.name, "Operação Farol");
@@ -27,6 +29,15 @@ test("Mission create normaliza audiência e objetivos para operação disponíve
   assert.deepEqual(value.audienceUserIds, ["P1", "P2"]);
   assert.equal(value.objectives[0].localId, "objective-1");
   assert.equal(value.objectives[0].status, "pending");
+  assert.deepEqual(value.personAssignments, [person]);
+});
+
+test("Mission create rejeita a mesma Pessoa mais de uma vez", () => {
+  assert.throws(() => normalizeMissionCreatePayload({
+    name: "Operação Duplicada",
+    primaryDomain: domain,
+    personAssignments: [person, person]
+  }), /Pessoas duplicadas/i);
 });
 
 test("Mission prepare rejeita recurso duplicado e efetivo inválido", () => {

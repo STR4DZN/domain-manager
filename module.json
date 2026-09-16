@@ -2,7 +2,7 @@
   "id": "domain-manager",
   "title": "Domínios // Domain Manager",
   "description": "Framework estratégico e operacional imersivo para gestão de domínios, bases, squads, recursos, projetos e missões no Foundry VTT v13.",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "authors": [
     {
       "name": "Fusion",
@@ -11,7 +11,7 @@
   ],
   "url": "https://github.com/STR4DZN/domain-manager",
   "manifest": "https://raw.githubusercontent.com/STR4DZN/domain-manager/main/module.json",
-  "download": "https://github.com/STR4DZN/domain-manager/releases/download/v0.2.5/domain-manager-v0.2.5.zip",
+  "download": "https://github.com/STR4DZN/domain-manager/releases/download/v0.2.6/domain-manager-v0.2.6.zip",
   "compatibility": {
     "minimum": "13.341",
     "verified": "13.351"

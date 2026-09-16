@@ -1,5 +1,7 @@
 const MOTION_MODES = new Set(["full", "reduced", "none"]);
-const INTRO_DURATION = Object.freeze({ full: 1800, reduced: 520 });
+// A abertura é uma confirmação de contexto, não uma mensagem de sessão: ela
+// dura quatro segundos quando o usuário abre o módulo pelo ponto de entrada.
+const INTRO_DURATION_MS = 4_000;
 
 export function resolveMotionMode({ preference = "full", prefersReducedMotion = false } = {}) {
   const selected = MOTION_MODES.has(preference) ? preference : "full";
@@ -11,8 +13,8 @@ export function introSessionKey(world, user) {
   return `domain-manager:intro:${world?.id ?? "world"}:${user?.id ?? "user"}`;
 }
 
-export function shouldPresentPlayerIntro({ alreadySeen = false, user } = {}) {
-  return Boolean(user?.id) && !alreadySeen;
+export function shouldPresentPlayerIntro({ user } = {}) {
+  return Boolean(user?.id);
 }
 
 export function buildPlayerIntroProfile({ user, world, domain } = {}) {
@@ -45,10 +47,7 @@ export function presentPlayerIntro({ root, user, world, domain } = {}) {
   const mode = currentMotionMode();
   if (mode === "none") return false;
 
-  const key = introSessionKey(world, user);
-  const alreadySeen = readSessionFlag(key);
-  if (!shouldPresentPlayerIntro({ alreadySeen, user })) return false;
-  writeSessionFlag(key);
+  if (!shouldPresentPlayerIntro({ user })) return false;
 
   const profile = buildPlayerIntroProfile({ user, world, domain });
   const overlay = createIntroOverlay(profile);
@@ -82,7 +81,7 @@ export function presentPlayerIntro({ root, user, world, domain } = {}) {
       { opacity: 1, transform: "translateY(0)" },
     ], motionOptions(mode, { duration: 280 }));
   }
-  globalThis.setTimeout?.(dismiss, INTRO_DURATION[mode] ?? 0);
+  globalThis.setTimeout?.(dismiss, INTRO_DURATION_MS);
   return true;
 }
 
@@ -139,20 +138,4 @@ function createIntroOverlay(profile) {
 function removeIntro(root, overlay) {
   overlay.remove();
   if (root.dataset.dmIntro === "active") delete root.dataset.dmIntro;
-}
-
-function readSessionFlag(key) {
-  try {
-    return globalThis.sessionStorage?.getItem(key) === "seen";
-  } catch {
-    return false;
-  }
-}
-
-function writeSessionFlag(key) {
-  try {
-    globalThis.sessionStorage?.setItem(key, "seen");
-  } catch {
-    // Storage can be unavailable in hardened browser contexts; the intro remains functional.
-  }
 }

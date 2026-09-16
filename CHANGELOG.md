@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6 — abertura do módulo e Pessoas em Missões
+
+- A abertura personalizada agora é acionada ao entrar no módulo, dura quatro segundos e volta a aparecer em cada nova abertura do Domain Manager; ela não é reiniciada por navegação, renderização ou janelas internas.
+- Missions podem designar Pessoas individuais além de Forças. A seleção é validada contra pessoas duplicadas, inativas em definitivo e de outro Domain; uma Mission só com Pessoas também pode ser iniciada.
+
 ## 0.2.5 — Migração de Pessoas legadas
 
 - Pessoas mostradas como `LEGACY` agora abrem o editor; ao salvar, o módulo cria o cadastro atual e remove o item embutido do domínio na mesma transação.

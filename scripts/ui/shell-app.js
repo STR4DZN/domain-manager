@@ -419,6 +419,9 @@ function buildLegacyPeople(domain) {
 
 export class DomainManagerShellApp extends HandlebarsApplicationMixin(ApplicationV2) {
   activeView = "command";
+  // Esta fila é armada exclusivamente pela entrada pública do módulo. Assim a
+  // abertura não se repete em re-renderizações, navegação ou janelas internas.
+  introPendingForModuleOpen = false;
   selectedDomainUuid = null;
   searchQuery = "";
   isCreateDomainOpen = false;
@@ -746,7 +749,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     super._onRender?.(context, options);
     const root = this.element?.querySelector?.(".dm-os");
     applyShellMotion(root, { previousView: this.lastMotionView, nextView: this.activeView });
-    presentPlayerIntro({ root, user: game.user, world: game.world, domain: context.selectedDomain });
+    if (this.introPendingForModuleOpen) {
+      this.introPendingForModuleOpen = false;
+      presentPlayerIntro({ root, user: game.user, world: game.world, domain: context.selectedDomain });
+    }
     this.lastMotionView = this.activeView;
     this.#syncResponsiveState();
     const search = this.element?.querySelector?.("[data-dm-search]");
@@ -1355,6 +1361,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       : reference?.uuid
         ? recordIndex.get(RECORD_TYPES.SQUAD, reference.uuid)
         : null;
+    const personDocumentForReference = (reference) => reference?.entityId
+      ? recordIndex.getByEntityId(reference.entityId)
+      : reference?.uuid
+        ? recordIndex.get(RECORD_TYPES.PERSON, reference.uuid)
+        : null;
 
     const missions = related.missions.map((record) => {
       const assignments = (record.data.assignments ?? []).map((assignment) => {
@@ -1395,6 +1406,17 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         isPrepared: assignments.some((assignment) => assignment.squadUuid === squad.uuid),
         prepareLabel: assignments.some((assignment) => assignment.squadUuid === squad.uuid) ? "RECONFIGURAR" : "PREPARAR"
       }));
+      const personAssignments = (record.data.personAssignments ?? []).map((reference) => {
+        const personDocument = personDocumentForReference(reference);
+        const personRecord = personDocument ? decodeRecord(personDocument) : null;
+        return {
+          uuid: personRecord?.uuid ?? reference.uuid ?? "",
+          entityId: personRecord?.data.entityId ?? reference.entityId ?? "",
+          name: personDocument?.name ?? "Pessoa indisponível",
+          role: personRecord?.data.role ?? "Pessoa",
+          statusLabel: stateLabel(personRecord?.data.status ?? "unknown")
+        };
+      });
       const completedObjectives = (record.data.objectives ?? []).filter((objective) => objective.status === "completed").length;
       const failedObjectives = (record.data.objectives ?? []).filter((objective) => objective.status === "failed").length;
       return {
@@ -1413,13 +1435,15 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         failedObjectives,
         assignments,
         assignmentCount: assignments.length,
+        personAssignments,
+        personAssignmentCount: personAssignments.length,
         committedStrength: assignments.reduce((sum, assignment) => sum + Number(assignment.committedStrength ?? 0), 0),
         eligibleSquads,
         audienceNames: (record.data.audienceUserIds ?? []).map((id) => game.users.get(id)?.name ?? id),
         audienceLabel: (record.data.audienceUserIds ?? []).length
           ? (record.data.audienceUserIds ?? []).map((id) => game.users.get(id)?.name ?? id).join(" · ")
           : "GM ONLY",
-        canLaunch: Boolean(isModuleManager(game.user) && record.data.status === "available" && assignments.length),
+        canLaunch: Boolean(isModuleManager(game.user) && record.data.status === "available" && (assignments.length || personAssignments.length)),
         canResolve: Boolean(isModuleManager(game.user) && record.data.status === "active"),
         canCancel: Boolean(isModuleManager(game.user) && ["planned", "available", "active"].includes(record.data.status)),
         canEdit: Boolean(isModuleManager(game.user) && ["planned", "available"].includes(record.data.status)),
@@ -1731,6 +1755,17 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       label: stateLabel(value),
       selected: (editingPerson?.status ?? "active") === value
     }));
+    const missionPersonOptions = people
+      .filter((person) => !person.legacy && !["dead", "retired"].includes(person.status))
+      .map((person) => ({
+        entityId: person.entityId,
+        name: person.name,
+        role: person.role,
+        statusLabel: stateLabel(person.status),
+        checked: Boolean((editingMissionRecord?.data.personAssignments ?? []).some((reference) => (
+          reference.entityId === person.entityId || reference.uuid === person.uuid
+        )))
+      }));
 
     const canManageTerritory = Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.territory);
     const canManageDiplomacy = Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.diplomacy);
@@ -2032,6 +2067,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       pendingMissionLaunch: this.pendingMissionLaunch,
       pendingMissionCancel: this.pendingMissionCancel,
       missionAudienceOptions,
+      missionPersonOptions,
       canCreateMission: Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.missions),
       editingSquad,
       supplySquad,
@@ -4245,6 +4281,10 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       title,
       status: mission?.data.objectives?.[index]?.status ?? "pending"
     }));
+    const personAssignments = data.getAll("personEntityIds")
+      .map((entityId) => recordIndex.getByEntityId(String(entityId)))
+      .filter(Boolean)
+      .map((document) => entityReference(decodeRecord(document)));
     this.isMissionBusy = true;
     try {
       if (mission) {
@@ -4265,7 +4305,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
             audienceUserIds: data.getAll("audienceUserIds"),
             briefing: String(data.get("briefing") ?? ""),
             outcomeSummary: String(data.get("outcomeSummary") ?? ""),
-            objectives
+            objectives,
+            personAssignments
           }
         });
       } else {
@@ -4277,7 +4318,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
             audienceUserIds: data.getAll("audienceUserIds"),
             status: String(data.get("status") ?? "available"),
             briefing: String(data.get("briefing") ?? ""),
-            objectives
+            objectives,
+            personAssignments
           }
         });
       }

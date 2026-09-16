@@ -31,6 +31,6 @@ test("abertura usa o contexto real do jogador, mundo e domínio", () => {
     },
   );
   assert.equal(introSessionKey({ id: "world-omega" }, { id: "player-7" }), "domain-manager:intro:world-omega:player-7");
-  assert.equal(shouldPresentPlayerIntro({ alreadySeen: false, user: { id: "player-7" } }), true);
-  assert.equal(shouldPresentPlayerIntro({ alreadySeen: true, user: { id: "player-7" } }), false);
+  assert.equal(shouldPresentPlayerIntro({ user: { id: "player-7" } }), true);
+  assert.equal(shouldPresentPlayerIntro({ alreadySeen: true, user: { id: "player-7" } }), true);
 });
