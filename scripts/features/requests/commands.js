@@ -4,6 +4,7 @@ import { hasCapability } from "../../core/management-contracts.js";
 import { createRecord, deleteRecord, updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import { canControlDomain } from "../domains/rules.js";
 import { normalizeRequestDraft, planRequestDecision, planRequestFulfillment, planRequestResubmission, planRequestWithdrawal } from "./rules.js";
 import { normalizeRequestCreatePayload, normalizeRequestLifecyclePayload, normalizeRequestMissionPayload, normalizeRequestResubmitPayload, normalizeRequestReviewPayload } from "./contracts.js";
@@ -139,8 +140,8 @@ export async function executeRequestResubmit({ payload, callerUserId }) {
 export async function executeRequestReview({ payload, callerUserId }) {
   const normalized = normalizeRequestReviewPayload(payload);
   const caller = callerFromId(callerUserId);
-  if (!caller.isGM) {
-    throw new ModuleError(ERROR_CODES.PERMISSION, "A revisão oficial de Requests é exclusiva do GM.");
+  if (!isModuleManager(caller)) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "A revisão oficial de Requests é exclusiva do Mestre ou Assistente do Mestre.");
   }
 
   const request = resolveReference(normalized.request, RECORD_TYPES.REQUEST, "Request");
@@ -215,8 +216,8 @@ function missionResult(record, { reused = false } = {}) {
 export async function executeRequestCreateMission({ payload, callerUserId }) {
   const normalized = normalizeRequestMissionPayload(payload);
   const caller = callerFromId(callerUserId);
-  if (!caller.isGM) {
-    throw new ModuleError(ERROR_CODES.PERMISSION, "Somente GM pode materializar uma Request como Mission.");
+  if (!isModuleManager(caller)) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "Somente o Mestre ou Assistente do Mestre pode materializar uma Request como Mission.");
   }
 
   const request = resolveReference(normalized.request, RECORD_TYPES.REQUEST, "Request");
@@ -389,8 +390,8 @@ export async function executeRequestWithdraw({ payload, callerUserId }) {
 export async function executeRequestFulfill({ payload, callerUserId }) {
   const normalized = normalizeRequestLifecyclePayload(payload);
   const caller = callerFromId(callerUserId);
-  if (!caller.isGM) {
-    throw new ModuleError(ERROR_CODES.PERMISSION, "Somente GM pode confirmar o cumprimento de uma Request.");
+  if (!isModuleManager(caller)) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "Somente o Mestre ou Assistente do Mestre pode confirmar o cumprimento de uma Request.");
   }
 
   const request = resolveReference(normalized.request, RECORD_TYPES.REQUEST, "Request");

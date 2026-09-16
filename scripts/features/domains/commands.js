@@ -21,6 +21,7 @@ import {
   wouldCreateCycle
 } from "./hierarchy.js";
 import { normalizeDomainDraft } from "./rules.js";
+import { isModuleManager } from "../../core/permissions.js";
 
 const STRING_VISUAL_FIELDS = new Set([
   "visuals.bannerImg",
@@ -305,10 +306,10 @@ async function updateDomainMediaRecord({
 
 function caller(callerUserId) {
   const actor = game.users.get(callerUserId);
-  if (!actor?.isGM) {
+  if (!isModuleManager(actor)) {
     throw new ModuleError(
       ERROR_CODES.PERMISSION,
-      "Somente GM pode criar ou editar Domains oficiais."
+      "Somente o Mestre ou Assistente do Mestre pode criar ou editar Domains oficiais."
     );
   }
   return actor;
@@ -431,6 +432,76 @@ async function restoreDeletedDocument(snapshot) {
   return restored;
 }
 
+function referenceMatchesDomain(reference, domain) {
+  if (!reference) return false;
+  if (typeof reference === "string") return reference === domain.uuid || reference === domain.data.entityId;
+  return reference.uuid === domain.uuid || reference.entityId === domain.data.entityId;
+}
+
+function uniqueRecords(records) {
+  return [...new Map(records.filter(Boolean).map((record) => [record.uuid, record])).values()];
+}
+
+function cascadeOwnedRecords(domain) {
+  const from = (type, predicate) => recordIndex.list(type)
+    .map(decodeRecord).filter((record) => record && predicate(record.data ?? {}));
+  return uniqueRecords([
+    ...from(RECORD_TYPES.PROJECT, (data) => data.domainUuid === domain.uuid),
+    ...from(RECORD_TYPES.STRUCTURE, (data) => referenceMatchesDomain(data.domain, domain)),
+    ...from(RECORD_TYPES.MISSION, (data) => data.primaryDomainUuid === domain.uuid),
+    ...from(RECORD_TYPES.REQUEST, (data) => data.primaryDomainUuid === domain.uuid),
+    ...from(RECORD_TYPES.SQUAD, (data) => referenceMatchesDomain(data.parentDomain, domain)),
+    ...from(RECORD_TYPES.PERSON, (data) => referenceMatchesDomain(data.primaryDomain, domain))
+  ]);
+}
+
+function cleanupExternalReference(record, domain) {
+  const data = foundry.utils.deepClone(record.data);
+  let changed = false;
+  const remove = (key, predicate) => {
+    const before = data[key] ?? [];
+    const after = before.filter((entry) => !predicate(entry));
+    if (after.length !== before.length) { data[key] = after; changed = true; }
+  };
+  if (record.recordType === RECORD_TYPES.DOMAIN) {
+    if (data.hierarchy?.locatedInUuid === domain.uuid) { data.hierarchy.locatedInUuid = null; changed = true; }
+    if (data.hierarchy?.administrativeParentUuid === domain.uuid) { data.hierarchy.administrativeParentUuid = null; changed = true; }
+    remove("relations", (entry) => entry.targetDomainUuid === domain.uuid || referenceMatchesDomain(entry.target, domain));
+    remove("agreements", (entry) => entry.targetDomainUuid === domain.uuid);
+    if (referenceMatchesDomain(data.territory?.controller, domain)) { data.territory.controller = null; changed = true; }
+    if (Array.isArray(data.territory?.influence)) {
+      const before = data.territory.influence;
+      const after = before.filter((entry) => !referenceMatchesDomain(entry.domain, domain));
+      if (after.length !== before.length) { data.territory.influence = after; changed = true; }
+    }
+    remove("intel", (entry) => referenceMatchesDomain(entry.targetDomain, domain));
+  }
+  if ((record.recordType === RECORD_TYPES.MISSION || record.recordType === RECORD_TYPES.REQUEST)
+    && (data.relatedDomainUuids ?? []).includes(domain.uuid)) {
+    data.relatedDomainUuids = data.relatedDomainUuids.filter((uuid) => uuid !== domain.uuid); changed = true;
+  }
+  if (record.recordType === RECORD_TYPES.PERSON && referenceMatchesDomain(data.currentLocation, domain)) {
+    data.currentLocation = null; changed = true;
+  }
+  return changed ? data : null;
+}
+
+function cascadeExternalRecords(domain, ownedUuids) {
+  const updates = [];
+  for (const type of [RECORD_TYPES.DOMAIN, RECORD_TYPES.MISSION, RECORD_TYPES.REQUEST, RECORD_TYPES.PERSON]) {
+    for (const document of recordIndex.list(type)) {
+      if (document.uuid === domain.uuid || ownedUuids.has(document.uuid)) continue;
+      const record = decodeRecord(document);
+      const data = record ? cleanupExternalReference(record, domain) : null;
+      if (data) updates.push({ record, data });
+    }
+  }
+  const agreements = recordIndex.list(RECORD_TYPES.AGREEMENT).map(decodeRecord).filter(Boolean)
+    .filter((record) => (record.data.parties ?? []).some((party) => referenceMatchesDomain(party, domain))
+      || (record.data.transfers ?? []).some((entry) => referenceMatchesDomain(entry.fromDomain, domain) || referenceMatchesDomain(entry.toDomain, domain)));
+  return { updates, agreements };
+}
+
 export async function executeDomainDelete({ payload, callerUserId }) {
   caller(callerUserId);
   const normalized = normalizeDomainDeletePayload(payload);
@@ -445,17 +516,24 @@ export async function executeDomainDelete({ payload, callerUserId }) {
   }
 
   const dependencies = buildDomainDependencyReport(current);
-  if (dependencies.blocked) {
-    throw new ModuleError(
-      ERROR_CODES.CONFLICT,
-      `O Domain possui ${dependencies.total} vinculação(ões) e não pode ser excluído enquanto elas existirem.`
-    );
+  if (dependencies.blocked && !normalized.cascade) {
+    throw new ModuleError(ERROR_CODES.CONFLICT, `O Domain possui ${dependencies.total} vinculação(ões). Confirme a exclusão em cascata para continuar.`);
   }
 
-  const snapshot = snapshotDocument(current.document);
-  const result = { ...domainResult(current), dependencyCount: 0 };
-  await deleteRecord(current.uuid);
-  recordIndex.remove(current.uuid);
+  const owned = cascadeOwnedRecords(current);
+  const external = cascadeExternalRecords(current, new Set(owned.map((record) => record.uuid)));
+  const deleted = uniqueRecords([...owned, ...external.agreements, current]);
+  const deletedSnapshots = deleted.map((record) => snapshotDocument(record.document));
+  const updates = external.updates.map(({ record, data }) => ({
+    uuid: record.uuid, recordType: record.recordType, name: record.document.name, data,
+    beforeData: foundry.utils.deepClone(record.data), controllerIds: null
+  }));
+  for (const update of updates) await updateRecord(update);
+  for (const record of deleted) await deleteRecord(record.uuid);
+  const result = {
+    ...domainResult(current), dependencyCount: dependencies.total,
+    deletedRecordCount: deleted.length - 1, detachedReferenceCount: updates.length
+  };
 
   return {
     result,
@@ -465,7 +543,10 @@ export async function executeDomainDelete({ payload, callerUserId }) {
       entities: [current.data.entityId],
       payload: result
     }],
-    rollback: () => restoreDeletedDocument(snapshot)
+    rollback: async () => {
+      for (const update of updates) await updateRecord({ uuid: update.uuid, recordType: update.recordType, name: update.name, data: update.beforeData, controllerIds: update.controllerIds });
+      for (const snapshot of deletedSnapshots) await restoreDeletedDocument(snapshot);
+    }
   };
 }
 

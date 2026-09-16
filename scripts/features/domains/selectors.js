@@ -1,6 +1,7 @@
 import { RECORD_TYPES } from "../../core/constants.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 
 export function canViewDomainDocument(document, user = game.user) {
   if (!document || !user) return false;
@@ -18,10 +19,7 @@ export function listVisibleDomainRecords(user = game.user) {
 }
 
 export function listControlledDomainRecords(user = game.user) {
-  return listVisibleDomainRecords(user).filter((record) =>
-    user.isGM
-    || record.data.governance.controllers.includes(user.id)
-  );
+  return isModuleManager(user) ? listVisibleDomainRecords(user) : [];
 }
 
 export function getVisibleDomainRecord(uuid, user = game.user) {

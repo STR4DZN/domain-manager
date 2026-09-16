@@ -1013,16 +1013,16 @@
   {{#if isDomainDeleteOpen}}
     <div class="dm-modal-layer">
       <form id="dm-domain-delete-form" class="dm-system-dialog dm-system-dialog--wide dm-domain-delete-dialog" autocomplete="off">
-        <header class="dm-system-dialog__header"><div><span class="dm-kicker">DOMÍNIO // EXCLUSÃO PERMANENTE</span><h2>Excluir {{domainDeleteReport.domain.name}}</h2><p>A exclusão só é liberada quando nenhuma entidade ou configuração aponta para este domínio.</p></div><button type="button" class="dm-icon-button" data-action="cancelDeleteDomain" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+        <header class="dm-system-dialog__header"><div><span class="dm-kicker">DOMÍNIO // EXCLUSÃO PERMANENTE</span><h2>Excluir {{domainDeleteReport.domain.name}}</h2><p>Os registros próprios serão removidos e referências em outros domínios serão desvinculadas.</p></div><button type="button" class="dm-icon-button" data-action="cancelDeleteDomain" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
         <div class="dm-system-dialog__body dm-system-dialog__body--stacked">
           <input type="hidden" name="expectedModifiedTime" value="{{domainDeleteReport.domain.expectedModifiedTime}}" />
           <section class="dm-domain-delete-summary">
             <span class="dm-domain-delete-summary__icon"><i class="fa-solid fa-trash-can"></i></span>
             <div><small>REGISTRO SELECIONADO</small><strong>{{domainDeleteReport.domain.name}}</strong><code>{{domainDeleteReport.domain.entityId}}</code></div>
-            <em class="dm-chip dm-chip--{{#if domainDeleteReport.blocked}}critical{{else}}warning{{/if}}">{{domainDeleteReport.total}} VINCULAÇÃO(ÕES)</em>
+            <em class="dm-chip dm-chip--warning">{{domainDeleteReport.total}} VINCULAÇÃO(ÕES)</em>
           </section>
           {{#if domainDeleteReport.blocked}}
-            <section class="dm-domain-delete-blocked"><i class="fa-solid fa-shield-halved"></i><div><strong>Exclusão bloqueada para proteger os dados relacionados.</strong><p>Abra as áreas indicadas, reatribua ou encerre cada vínculo e volte a esta confirmação.</p></div></section>
+            <section class="dm-domain-delete-ready"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Exclusão em cascata.</strong><p>Os itens abaixo serão removidos quando pertencerem a este domínio; referências externas serão desvinculadas.</p></div></section>
             <div class="dm-domain-dependency-list">
               {{#each domainDeleteReport.groups}}
                 <section class="dm-domain-dependency-group">
@@ -1031,12 +1031,10 @@
                 </section>
               {{/each}}
             </div>
-          {{else}}
-            <section class="dm-domain-delete-ready"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Nenhuma dependência foi encontrada.</strong><p>Esta operação remove o JournalEntry e não pode ser desfeita pela interface. Digite o identificador abaixo para habilitar a ação final.</p></div></section>
-            <label class="dm-field dm-field--wide"><span>Confirmação obrigatória</span><input name="confirmation" data-domain-delete-confirmation data-confirmation="{{domainDeleteReport.domain.entityId}}" placeholder="Digite {{domainDeleteReport.domain.entityId}}" spellcheck="false" /></label>
-          {{/if}}
+          {{else}}<section class="dm-domain-delete-ready"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Nenhuma vinculação adicional foi encontrada.</strong><p>Esta operação remove o JournalEntry e não pode ser desfeita pela interface.</p></div></section>{{/if}}
+          <label class="dm-field dm-field--wide"><span>Confirmação obrigatória</span><input name="confirmation" data-domain-delete-confirmation data-confirmation="{{domainDeleteReport.domain.entityId}}" placeholder="Digite {{domainDeleteReport.domain.entityId}}" spellcheck="false" /></label>
         </div>
-        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelDeleteDomain" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button>{{#if domainDeleteReport.blocked}}<button type="button" class="dm-action-button dm-action-button--critical" disabled><i class="fa-solid fa-lock"></i> EXCLUSÃO BLOQUEADA</button>{{else}}<button type="button" class="dm-action-button dm-action-button--critical" data-action="submitDeleteDomain" data-domain-delete-submit disabled><i class="fa-solid fa-trash"></i> EXCLUIR PERMANENTEMENTE</button>{{/if}}</footer>
+        <footer class="dm-system-dialog__footer"><button type="button" class="dm-action-button dm-action-button--secondary" data-action="cancelDeleteDomain" {{#if isDomainBusy}}disabled{{/if}}>CANCELAR</button><button type="button" class="dm-action-button dm-action-button--critical" data-action="submitDeleteDomain" data-domain-delete-submit disabled><i class="fa-solid fa-trash"></i> EXCLUIR DOMÍNIO E VÍNCULOS</button></footer>
       </form>
     </div>
   {{/if}}

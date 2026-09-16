@@ -4,6 +4,7 @@ import { hasCapability } from "../../core/management-contracts.js";
 import { createRecord, deleteRecord, updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import {
   normalizePersonCreatePayload,
   normalizePersonUpdatePayload,
@@ -40,8 +41,8 @@ function controllers(domain) {
 
 function assertDomainCapability(domain, callerUserId, capability) {
   const actor = user(callerUserId);
-  if (!actor.isGM && !controllers(domain).includes(actor.id)) {
-    throw new ModuleError(ERROR_CODES.PERMISSION, `O usuário não controla o Domain '${domain.document.name}'.`);
+  if (!isModuleManager(actor)) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas o Mestre ou Assistente do Mestre pode alterar população e pessoas.");
   }
   if (!hasCapability(domain.data, capability)) {
     throw new ModuleError(ERROR_CODES.VALIDATION, `O Domain '${domain.document.name}' não possui a capability ${capability}.`);

@@ -1,5 +1,6 @@
 import { ModuleError, ERROR_CODES } from "../../core/errors.js";
 import { normalizeManagementConfig } from "../../core/management-contracts.js";
+import { isModuleManager } from "../../core/permissions.js";
 
 export function normalizeControllerIds(controllerIds) {
   return Array.from(new Set((controllerIds ?? []).filter(Boolean)));
@@ -21,8 +22,7 @@ export function normalizeTags(tags) {
 }
 
 export function canControlDomain(user, domainData) {
-  if (user?.isGM) return true;
-  return domainData?.governance?.controllers?.includes(user?.id) === true;
+  return isModuleManager(user);
 }
 
 export function assertCanControlDomain(user, domainData) {

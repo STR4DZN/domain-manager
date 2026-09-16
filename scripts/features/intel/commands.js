@@ -4,10 +4,11 @@ import { hasCapability } from "../../core/management-contracts.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import { normalizeIntelRemovePayload, normalizeIntelRevealPayload, normalizeIntelUpsertPayload } from "./contracts.js";
 
 function resolve(reference,expectedType){ const byId=reference?.entityId?recordIndex.getByEntityId(reference.entityId):null; const byUuid=reference?.uuid?recordIndex.get(expectedType,reference.uuid):null; if(byId&&byUuid&&byId.uuid!==byUuid.uuid) throw new ModuleError(ERROR_CODES.CONFLICT,"A referência aponta para UUID e entityId de entidades diferentes."); const doc=byId??byUuid; if(!doc) throw new ModuleError(ERROR_CODES.NOT_FOUND,`${expectedType} não encontrado.`); const r=decodeRecord(doc); if(r.recordType!==expectedType) throw new ModuleError(ERROR_CODES.VALIDATION,`Registro não é ${expectedType}.`); return r; }
-function assertGM(callerUserId){ const u=game.users.get(callerUserId); if(!u?.isGM) throw new ModuleError(ERROR_CODES.PERMISSION,"Apenas GM pode alterar inteligência persistente."); }
+function assertGM(callerUserId){ const u=game.users.get(callerUserId); if(!isModuleManager(u)) throw new ModuleError(ERROR_CODES.PERMISSION,"Apenas o Mestre ou Assistente do Mestre pode alterar inteligência persistente."); }
 function ref(record){ return {recordType:record.recordType,uuid:record.uuid,entityId:record.data.entityId}; }
 function assertIntel(domain){ if(!hasCapability(domain.data,"intel")) throw new ModuleError(ERROR_CODES.VALIDATION,`O Domain '${domain.document.name}' não possui capability intel.`); }
 function assertRevision(record,expectedModifiedTime){ if(expectedModifiedTime==null)return; if((record.document?._stats?.modifiedTime??null)!==expectedModifiedTime)throw new ModuleError(ERROR_CODES.CONFLICT,"O Domain mudou enquanto a informação estava aberta. Recarregue os dados antes de tentar novamente."); }

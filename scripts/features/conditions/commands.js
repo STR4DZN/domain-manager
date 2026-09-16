@@ -3,6 +3,7 @@ import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import { normalizeConditionCreatePayload, normalizeConditionReferencePayload, normalizeConditionUpdatePayload } from "./contracts.js";
 import { addDomainCondition, removeDomainCondition, updateDomainCondition } from "./rules.js";
 
@@ -17,7 +18,7 @@ function resolveDomain(reference) {
   return record;
 }
 function assertGM(callerUserId) {
-  if (!game.users.get(callerUserId)?.isGM) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas GM pode alterar Conditions persistentes.");
+  if (!isModuleManager(game.users.get(callerUserId))) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas o Mestre ou Assistente do Mestre pode alterar Conditions persistentes.");
 }
 function assertRevision(domain, expectedModifiedTime) {
   const currentModifiedTime = domain.document._stats?.modifiedTime ?? null;

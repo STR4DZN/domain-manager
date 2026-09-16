@@ -4,6 +4,7 @@ import { hasCapability } from "../../core/management-contracts.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import { normalizeTerritoryConfigurePayload } from "./contracts.js";
 
 function resolveReference(reference, expectedType) {
@@ -20,7 +21,7 @@ function resolveReference(reference, expectedType) {
 }
 function assertGM(callerUserId) {
   const actor = game.users.get(callerUserId);
-  if (!actor?.isGM) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas GM pode alterar controle territorial.");
+  if (!isModuleManager(actor)) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas o Mestre ou Assistente do Mestre pode alterar controle territorial.");
   return actor;
 }
 function ref(record) { return { recordType: record.recordType, uuid: record.uuid, entityId: record.data.entityId }; }

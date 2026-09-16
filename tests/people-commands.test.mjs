@@ -26,7 +26,7 @@ globalThis.Hooks = { callAll() {} };
 const users = new Map([
   ["GM", { id: "GM", uuid: "User.GM", name: "Primary GM", isGM: true, active: true }],
   ["GM2", { id: "GM2", uuid: "User.GM2", name: "Secondary GM", isGM: true, active: true }],
-  ["P1", { id: "P1", uuid: "User.P1", name: "Controller", isGM: false, active: true }],
+  ["P1", { id: "P1", uuid: "User.P1", name: "Assistant", role: 3, isGM: false, active: true }],
   ["P2", { id: "P2", uuid: "User.P2", name: "Visitor", isGM: false, active: true }]
 ]);
 users.get = Map.prototype.get.bind(users);
@@ -156,9 +156,9 @@ test("controlador configura população e retry é idempotente", async () => {
   assert.equal(second.duplicate, true);
 });
 
-test("population commands respeitam controlador e capability", async () => {
+test("population commands exigem Mestre ou Assistente e capability", async () => {
   const d = domain(); reset(d);
-  await assert.rejects(() => command("population.configure", "pop-denied", { domain: ref(d, "domain"), total: 10, morale: 60, countMode: "direct" }, "P2"), /não controla/i);
+  await assert.rejects(() => command("population.configure", "pop-denied", { domain: ref(d, "domain"), total: 10, morale: 60, countMode: "direct" }, "P2"), /Mestre ou Assistente/i);
   const noCapability = domain({ id: "D2", entityId: "domain:D2", population: false }); reset(noCapability);
   await assert.rejects(() => command("population.configure", "pop-cap", { domain: ref(noCapability, "domain"), total: 10, morale: 60, countMode: "direct" }), /capability population/i);
 });
@@ -240,7 +240,7 @@ test("Person update rejeita revisão obsoleta sem sobrescrever cadastro", async 
 
 test("Person rejeita visitante e Squad pertencente a outro Domain", async () => {
   const d1 = domain(); const d2 = domain({ id: "D2", entityId: "domain:D2" }); const sq2 = squad(d2, { id: "SQ2", entityId: "squad:SQ2" }); reset(d1, d2, sq2);
-  await assert.rejects(() => command("person.create", "person-denied", { domain: ref(d1, "domain"), name: "Visitor", morale: 60, condition: 100 }, "P2"), /não controla/i);
+  await assert.rejects(() => command("person.create", "person-denied", { domain: ref(d1, "domain"), name: "Visitor", morale: 60, condition: 100 }, "P2"), /Mestre ou Assistente/i);
   await assert.rejects(() => command("person.create", "person-cross", { domain: ref(d1, "domain"), name: "Wrong Squad", squad: ref(sq2, "squad"), morale: 60, condition: 100 }), /não pertence/i);
 });
 
@@ -310,18 +310,18 @@ test("Domain create/update/media passam pelo kernel para GM secundário", async 
   assert.equal(createdDocument.getFlag("domain-manager", "data").visuals.imagePosX, 72);
 });
 
-test("Domain commands rejeitam caller que não é GM", async () => {
+test("Domain commands rejeitam caller que não é Mestre nem Assistente", async () => {
   const d = domain(); reset(d);
   await assert.rejects(() => command("domain.create", "domain-denied-create", {
     name: "Inválido"
-  }, "P1"), /Somente GM/i);
+  }, "P2"), /Mestre ou Assistente/i);
   await assert.rejects(() => command("domain.media-update", "domain-denied-media", {
     domain: ref(d, "domain"),
     fields: [["visuals.bannerImg", "images/nope.webp"]]
-  }, "P1"), /Somente GM/i);
+  }, "P2"), /Mestre ou Assistente/i);
 });
 
-test("Domain delete bloqueia registros com dependências e preserva todos os documentos", async () => {
+test("Domain delete remove registros próprios e desfaz referências externas", async () => {
   const parent = domain();
   const child = domain({ id: "D2", entityId: "domain:D2" });
   child.flags["domain-manager"].data.hierarchy = {
@@ -331,14 +331,16 @@ test("Domain delete bloqueia registros com dependências e preserva todos os doc
   const linkedStructure = structure(parent);
   reset(parent, child, linkedStructure);
 
-  await assert.rejects(() => command("domain.delete", "domain-delete-blocked", {
+  const result = await command("domain.delete", "domain-delete-cascade", {
     domain: ref(parent, "domain"),
     confirmation: "domain:D1"
-  }, "GM2"), /2 vinculaç/i);
+  }, "GM2");
 
-  assert.ok(recordIndex.get("domain", parent.uuid));
+  assert.equal(result.deletedRecordCount, 1);
+  assert.equal(recordIndex.get("domain", parent.uuid), null);
   assert.ok(recordIndex.get("domain", child.uuid));
-  assert.ok(recordIndex.get("structure", linkedStructure.uuid));
+  assert.equal(child.getFlag("domain-manager", "data").hierarchy.locatedInUuid, null);
+  assert.equal(recordIndex.get("structure", linkedStructure.uuid), null);
 });
 
 test("Domain delete exige confirmação exata, aceita GM secundário e é idempotente", async () => {

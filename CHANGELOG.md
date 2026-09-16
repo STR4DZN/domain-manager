@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 — Administração e exclusão de domínio
+
+- Controles administrativos agora são exclusivos do Mestre e do Assistente do Mestre, tanto na interface quanto na validação autoritativa dos comandos.
+- A confirmação para excluir domínio passa a solicitar a exclusão em cascata: registros próprios são removidos e vínculos externos são desfeitos antes de apagar o domínio.
+- A operação informa quantos registros foram removidos e quantas referências externas foram desvinculadas; o mecanismo transacional restaura os registros se a confirmação final não puder ser gravada.
+- Solicitações, eventos, condições, defesa, pessoas, território, relações, inteligência, projetos e histórico usam a mesma regra de administração.
+
 ## 0.2.2 — Pacote para validação no Foundry
 
 - Publica o pacote atual com manifesto, tag e asset sincronizados para atualização pelo Foundry.

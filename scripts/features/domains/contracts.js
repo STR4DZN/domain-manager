@@ -31,7 +31,7 @@ export function normalizeDomainDeletePayload(payload = {}) {
   if (expectedModifiedTime != null && !Number.isFinite(expectedModifiedTime)) {
     throw new ModuleError(ERROR_CODES.VALIDATION, "expectedModifiedTime precisa ser um número válido.");
   }
-  return { domain, confirmation, expectedModifiedTime };
+  return { domain, confirmation, expectedModifiedTime, cascade: payload.cascade !== false };
 }
 
 export const domainDeleteResourceKeys = domainUpdateResourceKeys;

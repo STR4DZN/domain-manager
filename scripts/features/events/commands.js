@@ -9,6 +9,7 @@ import { getResourceCatalogSetting } from "../../core/settings.js";
 import { recordIndex } from "../../data/record-index.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import { buildStructuredHistoryEvent } from "../history/structured.js";
 import { EVENT_SEVERITIES } from "./constants.js";
 import { normalizeDomainEventApplyPayload } from "./contracts.js";
@@ -37,10 +38,10 @@ function resolveDomain(reference) {
 }
 
 function assertGM(callerUserId) {
-  if (!game.users.get(callerUserId)?.isGM) {
+  if (!isModuleManager(game.users.get(callerUserId))) {
     throw new ModuleError(
       ERROR_CODES.PERMISSION,
-      "Apenas GM pode aplicar eventos de domínio."
+      "Apenas o Mestre ou Assistente do Mestre pode aplicar eventos de domínio."
     );
   }
 }

@@ -5,6 +5,7 @@ import { getResourceCatalogSetting } from "../../core/settings.js";
 import { createRecord, updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import {
   normalizeAgreementCreatePayload,
   normalizeAgreementStatusPayload,
@@ -27,7 +28,7 @@ function ref(record) { return { recordType: record.recordType, uuid: record.uuid
 function actor(callerUserId) {
   const u = game.users.get(callerUserId); if (!u) throw new ModuleError(ERROR_CODES.PERMISSION, "Usuário não encontrado."); return u;
 }
-function assertGM(callerUserId) { const u = actor(callerUserId); if (!u.isGM) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas GM pode alterar relações e Agreements."); return u; }
+function assertGM(callerUserId) { const u = actor(callerUserId); if (!isModuleManager(u)) throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas o Mestre ou Assistente do Mestre pode alterar relações e Agreements."); return u; }
 function assertDiplomacy(domain) { if (!hasCapability(domain.data, "diplomacy")) throw new ModuleError(ERROR_CODES.VALIDATION, `O Domain '${domain.document.name}' não possui capability diplomacy.`); }
 function assertRevision(record, expectedModifiedTime, label) {
   if (expectedModifiedTime == null) return;

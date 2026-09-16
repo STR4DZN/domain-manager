@@ -4,6 +4,7 @@ import { hasCapability } from "../../core/management-contracts.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { recordIndex } from "../../data/record-index.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import { normalizeSecurityConfigurePayload } from "./contracts.js";
 
 function resolveDomain(reference) {
@@ -23,8 +24,8 @@ function resolveDomain(reference) {
 
 function assertGM(callerUserId) {
   const caller = game.users.get(callerUserId);
-  if (!caller?.isGM) {
-    throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas GM pode alterar Defense persistente.");
+  if (!isModuleManager(caller)) {
+    throw new ModuleError(ERROR_CODES.PERMISSION, "Apenas o Mestre ou Assistente do Mestre pode alterar Defense persistente.");
   }
 }
 

@@ -3,6 +3,7 @@ import { ERROR_CODES, ModuleError } from "../../core/errors.js";
 import { recordIndex } from "../../data/record-index.js";
 import { updateRecord } from "../../data/journal-store.js";
 import { decodeRecord } from "../../models/record-codec.js";
+import { isModuleManager } from "../../core/permissions.js";
 import {
   normalizeHistoryAddPayload,
   normalizeHistoryClearPayload,
@@ -33,10 +34,10 @@ function resolveDomain(reference) {
 }
 
 function assertGM(callerUserId) {
-  if (!game.users.get(callerUserId)?.isGM) {
+  if (!isModuleManager(game.users.get(callerUserId))) {
     throw new ModuleError(
       ERROR_CODES.PERMISSION,
-      "Apenas GM pode alterar o histórico persistente."
+      "Apenas o Mestre ou Assistente do Mestre pode alterar o histórico persistente."
     );
   }
 }

@@ -40,6 +40,7 @@ import {
 import { isAuthorityReady } from "../authority/socket.js";
 import { isPrimaryActiveGM } from "../authority/primary-gm.js";
 import { getTimekeepingStatus } from "../integration/timekeeping.js";
+import { isModuleManager } from "../core/permissions.js";
 import {
   buildDomainNavigation,
   buildGlobalNavigation,
@@ -75,7 +76,7 @@ const GLOBAL_VIEW_IDS = new Set(["command", "domains", "operations", "system"]);
 
 function canViewDocument(document, user = game.user) {
   return Boolean(
-    user?.isGM
+    isModuleManager(user)
     || document?.testUserPermission?.(user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)
   );
 }
@@ -252,12 +253,12 @@ function canManageDomainProjects(domain, user = game.user) {
   return Boolean(
     domain
     && domain.data?.management?.capabilities?.projects
-    && (user?.isGM || domain.data?.governance?.controllers?.includes(user?.id))
+    && isModuleManager(user)
   );
 }
 
 function canSubmitDomainRequest(domain, user = game.user) {
-  return Boolean(domain && (user?.isGM || domain.data?.governance?.controllers?.includes(user?.id)));
+  return Boolean(domain && isModuleManager(user));
 }
 
 const REQUEST_TYPE_LABELS = Object.freeze({
@@ -983,7 +984,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const subsystemNav = workspaceNav.find((workspace) => workspace.active)?.children ?? [];
 
     const domainCards = filteredDomains.map((record) => buildDomainCard(record, { selectedUuid: this.selectedDomainUuid }));
-    const globalNav = buildGlobalNavigation({ isGM: game.user.isGM, activeView: this.activeView });
+    const globalNav = buildGlobalNavigation({ isGM: isModuleManager(game.user), activeView: this.activeView });
 
     const allMissions = listVisibleRecords(RECORD_TYPES.MISSION).map(recordSummary);
     const allSquads = listVisibleRecords(RECORD_TYPES.SQUAD).map(recordSummary);
@@ -1223,7 +1224,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         && !record.data.resultUuid
       );
       const canFulfill = Boolean(
-        game.user.isGM
+        isModuleManager(game.user)
         && status === "approved"
         && (
           handling === "immediate"
@@ -1258,9 +1259,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           kindLabel: REQUEST_STATUS_LABELS[entry.kind] ?? titleCase(entry.kind),
           userName: users.find((user) => user.uuid === entry.userUuid)?.name ?? (entry.userUuid || "Sistema")
         })),
-        canReview: Boolean(game.user.isGM && status !== "needs-changes" && REQUEST_REVIEW_STATUSES.includes(status) && !record.data.resultUuid),
+        canReview: Boolean(isModuleManager(game.user) && status !== "needs-changes" && REQUEST_REVIEW_STATUSES.includes(status) && !record.data.resultUuid),
         canMaterializeMission: Boolean(
-          game.user.isGM
+          isModuleManager(game.user)
           && status === "approved"
           && handling === "mission"
           && !record.data.resultUuid
@@ -1323,8 +1324,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         controllerNames,
         controllerLabel: controllerNames.length ? controllerNames.join(" · ") : "Sem operador atribuído",
         controlledByMe,
-        canOperate: game.user.isGM || controlledByMe,
-        canUseSupply: Boolean((game.user.isGM || controlledByMe) && selectedDomain?.data.management?.capabilities?.economy),
+        canOperate: isModuleManager(game.user) || controlledByMe,
+        canUseSupply: Boolean((isModuleManager(game.user) || controlledByMe) && selectedDomain?.data.management?.capabilities?.economy),
         resourceKinds: record.data.resources?.length ?? 0,
         resources: (record.data.resources ?? []).map((entry) => {
           const definition = catalog?.resources?.find((resource) => resource.id === entry.resourceId);
@@ -1367,7 +1368,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
           squadStatusLabel: stateLabel(squadRecord?.data.status ?? "unknown"),
           stateLabel: stateLabel(assignment.state),
           canRelease: ["planned", "available"].includes(record.data.status)
-            && Boolean(game.user.isGM || controllers.includes(game.user.id)),
+            && Boolean(isModuleManager(game.user) || controllers.includes(game.user.id)),
           resources: (assignment.resources ?? []).map((entry) => {
             const definition = catalog?.resources?.find((resource) => resource.id === entry.resourceId);
             return {
@@ -1416,11 +1417,11 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         audienceLabel: (record.data.audienceUserIds ?? []).length
           ? (record.data.audienceUserIds ?? []).map((id) => game.users.get(id)?.name ?? id).join(" · ")
           : "GM ONLY",
-        canLaunch: Boolean(game.user.isGM && record.data.status === "available" && assignments.length),
-        canResolve: Boolean(game.user.isGM && record.data.status === "active"),
-        canCancel: Boolean(game.user.isGM && ["planned", "available", "active"].includes(record.data.status)),
-        canEdit: Boolean(game.user.isGM && ["planned", "available"].includes(record.data.status)),
-        canPublish: Boolean(game.user.isGM && record.data.status === "planned"),
+        canLaunch: Boolean(isModuleManager(game.user) && record.data.status === "available" && assignments.length),
+        canResolve: Boolean(isModuleManager(game.user) && record.data.status === "active"),
+        canCancel: Boolean(isModuleManager(game.user) && ["planned", "available", "active"].includes(record.data.status)),
+        canEdit: Boolean(isModuleManager(game.user) && ["planned", "available"].includes(record.data.status)),
+        canPublish: Boolean(isModuleManager(game.user) && record.data.status === "planned"),
         isAvailable: record.data.status === "available",
         isActive: record.data.status === "active",
         isTerminal: ["resolved", "failed", "cancelled"].includes(record.data.status),
@@ -1471,7 +1472,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         checked: editingSquadRecord?.data.governance?.controllers?.includes(user.id) ?? false
       }));
     const squadStatusOptions = ["forming", "ready", "deployed", "recovering", "inactive", "disbanded"]
-      .filter((value) => game.user.isGM || value !== "disbanded")
+      .filter((value) => isModuleManager(game.user) || value !== "disbanded")
       .map((value) => ({ value, label: stateLabel(value), selected: editingSquadRecord?.data.status === value }));
 
     const preparingMissionRecord = this.preparingMissionUuid
@@ -1514,7 +1515,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
     const resourceDefs = new Map((catalog?.resources ?? []).map((resource) => [resource.id, resource]));
     const domainControllerIds = selectedDomain?.data?.governance?.controllers ?? [];
-    const canOperateDomainStructures = Boolean(game.user.isGM || domainControllerIds.includes(game.user.id));
+    const canOperateDomainStructures = Boolean(isModuleManager(game.user) || domainControllerIds.includes(game.user.id));
     const structures = related.structures.map((record) => {
       const projectDocument = record.data.activeProject?.entityId
         ? recordIndex.getByEntityId(record.data.activeProject.entityId)
@@ -1552,7 +1553,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         production: mapProfile(record.data.production),
         tags: record.data.tags ?? [],
         canOperate: canOperateDomainStructures && !["planned", "destroyed", "decommissioned"].includes(record.data.status),
-        canAdmin: Boolean(game.user.isGM),
+        canAdmin: Boolean(isModuleManager(game.user)),
         project: projectRecord ? {
           uuid: projectRecord.uuid,
           entityId: projectRecord.data.entityId,
@@ -1618,7 +1619,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         moraleTone: morale >= 70 ? "nominal" : morale >= 40 ? "warning" : "critical",
         statusLabel: stateLabel(group.status),
         tone: statusTone(group.status),
-        canEdit: Boolean(selectedDomain && (game.user.isGM || selectedDomain.data.governance?.controllers?.includes(game.user.id)))
+        canEdit: Boolean(selectedDomain && (isModuleManager(game.user) || selectedDomain.data.governance?.controllers?.includes(game.user.id)))
       };
     });
     const workforceRows = structures.map((structure) => {
@@ -1698,7 +1699,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const people = peopleBase.map((person) => ({
       ...person,
       selected: person.uuid === this.selectedPersonUuid,
-      canEdit: !person.legacy && Boolean(selectedDomain && (game.user.isGM || selectedDomain.data.governance?.controllers?.includes(game.user.id)))
+      canEdit: !person.legacy && Boolean(selectedDomain && (isModuleManager(game.user) || selectedDomain.data.governance?.controllers?.includes(game.user.id)))
     }));
     const selectedPerson = people.find((person) => person.selected) ?? null;
     const editingPersonRecord = this.editingPersonUuid
@@ -1709,12 +1710,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const canManagePopulation = Boolean(
       selectedDomain
       && selectedDomain.data.management?.capabilities?.population
-      && (game.user.isGM || selectedDomain.data.governance?.controllers?.includes(game.user.id))
+      && (isModuleManager(game.user) || selectedDomain.data.governance?.controllers?.includes(game.user.id))
     );
     const canManagePeople = Boolean(
       selectedDomain
       && selectedDomain.data.management?.capabilities?.people
-      && (game.user.isGM || selectedDomain.data.governance?.controllers?.includes(game.user.id))
+      && (isModuleManager(game.user) || selectedDomain.data.governance?.controllers?.includes(game.user.id))
     );
     const personSquadOptions = related.squads.map((record) => ({
       uuid: record.uuid,
@@ -1730,9 +1731,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       selected: (editingPerson?.status ?? "active") === value
     }));
 
-    const canManageTerritory = Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.territory);
-    const canManageDiplomacy = Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.diplomacy);
-    const canManageIntel = Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.intel);
+    const canManageTerritory = Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.territory);
+    const canManageDiplomacy = Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.diplomacy);
+    const canManageIntel = Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.intel);
 
     const territoryData = selectedDomain?.data?.territory ?? {
       controlState: "unknown", controller: null, control: 0, strategicValue: 0, influence: [], notes: ""
@@ -1985,7 +1986,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       unrestTone: domainRisks?.unrestRisk?.level === "critical" ? "critical" : domainRisks?.unrestRisk?.level === "warning" ? "warning" : "nominal",
       unrestFactors: domainRisks?.unrestRisk?.factors ?? []
     } : null;
-    const canManageSecurity = Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.security);
+    const canManageSecurity = Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.security);
 
     const controllers = (selectedDomain?.data?.governance?.controllers ?? []).map((id) => game.users.get(id)?.name ?? id);
     const timekeeping = getTimekeepingStatus?.() ?? {};
@@ -1994,7 +1995,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ...context,
       appVersion: game.modules.get(MODULE_ID)?.version ?? "dev",
       schemaVersion: SCHEMA_VERSION,
-      isGM: game.user.isGM,
+      isGM: isModuleManager(game.user),
       isPrimaryGM: isPrimaryActiveGM(),
       authorityReady: isAuthorityReady(),
       activeView: this.activeView,
@@ -2030,14 +2031,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       pendingMissionLaunch: this.pendingMissionLaunch,
       pendingMissionCancel: this.pendingMissionCancel,
       missionAudienceOptions,
-      canCreateMission: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.missions),
+      canCreateMission: Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.missions),
       editingSquad,
       supplySquad,
       supplyDomainExpectedModifiedTime: selectedDomain?.document?._stats?.modifiedTime ?? null,
       supplyResourceOptions,
       controllerOptions,
       squadStatusOptions,
-      canCreateSquad: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.squads),
+      canCreateSquad: Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.squads),
       isEconomyConfigOpen: this.isEconomyConfigOpen,
       isEconomyFlowEditorOpen: this.editingEconomyFlowId !== null,
       editingEconomyFlow,
@@ -2052,7 +2053,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       resourceCatalogEditor,
       pendingResourceRemoval: this.pendingResourceRemoval,
       economyPolicyRows,
-      canConfigureEconomy: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.economy),
+      canConfigureEconomy: Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.economy),
       defense,
       canManageSecurity,
       isSecurityEditorOpen: this.isSecurityEditorOpen,
@@ -2088,9 +2089,9 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         selectedDomain
         && selectedDomain.data.management?.capabilities?.structures
         && selectedDomain.data.management?.capabilities?.projects
-        && (game.user.isGM || selectedDomain.data.governance?.controllers?.includes(game.user.id))
+        && (isModuleManager(game.user) || selectedDomain.data.governance?.controllers?.includes(game.user.id))
       ),
-      canRegisterStructure: Boolean(game.user.isGM && selectedDomain?.data.management?.capabilities?.structures),
+      canRegisterStructure: Boolean(isModuleManager(game.user) && selectedDomain?.data.management?.capabilities?.structures),
       telemetry,
       resources,
       catalogEmpty: (catalog?.resources?.length ?? 0) === 0,
@@ -2156,7 +2157,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       historySignificanceOptions,
       historyVisibilityOptions,
       domainEventCategoryOptions,
-      canManageHistory: Boolean(game.user.isGM && selectedDomain),
+      canManageHistory: Boolean(isModuleManager(game.user) && selectedDomain),
       isHistoryEntryOpen: this.isHistoryEntryOpen,
       pendingHistoryRemoval: this.pendingHistoryRemoval,
       pendingHistoryClear: this.pendingHistoryClear,
@@ -2168,7 +2169,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       editingCondition,
       conditionSeverityOptions,
       conditionCategoryOptions,
-      canManageConditions: Boolean(game.user.isGM && selectedDomain),
+      canManageConditions: Boolean(isModuleManager(game.user) && selectedDomain),
       isConditionEditorOpen: this.editingConditionId !== null,
       pendingConditionRemoval: this.pendingConditionRemoval,
       controllers,
@@ -2186,7 +2187,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       system: {
         authority: isAuthorityReady() ? "ONLINE" : "OFFLINE",
         authorityTone: isAuthorityReady() ? "nominal" : "critical",
-        primary: isPrimaryActiveGM() ? "PRINCIPAL" : game.user.isGM ? "SECUNDÁRIO" : "JOGADOR",
+        primary: isPrimaryActiveGM() ? "PRINCIPAL" : isModuleManager(game.user) ? "SECUNDÁRIO" : "JOGADOR",
         activeGM: game.users.activeGM?.name ?? "Nenhum",
         timeProvider: timekeeping.providerName ?? timekeeping.provider ?? "Tempo do Mundo do Foundry",
         timeConnected: timekeeping.available ?? timekeeping.connected ?? false
@@ -2276,7 +2277,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenRequestReview(event, target) {
-    if (!game.user.isGM) return;
+    if (!isModuleManager(game.user)) return;
     const uuid = String(target?.dataset?.requestUuid ?? this.selectedRequestUuid ?? "");
     if (!uuid) return;
     const document = recordIndex.get(RECORD_TYPES.REQUEST, uuid);
@@ -2296,7 +2297,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitRequestReview() {
-    if (!game.user.isGM || this.isRequestBusy || !this.reviewingRequestUuid) return;
+    if (!isModuleManager(game.user) || this.isRequestBusy || !this.reviewingRequestUuid) return;
     const form = this.element?.querySelector?.("#dm-request-review-form");
     const document = recordIndex.get(RECORD_TYPES.REQUEST, this.reviewingRequestUuid);
     if (!form || !document || !canViewDocument(document)) return;
@@ -2377,7 +2378,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onCreateMissionFromRequest(event, target) {
-    if (!game.user.isGM || this.isRequestBusy) return;
+    if (!isModuleManager(game.user) || this.isRequestBusy) return;
     const uuid = String(target?.dataset?.requestUuid ?? this.selectedRequestUuid ?? "");
     if (!uuid) return;
     const document = recordIndex.get(RECORD_TYPES.REQUEST, uuid);
@@ -2432,7 +2433,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onFulfillRequest(event, target) {
-    if (!game.user.isGM || this.isRequestBusy) return;
+    if (!isModuleManager(game.user) || this.isRequestBusy) return;
     const uuid = String(target?.dataset?.requestUuid ?? this.selectedRequestUuid ?? "");
     if (!uuid) return;
     const document = recordIndex.get(RECORD_TYPES.REQUEST, uuid);
@@ -2459,7 +2460,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenConditionEditor(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.conditionId ?? "__new__");
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
@@ -2476,7 +2477,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitConditionEditor() {
-    if (!game.user.isGM || this.isConditionBusy || !this.selectedDomainUuid || this.editingConditionId === null) return;
+    if (!isModuleManager(game.user) || this.isConditionBusy || !this.selectedDomainUuid || this.editingConditionId === null) return;
     const form = this.element?.querySelector?.("#dm-condition-form");
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
@@ -2513,7 +2514,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onToggleCondition(event, target) {
-    if (!game.user.isGM || this.isConditionBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isConditionBusy || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.conditionId ?? "");
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
@@ -2534,7 +2535,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onRemoveCondition(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.conditionId ?? this.editingConditionId ?? "");
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
@@ -2554,7 +2555,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmRemoveCondition() {
-    if (!game.user.isGM || this.isConditionBusy || !this.selectedDomainUuid || !this.pendingConditionRemoval) return;
+    if (!isModuleManager(game.user) || this.isConditionBusy || !this.selectedDomainUuid || !this.pendingConditionRemoval) return;
     const pending = this.pendingConditionRemoval;
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
@@ -2577,7 +2578,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenHistoryEntry() {
-    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid || this.isHistoryBusy) return;
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!document) return;
     this.isHistoryEntryOpen = true;
@@ -2594,7 +2595,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitHistoryEntry() {
-    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.isHistoryEntryOpen) return;
+    if (!isModuleManager(game.user) || this.isHistoryBusy || !this.selectedDomainUuid || !this.isHistoryEntryOpen) return;
     const form = this.element?.querySelector?.("#dm-history-entry-form");
     if (!form) return;
     const data = new FormData(form);
@@ -2623,7 +2624,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onRemoveHistoryEntry(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid || this.isHistoryBusy) return;
     const localId = String(target?.dataset?.historyId ?? "");
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
@@ -2647,7 +2648,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmRemoveHistoryEntry() {
-    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingHistoryRemoval) return;
+    if (!isModuleManager(game.user) || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingHistoryRemoval) return;
     const pending = this.pendingHistoryRemoval;
     this.isHistoryBusy = true;
     try {
@@ -2668,7 +2669,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenHistoryClear() {
-    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid || this.isHistoryBusy) return;
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
     const count = domain?.data?.history?.length ?? 0;
@@ -2690,7 +2691,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmHistoryClear() {
-    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingHistoryClear) return;
+    if (!isModuleManager(game.user) || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingHistoryClear) return;
     const pending = this.pendingHistoryClear;
     this.isHistoryBusy = true;
     try {
@@ -2710,7 +2711,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onRollDomainEvent() {
-    if (!game.user.isGM || !this.selectedDomainUuid || this.isHistoryBusy) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid || this.isHistoryBusy) return;
     const categoryField = this.element?.querySelector?.("[data-domain-event-category]");
     const category = String(categoryField?.value ?? "").trim() || null;
     try {
@@ -2750,7 +2751,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmDomainEvent() {
-    if (!game.user.isGM || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingDomainEvent) return;
+    if (!isModuleManager(game.user) || this.isHistoryBusy || !this.selectedDomainUuid || !this.pendingDomainEvent) return;
     const form = this.element?.querySelector?.("#dm-domain-event-form");
     if (!form) return;
     const pending = this.pendingDomainEvent;
@@ -2968,7 +2969,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenSecurityEditor() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = domainDocument ? decodeRecord(domainDocument) : null;
     if (!domain?.data.management?.capabilities?.security) return;
@@ -2982,7 +2983,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitSecurityEditor() {
-    if (!game.user.isGM || this.isSecurityBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isSecurityBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-security-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = domainDocument ? decodeRecord(domainDocument) : null;
@@ -3015,7 +3016,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenEconomyConfig() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.isEconomyConfigOpen = true;
     this.render({ force: true });
   }
@@ -3026,7 +3027,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitEconomyConfig() {
-    if (!game.user.isGM || this.isEconomyBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isEconomyBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-economy-config-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -3078,7 +3079,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenEconomyFlowEditor(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     const document = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = document ? decodeRecord(document) : null;
     if (!domain?.data.management?.capabilities?.economy) return;
@@ -3102,7 +3103,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitEconomyFlowEditor() {
-    if (!game.user.isGM || this.isEconomyBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isEconomyBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-economy-flow-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -3154,7 +3155,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onRemoveEconomyFlow(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     const domain = domainDocument ? decodeRecord(domainDocument) : null;
     const localId = String(target?.dataset?.flowId ?? "").trim();
@@ -3177,7 +3178,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async onConfirmRemoveEconomyFlow() {
     const pending = this.pendingEconomyFlowRemoval;
-    if (!game.user.isGM || this.isEconomyBusy || !pending || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isEconomyBusy || !pending || !this.selectedDomainUuid) return;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!domainDocument) return;
     const domain = decodeRecord(domainDocument);
@@ -3204,7 +3205,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenResourceCatalog() {
-    if (!game.user.isGM) return;
+    if (!isModuleManager(game.user)) return;
     this.isResourceCatalogOpen = true;
     this.editingResourceId = null;
     this.pendingResourceRemoval = null;
@@ -3219,14 +3220,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onNewResourceDefinition() {
-    if (!game.user.isGM || !this.isResourceCatalogOpen) return;
+    if (!isModuleManager(game.user) || !this.isResourceCatalogOpen) return;
     this.editingResourceId = null;
     this.pendingResourceRemoval = null;
     this.render({ force: true });
   }
 
   static onEditResourceDefinition(event, target) {
-    if (!game.user.isGM || !this.isResourceCatalogOpen) return;
+    if (!isModuleManager(game.user) || !this.isResourceCatalogOpen) return;
     const resourceId = String(target?.dataset?.resourceId ?? "");
     if (!(getResourceCatalogSetting().resources ?? []).some((resource) => resource.id === resourceId)) return;
     this.editingResourceId = resourceId;
@@ -3235,7 +3236,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitResourceDefinition() {
-    if (!game.user.isGM || this.isEconomyBusy || !this.isResourceCatalogOpen) return;
+    if (!isModuleManager(game.user) || this.isEconomyBusy || !this.isResourceCatalogOpen) return;
     const form = this.element?.querySelector?.("#dm-resource-catalog-form");
     if (!form) return;
     const data = new FormData(form);
@@ -3272,7 +3273,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onRemoveResourceDefinition() {
-    if (!game.user.isGM || !this.editingResourceId) return;
+    if (!isModuleManager(game.user) || !this.editingResourceId) return;
     const catalog = getResourceCatalogSetting();
     const resource = (catalog.resources ?? []).find((entry) => entry.id === this.editingResourceId);
     if (!resource) return;
@@ -3294,7 +3295,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
 
   static async onConfirmRemoveResourceDefinition() {
     const pending = this.pendingResourceRemoval;
-    if (!game.user.isGM || this.isEconomyBusy || !pending || pending.blocked) return;
+    if (!isModuleManager(game.user) || this.isEconomyBusy || !pending || pending.blocked) return;
     this.isEconomyBusy = true;
     try {
       await executeCommandAuthoritatively({
@@ -3669,7 +3670,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenDomainMedia() {
-    if (this.isDomainBusy || !game.user.isGM || !this.selectedDomainUuid) return;
+    if (this.isDomainBusy || !isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.isDomainMediaOpen = true;
     this.render({ force: true });
   }
@@ -3723,7 +3724,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitDomainMedia() {
-    if (this.isDomainBusy || !game.user.isGM || !this.selectedDomainUuid) return;
+    if (this.isDomainBusy || !isModuleManager(game.user) || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-domain-media-form");
     if (!form) return;
     const data = new FormData(form);
@@ -3763,14 +3764,14 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenCreateDomain() {
-    if (this.isDomainBusy || !game.user.isGM) return;
+    if (this.isDomainBusy || !isModuleManager(game.user)) return;
     this.editingDomainUuid = null;
     this.isCreateDomainOpen = true;
     this.render({ force: true });
   }
 
   static onOpenEditDomain(event, target) {
-    if (this.isDomainBusy || !game.user.isGM) return;
+    if (this.isDomainBusy || !isModuleManager(game.user)) return;
     const uuid = String(target?.dataset?.uuid ?? this.selectedDomainUuid ?? "").trim();
     if (!uuid || !recordIndex.get(RECORD_TYPES.DOMAIN, uuid)) return;
     this.editingDomainUuid = uuid;
@@ -3785,7 +3786,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitCreateDomain() {
-    if (this.isDomainBusy || !game.user.isGM) return;
+    if (this.isDomainBusy || !isModuleManager(game.user)) return;
     const form = this.element?.querySelector?.("#dm-create-domain-form");
     if (!form) return;
     const data = new FormData(form);
@@ -3841,7 +3842,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenDeleteDomain(event, target) {
-    if (this.isDomainBusy || !game.user.isGM) return;
+    if (this.isDomainBusy || !isModuleManager(game.user)) return;
     const uuid = String(target?.dataset?.uuid ?? this.selectedDomainUuid ?? "").trim();
     if (!uuid || !recordIndex.get(RECORD_TYPES.DOMAIN, uuid)) return;
     if (uuid !== this.selectedDomainUuid) {
@@ -3859,7 +3860,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitDeleteDomain() {
-    if (this.isDomainBusy || !game.user.isGM || !this.isDomainDeleteOpen || !this.selectedDomainUuid) return;
+    if (this.isDomainBusy || !isModuleManager(game.user) || !this.isDomainDeleteOpen || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-domain-delete-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -3878,7 +3879,8 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         payload: {
           domain: entityReference(domain),
           expectedModifiedTime: Number(data.get("expectedModifiedTime")) || null,
-          confirmation
+          confirmation,
+          cascade: true
         }
       });
       this.resetDomainScopedState();
@@ -3896,7 +3898,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenCreateSquad() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.isCreateSquadOpen = true;
     this.editingSquadUuid = null;
     this.supplySquadUuid = null;
@@ -3909,7 +3911,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitCreateSquad() {
-    if (!game.user.isGM || this.isSquadBusy) return;
+    if (!isModuleManager(game.user) || this.isSquadBusy) return;
     const form = this.element?.querySelector?.("#dm-create-squad-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -3947,7 +3949,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!document) return;
     const record = decodeRecord(document);
     const controllers = record.data.governance?.controllers ?? [];
-    if (!game.user.isGM && !controllers.includes(game.user.id)) {
+    if (!isModuleManager(game.user) && !controllers.includes(game.user.id)) {
       ui.notifications.warn("Você não controla esta unidade.");
       return;
     }
@@ -3991,7 +3993,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
         status: data.get("status")
       }
     };
-    const isDisbanding = game.user.isGM
+    const isDisbanding = isModuleManager(game.user)
       && administrationPayload.status === "disbanded"
       && squad.data.status !== "disbanded";
     if (isDisbanding && squad.data.currentMission) {
@@ -4022,7 +4024,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
     this.isSquadBusy = true;
     try {
-      if (game.user.isGM) {
+      if (isModuleManager(game.user)) {
         await updateSquadAdministrationAction(administrationPayload);
       } else {
         await patchSquadAction(operationalPayload);
@@ -4045,7 +4047,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     if (!document) return;
     const record = decodeRecord(document);
     const controllers = record.data.governance?.controllers ?? [];
-    if (!game.user.isGM && !controllers.includes(game.user.id)) {
+    if (!isModuleManager(game.user) && !controllers.includes(game.user.id)) {
       ui.notifications.warn("Você não controla esta unidade.");
       return;
     }
@@ -4075,7 +4077,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ui.notifications.warn("Selecione um recurso válido.");
       return;
     }
-    const direction = game.user.isGM ? String(data.get("direction") ?? "domain-to-squad") : "squad-to-domain";
+    const direction = isModuleManager(game.user) ? String(data.get("direction") ?? "domain-to-squad") : "squad-to-domain";
     let amount;
     try {
       amount = parseMinorUnits(data.get("amount"), resource.precision);
@@ -4116,7 +4118,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenCreateMission() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.isCreateMissionOpen = true;
     this.editingMissionUuid = null;
     this.preparingMissionUuid = null;
@@ -4129,7 +4131,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenEditMission(event, target) {
-    if (!game.user.isGM) return;
+    if (!isModuleManager(game.user)) return;
     const missionUuid = target?.dataset?.missionUuid;
     const document = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
     if (!document) return;
@@ -4156,7 +4158,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitCreateMission() {
-    if (!game.user.isGM || this.isMissionBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-create-mission-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -4229,7 +4231,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onPublishMission(event, target) {
-    if (!game.user.isGM || this.isMissionBusy) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy) return;
     const missionUuid = target?.dataset?.missionUuid;
     const document = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
     if (!document) return;
@@ -4263,7 +4265,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const mission = decodeRecord(missionDocument);
     const squad = decodeRecord(squadDocument);
     const controllers = squad.data.governance?.controllers ?? [];
-    if (!game.user.isGM && (!mission.data.audienceUserIds?.includes(game.user.id) || !controllers.includes(game.user.id))) {
+    if (!isModuleManager(game.user) && (!mission.data.audienceUserIds?.includes(game.user.id) || !controllers.includes(game.user.id))) {
       ui.notifications.warn("Você não possui autorização para preparar esta unidade nesta missão.");
       return;
     }
@@ -4389,7 +4391,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onLaunchMission(event, target) {
-    if (!game.user.isGM || this.isMissionBusy) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy) return;
     const missionUuid = target?.dataset?.missionUuid;
     const missionDocument = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
     if (!missionDocument) return;
@@ -4426,7 +4428,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmLaunchMission() {
-    if (!game.user.isGM || this.isMissionBusy || !this.pendingMissionLaunch) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy || !this.pendingMissionLaunch) return;
     const pending = this.pendingMissionLaunch;
     const missionDocument = recordIndex.get(RECORD_TYPES.MISSION, pending.missionUuid);
     if (!missionDocument) return;
@@ -4453,7 +4455,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenMissionCancel(event, target) {
-    if (!game.user.isGM || this.isMissionBusy) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy) return;
     const missionUuid = target?.dataset?.missionUuid;
     const missionDocument = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
     if (!missionDocument) return;
@@ -4504,7 +4506,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmMissionCancel() {
-    if (!game.user.isGM || this.isMissionBusy || !this.pendingMissionCancel) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy || !this.pendingMissionCancel) return;
     const form = this.element?.querySelector?.("#dm-mission-cancel-form");
     if (!form) return;
     const reason = String(new FormData(form).get("reason") ?? "").trim();
@@ -4544,7 +4546,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenMissionResolve(event, target) {
-    if (!game.user.isGM) return;
+    if (!isModuleManager(game.user)) return;
     const missionUuid = target?.dataset?.missionUuid;
     const missionDocument = missionUuid ? recordIndex.get(RECORD_TYPES.MISSION, missionUuid) : null;
     if (!missionDocument) return;
@@ -4570,7 +4572,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitMissionResolve() {
-    if (!game.user.isGM || this.isMissionBusy || !this.resolvingMissionUuid) return;
+    if (!isModuleManager(game.user) || this.isMissionBusy || !this.resolvingMissionUuid) return;
     const form = this.element?.querySelector?.("#dm-mission-resolve-form");
     const missionDocument = recordIndex.get(RECORD_TYPES.MISSION, this.resolvingMissionUuid);
     if (!form || !missionDocument) return;
@@ -4617,7 +4619,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static onOpenCreateStructure(event, target) {
     if (!this.selectedDomainUuid) return;
     const mode = String(target?.dataset?.mode ?? "construction");
-    if (mode === "direct" && !game.user.isGM) return;
+    if (mode === "direct" && !isModuleManager(game.user)) return;
     this.structureCreateMode = mode === "direct" ? "direct" : "construction";
     this.isCreateStructureOpen = true;
     this.editingStructureUuid = null;
@@ -4744,7 +4746,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     let commandType;
     let payload;
     try {
-      if (game.user.isGM) {
+      if (isModuleManager(game.user)) {
         const catalog = getResourceCatalogSetting();
         commandType = COMMAND_TYPES.STRUCTURE_ADMIN_UPDATE;
         payload = {
@@ -4779,7 +4781,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       ui.notifications.error(error.message ?? "Revise os campos da estrutura antes de salvar.");
       return;
     }
-    const isTerminalTransition = game.user.isGM
+    const isTerminalTransition = isModuleManager(game.user)
       && ["destroyed", "decommissioned"].includes(payload.status)
       && payload.status !== structure.data.status;
     if (isTerminalTransition && structure.data.activeProject) {
@@ -4826,7 +4828,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenTerritoryEditor() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.isTerritoryEditorOpen = true;
     this.render({ force: true });
   }
@@ -4837,7 +4839,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitTerritoryEditor() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-territory-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -4883,7 +4885,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenRelationEditor(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.editingRelationId = String(target?.dataset?.relationId ?? "__new__");
     this.isAgreementCreateOpen = false;
     this.render({ force: true });
@@ -4895,7 +4897,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitRelationEditor() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-relation-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -4935,7 +4937,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onRemoveRelation(event, target) {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.relationId ?? "");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!localId || !domainDocument) return;
@@ -4962,7 +4964,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmRemoveRelation() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid || !this.pendingRelationRemoval) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid || !this.pendingRelationRemoval) return;
     const pending = this.pendingRelationRemoval;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!domainDocument) return;
@@ -4989,7 +4991,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenAgreementCreate() {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.isAgreementCreateOpen = true;
     this.editingRelationId = null;
     this.render({ force: true });
@@ -5001,7 +5003,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitAgreementCreate() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-agreement-form");
     const sourceDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !sourceDocument) return;
@@ -5074,7 +5076,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSetAgreementStatus(event, target) {
-    if (!game.user.isGM || this.isStrategicIntelBusy) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy) return;
     const uuid = String(target?.dataset?.agreementUuid ?? "");
     const status = String(target?.dataset?.status ?? "");
     const document = uuid ? recordIndex.get(RECORD_TYPES.AGREEMENT, uuid) : null;
@@ -5119,7 +5121,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmAgreementStatus() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.pendingAgreementStatus) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.pendingAgreementStatus) return;
     const pending = this.pendingAgreementStatus;
     const document = recordIndex.get(RECORD_TYPES.AGREEMENT, pending.uuid);
     if (!document) return;
@@ -5152,7 +5154,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static onOpenIntelEditor(event, target) {
-    if (!game.user.isGM || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || !this.selectedDomainUuid) return;
     this.editingIntelId = String(target?.dataset?.intelId ?? "__new__");
     this.render({ force: true });
   }
@@ -5163,7 +5165,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onSubmitIntelEditor() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const form = this.element?.querySelector?.("#dm-intel-form");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!form || !domainDocument) return;
@@ -5211,7 +5213,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static openIntelConfirmation(kind, target) {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid) return;
     const localId = String(target?.dataset?.intelId ?? "");
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!localId || !domainDocument) return;
@@ -5236,7 +5238,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onConfirmIntelAction() {
-    if (!game.user.isGM || this.isStrategicIntelBusy || !this.selectedDomainUuid || !this.pendingIntelAction) return;
+    if (!isModuleManager(game.user) || this.isStrategicIntelBusy || !this.selectedDomainUuid || !this.pendingIntelAction) return;
     const pending = this.pendingIntelAction;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
     if (!domainDocument) return;
@@ -5264,7 +5266,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   }
 
   static async onAdvanceTicks(event, target) {
-    if (!game.user.isGM || this.isAdvanceBusy) return;
+    if (!isModuleManager(game.user) || this.isAdvanceBusy) return;
     const ticks = Math.max(1, Math.floor(Number(target?.dataset?.ticks ?? 1)));
     this.isAdvanceBusy = true;
     try {
