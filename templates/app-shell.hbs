@@ -8,7 +8,7 @@
     {{#if selectedDomain}}
       <button type="button" class="dm-domain-switcher" data-action="navigate" data-view="domains" title="Abrir domínios">
         <span class="dm-domain-switcher__status dm-domain-switcher__status--{{selectedDomain.stateTone}}"></span>
-        <span><small>{{selectedDomain.category}} / {{selectedDomain.presetLabel}}</small><strong>{{selectedDomain.name}}</strong><em>{{selectedDomain.entityIdShort}}</em></span>
+        <span><small>{{selectedDomain.category}} / {{selectedDomain.presetLabel}}</small><strong>{{selectedDomain.name}}</strong>{{#if selectedDomain.displayEntityIdShort}}<em>{{selectedDomain.displayEntityIdShort}}</em>{{/if}}</span>
         <i class="fa-solid fa-chevron-right"></i>
       </button>
     {{else}}
@@ -100,7 +100,7 @@
                 <div class="dm-command-domain-list">
                   {{#each domains}}
                     <button type="button" class="dm-command-domain-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
-                      <span class="dm-command-domain-row__identity"><i class="dm-status-pip dm-status-pip--{{stateTone}}"></i><span><strong>{{name}}</strong><small>{{entityId}}</small></span></span>
+                      <span class="dm-command-domain-row__identity"><i class="dm-status-pip dm-status-pip--{{stateTone}}"></i><span><strong>{{name}}</strong>{{#if displayEntityId}}<small>{{displayEntityId}}</small>{{/if}}</span></span>
                       <span>{{category}}</span><strong>{{population}}</strong><em class="dm-chip dm-chip--{{stateTone}}">{{state}}</em>
                     </button>
                   {{else}}
@@ -142,7 +142,7 @@
                 <div class="dm-registry-index__header"><span>DOMÍNIO</span><span>CATEGORIA</span><span>PERFIL</span><span>POP</span><span>ESTADO</span></div>
                 {{#each domains}}
                   <button type="button" class="dm-registry-row {{#if selected}}is-selected{{/if}}" data-action="selectDomain" data-uuid="{{uuid}}">
-                    <span><i></i><strong>{{name}}</strong><small>{{entityId}}</small></span><span>{{category}}</span><span>{{preset}}</span><span>{{population}}</span><span class="dm-chip dm-chip--{{stateTone}}">{{state}}</span>
+                    <span><i></i><strong>{{name}}</strong>{{#if displayEntityId}}<small>{{displayEntityId}}</small>{{/if}}</span><span>{{category}}</span><span>{{preset}}</span><span>{{population}}</span><span class="dm-chip dm-chip--{{stateTone}}">{{state}}</span>
                   </button>
                 {{else}}<div class="dm-empty-signal">NENHUM DOMÍNIO CADASTRADO</div>{{/each}}
               </section>
@@ -965,9 +965,9 @@
             <div class="dm-media-preview__image" data-preview-container-for="image">{{#if selectedDomain.visuals.image}}<img data-preview-for="image" src="{{selectedDomain.visuals.image}}" alt="Imagem principal de {{selectedDomain.name}}" />{{else}}<div class="dm-media-preview__empty"><i class="fa-solid fa-image"></i><span>Sem imagem principal</span></div>{{/if}}</div>
             <div><strong>{{selectedDomain.name}}</strong><span>Pré-visualização da imagem principal</span></div>
           </section>
-          <label class="dm-field dm-field--wide"><span>Imagem principal</span><div class="dm-file-field"><input name="image" value="{{selectedDomain.visuals.image}}" placeholder="caminho/para/imagem.webp" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="image"><i class="fa-solid fa-folder-open"></i> ESCOLHER</button></div></label>
-          <label class="dm-field dm-field--wide"><span>Banner</span><div class="dm-file-field"><input name="bannerImg" value="{{selectedDomain.visuals.bannerImg}}" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="bannerImg"><i class="fa-solid fa-folder-open"></i> ESCOLHER</button></div></label>
-          <label class="dm-field dm-field--wide"><span>Brasão / ícone</span><div class="dm-file-field"><input name="crestImg" value="{{selectedDomain.visuals.crestImg}}" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="crestImg"><i class="fa-solid fa-folder-open"></i> ESCOLHER</button></div></label>
+          <label class="dm-field dm-field--wide"><span>Imagem principal</span><div class="dm-file-field"><input name="image" value="{{selectedDomain.visuals.image}}" placeholder="https://servidor.exemplo/imagem.webp ou caminho/local.webp" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="image"><i class="fa-solid fa-folder-open"></i> ESCOLHER</button></div><small>Aceita URL pública direta ou arquivo do Foundry.</small></label>
+          <label class="dm-field dm-field--wide"><span>Banner</span><div class="dm-file-field"><input name="bannerImg" value="{{selectedDomain.visuals.bannerImg}}" placeholder="https://servidor.exemplo/banner.webp" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="bannerImg"><i class="fa-solid fa-folder-open"></i> ESCOLHER</button></div></label>
+          <label class="dm-field dm-field--wide"><span>Brasão / ícone</span><div class="dm-file-field"><input name="crestImg" value="{{selectedDomain.visuals.crestImg}}" placeholder="https://servidor.exemplo/brasao.webp" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="crestImg"><i class="fa-solid fa-folder-open"></i> ESCOLHER</button></div></label>
           <label class="dm-field"><span>Ajuste da imagem</span><select name="imageFit">{{#each domainImageFitOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>Cor de destaque</span><input name="themeColorHex" type="text" value="{{selectedDomain.visuals.themeColorHex}}" placeholder="#f59e0b" /></label>
           <label class="dm-field"><span>Zoom</span><input name="imageZoom" type="number" min="25" max="400" value="{{selectedDomain.visuals.imageZoom}}" /></label>
@@ -1463,7 +1463,7 @@
           <label class="dm-field"><span>Condição</span><input name="condition" type="number" min="0" max="100" value="{{#if editingPerson}}{{editingPerson.condition}}{{else}}100{{/if}}" /></label>
           <label class="dm-field"><span>Unidade</span><select name="squadEntityId"><option value="">— Nenhuma —</option>{{#each personSquadOptions}}<option value="{{entityId}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select></label>
           <label class="dm-field"><span>UUID do Ator</span><input name="actorUuid" value="{{editingPerson.actorUuid}}" /></label>
-          <label class="dm-field dm-field--wide"><span>Retrato</span><div class="dm-file-field"><input name="portrait" value="{{editingPerson.portrait}}" placeholder="caminho/para/imagem.webp" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="portrait"><i class="fa-solid fa-folder-open"></i> ESCOLHER IMAGEM</button></div></label>
+          <label class="dm-field dm-field--wide"><span>Retrato</span><div class="dm-file-field"><input name="portrait" value="{{editingPerson.portrait}}" placeholder="https://servidor.exemplo/retrato.webp ou caminho/local.webp" /><button type="button" class="dm-action-button dm-action-button--secondary" data-action="browseImageField" data-field="portrait"><i class="fa-solid fa-folder-open"></i> ESCOLHER IMAGEM</button></div><small>Aceita URL pública direta ou arquivo do Foundry.</small></label>
           <label class="dm-field dm-field--wide"><span>Marcadores</span><input name="tags" value="{{#each editingPerson.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}" /></label>
           <label class="dm-field dm-field--wide"><span>Descrição</span><textarea name="description" rows="3">{{editingPerson.data.description}}</textarea></label>
           <label class="dm-field dm-field--wide"><span>Notas</span><textarea name="notes" rows="3">{{editingPerson.notes}}</textarea></label>

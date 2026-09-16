@@ -84,8 +84,15 @@ test("exclusão de Domain expõe inventário de dependências e confirmação ex
   }
   assert.match(template, /dm-domain-dependency-list/);
   assert.match(template, /data-domain-delete-confirmation/);
-  assert.match(template, /EXCLUSÃO BLOQUEADA/);
+  assert.match(template, /EXCLUSÃO PERMANENTE/);
   assert.match(shell, /buildDomainDependencyReport/);
+});
+
+test("identificadores de Domain só entram na apresentação administrativa", () => {
+  assert.match(shell, /maySeeDomainIdentifiers\s*=\s*isModuleManager\(game\.user\)/);
+  assert.match(shell, /displayEntityId:\s*maySeeDomainIdentifiers/);
+  assert.match(template, /selectedDomain\.displayEntityIdShort/);
+  assert.match(template, /\{\{#if displayEntityId\}\}/);
 });
 
 test("Domain possui editor completo para identidade, hierarquia, governança e capabilities", () => {

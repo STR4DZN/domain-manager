@@ -5,6 +5,10 @@
 
 **Domain Manager** é um framework estratégico e operacional para Foundry VTT v13. Ele conecta Domains, economia, projetos, squads, pessoas, estruturas, missões, diplomacia, território e inteligência dentro de um estado persistente e multiplayer.
 
+## Linha 0.2.7 — privacidade de Domain e imagens remotas
+
+A `0.2.7` oculta IDs técnicos de Domínio para Players e aceita URLs públicas diretas para a aparência de Domínios e retratos de Pessoas.
+
 ## Linha 0.2.6 — abertura e Pessoas em Missões
 
 A `0.2.6` mostra a abertura personalizada por quatro segundos em cada entrada no módulo, sem reapresentá-la durante navegação interna. Missões podem receber Pessoas individuais, inclusive quando não há uma Força designada.
@@ -156,7 +160,7 @@ Consulte `docs/PROJECTS_ADVANCED.md` e `DEV138_AUDIT.md`.
 
 ## Instalação manual
 
-1. Baixe `domain-manager-v0.2.6.zip`.
+1. Baixe `domain-manager-v0.2.7.zip`.
 2. Extraia em `Data/modules/domain-manager`.
 3. Ative Domain Manager e socketlib no mundo.
 

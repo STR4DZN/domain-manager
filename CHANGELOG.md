@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.7 — privacidade de Domain e imagens remotas
+
+- Players não veem mais o identificador técnico de um Domain no seletor, na rede de comando ou no registro de Domínios; os identificadores internos continuam íntegros para os comandos.
+- Campos de aparência e retrato deixam explícito o suporte a URL pública direta, além do seletor de arquivos do Foundry.
+
 ## 0.2.6 — abertura do módulo e Pessoas em Missões
 
 - A abertura personalizada agora é acionada ao entrar no módulo, dura quatro segundos e volta a aparecer em cada nova abertura do Domain Manager; ela não é reiniciada por navegação, renderização ou janelas internas.

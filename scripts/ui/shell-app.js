@@ -991,8 +991,12 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const activeWorkspace = selectedDomain ? resolveWorkspaceForView(this.activeView) : null;
     const subsystemNav = workspaceNav.find((workspace) => workspace.active)?.children ?? [];
 
-    const domainCards = filteredDomains.map((record) => buildDomainCard(record, { selectedUuid: this.selectedDomainUuid }));
-    const globalNav = buildGlobalNavigation({ isGM: isModuleManager(game.user), activeView: this.activeView });
+    const maySeeDomainIdentifiers = isModuleManager(game.user);
+    const domainCards = filteredDomains.map((record) => {
+      const card = buildDomainCard(record, { selectedUuid: this.selectedDomainUuid });
+      return { ...card, displayEntityId: maySeeDomainIdentifiers ? card.entityId : "" };
+    });
+    const globalNav = buildGlobalNavigation({ isGM: maySeeDomainIdentifiers, activeView: this.activeView });
 
     const allMissions = listVisibleRecords(RECORD_TYPES.MISSION).map(recordSummary);
     const allSquads = listVisibleRecords(RECORD_TYPES.SQUAD).map(recordSummary);
@@ -1005,7 +1009,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       stateTone: statusTone(selectedDomain.data.identity?.state),
       natureLabel: domainNatureLabel(selectedDomain.data.identity?.nature),
       presetLabel: managementPresetLabel(selectedDomain.data.management?.preset),
-      entityIdShort: selectedDomain.data.entityId?.slice(-10)?.toUpperCase() ?? "—",
+      displayEntityIdShort: maySeeDomainIdentifiers ? (selectedDomain.data.entityId?.slice(-10)?.toUpperCase() ?? "—") : "",
       expectedModifiedTime: selectedDomain.document?._stats?.modifiedTime ?? null,
       visuals: {
         bannerImg: "",
