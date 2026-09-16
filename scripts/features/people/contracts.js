@@ -152,6 +152,7 @@ function normalizePersonBase(payload = {}) {
 export function normalizePersonCreatePayload(payload = {}) {
   return {
     domain: normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] }),
+    migrateLegacyLocalId: clean(payload.migrateLegacyLocalId) || null,
     ...normalizePersonBase(payload)
   };
 }

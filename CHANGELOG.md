@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5 — Migração de Pessoas legadas
+
+- Pessoas mostradas como `LEGACY` agora abrem o editor; ao salvar, o módulo cria o cadastro atual e remove o item embutido do domínio na mesma transação.
+- Se a atualização do domínio falhar, o cadastro recém-criado é removido para impedir duplicidade.
+
 ## 0.2.4 — Exclusão funcional de projetos e pessoas
 
 - Projetos sem Structures vinculadas podem ser excluídos pelo Mestre ou Assistente; a interface pede confirmação e o comando valida a revisão antes de apagar.

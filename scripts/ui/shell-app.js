@@ -1701,14 +1701,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     const people = peopleBase.map((person) => ({
       ...person,
       selected: person.uuid === this.selectedPersonUuid,
-      canEdit: !person.legacy && Boolean(selectedDomain && (isModuleManager(game.user) || selectedDomain.data.governance?.controllers?.includes(game.user.id)))
+      canEdit: Boolean(selectedDomain && isModuleManager(game.user) && selectedDomain.data.management?.capabilities?.people)
     }));
     const selectedPerson = people.find((person) => person.selected) ?? null;
-    const editingPersonRecord = this.editingPersonUuid
-      ? related.people.find((record) => record.uuid === this.editingPersonUuid) ?? null
+    const editingPerson = this.editingPersonUuid
+      ? people.find((person) => person.uuid === this.editingPersonUuid) ?? null
       : null;
-    if (this.editingPersonUuid && !editingPersonRecord) this.editingPersonUuid = null;
-    const editingPerson = editingPersonRecord ? people.find((person) => person.uuid === editingPersonRecord.uuid) ?? null : null;
+    if (this.editingPersonUuid && !editingPerson) this.editingPersonUuid = null;
     const canManagePopulation = Boolean(
       selectedDomain
       && selectedDomain.data.management?.capabilities?.population
@@ -3552,7 +3551,6 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
   static onOpenPersonEditor(event, target) {
     if (!this.selectedDomainUuid) return;
     const uuid = String(target?.dataset?.uuid ?? "");
-    if (uuid.startsWith("legacy:")) return;
     this.editingPersonUuid = uuid || null;
     this.isPersonEditorOpen = true;
     this.render({ force: true });
@@ -3588,10 +3586,13 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       squad: squad ? { recordType: RECORD_TYPES.SQUAD, uuid: squad.uuid, entityId: squadEntityId } : null,
       currentLocation: entityReference(domain)
     };
-    const personDocument = this.editingPersonUuid
+    const legacyLocalId = this.editingPersonUuid?.startsWith("legacy:")
+      ? this.editingPersonUuid.slice("legacy:".length)
+      : null;
+    const personDocument = this.editingPersonUuid && !legacyLocalId
       ? recordIndex.get(RECORD_TYPES.PERSON, this.editingPersonUuid)
       : null;
-    if (this.editingPersonUuid && !personDocument) {
+    if (this.editingPersonUuid && !legacyLocalId && !personDocument) {
       ui.notifications.warn("A pessoa selecionada não está mais disponível.");
       return;
     }
@@ -3637,7 +3638,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       } else {
         const result = await executeCommandAuthoritatively({
           commandType: COMMAND_TYPES.PERSON_CREATE,
-          payload: { domain: entityReference(domain), ...common }
+          payload: { domain: entityReference(domain), migrateLegacyLocalId: legacyLocalId, ...common }
         });
         this.selectedPersonUuid = result?.uuid ?? this.selectedPersonUuid;
       }

@@ -344,6 +344,13 @@ export async function executePersonCreate({ payload, callerUserId }) {
   const squad = validateSquadForDomain(normalized.squad, domain);
   const currentLocation = canonicalOptionalReference(normalized.currentLocation, RECORD_TYPES.DOMAIN) ?? ref(domain);
 
+  const legacyNotable = normalized.migrateLegacyLocalId
+    ? (domain.data.population?.notables ?? []).find((entry) => entry.localId === normalized.migrateLegacyLocalId)
+    : null;
+  if (normalized.migrateLegacyLocalId && !legacyNotable) {
+    throw new ModuleError(ERROR_CODES.NOT_FOUND, "Pessoa legada não encontrada para migração.");
+  }
+
   const created = await createRecord({
     recordType: RECORD_TYPES.PERSON,
     name: normalized.name,
@@ -365,6 +372,27 @@ export async function executePersonCreate({ payload, callerUserId }) {
     }
   });
 
+  let previousDomainData = null;
+  if (legacyNotable) {
+    previousDomainData = foundry.utils.deepClone(domain.data);
+    const domainData = foundry.utils.deepClone(domain.data);
+    domainData.population ??= {};
+    domainData.population.notables = (domainData.population.notables ?? [])
+      .filter((entry) => entry.localId !== normalized.migrateLegacyLocalId);
+    try {
+      await updateRecord({
+        uuid: domain.uuid,
+        recordType: RECORD_TYPES.DOMAIN,
+        name: domain.document.name,
+        data: domainData,
+        controllerIds: controllers(domain)
+      });
+    } catch (error) {
+      await deleteRecord(created.uuid);
+      throw error;
+    }
+  }
+
   return {
     result: personResult(created),
     entities: [domain.data.entityId, created.data.entityId, squad?.data.entityId].filter(Boolean),
@@ -373,7 +401,18 @@ export async function executePersonCreate({ payload, callerUserId }) {
       entities: [domain.data.entityId, created.data.entityId, squad?.data.entityId].filter(Boolean),
       payload: personResult(created)
     }],
-    rollback: () => deleteRecord(created.uuid)
+    rollback: async () => {
+      if (previousDomainData) {
+        await updateRecord({
+          uuid: domain.uuid,
+          recordType: RECORD_TYPES.DOMAIN,
+          name: domain.document.name,
+          data: previousDomainData,
+          controllerIds: controllers(domain)
+        });
+      }
+      await deleteRecord(created.uuid);
+    }
   };
 }
 
