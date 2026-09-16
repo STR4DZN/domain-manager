@@ -125,6 +125,14 @@ export function normalizeProjectUpdatePayload(payload = {}) {
   };
 }
 
+export function normalizeProjectDeletePayload(payload = {}) {
+  return {
+    domain: domainRef(payload.domain),
+    project: projectRef(payload.project),
+    expectedModifiedTime: expectedModifiedTime(payload.expectedModifiedTime)
+  };
+}
+
 export function normalizeProjectCostUpsertPayload(payload = {}) {
   return {
     domain: domainRef(payload.domain),
@@ -152,6 +160,14 @@ export function projectCreateResourceKeys(payload = {}) {
 
 export function projectUpdateResourceKeys(payload = {}) {
   const normalized = normalizeProjectUpdatePayload(payload);
+  return [
+    `domain:${referenceKey(normalized.domain)}`,
+    `project:${referenceKey(normalized.project)}`
+  ];
+}
+
+export function projectDeleteResourceKeys(payload = {}) {
+  const normalized = normalizeProjectDeletePayload(payload);
   return [
     `domain:${referenceKey(normalized.domain)}`,
     `project:${referenceKey(normalized.project)}`

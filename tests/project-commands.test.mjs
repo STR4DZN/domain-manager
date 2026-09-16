@@ -19,13 +19,13 @@ globalThis.foundry = {
   data: { fields: { ArrayField: DummyField, BooleanField: DummyField, NumberField: DummyField, SchemaField: DummyField, StringField: DummyField } },
   utils: { deepClone: (value) => structuredClone(value), randomID: () => `RID${nextEntity++}` }
 };
-globalThis.CONST = { DOCUMENT_OWNERSHIP_LEVELS: { NONE: 0, OBSERVER: 2, OWNER: 3 } };
+globalThis.CONST = { USER_ROLES: { ASSISTANT: 3 }, DOCUMENT_OWNERSHIP_LEVELS: { NONE: 0, OBSERVER: 2, OWNER: 3 } };
 globalThis.Hooks = { callAll() {} };
 
 const docs = new Map();
 const users = new Map([
   ["GM", { id: "GM", uuid: "User.GM", name: "Primary GM", isGM: true, active: true }],
-  ["P1", { id: "P1", uuid: "User.P1", name: "Base Commander", isGM: false, active: true }],
+  ["P1", { id: "P1", uuid: "User.P1", name: "Assistant", role: 3, isGM: false, active: true }],
   ["P2", { id: "P2", uuid: "User.P2", name: "Visitor", isGM: false, active: true }]
 ]);
 users.get = Map.prototype.get.bind(users);
@@ -353,7 +353,7 @@ test("custo de Project pode ser criado, editado e removido antes do primeiro pro
   assert.deepEqual(removed.costs, []);
 });
 
-test("usuário sem controle do Domain não altera Project", async () => {
+test("usuário que não é Mestre nem Assistente não altera Project", async () => {
   const domain = domainDocument();
   const project = projectDocument({ status: "planned" });
   resetWorld(domain, project);
@@ -367,7 +367,7 @@ test("usuário sem controle do Domain não altera Project", async () => {
     workRequired: 100,
     rateAmount: 10,
     periodTicks: 1
-  }, "P2"), /não controla o Domain/);
+  }, "P2"), /Mestre ou Assistente/);
   assert.equal(project.getFlag("domain-manager", "data").status, "planned");
 });
 
@@ -454,7 +454,7 @@ test("Project com progresso não pode regredir para planned", async () => {
   assert.equal(project.getFlag("domain-manager", "data").status, "active");
 });
 
-test("APIs legadas de Project delegam ao kernel e hard-delete é recusado", async () => {
+test("APIs legadas de Project delegam ao kernel e podem excluir Project sem Structure vinculada", async () => {
   const domain = domainDocument();
   const project = projectDocument({ status: "planned" });
   resetWorld(domain, project);
@@ -496,8 +496,8 @@ test("APIs legadas de Project delegam ao kernel e hard-delete é recusado", asyn
     operationId: "legacy-project-origin"
   }), /bridge canônico|provenance/i);
 
-  await assert.rejects(() => actions.deleteProjectAction({ projectUuid: project.uuid }), /Hard-delete|cancelamento/i);
-  assert.ok(game.journal.includes(project), "Project não deve ser removido fisicamente");
+  await actions.deleteProjectAction({ projectUuid: project.uuid, operationId: "legacy-project-delete" });
+  assert.equal(game.journal.includes(project), false, "Project deve ser removido fisicamente");
 });
 
 test("updateProjectAction preserva patch parcial, campos sistêmicos e retry idempotente", async () => {

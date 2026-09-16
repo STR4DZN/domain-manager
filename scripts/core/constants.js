@@ -1,6 +1,6 @@
 export const MODULE_ID = "domain-manager";
 export const MODULE_TITLE = "Domínios // Domain Manager";
-export const MODULE_VERSION = "0.2.3";
+export const MODULE_VERSION = "0.2.4";
 export const SCHEMA_VERSION = 9;
 
 export const RECORD_TYPES = Object.freeze({
@@ -193,6 +193,7 @@ export const COMMAND_TYPES = Object.freeze({
   STRUCTURE_BEGIN_CONSTRUCTION: "structure.begin-construction",
   PROJECT_CREATE: "project.create",
   PROJECT_UPDATE: "project.update",
+  PROJECT_DELETE: "project.delete",
   PROJECT_COST_UPSERT: "project.cost-upsert",
   PROJECT_COST_REMOVE: "project.cost-remove",
   ECONOMY_CONFIGURE: "economy.configure",
@@ -206,6 +207,7 @@ export const COMMAND_TYPES = Object.freeze({
   POPULATION_WORKFORCE_SET: "population.workforce-set",
   PERSON_CREATE: "person.create",
   PERSON_UPDATE: "person.update",
+  PERSON_DELETE: "person.delete",
   TERRITORY_CONFIGURE: "territory.configure",
   RELATION_UPSERT: "relation.upsert",
   RELATION_REMOVE: "relation.remove",
@@ -256,6 +258,7 @@ export const EVENT_TYPES = Object.freeze({
   STRUCTURE_COMMISSIONED: "structure.commissioned",
   PROJECT_CREATED: "project.created",
   PROJECT_UPDATED: "project.updated",
+  PROJECT_DELETED: "project.deleted",
   ECONOMY_CONFIGURED: "economy.configured",
   ECONOMY_FLOW_UPDATED: "economy.flow-updated",
   ECONOMY_FLOW_REMOVED: "economy.flow-removed",
@@ -267,6 +270,7 @@ export const EVENT_TYPES = Object.freeze({
   POPULATION_WORKFORCE_UPDATED: "population.workforce-updated",
   PERSON_CREATED: "person.created",
   PERSON_UPDATED: "person.updated",
+  PERSON_DELETED: "person.deleted",
   TERRITORY_CONFIGURED: "territory.configured",
   RELATION_UPDATED: "relation.updated",
   RELATION_REMOVED: "relation.removed",

@@ -10,6 +10,7 @@ import {
   normalizeProjectCostRemovePayload,
   normalizeProjectCostUpsertPayload,
   normalizeProjectCreatePayload,
+  normalizeProjectDeletePayload,
   normalizeProjectUpdatePayload
 } from "./contracts.js";
 import {
@@ -263,6 +264,34 @@ export async function executeProjectUpdate({ payload, callerUserId }) {
       data: beforeData,
       controllerIds: controllers(domain)
     })
+  };
+}
+
+export async function executeProjectDelete({ payload, callerUserId }) {
+  const normalized = normalizeProjectDeletePayload(payload);
+  const domain = resolveReference(normalized.domain, RECORD_TYPES.DOMAIN);
+  const project = resolveReference(normalized.project, RECORD_TYPES.PROJECT);
+  assertProjectOperator(domain, callerUserId);
+  assertProjectBelongsToDomain(project, domain);
+  assertRevision(project, normalized.expectedModifiedTime);
+
+  const linked = linkedStructures(project);
+  if (linked.length) {
+    throw new ModuleError(
+      ERROR_CODES.CONFLICT,
+      "Remova ou desvincule as Structures deste Project antes de excluí-lo."
+    );
+  }
+
+  await deleteRecord(project.uuid);
+  return {
+    result: { uuid: project.uuid, entityId: project.data.entityId, deleted: true },
+    entities: [domain.data.entityId, project.data.entityId],
+    events: [{
+      type: EVENT_TYPES.PROJECT_DELETED,
+      entities: [domain.data.entityId, project.data.entityId],
+      payload: { uuid: project.uuid, entityId: project.data.entityId, name: project.document.name }
+    }]
   };
 }
 

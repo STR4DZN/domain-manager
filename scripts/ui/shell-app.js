@@ -561,6 +561,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openProjectEditor: DomainManagerShellApp.onOpenProjectEditor,
       closeProjectEditor: DomainManagerShellApp.onCloseProjectEditor,
       submitProjectEditor: DomainManagerShellApp.onSubmitProjectEditor,
+      deleteProject: DomainManagerShellApp.onDeleteProject,
       openProjectCostEditor: DomainManagerShellApp.onOpenProjectCostEditor,
       closeProjectCostEditor: DomainManagerShellApp.onCloseProjectCostEditor,
       submitProjectCostEditor: DomainManagerShellApp.onSubmitProjectCostEditor,
@@ -615,6 +616,7 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
       openPersonEditor: DomainManagerShellApp.onOpenPersonEditor,
       closePersonEditor: DomainManagerShellApp.onClosePersonEditor,
       submitPersonEditor: DomainManagerShellApp.onSubmitPersonEditor,
+      deletePerson: DomainManagerShellApp.onDeletePerson,
       closeTerminalTransition: DomainManagerShellApp.onCloseTerminalTransition,
       confirmTerminalTransition: DomainManagerShellApp.onConfirmTerminalTransition,
       openEconomyConfig: DomainManagerShellApp.onOpenEconomyConfig,
@@ -2854,6 +2856,36 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     }
   }
 
+  static async onDeleteProject() {
+    if (this.isProjectBusy || !this.selectedDomainUuid || !this.selectedProjectUuid) return;
+    const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
+    const projectDocument = recordIndex.get(RECORD_TYPES.PROJECT, this.selectedProjectUuid);
+    const domain = domainDocument ? decodeRecord(domainDocument) : null;
+    const project = projectDocument ? decodeRecord(projectDocument) : null;
+    if (!canManageDomainProjects(domain) || !project || project.data.domainUuid !== domain.uuid) return;
+    if (!globalThis.confirm(`Excluir permanentemente o projeto “${project.document.name}”?`)) return;
+    this.isProjectBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.PROJECT_DELETE,
+        payload: {
+          domain: entityReference(domain),
+          project: entityReference(project),
+          expectedModifiedTime: project.document?._stats?.modifiedTime ?? null
+        }
+      });
+      this.selectedProjectUuid = null;
+      this.editingProjectUuid = null;
+      ui.notifications.info("Projeto excluído.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao excluir Project", error);
+      ui.notifications.error(error.message ?? "Falha ao excluir projeto.");
+    } finally {
+      this.isProjectBusy = false;
+    }
+  }
+
   static onOpenProjectCostEditor(event, target) {
     if (!this.selectedDomainUuid || !this.selectedProjectUuid) return;
     const domainDocument = recordIndex.get(RECORD_TYPES.DOMAIN, this.selectedDomainUuid);
@@ -3616,6 +3648,36 @@ export class DomainManagerShellApp extends HandlebarsApplicationMixin(Applicatio
     } catch (error) {
       console.error("Domain Manager | Falha ao salvar Person", error);
       ui.notifications.error(error.message ?? "Falha ao salvar pessoa.");
+    } finally {
+      this.isPeopleBusy = false;
+    }
+  }
+
+  static async onDeletePerson() {
+    if (this.isPeopleBusy || !this.selectedDomainUuid || !this.selectedPersonUuid) return;
+    if (this.selectedPersonUuid.startsWith("legacy:")) {
+      ui.notifications.warn("Esta pessoa legada precisa ser migrada antes de ser excluída.");
+      return;
+    }
+    const personDocument = recordIndex.get(RECORD_TYPES.PERSON, this.selectedPersonUuid);
+    const person = personDocument ? decodeRecord(personDocument) : null;
+    if (!person || !globalThis.confirm(`Excluir permanentemente “${person.document.name}”?`)) return;
+    this.isPeopleBusy = true;
+    try {
+      await executeCommandAuthoritatively({
+        commandType: COMMAND_TYPES.PERSON_DELETE,
+        payload: {
+          person: entityReference(person),
+          expectedModifiedTime: person.document?._stats?.modifiedTime ?? null
+        }
+      });
+      this.selectedPersonUuid = null;
+      this.editingPersonUuid = null;
+      ui.notifications.info("Pessoa excluída.");
+      await this.render({ force: true });
+    } catch (error) {
+      console.error("Domain Manager | Falha ao excluir Person", error);
+      ui.notifications.error(error.message ?? "Falha ao excluir pessoa.");
     } finally {
       this.isPeopleBusy = false;
     }

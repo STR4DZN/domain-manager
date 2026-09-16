@@ -165,6 +165,13 @@ export function normalizePersonUpdatePayload(payload = {}) {
   };
 }
 
+export function normalizePersonDeletePayload(payload = {}) {
+  return {
+    person: normalizeEntityReference(payload.person, { allowedTypes: [RECORD_TYPES.PERSON] }),
+    expectedModifiedTime: revision(payload.expectedModifiedTime)
+  };
+}
+
 export function populationConfigureResourceKeys(payload = {}) {
   const ref = normalizeEntityReference(payload.domain, { allowedTypes: [RECORD_TYPES.DOMAIN] });
   return [`domain:${referenceKey(ref)}`, `population:${referenceKey(ref)}`];
@@ -197,4 +204,9 @@ export function personUpdateResourceKeys(payload = {}) {
     normalized.squad ? `squad:${referenceKey(normalized.squad)}` : null,
     normalized.currentLocation ? `domain:${referenceKey(normalized.currentLocation)}` : null
   ].filter(Boolean);
+}
+
+export function personDeleteResourceKeys(payload = {}) {
+  const normalized = normalizePersonDeletePayload(payload);
+  return [`person:${referenceKey(normalized.person)}`];
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4 — Exclusão funcional de projetos e pessoas
+
+- Projetos sem Structures vinculadas podem ser excluídos pelo Mestre ou Assistente; a interface pede confirmação e o comando valida a revisão antes de apagar.
+- Pessoas registradas agora têm exclusão autoritativa e confirmada, além da edição já disponível.
+- O bundle de estilos foi recompilado a partir das fontes que mantêm alertas, controles de marcação e painel de sistema legíveis e contidos.
+
 ## 0.2.3 — Administração e exclusão de domínio
 
 - Controles administrativos agora são exclusivos do Mestre e do Assistente do Mestre, tanto na interface quanto na validação autoritativa dos comandos.

@@ -7,6 +7,7 @@ import { decodeRecord } from "../../models/record-codec.js";
 import { isModuleManager } from "../../core/permissions.js";
 import {
   normalizePersonCreatePayload,
+  normalizePersonDeletePayload,
   normalizePersonUpdatePayload,
   normalizePopulationConfigurePayload,
   normalizePopulationGroupPayload,
@@ -440,11 +441,30 @@ export async function executePersonUpdate({ payload, callerUserId }) {
   };
 }
 
+export async function executePersonDelete({ payload, callerUserId }) {
+  const normalized = normalizePersonDeletePayload(payload);
+  const person = resolveReference(normalized.person, RECORD_TYPES.PERSON);
+  assertRevision(person, normalized.expectedModifiedTime, "A Person");
+  const domain = resolveReference(person.data.primaryDomain, RECORD_TYPES.DOMAIN);
+  assertDomainCapability(domain, callerUserId, "people");
+  await deleteRecord(person.uuid);
+  return {
+    result: { uuid: person.uuid, entityId: person.data.entityId, deleted: true },
+    entities: [domain.data.entityId, person.data.entityId],
+    events: [{
+      type: EVENT_TYPES.PERSON_DELETED,
+      entities: [domain.data.entityId, person.data.entityId],
+      payload: { uuid: person.uuid, entityId: person.data.entityId, name: person.document.name }
+    }]
+  };
+}
+
 export const PEOPLE_COMMAND_TYPES = Object.freeze([
   COMMAND_TYPES.POPULATION_CONFIGURE,
   COMMAND_TYPES.POPULATION_GROUP_UPSERT,
   COMMAND_TYPES.POPULATION_GROUP_REMOVE,
   COMMAND_TYPES.POPULATION_WORKFORCE_SET,
   COMMAND_TYPES.PERSON_CREATE,
-  COMMAND_TYPES.PERSON_UPDATE
+  COMMAND_TYPES.PERSON_UPDATE,
+  COMMAND_TYPES.PERSON_DELETE
 ]);

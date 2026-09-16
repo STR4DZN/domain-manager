@@ -70,6 +70,7 @@ import {
 } from "../features/structures/contracts.js";
 import {
   executePersonCreate,
+  executePersonDelete,
   executePersonUpdate,
   executePopulationConfigure,
   executePopulationGroupRemove,
@@ -78,6 +79,7 @@ import {
 } from "../features/people/commands.js";
 import {
   personCreateResourceKeys,
+  personDeleteResourceKeys,
   personUpdateResourceKeys,
   populationConfigureResourceKeys,
   populationGroupResourceKeys,
@@ -110,12 +112,14 @@ import {
   executeProjectCostRemove,
   executeProjectCostUpsert,
   executeProjectCreate,
+  executeProjectDelete,
   executeProjectUpdate
 } from "../features/projects/commands.js";
 import {
   projectCostRemoveResourceKeys,
   projectCostUpsertResourceKeys,
   projectCreateResourceKeys,
+  projectDeleteResourceKeys,
   projectUpdateResourceKeys
 } from "../features/projects/contracts.js";
 
@@ -242,6 +246,10 @@ const COMMAND_REGISTRY = Object.freeze({
     resourceKeys: projectUpdateResourceKeys,
     execute: executeProjectUpdate
   }),
+  [COMMAND_TYPES.PROJECT_DELETE]: Object.freeze({
+    resourceKeys: projectDeleteResourceKeys,
+    execute: executeProjectDelete
+  }),
   [COMMAND_TYPES.PROJECT_COST_UPSERT]: Object.freeze({
     resourceKeys: projectCostUpsertResourceKeys,
     execute: executeProjectCostUpsert
@@ -273,6 +281,10 @@ const COMMAND_REGISTRY = Object.freeze({
   [COMMAND_TYPES.PERSON_UPDATE]: Object.freeze({
     resourceKeys: personUpdateResourceKeys,
     execute: executePersonUpdate
+  }),
+  [COMMAND_TYPES.PERSON_DELETE]: Object.freeze({
+    resourceKeys: personDeleteResourceKeys,
+    execute: executePersonDelete
   }),
   [COMMAND_TYPES.TERRITORY_CONFIGURE]: Object.freeze({ resourceKeys: territoryConfigureResourceKeys, execute: executeTerritoryConfigure }),
   [COMMAND_TYPES.RELATION_UPSERT]: Object.freeze({ resourceKeys: relationResourceKeys, execute: executeRelationUpsert }),

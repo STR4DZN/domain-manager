@@ -182,9 +182,12 @@ export async function removeProjectCostAction({
  * Physical deletion is deliberately disabled. Recreating a deleted Project in
  * rollback would change its UUID and could invalidate references/provenance.
  */
-export async function deleteProjectAction() {
-  throw new ModuleError(
-    ERROR_CODES.CONFLICT,
-    "Hard-delete de Project foi desativado. Use o lifecycle de cancelamento para preservar histórico e referências."
-  );
+export async function deleteProjectAction({ projectUuid, expectedModifiedTime, operationId: requestedOperationId = null } = {}) {
+  const { projectRef, domainRef } = await projectContext(projectUuid);
+  await executeCommandAuthoritatively({
+    commandType: COMMAND_TYPES.PROJECT_DELETE,
+    operationId: operationId(requestedOperationId),
+    payload: { domain: domainRef, project: projectRef, expectedModifiedTime }
+  });
+  return { uuid: projectUuid, deleted: true };
 }
