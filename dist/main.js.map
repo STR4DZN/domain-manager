@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/core/versioning/build-metadata.ts", "../src/diagnostics/build-diagnostics.ts", "../src/main.ts"],
+  "sourcesContent": ["export const BUILD_METADATA = Object.freeze({\n  moduleVersion: \"0.3.0-dev.1\",\n  buildChannel: \"dev\",\n  target: \"foundry-vtt\"\n} as const);\n", "import { BUILD_METADATA } from \"../core/versioning/build-metadata.js\";\n\nexport function getBuildDiagnostics() {\n  return {\n    ...BUILD_METADATA\n  };\n}\n", "import { BUILD_METADATA } from \"./core/versioning/build-metadata.js\";\nimport { getBuildDiagnostics } from \"./diagnostics/build-diagnostics.js\";\n\n/**\n * Minimal Domain Manager bootstrap.\n */\n\nHooks.once(\"init\", () => {\n  console.info(\"[Domain Manager] init\");\n});\n\nHooks.once(\"ready\", () => {\n  console.info(\"[Domain Manager] ready\", BUILD_METADATA);\n  console.info(\"[Domain Manager] build diagnostics\", getBuildDiagnostics());\n});\n"],
+  "mappings": ";AAAO,IAAM,iBAAiB,OAAO,OAAO;AAAA,EAC1C,eAAe;AAAA,EACf,cAAc;AAAA,EACd,QAAQ;AACV,CAAU;;;ACFH,SAAS,sBAAsI;AACpC,SAAO;AAAA,IACL,GAAG;AAAA,EACL;AACF;;;ACIA,MAAM,KAAK,QAAQ,MAAM;AACvB,UAAQ,KAAK,uBAAuB;AACtC,CAAC;AAED,MAAM,KAAK,SAAS,MAAM;AACxB,UAAQ,KAAK,0BAA0B,cAAc;AACrD,UAAQ,KAAK,sCAAsC,oBAAoB,CAAC;AAC1E,CAAC;",
+  "names": []
+}

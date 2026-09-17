@@ -1,8 +1,15 @@
 {
   "id": "domain-manager",
-  "title": "Domínios // Domain Manager",
-  "description": "Framework estratégico e operacional imersivo para gestão de domínios, bases, squads, recursos, projetos e missões no Foundry VTT v13.",
-  "version": "0.2.7",
+  "title": "Domínios // Domain Manager — G0 Rewrite",
+  "description": "Reescrita arquitetural do Domain Manager — Gate G0 (Skeleton / Infrastructure) para validação no Foundry VTT v13.",
+  "version": "0.3.0-dev.1",
+  "compatibility": {
+    "minimum": "13.351",
+    "verified": "13.351"
+  },
+  "scripts": [
+    "dist/main.js"
+  ],
   "authors": [
     {
       "name": "Fusion",
@@ -10,48 +17,6 @@
     }
   ],
   "url": "https://github.com/STR4DZN/domain-manager",
-  "manifest": "https://raw.githubusercontent.com/STR4DZN/domain-manager/main/module.json",
-  "download": "https://github.com/STR4DZN/domain-manager/releases/download/v0.2.7/domain-manager-v0.2.7.zip",
-  "compatibility": {
-    "minimum": "13.341",
-    "verified": "13.351"
-  },
-  "esmodules": [
-    "scripts/main.js"
-  ],
-  "styles": [
-    "styles/shell.css"
-  ],
-  "languages": [
-    {
-      "lang": "pt-BR",
-      "name": "Português (Brasil)",
-      "path": "lang/pt-BR.json"
-    }
-  ],
-  "packs": [
-    {
-      "name": "domain-manager-macros",
-      "label": "Domain Manager — Macros",
-      "path": "packs/macros",
-      "type": "Macro",
-      "ownership": {
-        "PLAYER": "OBSERVER",
-        "ASSISTANT": "OWNER"
-      }
-    }
-  ],
-  "relationships": {
-    "requires": [
-      {
-        "id": "socketlib",
-        "type": "module",
-        "manifest": "https://github.com/farling42/foundryvtt-socketlib/releases/latest/download/module.json",
-        "compatibility": {
-          "minimum": "1.1.3"
-        }
-      }
-    ]
-  },
-  "socket": true
+  "manifest": "https://raw.githubusercontent.com/STR4DZN/domain-manager/rewrite-g0-v0.3.0-dev.1/module.json",
+  "download": "https://raw.githubusercontent.com/STR4DZN/domain-manager/rewrite-g0-v0.3.0-dev.1/dist/domain-manager-v0.3.0-dev.1.zip"
 }
